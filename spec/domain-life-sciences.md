@@ -1,8 +1,8 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.2. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.3.
+Version 0.3. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.4.
 
-This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas and the journeys the demo must run. It satisfies section 6 of the platform spec.
+This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
 The platform spec stays domain-free. Everything domain-specific lives here.
 
@@ -16,14 +16,14 @@ The three domains form one lifecycle: from molecule, to patient, to the real wor
 2. **Clinical Development.** The molecule is tested on patients in a clinical trial.
 3. **Safety and Regulatory.** What happens to patients is monitored, assessed and reported to regulators, during the trial and after launch.
 
-What is learned in each domain flows back to the others. A safety signal sends scientists back to the molecule. A manufacturing deviation can explain an adverse event. The links between domains are the point of the demo.
+What is learned in each domain flows back to the others. A safety signal sends scientists back to the molecule. A manufacturing deviation can explain an adverse event. The links between domains are the point of the platform.
 
 ### Terminology
 Patient centricity rule: the platform never calls a person in a study a "subject". The object type is Patient. Where the study has no disease state, such as a healthy volunteer study, the interface labels the same object "participant". The label comes from the Study the person is enrolled in, not from separate code or a separate type.
 
 ### Reference grounding
 
-Each domain is modeled on the scope of an existing Dassault Systèmes brand. The brands ground the model in real practice. The demo itself uses discipline names and fictional data. It does not use product names, logos or real records.
+Each domain is modeled on the scope of an existing Dassault Systèmes brand. The brands ground the model in real practice. The spec uses discipline names, not product names. Development and automated testing use the fictional seed graph in section 10. Real systems of record connect through adapters at the gateway (platform spec section 7).
 
 | Domain | Modeled on | Core disciplines |
 |---|---|---|
@@ -151,20 +151,23 @@ Covers patient safety and regulatory obligations, during trials and after launch
 | Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
 | Send for review | Submission | Reviewer | Status is draft | Status: in review |
 | Submit | Submission | Approver | Status is in review | Status: submitted. Each Safety Case it reports moves to Workflow: reported |
+| Run signal detection | Product | None | Product has Safety Cases | Creates a Signal in detected for each product and event pair whose disproportionality exceeds the threshold in business context. Also runs on the schedule set there |
 | Evaluate signal | Signal | None | Status is detected | Status: under evaluation |
 | Confirm signal | Signal | Rationale | Under evaluation | Status: confirmed. Suggests follow-up in other domains |
 | Refute signal | Signal | Rationale | Under evaluation | Status: refuted |
 | Open quality event | Batch | Description, severity | None | Creates a Quality Event in open |
 | Start investigation | Quality Event | Investigator | Status is open | Status: investigating |
-| Assign CAPA | Quality Event | Owner, action | Status is investigating | Creates a CAPA. Status: CAPA assigned |
+| Assign CAPA | Quality Event | Owner, action | Status is investigating | Creates a CAPA in planned. Status: CAPA assigned |
+| Start CAPA | CAPA | None | Status is planned | Status: in progress |
+| Record CAPA outcome | CAPA | Evidence | Status is in progress | Status: effective or ineffective. If ineffective, its Quality Event returns to investigating |
+| Close quality event | Quality Event | None | Status is CAPA assigned and its CAPA is effective | Status: closed |
 
-Signals enter detected from a detection run across Safety Cases. The demo seeds a detected Signal and does not simulate the run.
 
 ---
 
 ## 5. Cross-Domain Links
 
-These links are the demo's main proof that domains connect through the graph, not through special code.
+These links are the main proof that domains connect through the graph, not through special code.
 
 | Link | From | To | Why it matters |
 |---|---|---|---|
@@ -185,8 +188,8 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 |---|---|---|---|---|
 | Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See patient-level clinical data |
 | Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise and close queries, report adverse events to safety, lock studies | See unblinded arms. Change safety assessments |
-| Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage and assess cases, evaluate signals, request unblinding | Change clinical data. Release batches |
-| Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open quality events, assign CAPAs | Assess safety cases |
+| Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
+| Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
 
 The same object must look different to each persona. A Batch is a production record to the Quality Lead, a supply item to the Clinical Data Manager and a possible cause to the Drug Safety Physician. The platform must explain why each persona sees what it sees.
 
@@ -205,7 +208,22 @@ Rules the Guard agent enforces. They are data in the business context, not code.
 
 ---
 
-## 8. Journeys
+## 8. Regulatory Obligations
+
+The platform is a regulated system in these domains. These obligations apply on top of platform spec section 7.
+
+| Obligation | What the platform must do |
+|---|---|
+| Electronic records and signatures (21 CFR Part 11, EU GMP Annex 11) | Audit trails on every regulated record. Signatures bound to their record with the signer, time and meaning. Controlled access |
+| Data integrity (ALCOA+) | Records are attributable, legible, contemporaneous, original, accurate, complete, consistent, enduring and available |
+| Computerized system validation (GxP) | The configuration (ontology, methods, policies, catalog) is validated for its intended use, and changes to it go through change control |
+| Good clinical practice (ICH E6) | Blinding and trial integrity are protected. Every clinical data point traces to its source |
+| Safety reporting (ICH E2B(R3)) | Expedited reports are produced as E2B(R3) individual case safety reports |
+| Patient privacy (HIPAA, GDPR) | Patients are pseudonymized outside the clinical domain. Direct identifiers are visible only to roles that need them |
+
+---
+
+## 9. Journeys
 
 Each journey runs the full core loop (platform spec section 4).
 
@@ -257,9 +275,9 @@ A contract research organization's agent connects through the gateway with no UI
 
 ---
 
-## 9. Seed Graph
+## 10. Seed Graph
 
-Small and fictional. Enough to run every journey.
+Small and fictional. Used for development and automated testing, and enough to run every journey. It is never mixed with real records.
 
 - One research program with 5 compounds, including 1 candidate and 2 analogs.
 - 1 formulation of the candidate, 1 validated process and 3 batches. One batch has high deviation risk.
@@ -273,17 +291,19 @@ All names, compounds, sites and people are invented.
 
 ---
 
-## 10. Open Questions
+## 11. Open Questions
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
 - Should post-market cases (after approval) be in scope, or only trial cases?
-- How much of the generative design (analog generation) should the demo simulate versus stub?
+- Which models back Run simulation and Generate analogs, and how are they validated for their intended use?
+- Which systems of record does each domain integrate first?
 
 ---
 
-## 11. Version Log
+## 12. Version Log
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-08 | First domain spec: three domains, cross-domain links, four personas, three journeys, edge case, external agent, seed graph. |
 | 0.2 | 2026-11-08 | Closed state gaps the journeys hit: expectedness set at triage so unblinding can precede assessment; added Flag duplicate, Close case, Send for review, Refute signal, Start investigation; Submit marks cases reported; Adverse Event gets an entry state; added Inspection. Renamed Subject to Patient under the patient centricity rule, with participant as the label for studies without a disease state. |
+| 0.3 | 2026-11-08 | Reframed for platform development. Added Regulatory Obligations (section 8). Replaced the signal detection stub with Run signal detection. Added Start CAPA, Record CAPA outcome and Close quality event so a held batch can be released. Named who approves submissions. Seed graph scoped to development and testing. |

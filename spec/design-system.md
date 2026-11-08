@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.1. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.3, section 3.6.
+Version 0.2. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.4, section 3.6.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -48,7 +48,7 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 1. **Development time.** Coding agents (Claude Code) use the PatternFly MCP server to look up components, props, guidelines and accessibility rules while building the platform. It is configured in `.mcp.json` at the repo root.
 2. **Run time.** The Compose agent does not browse docs. It reads a curated, machine-readable catalog checked into `design-system/` (section 4). The catalog is a subset of PatternFly, organized by atomic level, with the rules for when to use each piece. This keeps generation fast, bounded and repeatable.
 
-The run-time catalog is part of the asset, like the specs. It is kept, versioned and improved. Demo code that renders it is disposable.
+The run-time catalog is part of the asset, like the specs. It is kept, versioned and improved. The renderer that draws it is built from the specs and changes when they do.
 
 ---
 
@@ -133,7 +133,7 @@ The renderer validates the view spec, maps each node to its PatternFly component
 
 1. Use only components and patterns in the catalog. Ask for a catalog change rather than inventing a component.
 2. Use tokens, never raw colors or sizes.
-3. Every interactive node has an accessible name.
+3. Every interactive node has an accessible name. Every generated view meets WCAG 2.2 AA (platform spec section 7).
 4. Show status with PatternFly's status colors and an icon or text, never color alone.
 5. Generated or AI-drafted content is marked as such until a human accepts it.
 
@@ -152,3 +152,4 @@ The renderer validates the view spec, maps each node to its PatternFly component
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-08 | Chose PatternFly 6. Defined atomic mapping, run-time catalog, pattern selection rules and view spec. |
+| 0.2 | 2026-11-08 | Reframed for platform development. Renderer is maintained, not disposable. Added the WCAG 2.2 AA requirement to rule 3. |
