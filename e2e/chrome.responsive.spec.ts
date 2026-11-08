@@ -8,8 +8,9 @@ const widths = [
   { label: 'xl', width: 1200 },
 ];
 
-for (const { label, width } of widths) {
-  test(`chrome works at ${label}`, async ({ page }) => {
+for (const mode of ['light', 'dark'] as const) for (const { label, width } of widths) {
+  test(`chrome works at ${label} in ${mode} mode`, async ({ page }) => {
+    await page.addInitScript((m) => localStorage.setItem('lsh.appearance', m), mode);
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/');
 

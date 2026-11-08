@@ -1,5 +1,5 @@
 import Ajv2020, { type ValidateFunction } from 'ajv/dist/2020';
-import { componentsById, schemas, type ViewNode, type ViewSpec } from './catalog';
+import { catalog, componentsById, schemas, type ViewNode, type ViewSpec } from './catalog';
 
 /**
  * Validates view specs against the catalog (design system spec, section 5.2).
@@ -72,6 +72,9 @@ export function validateNode(node: unknown, at = 'node'): ValidationResult {
 
 export function validateView(view: unknown): ValidationResult {
   if (!validateViewShape(view)) return { valid: false, errors: ajvErrors(validateViewShape, 'view') };
-  const errors = checkNode((view as ViewSpec).root, 'view.root');
+  const spec = view as ViewSpec;
+  const errors: string[] = [];
+  if (!catalog.patterns.some((p) => p.id === spec.pattern)) errors.push(`view unknown pattern "${spec.pattern}"`);
+  errors.push(...checkNode(spec.root, 'view.root'));
   return { valid: errors.length === 0, errors };
 }

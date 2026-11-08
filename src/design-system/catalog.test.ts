@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import * as PatternFly from '@patternfly/react-core';
 import { describe, expect, it } from 'vitest';
-import { catalog, componentsById, schemas } from './catalog';
+import { catalog, componentsById, schemas, type ViewNode } from './catalog';
 import { validateNode, validateView } from './validateView';
 
 const require = createRequire(import.meta.url);
@@ -46,9 +46,10 @@ describe.each(catalog.components.map((c) => [c.id, c] as const))('component %s',
     }
   });
 
-  it('has examples that validate', () => {
+  it('has examples that show it and validate', () => {
+    const contains = (node: ViewNode): boolean => node.component === entry.id || (node.children ?? []).some(contains);
     entry.examples.forEach((example, i) => {
-      expect(example.component).toBe(entry.id);
+      expect(contains(example), `${entry.id}.examples[${i}] does not show ${entry.id}`).toBe(true);
       const result = validateNode(example, `${entry.id}.examples[${i}]`);
       expect(result.errors).toEqual([]);
     });
@@ -91,7 +92,7 @@ describe('icons', () => {
 
 describe('validateView', () => {
   const view = {
-    pattern: 'primary-detail',
+    pattern: 'card-view',
     because: 'Drug Safety Physician opened a Safety Case in triaged',
     root: {
       component: 'Stack',
@@ -136,6 +137,10 @@ describe('validateView', () => {
   it('rejects children on a component that takes none', () => {
     const result = validateView({ ...view, root: { component: 'Button', props: { label: 'Go' }, children: [{ component: 'Badge', props: { label: '1' } }] } });
     expect(result.errors).toContain('view.root Button takes no children');
+  });
+
+  it('rejects a pattern not in the catalog', () => {
+    expect(validateView({ ...view, pattern: 'wizard' }).errors).toEqual(['view unknown pattern "wizard"']);
   });
 
   it('rejects a view without a reason', () => {

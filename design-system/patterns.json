@@ -1,5 +1,30 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.1",
-  "patterns": []
+  "version": "0.2",
+  "patterns": [
+    {
+      "id": "card-view",
+      "purpose": "Shows a set of items as cards that wrap to fit the screen.",
+      "template": "page",
+      "coreLoopSteps": [
+        "find",
+        "continue"
+      ],
+      "fitsWhen": [
+        "A small set of items, each worth a summary",
+        "Items people scan and compare"
+      ],
+      "slots": [
+        {
+          "name": "main",
+          "accepts": [
+            "Stack",
+            "Gallery",
+            "Card"
+          ]
+        }
+      ],
+      "responsive": "One card per row on phones. More per row as width allows, through a Gallery."
+    }
+  ]
 }

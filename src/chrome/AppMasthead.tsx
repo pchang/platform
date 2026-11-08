@@ -11,9 +11,9 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core';
-import CogIcon from '@patternfly/react-icons/dist/esm/icons/cog-icon';
 import UserIcon from '@patternfly/react-icons/dist/esm/icons/user-icon';
 import { product } from '../config/product';
+import { SettingsMenu } from './SettingsMenu';
 import './AppMasthead.css';
 
 /**
@@ -23,7 +23,8 @@ import './AppMasthead.css';
  * accessible names. The notification badge uses its read and unread states
  * once notifications exist.
  *
- * What each item opens is an open question, so they have no action yet.
+ * Settings opens a menu with Appearance (section 4.2). What notifications and
+ * profile open is an open question, so they have no action yet.
  */
 export function AppMasthead() {
   return (
@@ -47,7 +48,7 @@ export function AppMasthead() {
                 <NotificationBadge variant="plain" aria-label="Notifications" />
               </ToolbarItem>
               <ToolbarItem>
-                <Button variant="plain" icon={<CogIcon />} aria-label="Settings" />
+                <SettingsMenu />
               </ToolbarItem>
               <ToolbarItem>
                 <Button variant="plain" icon={<UserIcon />} aria-label="Profile" />

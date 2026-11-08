@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.4. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
+Version 0.6. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -21,7 +21,7 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 
 ### Visual style
 
-The platform uses PatternFly's default visual style, unchanged: no custom theme, brand colors or fonts. Light and dark modes come from PatternFly. The only product-specific element is the product name in the logo, set in configuration.
+The platform uses PatternFly's default visual style, unchanged: no custom theme, brand colors or fonts. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The only product-specific element is the product name in the logo, set in configuration.
 
 ### Packages
 
@@ -81,7 +81,7 @@ Every token, component, organism, layout, template and pattern works at every wi
 - **No horizontal page scrolling** at any width. Wide content, such as tables and charts, scrolls inside its own container or changes form, for example a table becoming a list of cards.
 - **Target size.** Every interactive target meets WCAG 2.2 AA target size.
 - **Declared behavior.** Each entry in `components.json` and `patterns.json` records how it behaves at each breakpoint.
-- **Tested.** Each entry is tested at 320px, at md and at xl.
+- **Tested.** Each entry is tested at 320px, at md and at xl, in light and dark mode.
 
 ### 4.1 Chrome
 
@@ -93,6 +93,23 @@ The masthead of the Page template is the platform chrome. It is the same in ever
 | Right | Notifications, settings and profile, as icon buttons with accessible names |
 
 All right-hand items stay visible at every width, on one row with the logo. The product name is LS&H.
+
+Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
+
+### 4.2 Light and dark mode
+
+Every component, pattern and view works in both light and dark mode. Dark mode is PatternFly's own dark theme.
+
+| Appearance setting | Behavior |
+|---|---|
+| Automatic (default) | Follows the local time of day: light from 07:00 to 19:00, dark otherwise. Switches at those times without a reload |
+| Light | Always light |
+| Dark | Always dark |
+
+- The day hours are configuration, not code.
+- The setting belongs to the person and will live in their user context (platform spec 3.3). Until identity exists, it is kept on the device.
+- Because colors come only from tokens (rule 2), components need no theme-specific code.
+- The accessibility scans in section 4 run in both modes.
 
 ---
 
@@ -109,7 +126,7 @@ The catalog lives in `design-system/` as JSON. Four files, each with a schema in
 
 The catalog is curated by hand and checked by automated tests against the pinned PatternFly packages: every import must exist, every props schema must compile, every example must validate, and every token must exist. Platform CSS may use only tokens listed in `tokens.json`.
 
-Allowed props use PatternFly's prop names, so the renderer passes them through. Two exceptions: `label` carries a component's text content, which the renderer passes as children, and Icon's `name` picks an icon from `@patternfly/react-icons`.
+Allowed props use PatternFly's prop names, so the renderer passes them through. Two exceptions: `label` carries a component's text, which the renderer passes as children (or as PatternFly's own `label` prop for components that have one, such as Checkbox), and Icon's `name` picks an icon from `@patternfly/react-icons`.
 
 The catalog grows by atomic level. It starts with tokens, atoms and layouts. Molecules, organisms and patterns are added when a view needs them, each with its tests.
 
@@ -161,6 +178,23 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
+### 5.3 Renderer
+
+- Validates the whole view spec against the catalog before drawing anything, including that its pattern exists in `patterns.json`.
+- Maps each node to the PatternFly export named in its catalog entry. Nothing outside the catalog can be drawn.
+- Gives form controls the ids PatternFly needs, so labels stay connected to their inputs.
+- Runs a node's `action` only through a handler supplied by its host. With no handler, nothing runs.
+- Resolves `bind` through the gateway. Until the gateway exists, bound nodes render with the props in the view spec, and the host shows the binding.
+
+### 5.4 Catalog preview
+
+A page at `#/catalog` shows the whole catalog so people can review it on any device.
+
+- It is itself a view spec, built from the catalog data with the card-view pattern and drawn by the renderer. No part of it is hand-built UI.
+- It shows every component, grouped by level: purpose, when to use and avoid it, responsive behavior, accessibility notes, and each example drawn live, with its binding, action and reason shown as text. It also lists the tokens and their uses.
+- Examples are not connected to the gateway. Actions do not run and bindings are shown, not read.
+- It is tested at 320px, md and xl, with an accessibility scan in a real browser.
+
 ---
 
 ## 6. Rules for Agents
@@ -178,7 +212,8 @@ The renderer validates the view spec, maps each node to its PatternFly component
 
 - How small can the component subset be while still covering every journey?
 - Should the platform add its own composites (for example, a state-transition preview) to the catalog?
-- What do notifications, settings and profile open: a drawer, a menu or a page?
+- What do notifications and profile open: a drawer, a menu or a page? Settings opens a menu; does it later need its own page?
+- Should Automatic follow sunrise and sunset at the person's location instead of fixed hours?
 
 ---
 
@@ -190,3 +225,5 @@ The renderer validates the view spec, maps each node to its PatternFly component
 | 0.2 | 2026-11-08 | Reframed for platform development. Renderer is maintained, not disposable. Added the WCAG 2.2 AA requirement to rule 3. |
 | 0.3 | 2026-11-08 | Added Responsive Design (section 4) and the chrome definition. Renumbered later sections. Added rule 6 and two open questions. |
 | 0.4 | 2026-11-08 | Visual style is PatternFly's default. Product name is LS&H. Catalog is curated by hand and checked by tests; added entry contents, prop convention and growth by level. Closed two open questions. |
+| 0.5 | 2026-11-08 | Added the renderer (5.3) and the catalog preview (5.4). Added Card, CardTitle and CardBody and the card-view pattern, which the preview needs. Clarified the label exception. |
+| 0.6 | 2026-11-08 | Added light and dark mode (4.2): automatic by time of day, with a Light or Dark override in a Settings menu. Tests run in both modes. |

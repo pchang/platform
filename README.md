@@ -26,7 +26,7 @@ Needs Node 22 or later.
 
 ```bash
 npm install
-npm run dev        # local dev server
+npm run dev        # local dev server; the design system catalog is at /#/catalog
 npm test           # unit and accessibility tests
 npm run test:e2e   # browser tests at phone, tablet and desktop widths
 npm run build      # type check and production build

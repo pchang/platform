@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.1",
+  "version": "0.2",
   "components": [
     {
       "id": "Button",
@@ -633,7 +633,7 @@
       },
       "responsive": "On touch screens it shows on tap or focus. Never the only place for essential information.",
       "accessibility": [
-        "Opens on keyboard focus as well as hover"
+        "Opens on keyboard focus as well as hover, so its trigger must be focusable, such as a Button"
       ],
       "examples": [
         {
@@ -643,10 +643,10 @@
           },
           "children": [
             {
-              "component": "Icon",
+              "component": "Button",
               "props": {
-                "name": "info-circle",
-                "aria-label": "Deadline"
+                "label": "Deadline",
+                "variant": "link"
               }
             }
           ]
@@ -683,13 +683,39 @@
       ],
       "examples": [
         {
-          "component": "Divider",
+          "component": "Flex",
           "props": {
-            "orientation": {
-              "default": "horizontal",
-              "md": "vertical"
+            "direction": {
+              "default": "column",
+              "md": "row"
+            },
+            "gap": {
+              "default": "gapMd"
             }
-          }
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Before"
+              }
+            },
+            {
+              "component": "Divider",
+              "props": {
+                "orientation": {
+                  "default": "horizontal",
+                  "md": "vertical"
+                }
+              }
+            },
+            {
+              "component": "Content",
+              "props": {
+                "label": "After"
+              }
+            }
+          ]
         }
       ]
     },
@@ -745,7 +771,7 @@
         {
           "component": "Avatar",
           "props": {
-            "src": "/avatars/default.svg",
+            "src": "avatars/default.svg",
             "alt": "Drug Safety Physician"
           },
           "bind": "person:P-0003"
@@ -813,7 +839,7 @@
           "component": "Title",
           "props": {
             "label": "Safety case SC-0007",
-            "headingLevel": "h1"
+            "headingLevel": "h2"
           }
         }
       ]
@@ -869,6 +895,212 @@
           "props": {
             "label": "Reported by the site on day 12 of treatment."
           }
+        }
+      ]
+    },
+    {
+      "id": "Card",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Card"
+      },
+      "purpose": "A self-contained surface for one object or topic.",
+      "useWhen": [
+        "Showing several objects of the same kind side by side",
+        "Grouping everything about one item"
+      ],
+      "avoidWhen": [
+        "Wrapping a whole page",
+        "Nesting cards inside cards"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isCompact": {
+            "type": "boolean",
+            "description": "Less padding"
+          },
+          "isPlain": {
+            "type": "boolean",
+            "description": "No border or background"
+          },
+          "isFullHeight": {
+            "type": "boolean",
+            "description": "Fills the height of its container, so cards in a row line up"
+          },
+          "variant": {
+            "enum": [
+              "default",
+              "secondary"
+            ],
+            "description": "Surface style"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "CardTitle",
+          "CardBody"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Full width on phones. In a Gallery or Grid, cards sit side by side as space allows.",
+      "accessibility": [
+        "Give it a CardTitle so the card has a heading"
+      ],
+      "examples": [
+        {
+          "component": "Card",
+          "children": [
+            {
+              "component": "CardTitle",
+              "props": {
+                "label": "Batch B-0002",
+                "component": "h3"
+              }
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Deviation risk is high."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CardTitle",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "CardTitle"
+      },
+      "purpose": "The heading of a Card.",
+      "useWhen": [
+        "Every Card"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "component"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Heading text"
+          },
+          "component": {
+            "enum": [
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6"
+            ],
+            "description": "Heading level in the page outline"
+          }
+        }
+      },
+      "children": null,
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "Always a heading, at the right level for the page outline"
+      ],
+      "examples": [
+        {
+          "component": "Card",
+          "children": [
+            {
+              "component": "CardTitle",
+              "props": {
+                "label": "Safety case SC-0007",
+                "component": "h3"
+              }
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Serious, unexpected, triaged."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CardBody",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "CardBody"
+      },
+      "purpose": "The content of a Card.",
+      "useWhen": [
+        "Every Card with content"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isFilled": {
+            "type": "boolean",
+            "description": "Takes the remaining height of the card"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Full width of its card.",
+      "accessibility": [
+        "Purely a container"
+      ],
+      "examples": [
+        {
+          "component": "Card",
+          "children": [
+            {
+              "component": "CardTitle",
+              "props": {
+                "label": "Study ST-0001",
+                "component": "h3"
+              }
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Phase II, enrolling at 3 sites."
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -1033,18 +1265,40 @@
       ],
       "examples": [
         {
-          "component": "FlexItem",
+          "component": "Flex",
           "props": {
-            "flex": {
-              "default": "flex_1"
+            "gap": {
+              "default": "gapMd"
             }
           },
           "children": [
             {
-              "component": "Content",
+              "component": "FlexItem",
               "props": {
-                "label": "Fills the remaining space"
-              }
+                "flex": {
+                  "default": "flex_1"
+                }
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Fills the remaining space"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "FlexItem",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Act",
+                    "variant": "secondary"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1155,13 +1409,36 @@
       ],
       "examples": [
         {
-          "component": "GalleryItem",
+          "component": "Gallery",
+          "props": {
+            "hasGutter": true,
+            "minWidths": {
+              "default": "100%",
+              "md": "16rem"
+            }
+          },
           "children": [
             {
-              "component": "Content",
-              "props": {
-                "label": "Item"
-              }
+              "component": "GalleryItem",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Item one"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "GalleryItem",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Item two"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1212,14 +1489,30 @@
               "props": {
                 "span": 12,
                 "md": 8
-              }
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Two thirds from md up"
+                  }
+                }
+              ]
             },
             {
               "component": "GridItem",
               "props": {
                 "span": 12,
                 "md": 4
-              }
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "One third from md up"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1275,17 +1568,40 @@
       ],
       "examples": [
         {
-          "component": "GridItem",
+          "component": "Grid",
           "props": {
-            "span": 12,
-            "md": 6
+            "hasGutter": true
           },
           "children": [
             {
-              "component": "Content",
+              "component": "GridItem",
               "props": {
-                "label": "Half width from md up"
-              }
+                "span": 12,
+                "md": 6
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Half width from md up"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "GridItem",
+              "props": {
+                "span": 12,
+                "md": 6
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Half width from md up"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1387,13 +1703,31 @@
       ],
       "examples": [
         {
-          "component": "LevelItem",
+          "component": "Level",
           "children": [
             {
-              "component": "Content",
-              "props": {
-                "label": "Item"
-              }
+              "component": "LevelItem",
+              "children": [
+                {
+                  "component": "Title",
+                  "props": {
+                    "label": "Open queries",
+                    "headingLevel": "h2"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "LevelItem",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Raise query",
+                    "variant": "secondary"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1509,16 +1843,36 @@
       ],
       "examples": [
         {
-          "component": "SplitItem",
+          "component": "Split",
           "props": {
-            "isFilled": true
+            "hasGutter": true,
+            "isWrappable": true
           },
           "children": [
             {
-              "component": "Content",
+              "component": "SplitItem",
+              "children": [
+                {
+                  "component": "Icon",
+                  "props": {
+                    "name": "info-circle"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "SplitItem",
               "props": {
-                "label": "Item"
-              }
+                "isFilled": true
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Text fills the rest"
+                  }
+                }
+              ]
             }
           ]
         }
@@ -1571,7 +1925,7 @@
                   "component": "Title",
                   "props": {
                     "label": "Batch B-0002",
-                    "headingLevel": "h1"
+                    "headingLevel": "h2"
                   }
                 }
               ]
@@ -1630,13 +1984,36 @@
       ],
       "examples": [
         {
-          "component": "StackItem",
+          "component": "Stack",
+          "props": {
+            "hasGutter": true
+          },
           "children": [
             {
-              "component": "Content",
+              "component": "StackItem",
+              "children": [
+                {
+                  "component": "Title",
+                  "props": {
+                    "label": "Batch B-0002",
+                    "headingLevel": "h2"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "StackItem",
               "props": {
-                "label": "Item"
-              }
+                "isFilled": true
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Deviation risk is high."
+                  }
+                }
+              ]
             }
           ]
         }
