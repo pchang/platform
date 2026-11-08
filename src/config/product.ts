@@ -4,5 +4,5 @@
  */
 export const product = {
   name: 'LS&H',
-  homeHref: '/',
+  homeHref: '#/',
 } as const;

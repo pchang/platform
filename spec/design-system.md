@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.4. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
+Version 0.5. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -109,7 +109,7 @@ The catalog lives in `design-system/` as JSON. Four files, each with a schema in
 
 The catalog is curated by hand and checked by automated tests against the pinned PatternFly packages: every import must exist, every props schema must compile, every example must validate, and every token must exist. Platform CSS may use only tokens listed in `tokens.json`.
 
-Allowed props use PatternFly's prop names, so the renderer passes them through. Two exceptions: `label` carries a component's text content, which the renderer passes as children, and Icon's `name` picks an icon from `@patternfly/react-icons`.
+Allowed props use PatternFly's prop names, so the renderer passes them through. Two exceptions: `label` carries a component's text, which the renderer passes as children (or as PatternFly's own `label` prop for components that have one, such as Checkbox), and Icon's `name` picks an icon from `@patternfly/react-icons`.
 
 The catalog grows by atomic level. It starts with tokens, atoms and layouts. Molecules, organisms and patterns are added when a view needs them, each with its tests.
 
@@ -161,6 +161,23 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
+### 5.3 Renderer
+
+- Validates the whole view spec against the catalog before drawing anything, including that its pattern exists in `patterns.json`.
+- Maps each node to the PatternFly export named in its catalog entry. Nothing outside the catalog can be drawn.
+- Gives form controls the ids PatternFly needs, so labels stay connected to their inputs.
+- Runs a node's `action` only through a handler supplied by its host. With no handler, nothing runs.
+- Resolves `bind` through the gateway. Until the gateway exists, bound nodes render with the props in the view spec, and the host shows the binding.
+
+### 5.4 Catalog preview
+
+A page at `#/catalog` shows the whole catalog so people can review it on any device.
+
+- It is itself a view spec, built from the catalog data with the card-view pattern and drawn by the renderer. No part of it is hand-built UI.
+- It shows every component, grouped by level: purpose, when to use and avoid it, responsive behavior, accessibility notes, and each example drawn live, with its binding, action and reason shown as text. It also lists the tokens and their uses.
+- Examples are not connected to the gateway. Actions do not run and bindings are shown, not read.
+- It is tested at 320px, md and xl, with an accessibility scan in a real browser.
+
 ---
 
 ## 6. Rules for Agents
@@ -190,3 +207,4 @@ The renderer validates the view spec, maps each node to its PatternFly component
 | 0.2 | 2026-11-08 | Reframed for platform development. Renderer is maintained, not disposable. Added the WCAG 2.2 AA requirement to rule 3. |
 | 0.3 | 2026-11-08 | Added Responsive Design (section 4) and the chrome definition. Renumbered later sections. Added rule 6 and two open questions. |
 | 0.4 | 2026-11-08 | Visual style is PatternFly's default. Product name is LS&H. Catalog is curated by hand and checked by tests; added entry contents, prop convention and growth by level. Closed two open questions. |
+| 0.5 | 2026-11-08 | Added the renderer (5.3) and the catalog preview (5.4). Added Card, CardTitle and CardBody and the card-view pattern, which the preview needs. Clarified the label exception. |
