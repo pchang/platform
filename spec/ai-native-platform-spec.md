@@ -76,6 +76,8 @@ Modeling rules:
 
 Runtime: the gateway holds the graph in **Oxigraph** and validates with a JavaScript SHACL engine.
 
+Namespace: every term lives under **`https://w3id.org/lsh/`**, a permanent identifier from the w3id.org redirection service, so term addresses survive any change of host or repository. Each ontology has its own path, such as `https://w3id.org/lsh/platform#` and `https://w3id.org/lsh/life-sciences#`. The redirect sends software to the Turtle file and people to its documentation.
+
 ### 3.2 Knowledge Graph Layer
 Holds the instances. The ontology defines types. The knowledge graph holds every actual object, its relationships and its history.
 
@@ -222,7 +224,6 @@ To resolve in future versions of this spec.
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
-- What permanent namespace do the platform's URIs use? Files use a placeholder, `https://example.org/lsh/`, until it is chosen.
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
 
@@ -237,4 +238,4 @@ To resolve in future versions of this spec.
 | 0.3 | 2026-11-08 | Linked the design system spec from section 3.6. |
 | 0.4 | 2026-11-08 | Reframed from a demo to platform development: the spec leads production code. Replaced Demo Scope and Non-Goals with First Release Scope and Quality Requirements. Added acceptance criterion 6 and open questions on deployment and performance targets. |
 | 0.5 | 2026-11-08 | Added the responsive requirement to section 7. |
-| 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Added an open question on the namespace. |
+| 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Chose the namespace, `https://w3id.org/lsh/`. |

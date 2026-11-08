@@ -6,16 +6,16 @@
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix prov:    <http://www.w3.org/ns/prov#> .
-@prefix p:       <https://example.org/lsh/platform#> .
-@prefix ls:      <https://example.org/lsh/life-sciences#> .
-@prefix lst:     <https://example.org/lsh/life-sciences/term#> .
-@prefix lsh:     <https://example.org/lsh/life-sciences/shape#> .
+@prefix p:       <https://w3id.org/lsh/platform#> .
+@prefix ls:      <https://w3id.org/lsh/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh/life-sciences/shape#> .
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
-<https://example.org/lsh/life-sciences/methods> a owl:Ontology ;
+<https://w3id.org/lsh/life-sciences/methods> a owl:Ontology ;
   dcterms:title "LS&H life sciences methods" ;
   rdfs:comment "Methods with their inputs, preconditions and effects (domain spec sections 2.3, 3.3 and 4.3). Preconditions are SHACL shapes; their messages explain blocks." ;
   owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://example.org/lsh/life-sciences/methods/0.1.0> ;
+  owl:versionIRI <https://w3id.org/lsh/life-sciences/methods/0.1.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:RunSimulation-modelType a p:Input ;
@@ -670,10 +670,10 @@ lsh:prefixes a owl:Ontology ;
   sh:declare lsh:prefix-ls, lsh:prefix-lst .
 lsh:prefix-ls a sh:PrefixDeclaration ;
   sh:prefix "ls" ;
-  sh:namespace "https://example.org/lsh/life-sciences#"^^xsd:anyURI .
+  sh:namespace "https://w3id.org/lsh/life-sciences#"^^xsd:anyURI .
 lsh:prefix-lst a sh:PrefixDeclaration ;
   sh:prefix "lst" ;
-  sh:namespace "https://example.org/lsh/life-sciences/term#"^^xsd:anyURI .
+  sh:namespace "https://w3id.org/lsh/life-sciences/term#"^^xsd:anyURI .
 
 lsh:RunSimulation-pre-stage a sh:PropertyShape ;
   sh:path ls:compoundStage ;

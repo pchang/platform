@@ -6,16 +6,16 @@
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix prov:    <http://www.w3.org/ns/prov#> .
-@prefix p:       <https://example.org/lsh/platform#> .
-@prefix ls:      <https://example.org/lsh/life-sciences#> .
-@prefix lst:     <https://example.org/lsh/life-sciences/term#> .
-@prefix lsh:     <https://example.org/lsh/life-sciences/shape#> .
+@prefix p:       <https://w3id.org/lsh/platform#> .
+@prefix ls:      <https://w3id.org/lsh/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh/life-sciences/shape#> .
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
-<https://example.org/lsh/life-sciences/rules> a owl:Ontology ;
+<https://w3id.org/lsh/life-sciences/rules> a owl:Ontology ;
   dcterms:title "LS&H life sciences business rules" ;
   rdfs:comment "The business rules of domain spec section 7, as data." ;
   owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://example.org/lsh/life-sciences/rules/0.1.0> ;
+  owl:versionIRI <https://w3id.org/lsh/life-sciences/rules/0.1.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ExpeditedReporting a p:BusinessRule ;

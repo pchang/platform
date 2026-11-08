@@ -15,10 +15,10 @@ export const NS = {
   owl: 'http://www.w3.org/2002/07/owl#',
   sh: 'http://www.w3.org/ns/shacl#',
   skos: 'http://www.w3.org/2004/02/skos/core#',
-  p: 'https://example.org/lsh/platform#',
-  ls: 'https://example.org/lsh/life-sciences#',
-  lst: 'https://example.org/lsh/life-sciences/term#',
-  lsh: 'https://example.org/lsh/life-sciences/shape#',
+  p: 'https://w3id.org/lsh/platform#',
+  ls: 'https://w3id.org/lsh/life-sciences#',
+  lst: 'https://w3id.org/lsh/life-sciences/term#',
+  lsh: 'https://w3id.org/lsh/life-sciences/shape#',
 } as const;
 
 export const PREFIXES = Object.entries(NS)

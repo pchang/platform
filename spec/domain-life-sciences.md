@@ -237,7 +237,7 @@ The domain is written in the platform's ontology format (platform spec section 3
 | `rules.ttl` | The business rules in section 7, with their parameters |
 | `roles.ttl` | The personas in section 6, with the methods they may run and what they may not read |
 
-- **Namespace.** `https://example.org/lsh/life-sciences#`, a placeholder until the platform namespace is chosen.
+- **Namespace.** `https://w3id.org/lsh/life-sciences#`, with concepts under `…/life-sciences/term#` and shapes under `…/life-sciences/shape#` (platform spec section 3.1). Example and seed data use `https://example.org/`, which is reserved for examples, so it can never be mistaken for real records.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
 - **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4 must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
 
