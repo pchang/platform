@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repo holds an ontology-driven AI platform, built for production use. Read `spec/ontology-platform-prompt-spec.md` before doing any work here.
+This repo holds an ontology-driven AI platform, built for production use. Read `spec/ai-native-platform-spec.md` before doing any work here.
 
 ## Working rules
 
