@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": ["patternfly"],
+  "permissions": {
+    "allow": ["mcp__patternfly"]
+  }
+}
