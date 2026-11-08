@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.2. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.4, section 3.6.
+Version 0.3. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -46,7 +46,7 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 ## 2. Two Ways Agents Read the Design System
 
 1. **Development time.** Coding agents (Claude Code) use the PatternFly MCP server to look up components, props, guidelines and accessibility rules while building the platform. It is configured in `.mcp.json` at the repo root.
-2. **Run time.** The Compose agent does not browse docs. It reads a curated, machine-readable catalog checked into `design-system/` (section 4). The catalog is a subset of PatternFly, organized by atomic level, with the rules for when to use each piece. This keeps generation fast, bounded and repeatable.
+2. **Run time.** The Compose agent does not browse docs. It reads a curated, machine-readable catalog checked into `design-system/` (section 5). The catalog is a subset of PatternFly, organized by atomic level, with the rules for when to use each piece. This keeps generation fast, bounded and repeatable.
 
 The run-time catalog is part of the asset, like the specs. It is kept, versioned and improved. The renderer that draws it is built from the specs and changes when they do.
 
@@ -68,7 +68,31 @@ PatternFly does not use atomic design terms. The platform maps it to them so age
 
 ---
 
-## 4. Run-Time Catalog
+## 4. Responsive Design
+
+Every token, component, organism, layout, template and pattern works at every width from 320 CSS pixels (a small phone) up. Responsiveness is part of each catalog entry, not a later pass.
+
+- **Breakpoints** are PatternFly's: sm 576px, md 768px, lg 992px, xl 1200px, 2xl 1450px. No custom breakpoints.
+- **Mobile first.** The default layout is the smallest. Larger breakpoints add to it.
+- **No horizontal page scrolling** at any width. Wide content, such as tables and charts, scrolls inside its own container or changes form, for example a table becoming a list of cards.
+- **Target size.** Every interactive target meets WCAG 2.2 AA target size.
+- **Declared behavior.** Each entry in `components.json` and `patterns.json` records how it behaves at each breakpoint.
+- **Tested.** Each entry is tested at 320px, at md and at xl.
+
+### 4.1 Chrome
+
+The masthead of the Page template is the platform chrome. It is the same in every domain.
+
+| Position | Content |
+|---|---|
+| Left | Text-based logo: the product name, set in configuration. Links to home |
+| Right | Notifications, settings and profile, as icon buttons with accessible names |
+
+All right-hand items stay visible at every width.
+
+---
+
+## 5. Run-Time Catalog
 
 The catalog lives in `design-system/` as JSON. Four files.
 
@@ -79,7 +103,7 @@ The catalog lives in `design-system/` as JSON. Four files.
 | `patterns.json` | Every allowed pattern: its template, layout, slots, and the conditions under which it fits |
 | `view.schema.json` | The schema of a view spec, the only thing the Compose agent may output |
 
-### 4.1 Pattern selection rules
+### 5.1 Pattern selection rules
 
 Patterns are chosen by rules, not by free generation. The rules read the core loop step, the object and the context. This is what makes the same task produce the same UI shape (platform spec 5.4).
 
@@ -93,7 +117,7 @@ Patterns are chosen by rules, not by free generation. The rules read the core lo
 | Commit | Preview as a Description list of before and after, then an Alert with the outcome | Whether the change is reversible |
 | Continue | Cards of suggested next actions | New state, links to other domains |
 
-### 4.2 View spec
+### 5.2 View spec
 
 The Compose agent emits a view spec: a tree of catalog components. Nothing else reaches the screen.
 
@@ -129,27 +153,31 @@ The renderer validates the view spec, maps each node to its PatternFly component
 
 ---
 
-## 5. Rules for Agents
+## 6. Rules for Agents
 
 1. Use only components and patterns in the catalog. Ask for a catalog change rather than inventing a component.
 2. Use tokens, never raw colors or sizes.
 3. Every interactive node has an accessible name. Every generated view meets WCAG 2.2 AA (platform spec section 7).
 4. Show status with PatternFly's status colors and an icon or text, never color alone.
 5. Generated or AI-drafted content is marked as such until a human accepts it.
+6. Every view works from 320px up with no horizontal page scrolling (section 4).
 
 ---
 
-## 6. Open Questions
+## 7. Open Questions
 
 - Should the catalog be generated from PatternFly's TypeScript types, or curated by hand?
 - How small can the component subset be while still covering every journey?
 - Should the platform add its own composites (for example, a state-transition preview) to the catalog?
+- What do notifications, settings and profile open: a drawer, a menu or a page?
+- What is the product name shown in the logo?
 
 ---
 
-## 7. Version Log
+## 8. Version Log
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-08 | Chose PatternFly 6. Defined atomic mapping, run-time catalog, pattern selection rules and view spec. |
 | 0.2 | 2026-11-08 | Reframed for platform development. Renderer is maintained, not disposable. Added the WCAG 2.2 AA requirement to rule 3. |
+| 0.3 | 2026-11-08 | Added Responsive Design (section 4) and the chrome definition. Renumbered later sections. Added rule 6 and two open questions. |
