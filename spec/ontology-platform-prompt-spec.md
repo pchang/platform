@@ -1,16 +1,16 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.3. November 8, 2026. Author: Paul Chang.
+Version 0.4. November 8, 2026. Author: Paul Chang.
 
-This is a living prompt. It drives the generation of a platform demo. We improve the prompt, not the demo. Each version of the demo is disposable. The spec is the asset.
+This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
-This spec stays abstract on purpose. It defines the pattern, not a domain. Concrete examples come later, when a specific domain is applied to it.
+This spec stays abstract on purpose. It defines the pattern, not a domain. Concrete domains are applied to it through domain specs.
 
 ---
 
 ## 1. The Prompt
 
-You are building a demo of an AI platform. The platform has no hardcoded screens, menus or workflows. Everything a person sees and does is derived from an underlying model: an ontology and a knowledge graph. Agents read that model. Agents act on it. Agents compose the interface a person needs, at the moment they need it.
+You are building an AI platform for production use. The platform has no hardcoded screens, menus or workflows. Everything a person sees and does is derived from an underlying model: an ontology and a knowledge graph. Agents read that model. Agents act on it. Agents compose the interface a person needs, at the moment they need it.
 
 Most of the effort goes into the model. The interface is a consequence of the model.
 
@@ -91,7 +91,7 @@ What a person sees. Generated, not designed screen by screen.
 
 ## 4. The Core Loop
 
-Every interaction follows the same loop. The demo must show it end to end.
+Every interaction follows the same loop. The platform supports it end to end, for every object type in every domain.
 
 1. **Orient.** The platform shows a navigation structure derived from the ontology, shaped by context. It proposes logical starting points.
 2. **Find.** The person searches or browses. The platform resolves the request against the graph and returns the object.
@@ -136,9 +136,9 @@ Every interaction follows the same loop. The demo must show it end to end.
 
 ---
 
-## 6. Demo Scope
+## 6. First Release Scope
 
-The demo proves the pattern, not the scale.
+The first release proves the pattern on real work, built to the quality requirements in section 7. Later releases add domains, not new UI code.
 
 - More than one domain, to prove the platform is domain-independent.
 - At least one link across domains.
@@ -147,27 +147,36 @@ The demo proves the pattern, not the scale.
 - An external agent completing a task through the gateway.
 - A way to inspect the ontology, graph, method and policy behind any view.
 
-Specific domains, personas and journeys are defined in a later section or a separate domain spec.
+Specific domains, personas and journeys are defined in domain specs.
 
 ---
 
-## 7. Non-Goals for the Demo
+## 7. Quality Requirements
 
-- Production security, scale or performance.
-- Real data integrations.
-- Final visual design. The design system needs to be coherent, not finished.
+The platform meets these from the first release. Domain specs add the obligations of their industry.
+
+- **Security.** Every person and agent has an authenticated identity. Permissions are least-privilege and enforced at the gateway. Data is encrypted in transit and at rest. Secrets never live in code.
+- **Accountability.** An append-only audit trail records every change and every read of protected data: who, what, when, why and under which policy. Methods that need a signature capture one, bound to the record.
+- **Data integrity.** History is never overwritten. A correction is a new record linked to what it corrects.
+- **Integration.** Systems of record connect through adapters at the gateway. An adapter maps an external system's records to the ontology, so agents see one graph whether an object is held by the platform or federated from another system.
+- **Reliability.** Every commit is atomic. A failed method leaves the object in its prior state and explains why.
+- **Performance and scale.** Each release sets targets and measures against them from the first build.
+- **Accessibility.** Generated UI meets WCAG 2.2 AA.
+- **Testing.** Every method, policy rule and pattern selection rule has automated tests. Generated views are tested for consistency (the same task produces the same UI shape) and accessibility.
+- **Change control.** The ontology, methods, policies and design system catalog are versioned. Changes to them are reviewed, tested and traceable, so the platform can be formally validated where a domain requires it.
 
 ---
 
 ## 8. Acceptance Criteria
 
-The demo succeeds when:
+The first release is accepted when:
 
-1. Adding a new domain requires only a new ontology and seed graph.
+1. Adding a new domain requires only a new ontology, its methods and policies, and a seed graph or an adapter.
 2. The same object adapts to different personas, for reasons the platform can explain.
 3. A person can reach and act on any object by declaring intent.
 4. An external agent completes a task without any UI.
 5. Every change is traceable from intent to outcome.
+6. The quality requirements in section 7 and the obligations of each applied domain spec are met.
 
 ---
 
@@ -180,7 +189,9 @@ To resolve in future versions of this spec.
 - How much autonomy do agents get before they must ask a human?
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
-- How is the generated UI tested for consistency and accessibility?
+- How is the generated UI tested for consistency and accessibility at scale?
+- What are the deployment model and hosting targets?
+- What are the performance and scale targets for the first release?
 
 ---
 
@@ -191,3 +202,4 @@ To resolve in future versions of this spec.
 | 0.1 | 2026-11-07 | First draft from freeform brief. |
 | 0.2 | 2026-11-07 | Abstracted state to n-dimensional spaces. Removed domain examples and fixed counts. Agent roles marked illustrative. |
 | 0.3 | 2026-11-08 | Linked the design system spec from section 3.6. |
+| 0.4 | 2026-11-08 | Reframed from a demo to platform development: the spec leads production code. Replaced Demo Scope and Non-Goals with First Release Scope and Quality Requirements. Added acceptance criterion 6 and open questions on deployment and performance targets. |
