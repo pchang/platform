@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.2. November 7, 2026. Author: Paul Chang.
+Version 0.3. November 8, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the generation of a platform demo. We improve the prompt, not the demo. Each version of the demo is disposable. The spec is the asset.
 
@@ -85,6 +85,7 @@ What a person sees. Generated, not designed screen by screen.
 
 - Built from a design system that is itself machine-readable, so agents can assemble it.
 - Chat is one mode among many. The platform picks the right mode for the task.
+- The design system and its machine-readable catalog are defined in `design-system.md`.
 
 ---
 
@@ -189,3 +190,4 @@ To resolve in future versions of this spec.
 |---|---|---|
 | 0.1 | 2026-11-07 | First draft from freeform brief. |
 | 0.2 | 2026-11-07 | Abstracted state to n-dimensional spaces. Removed domain examples and fixed counts. Agent roles marked illustrative. |
+| 0.3 | 2026-11-08 | Linked the design system spec from section 3.6. |

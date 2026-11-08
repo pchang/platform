@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.1. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.2.
+Version 0.1. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.3.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas and the journeys the demo must run. It satisfies section 6 of the platform spec.
 

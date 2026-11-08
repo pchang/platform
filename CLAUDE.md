@@ -9,3 +9,4 @@ This repo holds an ontology-driven AI platform demo. Read `spec/ontology-platfor
 - **When you change the spec,** bump its version, update the date and add a row to the Version Log (section 10).
 - **No hardcoded screens in the demo.** Navigation, actions and UI must be derived from the ontology, graph and context (spec sections 2 and 3). A new domain must need only a new ontology and seed graph.
 - **Agents go through the gateway.** No code path may read or write the graph except through the intelligence gateway.
+- **Design system.** Build UI only from PatternFly, through the catalog in `design-system/` (see `spec/design-system.md`). Use the `patternfly` MCP server in `.mcp.json` to look up components and guidelines.
