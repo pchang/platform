@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "view.schema.json",
+  "title": "View spec",
+  "description": "The only thing the Compose agent may output (design system spec, section 5.2). Structural rules live here. That each component exists in components.json and its props validate is checked by the view validator against the catalog.",
+  "type": "object",
+  "required": [
+    "pattern",
+    "because",
+    "root"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "pattern": {
+      "type": "string",
+      "description": "Id of a pattern in patterns.json."
+    },
+    "because": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why this view was composed."
+    },
+    "root": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": [
+        "component"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$",
+          "description": "Id of a component in components.json."
+        },
+        "props": {
+          "type": "object",
+          "description": "Validated against the component's props schema."
+        },
+        "bind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9._-]+$",
+          "description": "A graph object, as type:id. Data is read through the gateway, never embedded."
+        },
+        "action": {
+          "type": "object",
+          "required": [
+            "method",
+            "target"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9._-]+$"
+            }
+          },
+          "description": "An ontology method. The gateway checks it again on commit."
+        },
+        "because": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why this node is here. Powers \"why am I seeing this\"."
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    }
+  }
+}

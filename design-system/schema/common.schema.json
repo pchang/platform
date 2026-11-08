@@ -1,0 +1,526 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Shared definitions for the design system catalog",
+  "$defs": {
+    "breakpoint": {
+      "enum": [
+        "default",
+        "sm",
+        "md",
+        "lg",
+        "xl",
+        "2xl"
+      ],
+      "description": "PatternFly breakpoints (design system spec, section 4)."
+    },
+    "flexGap": {
+      "type": "object",
+      "description": "Gap between items, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        },
+        "md": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "gap",
+            "gapNone",
+            "gapXs",
+            "gapSm",
+            "gapMd",
+            "gapLg",
+            "gapXl",
+            "gap2xl",
+            "gap3xl",
+            "gap4xl"
+          ]
+        }
+      }
+    },
+    "flexDirection": {
+      "type": "object",
+      "description": "Direction of items, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        },
+        "md": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "column",
+            "columnReverse",
+            "row",
+            "rowReverse"
+          ]
+        }
+      }
+    },
+    "flexWrap": {
+      "type": "object",
+      "description": "Wrapping of items, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        },
+        "md": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "wrap",
+            "wrapReverse",
+            "nowrap"
+          ]
+        }
+      }
+    },
+    "flexAlignItems": {
+      "type": "object",
+      "description": "Cross-axis alignment, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        },
+        "md": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "alignItemsFlexStart",
+            "alignItemsFlexEnd",
+            "alignItemsCenter",
+            "alignItemsStretch",
+            "alignItemsBaseline"
+          ]
+        }
+      }
+    },
+    "flexJustifyContent": {
+      "type": "object",
+      "description": "Main-axis distribution, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        },
+        "md": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "justifyContentFlexStart",
+            "justifyContentFlexEnd",
+            "justifyContentCenter",
+            "justifyContentSpaceBetween",
+            "justifyContentSpaceAround",
+            "justifyContentSpaceEvenly"
+          ]
+        }
+      }
+    },
+    "flexItemFlex": {
+      "type": "object",
+      "description": "How much the item grows, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        },
+        "md": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "flexDefault",
+            "flexNone",
+            "flex_1",
+            "flex_2",
+            "flex_3",
+            "flex_4"
+          ]
+        }
+      }
+    },
+    "orientation": {
+      "type": "object",
+      "description": "Orientation, per breakpoint.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "md": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        }
+      }
+    },
+    "galleryMinWidths": {
+      "type": "object",
+      "description": "Minimum item width, per breakpoint. A curated set of sizes, not free values (rule 2).",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        },
+        "sm": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        },
+        "md": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        },
+        "lg": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        },
+        "xl": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        },
+        "2xl": {
+          "enum": [
+            "100%",
+            "12rem",
+            "16rem",
+            "20rem",
+            "24rem"
+          ]
+        }
+      }
+    },
+    "gridSpan": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Columns spanned, out of 12."
+    }
+  }
+}

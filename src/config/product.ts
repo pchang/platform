@@ -1,8 +1,8 @@
 /**
  * Product identity shown in the chrome. The name is configuration, not code
- * (design system spec, section 4.1). The final name is an open question.
+ * (design system spec, section 4.1).
  */
 export const product = {
-  name: 'Platform',
+  name: 'LS&H',
   homeHref: '/',
 } as const;

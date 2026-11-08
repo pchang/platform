@@ -1,0 +1,1646 @@
+{
+  "$schema": "./schema/components.schema.json",
+  "version": "0.1",
+  "components": [
+    {
+      "id": "Button",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Button"
+      },
+      "purpose": "Triggers an action, usually an ontology method.",
+      "useWhen": [
+        "The person runs a method or confirms a step"
+      ],
+      "avoidWhen": [
+        "Navigating to another place: use a link"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "variant": {
+            "enum": [
+              "primary",
+              "secondary",
+              "tertiary",
+              "danger",
+              "link",
+              "plain",
+              "control"
+            ],
+            "description": "Emphasis. One primary per view"
+          },
+          "size": {
+            "enum": [
+              "default",
+              "sm",
+              "lg"
+            ],
+            "description": "Size"
+          },
+          "isBlock": {
+            "type": "boolean",
+            "description": "Full width of its container"
+          },
+          "isDisabled": {
+            "type": "boolean",
+            "description": "Not available. Prefer hiding methods that are not valid"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Inline at every width. Use isBlock for a full-width action in narrow containers.",
+      "accessibility": [
+        "Always has a visible label",
+        "Disabled buttons must say why elsewhere in the view"
+      ],
+      "examples": [
+        {
+          "component": "Button",
+          "props": {
+            "label": "Assess",
+            "variant": "primary"
+          },
+          "action": {
+            "method": "Assess",
+            "target": "case:SC-0007"
+          },
+          "because": "Assess is valid: workflow is triaged"
+        }
+      ]
+    },
+    {
+      "id": "Label",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Label"
+      },
+      "purpose": "Shows a short category or status.",
+      "useWhen": [
+        "Showing an object's state or category"
+      ],
+      "avoidWhen": [
+        "Long text",
+        "Counts: use Badge"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text"
+          },
+          "color": {
+            "enum": [
+              "blue",
+              "teal",
+              "green",
+              "orange",
+              "purple",
+              "red",
+              "orangered",
+              "grey",
+              "yellow"
+            ],
+            "description": "Category color"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "custom"
+            ],
+            "description": "Status, adds an icon"
+          },
+          "variant": {
+            "enum": [
+              "outline",
+              "filled"
+            ],
+            "description": "Style"
+          },
+          "isCompact": {
+            "type": "boolean",
+            "description": "Smaller size"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Fixed size. Several labels wrap onto new lines.",
+      "accessibility": [
+        "Status is shown with status, which adds an icon, never color alone (rule 4)"
+      ],
+      "examples": [
+        {
+          "component": "Label",
+          "props": {
+            "label": "Serious",
+            "status": "danger"
+          }
+        },
+        {
+          "component": "Label",
+          "props": {
+            "label": "Phase II",
+            "color": "blue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Badge",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Badge"
+      },
+      "purpose": "Shows a count.",
+      "useWhen": [
+        "A number of items, such as unread notifications"
+      ],
+      "avoidWhen": [
+        "Status: use Label"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The count, as text"
+          },
+          "isRead": {
+            "type": "boolean",
+            "description": "Muted style when already seen"
+          },
+          "screenReaderText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the count means, for screen readers"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Fixed size at every width.",
+      "accessibility": [
+        "Give screenReaderText when the number alone is unclear"
+      ],
+      "examples": [
+        {
+          "component": "Badge",
+          "props": {
+            "label": "4",
+            "screenReaderText": "open queries"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Icon",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Icon"
+      },
+      "purpose": "Shows a PatternFly icon, sized and colored by status.",
+      "useWhen": [
+        "Reinforcing a status or action"
+      ],
+      "avoidWhen": [
+        "As the only carrier of meaning without a label"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "enum": [
+              "check-circle",
+              "exclamation-triangle",
+              "exclamation-circle",
+              "info-circle",
+              "bell",
+              "cog",
+              "user"
+            ],
+            "description": "Icon from @patternfly/react-icons"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "custom"
+            ],
+            "description": "Status color"
+          },
+          "size": {
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl",
+              "2xl",
+              "3xl"
+            ],
+            "description": "Size"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name it when the icon carries meaning"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "children": null,
+      "responsive": "Fixed size at every width.",
+      "accessibility": [
+        "Decorative unless aria-label is set",
+        "Never the only signal of status (rule 4)"
+      ],
+      "examples": [
+        {
+          "component": "Icon",
+          "props": {
+            "name": "exclamation-triangle",
+            "status": "warning",
+            "aria-label": "Warning"
+          }
+        }
+      ]
+    },
+    {
+      "id": "TextInput",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "TextInput"
+      },
+      "purpose": "Single-line text entry.",
+      "useWhen": [
+        "A method needs a short text input"
+      ],
+      "avoidWhen": [
+        "Long text"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the field. Required until the Form group molecule is in the catalog"
+          },
+          "type": {
+            "enum": [
+              "text",
+              "email",
+              "number",
+              "search",
+              "tel",
+              "url",
+              "date",
+              "time"
+            ],
+            "description": "Kind of input"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "Must be filled"
+          },
+          "isDisabled": {
+            "type": "boolean",
+            "description": "Not editable"
+          },
+          "validated": {
+            "enum": [
+              "default",
+              "success",
+              "warning",
+              "error"
+            ],
+            "description": "Validation state"
+          }
+        },
+        "required": [
+          "aria-label"
+        ]
+      },
+      "children": null,
+      "responsive": "Fills the width of its container.",
+      "accessibility": [
+        "Always has a name",
+        "Error state is explained in text, not color alone"
+      ],
+      "examples": [
+        {
+          "component": "TextInput",
+          "props": {
+            "aria-label": "Rationale",
+            "isRequired": true
+          },
+          "bind": "signal:SG-0001"
+        }
+      ]
+    },
+    {
+      "id": "Checkbox",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Checkbox"
+      },
+      "purpose": "Turns one option on or off, often one of several.",
+      "useWhen": [
+        "Selecting any number of options"
+      ],
+      "avoidWhen": [
+        "A setting that applies at once: use Switch"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Extra detail under the label"
+          },
+          "isDisabled": {
+            "type": "boolean",
+            "description": "Not available"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Label wraps at narrow widths.",
+      "accessibility": [
+        "Always has a visible label"
+      ],
+      "examples": [
+        {
+          "component": "Checkbox",
+          "props": {
+            "label": "Include resolved events"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Radio",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Radio"
+      },
+      "purpose": "Picks one option from a set.",
+      "useWhen": [
+        "Picking exactly one of a few options"
+      ],
+      "avoidWhen": [
+        "More than about six options"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Group name shared by the set"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Extra detail"
+          },
+          "isDisabled": {
+            "type": "boolean",
+            "description": "Not available"
+          }
+        },
+        "required": [
+          "label",
+          "name"
+        ]
+      },
+      "children": null,
+      "responsive": "Label wraps at narrow widths.",
+      "accessibility": [
+        "Always has a visible label",
+        "Options in a set share a name"
+      ],
+      "examples": [
+        {
+          "component": "Radio",
+          "props": {
+            "label": "Possible",
+            "name": "causality"
+          }
+        },
+        {
+          "component": "Radio",
+          "props": {
+            "label": "Probable",
+            "name": "causality"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Switch",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Switch"
+      },
+      "purpose": "Turns a setting on or off with immediate effect.",
+      "useWhen": [
+        "A setting that applies at once"
+      ],
+      "avoidWhen": [
+        "Choices submitted with a form: use Checkbox"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "isDisabled": {
+            "type": "boolean",
+            "description": "Not available"
+          },
+          "isReversed": {
+            "type": "boolean",
+            "description": "Label before the switch"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Label wraps at narrow widths.",
+      "accessibility": [
+        "Always has a visible label"
+      ],
+      "examples": [
+        {
+          "component": "Switch",
+          "props": {
+            "label": "Show unblinded data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Spinner",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Spinner"
+      },
+      "purpose": "Shows that something is loading.",
+      "useWhen": [
+        "Waiting for a gateway read or method"
+      ],
+      "avoidWhen": [
+        "Waits with known progress"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "size": {
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl"
+            ],
+            "description": "Size"
+          },
+          "aria-valuetext": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What is loading"
+          }
+        }
+      },
+      "children": null,
+      "responsive": "Fixed size at every width.",
+      "accessibility": [
+        "Announces what is loading"
+      ],
+      "examples": [
+        {
+          "component": "Spinner",
+          "props": {
+            "size": "lg",
+            "aria-valuetext": "Loading safety cases"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Tooltip",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Tooltip"
+      },
+      "purpose": "Shows a short hint for the element it wraps.",
+      "useWhen": [
+        "Naming an icon-only control or adding a hint"
+      ],
+      "avoidWhen": [
+        "Essential information: hard to reach on touch screens"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Hint text"
+          },
+          "position": {
+            "enum": [
+              "auto",
+              "top",
+              "bottom",
+              "left",
+              "right"
+            ],
+            "description": "Where it appears"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "level:atom"
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "responsive": "On touch screens it shows on tap or focus. Never the only place for essential information.",
+      "accessibility": [
+        "Opens on keyboard focus as well as hover"
+      ],
+      "examples": [
+        {
+          "component": "Tooltip",
+          "props": {
+            "content": "Expedited report due in 3 days"
+          },
+          "children": [
+            {
+              "component": "Icon",
+              "props": {
+                "name": "info-circle",
+                "aria-label": "Deadline"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Divider",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Divider"
+      },
+      "purpose": "Separates groups of content.",
+      "useWhen": [
+        "Separating related groups"
+      ],
+      "avoidWhen": [
+        "Decoration"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "orientation": {
+            "$ref": "common.schema.json#/$defs/orientation"
+          }
+        }
+      },
+      "children": null,
+      "responsive": "Can change orientation per breakpoint, for example horizontal when stacked on phones and vertical side by side.",
+      "accessibility": [
+        "Presentational: separates visually, not semantically"
+      ],
+      "examples": [
+        {
+          "component": "Divider",
+          "props": {
+            "orientation": {
+              "default": "horizontal",
+              "md": "vertical"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "Avatar",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Avatar"
+      },
+      "purpose": "Shows a person's picture.",
+      "useWhen": [
+        "Identifying a person"
+      ],
+      "avoidWhen": [
+        "Decoration"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "src": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Image address, read through the gateway"
+          },
+          "alt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Who it shows"
+          },
+          "size": {
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl"
+            ],
+            "description": "Size"
+          }
+        },
+        "required": [
+          "src",
+          "alt"
+        ]
+      },
+      "children": null,
+      "responsive": "Fixed size at every width.",
+      "accessibility": [
+        "Always has alt text naming the person"
+      ],
+      "examples": [
+        {
+          "component": "Avatar",
+          "props": {
+            "src": "/avatars/default.svg",
+            "alt": "Drug Safety Physician"
+          },
+          "bind": "person:P-0003"
+        }
+      ]
+    },
+    {
+      "id": "Title",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Title"
+      },
+      "purpose": "A heading.",
+      "useWhen": [
+        "Naming a view or section"
+      ],
+      "avoidWhen": [
+        "Body text: use Content"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Heading text"
+          },
+          "headingLevel": {
+            "enum": [
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6"
+            ],
+            "description": "Level in the outline"
+          },
+          "size": {
+            "enum": [
+              "md",
+              "lg",
+              "xl",
+              "2xl",
+              "3xl",
+              "4xl"
+            ],
+            "description": "Visual size"
+          }
+        },
+        "required": [
+          "label",
+          "headingLevel"
+        ]
+      },
+      "children": null,
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "Heading levels follow the outline, never skipped for looks"
+      ],
+      "examples": [
+        {
+          "component": "Title",
+          "props": {
+            "label": "Safety case SC-0007",
+            "headingLevel": "h1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Content",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Content"
+      },
+      "purpose": "Body text.",
+      "useWhen": [
+        "Paragraphs and short text"
+      ],
+      "avoidWhen": [
+        "Headings: use Title"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text"
+          },
+          "component": {
+            "enum": [
+              "p",
+              "small",
+              "blockquote"
+            ],
+            "description": "Kind of text"
+          },
+          "isEditorial": {
+            "type": "boolean",
+            "description": "Larger, editorial style"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Wraps at every width.",
+      "accessibility": [
+        "Headings use Title, not Content"
+      ],
+      "examples": [
+        {
+          "component": "Content",
+          "props": {
+            "label": "Reported by the site on day 12 of treatment."
+          }
+        }
+      ]
+    },
+    {
+      "id": "Bullseye",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Bullseye"
+      },
+      "purpose": "Centers one item horizontally and vertically.",
+      "useWhen": [
+        "Empty states and single centered content"
+      ],
+      "avoidWhen": [
+        "Lists of items"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "maxItems": 1
+      },
+      "responsive": "Centers at every width.",
+      "accessibility": [
+        "Purely visual; reading order is the source order"
+      ],
+      "examples": [
+        {
+          "component": "Bullseye",
+          "children": [
+            {
+              "component": "Spinner",
+              "props": {
+                "aria-valuetext": "Loading"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Flex",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Flex"
+      },
+      "purpose": "Arranges items in a row or column, with per-breakpoint direction, gap and alignment.",
+      "useWhen": [
+        "Most one-dimensional arrangements"
+      ],
+      "avoidWhen": [
+        "Two-dimensional grids: use Grid or Gallery"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "$ref": "common.schema.json#/$defs/flexDirection"
+          },
+          "gap": {
+            "$ref": "common.schema.json#/$defs/flexGap"
+          },
+          "flexWrap": {
+            "$ref": "common.schema.json#/$defs/flexWrap"
+          },
+          "alignItems": {
+            "$ref": "common.schema.json#/$defs/flexAlignItems"
+          },
+          "justifyContent": {
+            "$ref": "common.schema.json#/$defs/flexJustifyContent"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Mobile first: default is the phone layout, for example a column, and larger breakpoints change it, for example to a row.",
+      "accessibility": [
+        "Reverse directions change only the visual order; keep the source order meaningful"
+      ],
+      "examples": [
+        {
+          "component": "Flex",
+          "props": {
+            "direction": {
+              "default": "column",
+              "md": "row"
+            },
+            "gap": {
+              "default": "gapMd"
+            }
+          },
+          "children": [
+            {
+              "component": "Button",
+              "props": {
+                "label": "Assess",
+                "variant": "primary"
+              }
+            },
+            {
+              "component": "Button",
+              "props": {
+                "label": "Generate narrative",
+                "variant": "secondary"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FlexItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "FlexItem"
+      },
+      "purpose": "An item in a Flex with its own grow behavior.",
+      "useWhen": [
+        "One item needs to grow or shrink differently"
+      ],
+      "avoidWhen": [
+        "Plain items: put them in Flex directly"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "flex": {
+            "$ref": "common.schema.json#/$defs/flexItemFlex"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Grow behavior can change per breakpoint.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "FlexItem",
+          "props": {
+            "flex": {
+              "default": "flex_1"
+            }
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Fills the remaining space"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Gallery",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Gallery"
+      },
+      "purpose": "A grid of equal-width items that wrap to fit.",
+      "useWhen": [
+        "Collections of similar items, such as cards"
+      ],
+      "avoidWhen": [
+        "Items of different importance"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasGutter": {
+            "type": "boolean",
+            "description": "Space between items"
+          },
+          "minWidths": {
+            "$ref": "common.schema.json#/$defs/galleryMinWidths"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "GalleryItem"
+        ]
+      },
+      "responsive": "Items wrap to fit the width: one column on phones, more as space allows.",
+      "accessibility": [
+        "Reading order is row by row in source order"
+      ],
+      "examples": [
+        {
+          "component": "Gallery",
+          "props": {
+            "hasGutter": true,
+            "minWidths": {
+              "default": "100%",
+              "md": "16rem"
+            }
+          },
+          "children": [
+            {
+              "component": "GalleryItem",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Item one"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "GalleryItem",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Item two"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GalleryItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "GalleryItem"
+      },
+      "purpose": "An item in a Gallery.",
+      "useWhen": [
+        "Each item of a Gallery"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "maxItems": 1
+      },
+      "responsive": "Width set by its Gallery.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "GalleryItem",
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Item"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Grid",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Grid"
+      },
+      "purpose": "A 12-column grid.",
+      "useWhen": [
+        "Two-dimensional layouts with items of set widths"
+      ],
+      "avoidWhen": [
+        "Equal items that wrap: use Gallery"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasGutter": {
+            "type": "boolean",
+            "description": "Space between items"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "GridItem"
+        ]
+      },
+      "responsive": "Items are full width on phones unless a span says otherwise; spans change per breakpoint.",
+      "accessibility": [
+        "Reading order is source order"
+      ],
+      "examples": [
+        {
+          "component": "Grid",
+          "props": {
+            "hasGutter": true
+          },
+          "children": [
+            {
+              "component": "GridItem",
+              "props": {
+                "span": 12,
+                "md": 8
+              }
+            },
+            {
+              "component": "GridItem",
+              "props": {
+                "span": 12,
+                "md": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GridItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "GridItem"
+      },
+      "purpose": "An item in a Grid, spanning columns per breakpoint.",
+      "useWhen": [
+        "Each item of a Grid"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "span": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          },
+          "sm": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          },
+          "md": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          },
+          "lg": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          },
+          "xl": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          },
+          "xl2": {
+            "$ref": "common.schema.json#/$defs/gridSpan"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Set span for phones (usually 12) and narrower spans at larger breakpoints.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "GridItem",
+          "props": {
+            "span": 12,
+            "md": 6
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Half width from md up"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Level",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Level"
+      },
+      "purpose": "Spreads items across a row, such as a heading and its actions.",
+      "useWhen": [
+        "A title on one side and actions on the other"
+      ],
+      "avoidWhen": [
+        "More than a few items"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasGutter": {
+            "type": "boolean",
+            "description": "Space between items"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "LevelItem"
+        ]
+      },
+      "responsive": "Stacks vertically on phones and becomes a row from md up.",
+      "accessibility": [
+        "Reading order is source order"
+      ],
+      "examples": [
+        {
+          "component": "Level",
+          "children": [
+            {
+              "component": "LevelItem",
+              "children": [
+                {
+                  "component": "Title",
+                  "props": {
+                    "label": "Open queries",
+                    "headingLevel": "h2"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "LevelItem",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Raise query",
+                    "variant": "secondary"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LevelItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "LevelItem"
+      },
+      "purpose": "An item in a Level.",
+      "useWhen": [
+        "Each item of a Level"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Position set by its Level.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "LevelItem",
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Item"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Split",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Split"
+      },
+      "purpose": "Places items side by side, one of which can fill the rest.",
+      "useWhen": [
+        "An item beside a growing item, such as an icon beside text"
+      ],
+      "avoidWhen": [
+        "Layouts that must stack on phones: use Flex"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasGutter": {
+            "type": "boolean",
+            "description": "Space between items"
+          },
+          "isWrappable": {
+            "type": "boolean",
+            "description": "Wrap onto new lines when space runs out"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "SplitItem"
+        ]
+      },
+      "responsive": "Set isWrappable unless the items always fit at 320px.",
+      "accessibility": [
+        "Reading order is source order"
+      ],
+      "examples": [
+        {
+          "component": "Split",
+          "props": {
+            "hasGutter": true,
+            "isWrappable": true
+          },
+          "children": [
+            {
+              "component": "SplitItem",
+              "children": [
+                {
+                  "component": "Icon",
+                  "props": {
+                    "name": "info-circle"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "SplitItem",
+              "props": {
+                "isFilled": true
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Text fills the rest"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SplitItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "SplitItem"
+      },
+      "purpose": "An item in a Split.",
+      "useWhen": [
+        "Each item of a Split"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isFilled": {
+            "type": "boolean",
+            "description": "Takes the remaining space"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Width set by its content or isFilled.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "SplitItem",
+          "props": {
+            "isFilled": true
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Item"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Stack",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Stack"
+      },
+      "purpose": "Places items in a column.",
+      "useWhen": [
+        "Vertical sections of a view"
+      ],
+      "avoidWhen": [
+        "Rows: use Flex or Split"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasGutter": {
+            "type": "boolean",
+            "description": "Space between items"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "StackItem"
+        ]
+      },
+      "responsive": "A column at every width.",
+      "accessibility": [
+        "Reading order is source order"
+      ],
+      "examples": [
+        {
+          "component": "Stack",
+          "props": {
+            "hasGutter": true
+          },
+          "children": [
+            {
+              "component": "StackItem",
+              "children": [
+                {
+                  "component": "Title",
+                  "props": {
+                    "label": "Batch B-0002",
+                    "headingLevel": "h1"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "StackItem",
+              "props": {
+                "isFilled": true
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Deviation risk is high."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "StackItem",
+      "level": "layout",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "StackItem"
+      },
+      "purpose": "An item in a Stack.",
+      "useWhen": [
+        "Each item of a Stack"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isFilled": {
+            "type": "boolean",
+            "description": "Takes the remaining height"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Full width at every width.",
+      "accessibility": [
+        "Purely visual"
+      ],
+      "examples": [
+        {
+          "component": "StackItem",
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Item"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

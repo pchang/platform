@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.3. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
+Version 0.4. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -18,6 +18,10 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 | Built for data-dense enterprise work | Its home is enterprise and operations software: tables, filters, status, wizards and detail drawers. That matches the life sciences domains. |
 | AI-readable | An official MCP server (`@patternfly/patternfly-mcp`, MIT) exposes the docs and guidelines to coding agents. Components are typed React, so props can be read as schemas. Tokens ship as data. |
 | Conversational mode | An official chatbot extension (`@patternfly/chatbot`) supplies chat components, so chat is one mode inside the same system (platform spec 3.6). |
+
+### Visual style
+
+The platform uses PatternFly's default visual style, unchanged: no custom theme, brand colors or fonts. Light and dark modes come from PatternFly. The only product-specific element is the product name in the logo, set in configuration.
 
 ### Packages
 
@@ -88,20 +92,26 @@ The masthead of the Page template is the platform chrome. It is the same in ever
 | Left | Text-based logo: the product name, set in configuration. Links to home |
 | Right | Notifications, settings and profile, as icon buttons with accessible names |
 
-All right-hand items stay visible at every width.
+All right-hand items stay visible at every width, on one row with the logo. The product name is LS&H.
 
 ---
 
 ## 5. Run-Time Catalog
 
-The catalog lives in `design-system/` as JSON. Four files.
+The catalog lives in `design-system/` as JSON. Four files, each with a schema in `design-system/schema/`.
 
 | File | Holds |
 |---|---|
-| `tokens.json` | The token subset the platform uses, for light and dark |
-| `components.json` | Every allowed component: id, atomic level, PatternFly import, purpose, allowed props (as JSON Schema), slots, accessibility notes |
+| `tokens.json` | The token subset the platform uses. Tokens are named, not copied: values come from PatternFly, so light and dark stay in sync with it |
+| `components.json` | Every allowed component: id, atomic level, PatternFly import, purpose, when to use and avoid it, allowed props (as JSON Schema), slots, responsive behavior, accessibility notes and at least one example |
 | `patterns.json` | Every allowed pattern: its template, layout, slots, and the conditions under which it fits |
 | `view.schema.json` | The schema of a view spec, the only thing the Compose agent may output |
+
+The catalog is curated by hand and checked by automated tests against the pinned PatternFly packages: every import must exist, every props schema must compile, every example must validate, and every token must exist. Platform CSS may use only tokens listed in `tokens.json`.
+
+Allowed props use PatternFly's prop names, so the renderer passes them through. Two exceptions: `label` carries a component's text content, which the renderer passes as children, and Icon's `name` picks an icon from `@patternfly/react-icons`.
+
+The catalog grows by atomic level. It starts with tokens, atoms and layouts. Molecules, organisms and patterns are added when a view needs them, each with its tests.
 
 ### 5.1 Pattern selection rules
 
@@ -166,11 +176,9 @@ The renderer validates the view spec, maps each node to its PatternFly component
 
 ## 7. Open Questions
 
-- Should the catalog be generated from PatternFly's TypeScript types, or curated by hand?
 - How small can the component subset be while still covering every journey?
 - Should the platform add its own composites (for example, a state-transition preview) to the catalog?
 - What do notifications, settings and profile open: a drawer, a menu or a page?
-- What is the product name shown in the logo?
 
 ---
 
@@ -181,3 +189,4 @@ The renderer validates the view spec, maps each node to its PatternFly component
 | 0.1 | 2026-11-08 | Chose PatternFly 6. Defined atomic mapping, run-time catalog, pattern selection rules and view spec. |
 | 0.2 | 2026-11-08 | Reframed for platform development. Renderer is maintained, not disposable. Added the WCAG 2.2 AA requirement to rule 3. |
 | 0.3 | 2026-11-08 | Added Responsive Design (section 4) and the chrome definition. Renumbered later sections. Added rule 6 and two open questions. |
+| 0.4 | 2026-11-08 | Visual style is PatternFly's default. Product name is LS&H. Catalog is curated by hand and checked by tests; added entry contents, prop convention and growth by level. Closed two open questions. |
