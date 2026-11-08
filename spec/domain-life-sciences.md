@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.3. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.4.
+Version 0.4. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.6.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -23,7 +23,7 @@ Patient centricity rule: the platform never calls a person in a study a "subject
 
 ### Reference grounding
 
-Each domain is modeled on the scope of an existing Dassault Systèmes brand. The brands ground the model in real practice. The spec uses discipline names, not product names. Development and automated testing use the fictional seed graph in section 10. Real systems of record connect through adapters at the gateway (platform spec section 7).
+Each domain is modeled on the scope of an existing Dassault Systèmes brand. The brands ground the model in real practice. The spec uses discipline names, not product names. Development and automated testing use the fictional seed graph in section 11. Real systems of record connect through adapters at the gateway (platform spec section 7).
 
 | Domain | Modeled on | Core disciplines |
 |---|---|---|
@@ -82,7 +82,7 @@ Covers a clinical trial from design to locked data.
 |---|---|---|
 | Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
-| Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: assigned, hidden while the study is blinded. |
+| Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: unassigned, assigned. Arm visibility: hidden, revealed. The assigned arm itself is hidden while the study is blinded (rule 2). |
 | Visit | A scheduled encounter with a patient | Status: scheduled, completed, missed. |
 | Data Record | A captured data point (lab value, vital sign, diary entry, device reading) | Entry: entered, verified. Source: site, patient, device, health record. |
 | Data Query | A question raised about a Data Record | Status: open, answered, closed. |
@@ -91,7 +91,7 @@ Covers a clinical trial from design to locked data.
 ### 3.2 Relationships
 
 - Study **tests** Formulation (cross-domain).
-- Study **runs at** Site. Patient **enrolled at** Site.
+- Study **runs at** Site. Patient **enrolled in** Study. Patient **enrolled at** Site.
 - Patient **receives** Batch (cross-domain, via study drug supply).
 - Visit **for** Patient. Data Record **captured at** Visit.
 - Data Query **raised on** Data Record.
@@ -102,12 +102,12 @@ Covers a clinical trial from design to locked data.
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
 | Consent | Patient | eConsent record | Enrollment is screened | Enrollment: consented |
-| Randomize | Patient | None | Enrollment is consented, study is enrolling | Enrollment: randomized, Arm: assigned |
+| Randomize | Patient | None | Enrollment is consented, study is enrolling | Enrollment: randomized. Arm: assigned |
 | Raise query | Data Record | Question | Entry is entered | Creates a Data Query in open |
 | Answer query | Data Query | Answer | Status is open | Status: answered |
 | Close query | Data Query | None | Status is answered | Status: closed |
 | Report to safety | Adverse Event | None | Not reported | Creates a Safety Case (cross-domain). Reporting: reported to safety |
-| Unblind patient | Patient | Justification | Study is blinded | Reveals Arm for this patient only. Requires policy approval (see 7) |
+| Unblind patient | Patient | Justification | Study is blinded, arm is hidden, and rule 2 allows it | Arm visibility: revealed, for this patient only. Logged with its justification |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
 
 ---
@@ -120,10 +120,10 @@ Covers patient safety and regulatory obligations, during trials and after launch
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Safety Case | One report of an adverse reaction in one patient | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
+| Safety Case | One report of an adverse reaction in one patient. Has a date of receipt | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
 | Product | A marketed or investigational product | Status: investigational, approved, withdrawn. |
 | Signal | A possible new risk detected across many cases | Status: detected, under evaluation, confirmed, refuted. |
-| Submission | A regulatory filing to an authority | Status: draft, in review, submitted, acknowledged. Deadline: on track, due soon, overdue. |
+| Submission | A regulatory filing to an authority. Records who prepared it and its due date | Status: draft, in review, submitted, acknowledged. Deadline: on track, due soon, overdue. |
 | Quality Event | A deviation, complaint or audit finding | Status: open, investigating, CAPA assigned, closed. Severity: minor, major, critical. |
 | CAPA | A corrective and preventive action | Status: planned, in progress, effective, ineffective. |
 | Medical Inquiry | A question from a clinician or patient about a product | Status: received, answered, closed. |
@@ -142,12 +142,12 @@ Covers patient safety and regulatory obligations, during trials and after launch
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
-| Triage | Safety Case | None | Workflow is received | Workflow: triaged. Sets seriousness and expectedness |
+| Triage | Safety Case | Seriousness, expectedness | Workflow is received | Workflow: triaged. Sets seriousness and expectedness |
 | Flag duplicate | Safety Case | Candidate case | Neither case is closed | Links the two by duplicate of. A suggestion until a human confirms (rule 6) |
 | Assess | Safety Case | Causality | Workflow is triaged | Workflow: assessed |
 | Generate narrative | Safety Case | None | Workflow is triaged or later | Drafts the case narrative for human review |
 | Merge duplicate | Safety Case | Target case | Cases are linked by duplicate of | Merges into target. Source workflow: closed |
-| Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable | Creates a Submission in draft with a deadline |
+| Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable | Creates a Submission in draft, prepared by the person, due 15 days after the case was received (rule 1) |
 | Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
 | Send for review | Submission | Reviewer | Status is draft | Status: in review |
 | Submit | Submission | Approver | Status is in review | Status: submitted. Each Safety Case it reports moves to Workflow: reported |
@@ -159,7 +159,7 @@ Covers patient safety and regulatory obligations, during trials and after launch
 | Start investigation | Quality Event | Investigator | Status is open | Status: investigating |
 | Assign CAPA | Quality Event | Owner, action | Status is investigating | Creates a CAPA in planned. Status: CAPA assigned |
 | Start CAPA | CAPA | None | Status is planned | Status: in progress |
-| Record CAPA outcome | CAPA | Evidence | Status is in progress | Status: effective or ineffective. If ineffective, its Quality Event returns to investigating |
+| Record CAPA outcome | CAPA | Outcome, evidence | Status is in progress | Status: effective or ineffective. If ineffective, its Quality Event returns to investigating |
 | Close quality event | Quality Event | None | Status is CAPA assigned and its CAPA is effective | Status: closed |
 
 
@@ -190,6 +190,8 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 | Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise and close queries, report adverse events to safety, lock studies | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
+
+An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
 
 The same object must look different to each persona. A Batch is a production record to the Quality Lead, a supply item to the Clinical Data Manager and a possible cause to the Drug Safety Physician. The platform must explain why each persona sees what it sees.
 
@@ -223,7 +225,25 @@ The platform is a regulated system in these domains. These obligations apply on 
 
 ---
 
-## 9. Journeys
+## 9. Ontology
+
+The domain is written in the platform's ontology format (platform spec section 3.1), in `ontology/life-sciences/`.
+
+| File | Holds |
+|---|---|
+| `model.ttl` | Object types, state dimensions, relationships and their shapes |
+| `terms.ttl` | The value of every state dimension, as SKOS concepts with NCIt mappings |
+| `methods.ttl` | Methods, their inputs, preconditions and effects |
+| `rules.ttl` | The business rules in section 7, with their parameters |
+| `roles.ttl` | The personas in section 6, with the methods they may run and what they may not read |
+
+- **Namespace.** `https://example.org/lsh/life-sciences#`, a placeholder until the platform namespace is chosen.
+- **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
+- **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4 must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
+
+---
+
+## 10. Journeys
 
 Each journey runs the full core loop (platform spec section 4).
 
@@ -275,7 +295,7 @@ A contract research organization's agent connects through the gateway with no UI
 
 ---
 
-## 10. Seed Graph
+## 11. Seed Graph
 
 Small and fictional. Used for development and automated testing, and enough to run every journey. It is never mixed with real records.
 
@@ -291,19 +311,22 @@ All names, compounds, sites and people are invented.
 
 ---
 
-## 11. Open Questions
+## 12. Open Questions
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
 - Should post-market cases (after approval) be in scope, or only trial cases?
 - Which models back Run simulation and Generate analogs, and how are they validated for their intended use?
 - Which systems of record does each domain integrate first?
+- Who runs Sign experiment, Invalidate result, Consent, Randomize and Start CAPA? No persona in section 6 does yet.
+- Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, drafting a narrative, detecting signals and suggesting follow-up. The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
 ---
 
-## 12. Version Log
+## 13. Version Log
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-08 | First domain spec: three domains, cross-domain links, four personas, three journeys, edge case, external agent, seed graph. |
 | 0.2 | 2026-11-08 | Closed state gaps the journeys hit: expectedness set at triage so unblinding can precede assessment; added Flag duplicate, Close case, Send for review, Refute signal, Start investigation; Submit marks cases reported; Adverse Event gets an entry state; added Inspection. Renamed Subject to Patient under the patient centricity rule, with participant as the label for studies without a disease state. |
 | 0.3 | 2026-11-08 | Reframed for platform development. Added Regulatory Obligations (section 8). Replaced the signal detection stub with Run signal detection. Added Start CAPA, Record CAPA outcome and Close quality event so a held batch can be released. Named who approves submissions. Seed graph scoped to development and testing. |
+| 0.4 | 2026-11-08 | Added the Ontology section (9) and renumbered later sections. Closed gaps found while modeling: Triage takes seriousness and expectedness, Patient is enrolled in a Study, Arm and Arm visibility are separate dimensions, Safety Case has a receipt date, Submission records who prepared it and its due date, Record CAPA outcome takes the outcome. External agents may answer and close queries. Two open questions. |

@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.5. November 8, 2026. Author: Paul Chang.
+Version 0.6. November 8, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -43,6 +43,38 @@ Defines what exists in a domain.
 - **State.** An object occupies a position in its own state space. That space can have any number of dimensions, defined by the domain. A method acts on an object by moving it from one position to another.
 
 This follows an object-oriented paradigm. Objects carry their own properties and behaviors. The ontology is domain-agnostic in format. One schema describes any domain.
+
+#### How the ontology is expressed
+
+The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontology/`.
+
+| Concept | Expressed as |
+|---|---|
+| Object type | An RDF class with a named SHACL node shape |
+| Property | A named SHACL property shape |
+| State dimension | A property whose values come from a SKOS concept scheme |
+| Relationship | An RDF property whose shape names the target class |
+| Method | A resource in the platform vocabulary, with its inputs, precondition and effects |
+| Precondition | A SHACL shape the object must conform to. Its messages explain a block |
+| Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
+| Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
+| Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
+| Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
+
+The platform vocabulary (`ontology/platform.ttl`) adds what SHACL does not describe: methods, inputs, effects, business rules and roles. It is domain-free.
+
+Modeling rules:
+
+- **SHACL is the contract.** Every class has a named node shape, and all data is validated against its shapes.
+- **Named, not anonymous.** Shapes and other resources have URIs; no blank nodes, except RDF lists.
+- **Progressive rigidity.** No closed shapes, and cardinality only where the domain is certain, so the model grows without breaking.
+- **Logic in SHACL, not OWL.** SHACL Core and SPARQL constraints now; SHACL 1.2 Rules once tooling supports them.
+- **Ground in terminologies.** Map to established vocabularies; mint new terms only when none fits. Every mapping is checked against its source.
+- **Reuse W3C standards first:** RDF, RDFS, SKOS, SHACL, PROV-O, Time, DCAT, then Schema.org and Dublin Core, then industry standards.
+- **Provenance.** Each commit is a named graph with PROV-O provenance. Statement-level provenance uses RDF 1.2 reifiers.
+- **Additive evolution.** Each ontology carries a semantic version. Published terms keep their meaning; they are deprecated, never deleted, and point to their replacement.
+
+Runtime: the gateway holds the graph in **Oxigraph** and validates with a JavaScript SHACL engine.
 
 ### 3.2 Knowledge Graph Layer
 Holds the instances. The ontology defines types. The knowledge graph holds every actual object, its relationships and its history.
@@ -185,12 +217,12 @@ The first release is accepted when:
 
 To resolve in future versions of this spec.
 
-- How is the ontology expressed?
 - How are methods authored and versioned? Who owns them?
 - How much autonomy do agents get before they must ask a human?
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
+- What permanent namespace do the platform's URIs use? Files use a placeholder, `https://example.org/lsh/`, until it is chosen.
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
 
@@ -205,3 +237,4 @@ To resolve in future versions of this spec.
 | 0.3 | 2026-11-08 | Linked the design system spec from section 3.6. |
 | 0.4 | 2026-11-08 | Reframed from a demo to platform development: the spec leads production code. Replaced Demo Scope and Non-Goals with First Release Scope and Quality Requirements. Added acceptance criterion 6 and open questions on deployment and performance targets. |
 | 0.5 | 2026-11-08 | Added the responsive requirement to section 7. |
+| 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Added an open question on the namespace. |
