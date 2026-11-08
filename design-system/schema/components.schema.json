@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "components.schema.json",
+  "title": "Component catalog",
+  "type": "object",
+  "required": [
+    "version",
+    "components"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "required": [
+        "id",
+        "level",
+        "import",
+        "purpose",
+        "useWhen",
+        "avoidWhen",
+        "props",
+        "children",
+        "responsive",
+        "accessibility",
+        "examples"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "level": {
+          "enum": [
+            "atom",
+            "molecule",
+            "organism",
+            "layout",
+            "template"
+          ]
+        },
+        "import": {
+          "type": "object",
+          "required": [
+            "package",
+            "export"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "package": {
+              "enum": [
+                "@patternfly/react-core"
+              ]
+            },
+            "export": {
+              "type": "string"
+            }
+          }
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "useWhen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "avoidWhen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "props": {
+          "type": "object",
+          "description": "JSON Schema for the props an agent may set.",
+          "required": [
+            "type",
+            "additionalProperties",
+            "properties"
+          ],
+          "properties": {
+            "type": {
+              "const": "object"
+            },
+            "additionalProperties": {
+              "const": false
+            },
+            "properties": {
+              "type": "object"
+            },
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "children": {
+          "description": "What the component may contain. null means no children.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "accepts"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "accepts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^([A-Z][A-Za-z0-9]*|level:(atom|molecule|organism|layout))$"
+                  },
+                  "description": "Component ids, or level:<level> for any component at that level."
+                },
+                "minItems": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "maxItems": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          ]
+        },
+        "responsive": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How it behaves from 320px up (design system spec, section 4)."
+        },
+        "accessibility": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "view.schema.json#/$defs/node"
+          }
+        }
+      }
+    }
+  }
+}

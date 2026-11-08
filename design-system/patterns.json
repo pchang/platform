@@ -1,0 +1,5 @@
+{
+  "$schema": "./schema/patterns.schema.json",
+  "version": "0.1",
+  "patterns": []
+}

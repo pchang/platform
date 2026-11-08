@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.4. November 8, 2026. Author: Paul Chang.
+Version 0.5. November 8, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -162,6 +162,7 @@ The platform meets these from the first release. Domain specs add the obligation
 - **Reliability.** Every commit is atomic. A failed method leaves the object in its prior state and explains why.
 - **Performance and scale.** Each release sets targets and measures against them from the first build.
 - **Accessibility.** Generated UI meets WCAG 2.2 AA.
+- **Responsive.** Every view works at every screen size, from a small phone (320 CSS pixels wide) to a wide desktop, with no horizontal page scrolling. Nothing is desktop-only.
 - **Testing.** Every method, policy rule and pattern selection rule has automated tests. Generated views are tested for consistency (the same task produces the same UI shape) and accessibility.
 - **Change control.** The ontology, methods, policies and design system catalog are versioned. Changes to them are reviewed, tested and traceable, so the platform can be formally validated where a domain requires it.
 
@@ -203,3 +204,4 @@ To resolve in future versions of this spec.
 | 0.2 | 2026-11-07 | Abstracted state to n-dimensional spaces. Removed domain examples and fixed counts. Agent roles marked illustrative. |
 | 0.3 | 2026-11-08 | Linked the design system spec from section 3.6. |
 | 0.4 | 2026-11-08 | Reframed from a demo to platform development: the spec leads production code. Replaced Demo Scope and Non-Goals with First Release Scope and Quality Requirements. Added acceptance criterion 6 and open questions on deployment and performance targets. |
+| 0.5 | 2026-11-08 | Added the responsive requirement to section 7. |

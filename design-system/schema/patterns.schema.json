@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "patterns.schema.json",
+  "title": "Pattern catalog",
+  "type": "object",
+  "required": [
+    "version",
+    "patterns"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "purpose",
+          "template",
+          "fitsWhen",
+          "slots",
+          "responsive"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "coreLoopSteps": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "orient",
+                "find",
+                "choose",
+                "declare",
+                "compose",
+                "commit",
+                "continue"
+              ]
+            }
+          },
+          "fitsWhen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "accepts"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "accepts": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          "responsive": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

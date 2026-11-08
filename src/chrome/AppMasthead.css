@@ -1,0 +1,18 @@
+/* Text-based logo. Tokens only, no raw values (design system spec, rule 2). */
+.app-masthead__main {
+  min-width: 0; /* lets a long product name shrink instead of pushing the actions off-screen */
+}
+
+.app-masthead__logo {
+  /* PatternFly sizes the logo for an image. A text logo is as wide as its text. */
+  --pf-v6-c-masthead__logo--Width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--pf-t--global--font--family--heading);
+  font-size: var(--pf-t--global--font--size--heading--h3);
+  font-weight: var(--pf-t--global--font--weight--heading--default);
+  color: var(--pf-t--global--text--color--regular);
+  text-decoration: none;
+  white-space: nowrap;
+}

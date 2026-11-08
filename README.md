@@ -16,5 +16,18 @@ The spec is the asset. The spec leads and the code follows.
 | Path | Purpose |
 |---|---|
 | `spec/` | The prompt specification and domain specs. Versioned and kept. |
-| `design-system/` | The run-time design system catalog the Compose agent reads (not yet created). Kept. |
-| `src/` | Platform code, built from the specs (not yet created). Changes when the specs do. |
+| `design-system/` | The run-time design system catalog the Compose agent reads: tokens, components, patterns and the view spec schema. Kept. |
+| `src/` | Platform code, built from the specs. Changes when the specs do. |
+| `e2e/` | Browser tests, including responsive checks at 320px, md and xl. |
+
+## Run it
+
+Needs Node 22 or later.
+
+```bash
+npm install
+npm run dev        # local dev server
+npm test           # unit and accessibility tests
+npm run test:e2e   # browser tests at phone, tablet and desktop widths
+npm run build      # type check and production build
+```
