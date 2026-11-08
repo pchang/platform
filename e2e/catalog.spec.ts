@@ -13,9 +13,12 @@ const widths = [
   { label: 'xl', width: 1200 },
 ];
 
-for (const { label, width } of widths) {
-  test.describe(`catalog preview at ${label}`, () => {
+const modes = ['light', 'dark'] as const;
+
+for (const mode of modes) for (const { label, width } of widths) {
+  test.describe(`catalog preview at ${label} in ${mode} mode`, () => {
     test.beforeEach(async ({ page }) => {
+      await page.addInitScript((m) => localStorage.setItem('lsh.appearance', m), mode);
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/#/catalog');
       await expect(page.getByRole('heading', { level: 1, name: 'Design system catalog' })).toBeVisible();
