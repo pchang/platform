@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.1. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.3.
+Version 0.2. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.3.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas and the journeys the demo must run. It satisfies section 6 of the platform spec.
 
@@ -17,6 +17,9 @@ The three domains form one lifecycle: from molecule, to patient, to the real wor
 3. **Safety and Regulatory.** What happens to patients is monitored, assessed and reported to regulators, during the trial and after launch.
 
 What is learned in each domain flows back to the others. A safety signal sends scientists back to the molecule. A manufacturing deviation can explain an adverse event. The links between domains are the point of the demo.
+
+### Terminology
+Patient centricity rule: the platform never calls a person in a study a "subject". The object type is Patient. Where the study has no disease state, such as a healthy volunteer study, the interface labels the same object "participant". The label comes from the Study the person is enrolled in, not from separate code or a separate type.
 
 ### Reference grounding
 
@@ -77,34 +80,34 @@ Covers a clinical trial from design to locked data.
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Study | A clinical trial of one or more formulations | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
+| Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
-| Subject | A patient enrolled in a study | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: assigned, hidden while the study is blinded. |
-| Visit | A scheduled encounter with a subject | Status: scheduled, completed, missed. |
+| Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: assigned, hidden while the study is blinded. |
+| Visit | A scheduled encounter with a patient | Status: scheduled, completed, missed. |
 | Data Record | A captured data point (lab value, vital sign, diary entry, device reading) | Entry: entered, verified. Source: site, patient, device, health record. |
 | Data Query | A question raised about a Data Record | Status: open, answered, closed. |
-| Adverse Event | Something harmful that happened to a subject during the study | Seriousness: non-serious, serious. Outcome: ongoing, resolved. Reporting: not reported, reported to safety. |
+| Adverse Event | Something harmful that happened to a patient during the study | Entry: entered, verified. Seriousness: non-serious, serious. Outcome: ongoing, resolved. Reporting: not reported, reported to safety. |
 
 ### 3.2 Relationships
 
 - Study **tests** Formulation (cross-domain).
-- Study **runs at** Site. Subject **enrolled at** Site.
-- Subject **receives** Batch (cross-domain, via study drug supply).
-- Visit **for** Subject. Data Record **captured at** Visit.
+- Study **runs at** Site. Patient **enrolled at** Site.
+- Patient **receives** Batch (cross-domain, via study drug supply).
+- Visit **for** Patient. Data Record **captured at** Visit.
 - Data Query **raised on** Data Record.
-- Adverse Event **experienced by** Subject.
+- Adverse Event **experienced by** Patient.
 
 ### 3.3 Methods
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
-| Consent | Subject | eConsent record | Enrollment is screened | Enrollment: consented |
-| Randomize | Subject | None | Enrollment is consented, study is enrolling | Enrollment: randomized, Arm: assigned |
+| Consent | Patient | eConsent record | Enrollment is screened | Enrollment: consented |
+| Randomize | Patient | None | Enrollment is consented, study is enrolling | Enrollment: randomized, Arm: assigned |
 | Raise query | Data Record | Question | Entry is entered | Creates a Data Query in open |
 | Answer query | Data Query | Answer | Status is open | Status: answered |
 | Close query | Data Query | None | Status is answered | Status: closed |
 | Report to safety | Adverse Event | None | Not reported | Creates a Safety Case (cross-domain). Reporting: reported to safety |
-| Unblind subject | Subject | Justification | Study is blinded | Reveals Arm for this subject only. Requires policy approval (see 7) |
+| Unblind patient | Patient | Justification | Study is blinded | Reveals Arm for this patient only. Requires policy approval (see 7) |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
 
 ---
@@ -139,16 +142,23 @@ Covers patient safety and regulatory obligations, during trials and after launch
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
-| Triage | Safety Case | None | Workflow is received | Workflow: triaged. Sets seriousness |
-| Assess | Safety Case | Causality, expectedness | Workflow is triaged | Workflow: assessed |
+| Triage | Safety Case | None | Workflow is received | Workflow: triaged. Sets seriousness and expectedness |
+| Flag duplicate | Safety Case | Candidate case | Neither case is closed | Links the two by duplicate of. A suggestion until a human confirms (rule 6) |
+| Assess | Safety Case | Causality | Workflow is triaged | Workflow: assessed |
 | Generate narrative | Safety Case | None | Workflow is triaged or later | Drafts the case narrative for human review |
 | Merge duplicate | Safety Case | Target case | Cases are linked by duplicate of | Merges into target. Source workflow: closed |
 | Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable | Creates a Submission in draft with a deadline |
-| Submit | Submission | Approver | Status is in review | Status: submitted |
+| Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
+| Send for review | Submission | Reviewer | Status is draft | Status: in review |
+| Submit | Submission | Approver | Status is in review | Status: submitted. Each Safety Case it reports moves to Workflow: reported |
 | Evaluate signal | Signal | None | Status is detected | Status: under evaluation |
 | Confirm signal | Signal | Rationale | Under evaluation | Status: confirmed. Suggests follow-up in other domains |
+| Refute signal | Signal | Rationale | Under evaluation | Status: refuted |
 | Open quality event | Batch | Description, severity | None | Creates a Quality Event in open |
+| Start investigation | Quality Event | Investigator | Status is open | Status: investigating |
 | Assign CAPA | Quality Event | Owner, action | Status is investigating | Creates a CAPA. Status: CAPA assigned |
+
+Signals enter detected from a detection run across Safety Cases. The demo seeds a detected Signal and does not simulate the run.
 
 ---
 
@@ -159,7 +169,7 @@ These links are the demo's main proof that domains connect through the graph, no
 | Link | From | To | Why it matters |
 |---|---|---|---|
 | tests | Study | Formulation | A trial is anchored to what the lab designed |
-| receives | Subject | Batch | A patient can be traced to the exact lot they took |
+| receives | Patient | Batch | A patient can be traced to the exact lot they took |
 | originates from | Safety Case | Adverse Event | A trial adverse event becomes a safety case without re-entry |
 | is | Product | Formulation | The safety view and the lab view are the same thing |
 | may involve | Safety Case | Batch | A safety problem can be traced to manufacturing |
@@ -173,7 +183,7 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
-| Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See subject-level clinical data |
+| Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See patient-level clinical data |
 | Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise and close queries, report adverse events to safety, lock studies | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage and assess cases, evaluate signals, request unblinding | Change clinical data. Release batches |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open quality events, assign CAPAs | Assess safety cases |
@@ -187,7 +197,7 @@ The same object must look different to each persona. A Batch is a production rec
 Rules the Guard agent enforces. They are data in the business context, not code.
 
 1. **Expedited reporting.** A serious, unexpected case with possible or probable causality must be submitted within 15 days of receipt. Within 3 days of the deadline, its Submission is due soon.
-2. **Blinding.** While a study is blinded, no persona sees a subject's arm. A Drug Safety Physician may unblind one subject only when that subject has a serious, unexpected adverse event and the result is needed for an expedited report. Every unblinding is logged with its justification.
+2. **Blinding.** While a study is blinded, no persona sees a patient's arm. A Drug Safety Physician may unblind one patient only when that patient's Safety Case is triaged as serious and unexpected, so the arm is needed to assess causality for a possible expedited report. Every unblinding is logged with its justification.
 3. **Batch release.** A batch with an open Quality Event cannot be released.
 4. **Data integrity.** Signed experiments and verified data records cannot be edited. They can only be corrected by a new linked record.
 5. **Separation of duties.** The person who prepares a Submission cannot approve it.
@@ -204,9 +214,9 @@ Each journey runs the full core loop (platform spec section 4).
 
 1. **Orient.** The Clinical Data Manager sees the study with open queries and a new serious adverse event surfaced as a starting point.
 2. **Find.** They open the adverse event.
-3. **Choose.** Report to safety is offered. Edit is not, because the record is verified.
+3. **Choose.** Report to safety is offered. Changing the event's details is not, because the record is verified (rule 4).
 4. **Declare.** "Send this to safety."
-5. **Compose.** A view confirms the subject, event and seriousness, and previews the Safety Case that will be created.
+5. **Compose.** A view confirms the patient, event and seriousness, and previews the Safety Case that will be created.
 6. **Commit.** The Safety Case is created in received, linked to the Adverse Event. The change is logged.
 7. **Continue.** The Drug Safety Physician now sees the case at the top of their queue, ranked by its reporting deadline. They triage, assess and prepare the expedited report.
 
@@ -228,16 +238,19 @@ Each journey runs the full core loop (platform spec section 4).
 2. **Find.** The Quality Lead opens the Batch.
 3. **Choose.** Release batch is not offered, because a Quality Event is open. Quarantine and Open quality event are offered.
 4. **Declare.** "Hold this lot and find out who is affected."
-5. **Compose.** A view previews the quarantine and lists every subject who received the batch and every Safety Case that may involve it.
-6. **Commit.** The Batch is quarantined and a CAPA is assigned.
+5. **Compose.** A view previews the quarantine and lists every patient who received the batch and every Safety Case that may involve it.
+6. **Commit.** The Batch is quarantined. The open Quality Event moves to investigating and a CAPA is assigned.
 7. **Continue.** The platform suggests the Drug Safety Physician review the linked cases.
 
 ### Edge case: unblinding inside J1
-In J1, the Drug Safety Physician needs the subject's arm to assess causality. The study is blinded.
+In J1, the Drug Safety Physician needs the patient's arm to assess causality. The study is blinded.
 
-No code handles this case. The Act agent sees Unblind subject is gated by policy. The Guard agent reads rule 7.2, checks that the adverse event is serious and unexpected and that an expedited report is being prepared, and allows the unblinding for this subject only. If the event were non-serious, the Guard would block it and explain which condition failed. The Clinical Data Manager still cannot see the arm.
+No code handles this case. The Act agent sees Unblind patient is gated by policy. The Guard agent reads rule 2 in section 7, checks that the Safety Case is triaged as serious and unexpected, and allows the unblinding for this patient only. The physician then assesses causality and prepares the expedited report. If the event were non-serious, the Guard would block it and explain which condition failed. The Clinical Data Manager still cannot see the arm.
 
-A second candidate edge case: the same adverse event arrives twice, once from the trial and once as a medical inquiry. The Find agent flags the likely duplicate by similarity and the physician merges it.
+A second candidate edge case: the same adverse event arrives twice, once from the trial and once as a medical inquiry. The Find agent proposes Flag duplicate by similarity. The physician confirms the link, then merges.
+
+### Inspection
+In any journey, any persona can ask "why am I seeing this?" on any view or element. The platform shows the `because` of each view node, the graph object it binds to, the method and its precondition, and the business rule that allowed or blocked it. This satisfies the inspection requirement in section 6 of the platform spec.
 
 ### External agent
 A contract research organization's agent connects through the gateway with no UI. It lists open Data Queries at its sites, answers them from its own records and closes the ones it can. Everything it does is checked by the same policy and appears in the same log as a human's actions.
@@ -250,7 +263,7 @@ Small and fictional. Enough to run every journey.
 
 - One research program with 5 compounds, including 1 candidate and 2 analogs.
 - 1 formulation of the candidate, 1 validated process and 3 batches. One batch has high deviation risk.
-- 1 blinded Phase II study at 3 sites with 12 subjects, 2 arms and about 40 data records, 4 open queries.
+- 1 blinded Phase II study at 3 sites with 12 patients, 2 arms and about 40 data records, 4 open queries.
 - 3 adverse events, 1 of them serious and unexpected.
 - 6 safety cases, including 1 duplicate pair, linked to 1 investigational product.
 - 1 detected signal aggregating 3 cases.
@@ -273,3 +286,4 @@ All names, compounds, sites and people are invented.
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-08 | First domain spec: three domains, cross-domain links, four personas, three journeys, edge case, external agent, seed graph. |
+| 0.2 | 2026-11-08 | Closed state gaps the journeys hit: expectedness set at triage so unblinding can precede assessment; added Flag duplicate, Close case, Send for review, Refute signal, Start investigation; Submit marks cases reported; Adverse Event gets an entry state; added Inspection. Renamed Subject to Patient under the patient centricity rule, with participant as the label for studies without a disease state. |
