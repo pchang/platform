@@ -1,0 +1,1091 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://w3id.org/lsh/platform#> .
+@prefix ls:      <https://w3id.org/lsh/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://w3id.org/lsh/life-sciences> a owl:Ontology ;
+  dcterms:title "LS&H life sciences model" ;
+  rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5)." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://w3id.org/lsh/life-sciences/0.1.0> ;
+  dcterms:created "2026-11-08"^^xsd:date .
+
+ls:ScientificInnovation a p:Domain ;
+  rdfs:label "Scientific Innovation" .
+
+ls:ClinicalDevelopment a p:Domain ;
+  rdfs:label "Clinical Development" .
+
+ls:SafetyAndRegulatory a p:Domain ;
+  rdfs:label "Safety and Regulatory" .
+
+ls:identifier a owl:DatatypeProperty ;
+  rdfs:label "identifier" ;
+  rdfs:comment "The identifier people use for an object, such as SC-0007." .
+
+ls:Compound a p:ObjectType, rdfs:Class ;
+  rdfs:label "Compound" ;
+  rdfs:comment "A molecule under research." ;
+  p:inDomain ls:ScientificInnovation .
+
+ls:compoundStage a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Stage" ;
+  rdfs:comment "The stage of a compound." ;
+  p:dimensionOf ls:Compound ;
+  p:valuesFrom lst:CompoundStage .
+
+ls:compoundRegistration a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Registration" ;
+  rdfs:comment "The registration of a compound." ;
+  p:dimensionOf ls:Compound ;
+  p:valuesFrom lst:CompoundRegistration .
+
+ls:Simulation a p:ObjectType, rdfs:Class ;
+  rdfs:label "Simulation" ;
+  rdfs:comment "An in silico run predicting a compound's properties." ;
+  p:inDomain ls:ScientificInnovation .
+
+ls:simulationRun a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Run" ;
+  rdfs:comment "The run of a simulation." ;
+  p:dimensionOf ls:Simulation ;
+  p:valuesFrom lst:SimulationRun .
+
+ls:simulationReview a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Review" ;
+  rdfs:comment "The review of a simulation." ;
+  p:dimensionOf ls:Simulation ;
+  p:valuesFrom lst:SimulationReview .
+
+ls:Experiment a p:ObjectType, rdfs:Class ;
+  rdfs:label "Experiment" ;
+  rdfs:comment "A lab experiment recorded in an electronic notebook." ;
+  p:inDomain ls:ScientificInnovation ;
+  skos:closeMatch ncit:C42790 .
+
+ls:experimentRecord a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Record" ;
+  rdfs:comment "The record of a experiment." ;
+  p:dimensionOf ls:Experiment ;
+  p:valuesFrom lst:ExperimentRecord .
+
+ls:experimentSignOff a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Sign-off" ;
+  rdfs:comment "The sign-off of a experiment." ;
+  p:dimensionOf ls:Experiment ;
+  p:valuesFrom lst:ExperimentSignOff .
+
+ls:AssayResult a p:ObjectType, rdfs:Class ;
+  rdfs:label "Assay Result" ;
+  rdfs:comment "A measured property from an experiment." ;
+  p:inDomain ls:ScientificInnovation .
+
+ls:assayResultValidity a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Validity" ;
+  rdfs:comment "The validity of a assay result." ;
+  p:dimensionOf ls:AssayResult ;
+  p:valuesFrom lst:AssayResultValidity .
+
+ls:Formulation a p:ObjectType, rdfs:Class ;
+  rdfs:label "Formulation" ;
+  rdfs:comment "A compound combined with other ingredients into a product." ;
+  p:inDomain ls:ScientificInnovation .
+
+ls:formulationStage a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Stage" ;
+  rdfs:comment "The stage of a formulation." ;
+  p:dimensionOf ls:Formulation ;
+  p:valuesFrom lst:FormulationStage .
+
+ls:Process a p:ObjectType, rdfs:Class ;
+  rdfs:label "Process" ;
+  rdfs:comment "The approved way a formulation is manufactured." ;
+  p:inDomain ls:ScientificInnovation .
+
+ls:processStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a process." ;
+  p:dimensionOf ls:Process ;
+  p:valuesFrom lst:ProcessStatus .
+
+ls:Batch a p:ObjectType, rdfs:Class ;
+  rdfs:label "Batch" ;
+  rdfs:comment "One manufactured lot of a formulation." ;
+  p:inDomain ls:ScientificInnovation ;
+  skos:exactMatch ncit:C41396 .
+
+ls:batchProduction a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Production" ;
+  rdfs:comment "The production of a batch." ;
+  p:dimensionOf ls:Batch ;
+  p:valuesFrom lst:BatchProduction .
+
+ls:batchQuality a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Quality" ;
+  rdfs:comment "The quality of a batch." ;
+  p:dimensionOf ls:Batch ;
+  p:valuesFrom lst:BatchQuality .
+
+ls:batchDeviationRisk a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Deviation risk" ;
+  rdfs:comment "The deviation risk of a batch." ;
+  p:dimensionOf ls:Batch ;
+  p:valuesFrom lst:BatchDeviationRisk .
+
+ls:Study a p:ObjectType, rdfs:Class ;
+  rdfs:label "Study" ;
+  rdfs:comment "A clinical trial of one or more formulations, in patients or in people without the disease." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:closeMatch ncit:C15206 .
+
+ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Phase" ;
+  rdfs:comment "The phase of a study." ;
+  p:dimensionOf ls:Study ;
+  p:valuesFrom lst:StudyPhase .
+
+ls:studyStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a study." ;
+  p:dimensionOf ls:Study ;
+  p:valuesFrom lst:StudyStatus .
+
+ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Blinding" ;
+  rdfs:comment "The blinding of a study." ;
+  p:dimensionOf ls:Study ;
+  p:valuesFrom lst:StudyBlinding .
+
+ls:Site a p:ObjectType, rdfs:Class ;
+  rdfs:label "Site" ;
+  rdfs:comment "A hospital or clinic running the study." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:exactMatch ncit:C85838 .
+
+ls:siteStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a site." ;
+  p:dimensionOf ls:Site ;
+  p:valuesFrom lst:SiteStatus .
+
+ls:sitePayment a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Payment" ;
+  rdfs:comment "The payment of a site." ;
+  p:dimensionOf ls:Site ;
+  p:valuesFrom lst:SitePayment .
+
+ls:Patient a p:ObjectType, rdfs:Class ;
+  rdfs:label "Patient" ;
+  rdfs:comment "A person enrolled in a study. Labeled participant in studies without a disease state." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:closeMatch ncit:C16960 .
+
+ls:patientEnrollment a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Enrollment" ;
+  rdfs:comment "The enrollment of a patient." ;
+  p:dimensionOf ls:Patient ;
+  p:valuesFrom lst:PatientEnrollment .
+
+ls:patientArm a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Arm" ;
+  rdfs:comment "The arm of a patient." ;
+  p:dimensionOf ls:Patient ;
+  p:valuesFrom lst:PatientArm .
+
+ls:patientArmVisibility a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Arm visibility" ;
+  rdfs:comment "The arm visibility of a patient." ;
+  p:dimensionOf ls:Patient ;
+  p:valuesFrom lst:PatientArmVisibility .
+
+ls:Visit a p:ObjectType, rdfs:Class ;
+  rdfs:label "Visit" ;
+  rdfs:comment "A scheduled encounter with a patient." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:exactMatch ncit:C191214 .
+
+ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a visit." ;
+  p:dimensionOf ls:Visit ;
+  p:valuesFrom lst:VisitStatus .
+
+ls:DataRecord a p:ObjectType, rdfs:Class ;
+  rdfs:label "Data Record" ;
+  rdfs:comment "A captured data point: a lab value, vital sign, diary entry or device reading." ;
+  p:inDomain ls:ClinicalDevelopment .
+
+ls:dataRecordEntry a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Entry" ;
+  rdfs:comment "The entry of a data record." ;
+  p:dimensionOf ls:DataRecord ;
+  p:valuesFrom lst:DataRecordEntry .
+
+ls:dataRecordSource a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Source" ;
+  rdfs:comment "The source of a data record." ;
+  p:dimensionOf ls:DataRecord ;
+  p:valuesFrom lst:DataRecordSource .
+
+ls:DataQuery a p:ObjectType, rdfs:Class ;
+  rdfs:label "Data Query" ;
+  rdfs:comment "A question raised about a data record." ;
+  p:inDomain ls:ClinicalDevelopment .
+
+ls:dataQueryStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a data query." ;
+  p:dimensionOf ls:DataQuery ;
+  p:valuesFrom lst:DataQueryStatus .
+
+ls:AdverseEvent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Adverse Event" ;
+  rdfs:comment "Something harmful that happened to a patient during the study." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:exactMatch ncit:C41331 .
+
+ls:adverseEventEntry a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Entry" ;
+  rdfs:comment "The entry of a adverse event." ;
+  p:dimensionOf ls:AdverseEvent ;
+  p:valuesFrom lst:AdverseEventEntry .
+
+ls:adverseEventSeriousness a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Seriousness" ;
+  rdfs:comment "The seriousness of a adverse event." ;
+  p:dimensionOf ls:AdverseEvent ;
+  p:valuesFrom lst:AdverseEventSeriousness .
+
+ls:adverseEventOutcome a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Outcome" ;
+  rdfs:comment "The outcome of a adverse event." ;
+  p:dimensionOf ls:AdverseEvent ;
+  p:valuesFrom lst:AdverseEventOutcome .
+
+ls:adverseEventReporting a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Reporting" ;
+  rdfs:comment "The reporting of a adverse event." ;
+  p:dimensionOf ls:AdverseEvent ;
+  p:valuesFrom lst:AdverseEventReporting .
+
+ls:SafetyCase a p:ObjectType, rdfs:Class ;
+  rdfs:label "Safety Case" ;
+  rdfs:comment "One report of an adverse reaction in one patient." ;
+  p:inDomain ls:SafetyAndRegulatory .
+
+ls:safetyCaseWorkflow a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Workflow" ;
+  rdfs:comment "The workflow of a safety case." ;
+  p:dimensionOf ls:SafetyCase ;
+  p:valuesFrom lst:SafetyCaseWorkflow .
+
+ls:safetyCaseSeriousness a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Seriousness" ;
+  rdfs:comment "The seriousness of a safety case." ;
+  p:dimensionOf ls:SafetyCase ;
+  p:valuesFrom lst:SafetyCaseSeriousness .
+
+ls:safetyCaseExpectedness a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Expectedness" ;
+  rdfs:comment "The expectedness of a safety case." ;
+  p:dimensionOf ls:SafetyCase ;
+  p:valuesFrom lst:SafetyCaseExpectedness .
+
+ls:safetyCaseCausality a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Causality" ;
+  rdfs:comment "The causality of a safety case." ;
+  p:dimensionOf ls:SafetyCase ;
+  p:valuesFrom lst:SafetyCaseCausality .
+
+ls:Product a p:ObjectType, rdfs:Class ;
+  rdfs:label "Product" ;
+  rdfs:comment "A marketed or investigational product." ;
+  p:inDomain ls:SafetyAndRegulatory ;
+  skos:closeMatch ncit:C221818 .
+
+ls:productStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a product." ;
+  p:dimensionOf ls:Product ;
+  p:valuesFrom lst:ProductStatus .
+
+ls:Signal a p:ObjectType, rdfs:Class ;
+  rdfs:label "Signal" ;
+  rdfs:comment "A possible new risk detected across many cases." ;
+  p:inDomain ls:SafetyAndRegulatory .
+
+ls:signalStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a signal." ;
+  p:dimensionOf ls:Signal ;
+  p:valuesFrom lst:SignalStatus .
+
+ls:Submission a p:ObjectType, rdfs:Class ;
+  rdfs:label "Submission" ;
+  rdfs:comment "A regulatory filing to an authority." ;
+  p:inDomain ls:SafetyAndRegulatory ;
+  skos:exactMatch ncit:C70885 .
+
+ls:submissionStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a submission." ;
+  p:dimensionOf ls:Submission ;
+  p:valuesFrom lst:SubmissionStatus .
+
+ls:submissionDeadline a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Deadline" ;
+  rdfs:comment "The deadline of a submission." ;
+  p:dimensionOf ls:Submission ;
+  p:valuesFrom lst:SubmissionDeadline .
+
+ls:QualityEvent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Quality Event" ;
+  rdfs:comment "A deviation, complaint or audit finding." ;
+  p:inDomain ls:SafetyAndRegulatory .
+
+ls:qualityEventStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a quality event." ;
+  p:dimensionOf ls:QualityEvent ;
+  p:valuesFrom lst:QualityEventStatus .
+
+ls:qualityEventSeverity a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Severity" ;
+  rdfs:comment "The severity of a quality event." ;
+  p:dimensionOf ls:QualityEvent ;
+  p:valuesFrom lst:QualityEventSeverity .
+
+ls:CAPA a p:ObjectType, rdfs:Class ;
+  rdfs:label "CAPA" ;
+  rdfs:comment "A corrective and preventive action." ;
+  p:inDomain ls:SafetyAndRegulatory .
+
+ls:capaStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a capa." ;
+  p:dimensionOf ls:CAPA ;
+  p:valuesFrom lst:CAPAStatus .
+
+ls:MedicalInquiry a p:ObjectType, rdfs:Class ;
+  rdfs:label "Medical Inquiry" ;
+  rdfs:comment "A question from a clinician or patient about a product." ;
+  p:inDomain ls:SafetyAndRegulatory .
+
+ls:medicalInquiryStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a medical inquiry." ;
+  p:dimensionOf ls:MedicalInquiry ;
+  p:valuesFrom lst:MedicalInquiryStatus .
+
+ls:predicts a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "predicts" ;
+  rdfs:comment "A simulation predicts properties of a compound." .
+
+ls:tests a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "tests" ;
+  rdfs:comment "An experiment tests a compound; a study tests a formulation." .
+
+ls:produces a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "produces" ;
+  rdfs:comment "An experiment produces an assay result." .
+
+ls:contains a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "contains" ;
+  rdfs:comment "A formulation contains a compound." .
+
+ls:manufactures a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "manufactures" ;
+  rdfs:comment "A process manufactures a formulation." .
+
+ls:follows a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "follows" ;
+  rdfs:comment "A batch is made by following a process." .
+
+ls:derivedFrom a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "derived from" ;
+  rdfs:comment "A compound is an analog derived from another." .
+
+ls:runsAt a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "runs at" ;
+  rdfs:comment "A study runs at a site." .
+
+ls:enrolledIn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "enrolled in" ;
+  rdfs:comment "A patient is enrolled in a study." .
+
+ls:enrolledAt a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "enrolled at" ;
+  rdfs:comment "A patient is enrolled at a site." .
+
+ls:receives a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "receives" ;
+  rdfs:comment "A patient receives study drug from a batch." .
+
+ls:visitFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "for" ;
+  rdfs:comment "A visit is for a patient." .
+
+ls:capturedAt a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "captured at" ;
+  rdfs:comment "A data record is captured at a visit." .
+
+ls:raisedOn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "raised on" ;
+  rdfs:comment "A data query is raised on a data record; a quality event on a batch." .
+
+ls:experiencedBy a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "experienced by" ;
+  rdfs:comment "An adverse event is experienced by a patient." .
+
+ls:originatesFrom a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "originates from" ;
+  rdfs:comment "A safety case originates from an adverse event or a medical inquiry." .
+
+ls:concerns a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "concerns" ;
+  rdfs:comment "A safety case or signal concerns a product." .
+
+ls:isFormulation a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is" ;
+  rdfs:comment "A product is a formulation." .
+
+ls:mayInvolve a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "may involve" ;
+  rdfs:comment "A safety case may involve a batch." .
+
+ls:aggregates a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "aggregates" ;
+  rdfs:comment "A signal aggregates safety cases." .
+
+ls:reports a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "reports" ;
+  rdfs:comment "A submission reports a safety case or a signal." .
+
+ls:resolves a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "resolves" ;
+  rdfs:comment "A CAPA resolves a quality event." .
+
+ls:duplicateOf a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "duplicate of" ;
+  rdfs:comment "A safety case duplicates another." .
+
+ls:receivedOn a owl:DatatypeProperty ;
+  rdfs:label "received on" ;
+  rdfs:comment "The date the safety case was received." .
+
+ls:dueOn a owl:DatatypeProperty ;
+  rdfs:label "due on" ;
+  rdfs:comment "The date the submission is due." .
+
+ls:preparedBy a owl:ObjectProperty ;
+  rdfs:label "prepared by" ;
+  rdfs:comment "The person who prepared the submission." .
+
+ls:assignedArm a owl:DatatypeProperty ;
+  rdfs:label "assigned arm" ;
+  rdfs:comment "The study arm the patient was randomized to. Hidden while the study is blinded (rule 2)." .
+
+# Shapes
+
+lsh:Compound-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Compound-stage a sh:PropertyShape ;
+  sh:path ls:compoundStage ;
+  sh:in ( lst:CompoundStage-designed lst:CompoundStage-synthesized lst:CompoundStage-tested lst:CompoundStage-candidate lst:CompoundStage-retired ) ;
+  sh:maxCount 1 ;
+  sh:name "Stage" .
+
+lsh:Compound-registration a sh:PropertyShape ;
+  sh:path ls:compoundRegistration ;
+  sh:in ( lst:CompoundRegistration-unregistered lst:CompoundRegistration-registered ) ;
+  sh:maxCount 1 ;
+  sh:name "Registration" .
+
+lsh:Compound-derivedFrom a sh:PropertyShape ;
+  sh:path ls:derivedFrom ;
+  sh:class ls:Compound ;
+  sh:name "derived from" .
+
+lsh:Compound a sh:NodeShape ;
+  sh:targetClass ls:Compound ;
+  sh:property lsh:Compound-identifier, lsh:Compound-stage, lsh:Compound-registration, lsh:Compound-derivedFrom .
+
+lsh:Simulation-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Simulation-run a sh:PropertyShape ;
+  sh:path ls:simulationRun ;
+  sh:in ( lst:SimulationRun-queued lst:SimulationRun-running lst:SimulationRun-complete lst:SimulationRun-failed ) ;
+  sh:maxCount 1 ;
+  sh:name "Run" .
+
+lsh:Simulation-review a sh:PropertyShape ;
+  sh:path ls:simulationReview ;
+  sh:in ( lst:SimulationReview-unreviewed lst:SimulationReview-accepted lst:SimulationReview-rejected ) ;
+  sh:maxCount 1 ;
+  sh:name "Review" .
+
+lsh:Simulation-predicts a sh:PropertyShape ;
+  sh:path ls:predicts ;
+  sh:class ls:Compound ;
+  sh:name "predicts" .
+
+lsh:Simulation a sh:NodeShape ;
+  sh:targetClass ls:Simulation ;
+  sh:property lsh:Simulation-identifier, lsh:Simulation-run, lsh:Simulation-review, lsh:Simulation-predicts .
+
+lsh:Experiment-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Experiment-record a sh:PropertyShape ;
+  sh:path ls:experimentRecord ;
+  sh:in ( lst:ExperimentRecord-planned lst:ExperimentRecord-inProgress lst:ExperimentRecord-complete ) ;
+  sh:maxCount 1 ;
+  sh:name "Record" .
+
+lsh:Experiment-signOff a sh:PropertyShape ;
+  sh:path ls:experimentSignOff ;
+  sh:in ( lst:ExperimentSignOff-unsigned lst:ExperimentSignOff-signed lst:ExperimentSignOff-witnessed ) ;
+  sh:maxCount 1 ;
+  sh:name "Sign-off" .
+
+lsh:Experiment-tests a sh:PropertyShape ;
+  sh:path ls:tests ;
+  sh:class ls:Compound ;
+  sh:name "tests" .
+
+lsh:Experiment-produces a sh:PropertyShape ;
+  sh:path ls:produces ;
+  sh:class ls:AssayResult ;
+  sh:name "produces" .
+
+lsh:Experiment a sh:NodeShape ;
+  sh:targetClass ls:Experiment ;
+  sh:property lsh:Experiment-identifier, lsh:Experiment-record, lsh:Experiment-signOff, lsh:Experiment-tests, lsh:Experiment-produces .
+
+lsh:AssayResult-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:AssayResult-validity a sh:PropertyShape ;
+  sh:path ls:assayResultValidity ;
+  sh:in ( lst:AssayResultValidity-valid lst:AssayResultValidity-invalidated ) ;
+  sh:maxCount 1 ;
+  sh:name "Validity" .
+
+lsh:AssayResult a sh:NodeShape ;
+  sh:targetClass ls:AssayResult ;
+  sh:property lsh:AssayResult-identifier, lsh:AssayResult-validity .
+
+lsh:Formulation-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Formulation-stage a sh:PropertyShape ;
+  sh:path ls:formulationStage ;
+  sh:in ( lst:FormulationStage-draft lst:FormulationStage-underTest lst:FormulationStage-approved lst:FormulationStage-obsolete ) ;
+  sh:maxCount 1 ;
+  sh:name "Stage" .
+
+lsh:Formulation-contains a sh:PropertyShape ;
+  sh:path ls:contains ;
+  sh:class ls:Compound ;
+  sh:name "contains" .
+
+lsh:Formulation a sh:NodeShape ;
+  sh:targetClass ls:Formulation ;
+  sh:property lsh:Formulation-identifier, lsh:Formulation-stage, lsh:Formulation-contains .
+
+lsh:Process-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Process-status a sh:PropertyShape ;
+  sh:path ls:processStatus ;
+  sh:in ( lst:ProcessStatus-draft lst:ProcessStatus-validated lst:ProcessStatus-superseded ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Process-manufactures a sh:PropertyShape ;
+  sh:path ls:manufactures ;
+  sh:class ls:Formulation ;
+  sh:name "manufactures" .
+
+lsh:Process a sh:NodeShape ;
+  sh:targetClass ls:Process ;
+  sh:property lsh:Process-identifier, lsh:Process-status, lsh:Process-manufactures .
+
+lsh:Batch-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Batch-production a sh:PropertyShape ;
+  sh:path ls:batchProduction ;
+  sh:in ( lst:BatchProduction-planned lst:BatchProduction-inProduction lst:BatchProduction-complete ) ;
+  sh:maxCount 1 ;
+  sh:name "Production" .
+
+lsh:Batch-quality a sh:PropertyShape ;
+  sh:path ls:batchQuality ;
+  sh:in ( lst:BatchQuality-pending lst:BatchQuality-released lst:BatchQuality-quarantined lst:BatchQuality-rejected ) ;
+  sh:maxCount 1 ;
+  sh:name "Quality" .
+
+lsh:Batch-deviationRisk a sh:PropertyShape ;
+  sh:path ls:batchDeviationRisk ;
+  sh:in ( lst:BatchDeviationRisk-low lst:BatchDeviationRisk-elevated lst:BatchDeviationRisk-high ) ;
+  sh:maxCount 1 ;
+  sh:name "Deviation risk" .
+
+lsh:Batch-follows a sh:PropertyShape ;
+  sh:path ls:follows ;
+  sh:class ls:Process ;
+  sh:name "follows" .
+
+lsh:Batch a sh:NodeShape ;
+  sh:targetClass ls:Batch ;
+  sh:property lsh:Batch-identifier, lsh:Batch-production, lsh:Batch-quality, lsh:Batch-deviationRisk, lsh:Batch-follows .
+
+lsh:Study-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Study-phase a sh:PropertyShape ;
+  sh:path ls:studyPhase ;
+  sh:in ( lst:StudyPhase-i lst:StudyPhase-ii lst:StudyPhase-iii ) ;
+  sh:maxCount 1 ;
+  sh:name "Phase" .
+
+lsh:Study-status a sh:PropertyShape ;
+  sh:path ls:studyStatus ;
+  sh:in ( lst:StudyStatus-planned lst:StudyStatus-enrolling lst:StudyStatus-active lst:StudyStatus-closed lst:StudyStatus-locked ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Study-blinding a sh:PropertyShape ;
+  sh:path ls:studyBlinding ;
+  sh:in ( lst:StudyBlinding-blinded lst:StudyBlinding-unblinded ) ;
+  sh:maxCount 1 ;
+  sh:name "Blinding" .
+
+lsh:Study-tests a sh:PropertyShape ;
+  sh:path ls:tests ;
+  sh:class ls:Formulation ;
+  sh:name "tests" .
+
+lsh:Study-runsAt a sh:PropertyShape ;
+  sh:path ls:runsAt ;
+  sh:class ls:Site ;
+  sh:name "runs at" .
+
+lsh:Study a sh:NodeShape ;
+  sh:targetClass ls:Study ;
+  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt .
+
+lsh:Site-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Site-status a sh:PropertyShape ;
+  sh:path ls:siteStatus ;
+  sh:in ( lst:SiteStatus-selected lst:SiteStatus-activated lst:SiteStatus-closed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Site-payment a sh:PropertyShape ;
+  sh:path ls:sitePayment ;
+  sh:in ( lst:SitePayment-current lst:SitePayment-overdue ) ;
+  sh:maxCount 1 ;
+  sh:name "Payment" .
+
+lsh:Site a sh:NodeShape ;
+  sh:targetClass ls:Site ;
+  sh:property lsh:Site-identifier, lsh:Site-status, lsh:Site-payment .
+
+lsh:Patient-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Patient-enrollment a sh:PropertyShape ;
+  sh:path ls:patientEnrollment ;
+  sh:in ( lst:PatientEnrollment-screened lst:PatientEnrollment-consented lst:PatientEnrollment-randomized lst:PatientEnrollment-completed lst:PatientEnrollment-withdrawn ) ;
+  sh:maxCount 1 ;
+  sh:name "Enrollment" .
+
+lsh:Patient-arm a sh:PropertyShape ;
+  sh:path ls:patientArm ;
+  sh:in ( lst:PatientArm-unassigned lst:PatientArm-assigned ) ;
+  sh:maxCount 1 ;
+  sh:name "Arm" .
+
+lsh:Patient-armVisibility a sh:PropertyShape ;
+  sh:path ls:patientArmVisibility ;
+  sh:in ( lst:PatientArmVisibility-hidden lst:PatientArmVisibility-revealed ) ;
+  sh:maxCount 1 ;
+  sh:name "Arm visibility" .
+
+lsh:Patient-enrolledIn a sh:PropertyShape ;
+  sh:path ls:enrolledIn ;
+  sh:class ls:Study ;
+  sh:name "enrolled in" .
+
+lsh:Patient-enrolledAt a sh:PropertyShape ;
+  sh:path ls:enrolledAt ;
+  sh:class ls:Site ;
+  sh:name "enrolled at" .
+
+lsh:Patient-receives a sh:PropertyShape ;
+  sh:path ls:receives ;
+  sh:class ls:Batch ;
+  sh:name "receives" .
+
+lsh:Patient-assignedArm a sh:PropertyShape ;
+  sh:path ls:assignedArm ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "assigned arm" .
+
+lsh:Patient a sh:NodeShape ;
+  sh:targetClass ls:Patient ;
+  sh:property lsh:Patient-identifier, lsh:Patient-enrollment, lsh:Patient-arm, lsh:Patient-armVisibility, lsh:Patient-enrolledIn, lsh:Patient-enrolledAt, lsh:Patient-receives, lsh:Patient-assignedArm .
+
+lsh:Visit-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Visit-status a sh:PropertyShape ;
+  sh:path ls:visitStatus ;
+  sh:in ( lst:VisitStatus-scheduled lst:VisitStatus-completed lst:VisitStatus-missed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Visit-visitFor a sh:PropertyShape ;
+  sh:path ls:visitFor ;
+  sh:class ls:Patient ;
+  sh:name "for" .
+
+lsh:Visit a sh:NodeShape ;
+  sh:targetClass ls:Visit ;
+  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor .
+
+lsh:DataRecord-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:DataRecord-entry a sh:PropertyShape ;
+  sh:path ls:dataRecordEntry ;
+  sh:in ( lst:DataRecordEntry-entered lst:DataRecordEntry-verified ) ;
+  sh:maxCount 1 ;
+  sh:name "Entry" .
+
+lsh:DataRecord-source a sh:PropertyShape ;
+  sh:path ls:dataRecordSource ;
+  sh:in ( lst:DataRecordSource-site lst:DataRecordSource-patient lst:DataRecordSource-device lst:DataRecordSource-healthRecord ) ;
+  sh:maxCount 1 ;
+  sh:name "Source" .
+
+lsh:DataRecord-capturedAt a sh:PropertyShape ;
+  sh:path ls:capturedAt ;
+  sh:class ls:Visit ;
+  sh:name "captured at" .
+
+lsh:DataRecord a sh:NodeShape ;
+  sh:targetClass ls:DataRecord ;
+  sh:property lsh:DataRecord-identifier, lsh:DataRecord-entry, lsh:DataRecord-source, lsh:DataRecord-capturedAt .
+
+lsh:DataQuery-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:DataQuery-status a sh:PropertyShape ;
+  sh:path ls:dataQueryStatus ;
+  sh:in ( lst:DataQueryStatus-open lst:DataQueryStatus-answered lst:DataQueryStatus-closed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:DataQuery-raisedOn a sh:PropertyShape ;
+  sh:path ls:raisedOn ;
+  sh:class ls:DataRecord ;
+  sh:name "raised on" .
+
+lsh:DataQuery a sh:NodeShape ;
+  sh:targetClass ls:DataQuery ;
+  sh:property lsh:DataQuery-identifier, lsh:DataQuery-status, lsh:DataQuery-raisedOn .
+
+lsh:AdverseEvent-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:AdverseEvent-entry a sh:PropertyShape ;
+  sh:path ls:adverseEventEntry ;
+  sh:in ( lst:AdverseEventEntry-entered lst:AdverseEventEntry-verified ) ;
+  sh:maxCount 1 ;
+  sh:name "Entry" .
+
+lsh:AdverseEvent-seriousness a sh:PropertyShape ;
+  sh:path ls:adverseEventSeriousness ;
+  sh:in ( lst:AdverseEventSeriousness-nonSerious lst:AdverseEventSeriousness-serious ) ;
+  sh:maxCount 1 ;
+  sh:name "Seriousness" .
+
+lsh:AdverseEvent-outcome a sh:PropertyShape ;
+  sh:path ls:adverseEventOutcome ;
+  sh:in ( lst:AdverseEventOutcome-ongoing lst:AdverseEventOutcome-resolved ) ;
+  sh:maxCount 1 ;
+  sh:name "Outcome" .
+
+lsh:AdverseEvent-reporting a sh:PropertyShape ;
+  sh:path ls:adverseEventReporting ;
+  sh:in ( lst:AdverseEventReporting-notReported lst:AdverseEventReporting-reportedToSafety ) ;
+  sh:maxCount 1 ;
+  sh:name "Reporting" .
+
+lsh:AdverseEvent-experiencedBy a sh:PropertyShape ;
+  sh:path ls:experiencedBy ;
+  sh:class ls:Patient ;
+  sh:name "experienced by" .
+
+lsh:AdverseEvent a sh:NodeShape ;
+  sh:targetClass ls:AdverseEvent ;
+  sh:property lsh:AdverseEvent-identifier, lsh:AdverseEvent-entry, lsh:AdverseEvent-seriousness, lsh:AdverseEvent-outcome, lsh:AdverseEvent-reporting, lsh:AdverseEvent-experiencedBy .
+
+lsh:SafetyCase-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:SafetyCase-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:in ( lst:SafetyCaseWorkflow-received lst:SafetyCaseWorkflow-triaged lst:SafetyCaseWorkflow-assessed lst:SafetyCaseWorkflow-reported lst:SafetyCaseWorkflow-closed ) ;
+  sh:maxCount 1 ;
+  sh:name "Workflow" .
+
+lsh:SafetyCase-seriousness a sh:PropertyShape ;
+  sh:path ls:safetyCaseSeriousness ;
+  sh:in ( lst:SafetyCaseSeriousness-nonSerious lst:SafetyCaseSeriousness-serious ) ;
+  sh:maxCount 1 ;
+  sh:name "Seriousness" .
+
+lsh:SafetyCase-expectedness a sh:PropertyShape ;
+  sh:path ls:safetyCaseExpectedness ;
+  sh:in ( lst:SafetyCaseExpectedness-expected lst:SafetyCaseExpectedness-unexpected ) ;
+  sh:maxCount 1 ;
+  sh:name "Expectedness" .
+
+lsh:SafetyCase-causality a sh:PropertyShape ;
+  sh:path ls:safetyCaseCausality ;
+  sh:in ( lst:SafetyCaseCausality-unassessed lst:SafetyCaseCausality-unrelated lst:SafetyCaseCausality-possible lst:SafetyCaseCausality-probable ) ;
+  sh:maxCount 1 ;
+  sh:name "Causality" .
+
+lsh:SafetyCase-originatesFrom a sh:PropertyShape ;
+  sh:path ls:originatesFrom ;
+  sh:or ( lsh:IsAdverseEvent lsh:IsMedicalInquiry ) ;
+  sh:name "originates from" .
+
+lsh:SafetyCase-concerns a sh:PropertyShape ;
+  sh:path ls:concerns ;
+  sh:class ls:Product ;
+  sh:name "concerns" .
+
+lsh:SafetyCase-mayInvolve a sh:PropertyShape ;
+  sh:path ls:mayInvolve ;
+  sh:class ls:Batch ;
+  sh:name "may involve" .
+
+lsh:SafetyCase-duplicateOf a sh:PropertyShape ;
+  sh:path ls:duplicateOf ;
+  sh:class ls:SafetyCase ;
+  sh:name "duplicate of" .
+
+lsh:SafetyCase-receivedOn a sh:PropertyShape ;
+  sh:path ls:receivedOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "received on" .
+
+lsh:SafetyCase a sh:NodeShape ;
+  sh:targetClass ls:SafetyCase ;
+  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-receivedOn .
+
+lsh:Product-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Product-status a sh:PropertyShape ;
+  sh:path ls:productStatus ;
+  sh:in ( lst:ProductStatus-investigational lst:ProductStatus-approved lst:ProductStatus-withdrawn ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Product-isFormulation a sh:PropertyShape ;
+  sh:path ls:isFormulation ;
+  sh:class ls:Formulation ;
+  sh:name "is" .
+
+lsh:Product a sh:NodeShape ;
+  sh:targetClass ls:Product ;
+  sh:property lsh:Product-identifier, lsh:Product-status, lsh:Product-isFormulation .
+
+lsh:Signal-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Signal-status a sh:PropertyShape ;
+  sh:path ls:signalStatus ;
+  sh:in ( lst:SignalStatus-detected lst:SignalStatus-underEvaluation lst:SignalStatus-confirmed lst:SignalStatus-refuted ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Signal-concerns a sh:PropertyShape ;
+  sh:path ls:concerns ;
+  sh:class ls:Product ;
+  sh:name "concerns" .
+
+lsh:Signal-aggregates a sh:PropertyShape ;
+  sh:path ls:aggregates ;
+  sh:class ls:SafetyCase ;
+  sh:name "aggregates" .
+
+lsh:Signal a sh:NodeShape ;
+  sh:targetClass ls:Signal ;
+  sh:property lsh:Signal-identifier, lsh:Signal-status, lsh:Signal-concerns, lsh:Signal-aggregates .
+
+lsh:Submission-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Submission-status a sh:PropertyShape ;
+  sh:path ls:submissionStatus ;
+  sh:in ( lst:SubmissionStatus-draft lst:SubmissionStatus-inReview lst:SubmissionStatus-submitted lst:SubmissionStatus-acknowledged ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Submission-deadline a sh:PropertyShape ;
+  sh:path ls:submissionDeadline ;
+  sh:in ( lst:SubmissionDeadline-onTrack lst:SubmissionDeadline-dueSoon lst:SubmissionDeadline-overdue ) ;
+  sh:maxCount 1 ;
+  sh:name "Deadline" .
+
+lsh:Submission-reports a sh:PropertyShape ;
+  sh:path ls:reports ;
+  sh:or ( lsh:IsSafetyCase lsh:IsSignal ) ;
+  sh:name "reports" .
+
+lsh:Submission-dueOn a sh:PropertyShape ;
+  sh:path ls:dueOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "due on" .
+
+lsh:Submission-preparedBy a sh:PropertyShape ;
+  sh:path ls:preparedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:maxCount 1 ;
+  sh:name "prepared by" .
+
+lsh:Submission a sh:NodeShape ;
+  sh:targetClass ls:Submission ;
+  sh:property lsh:Submission-identifier, lsh:Submission-status, lsh:Submission-deadline, lsh:Submission-reports, lsh:Submission-dueOn, lsh:Submission-preparedBy .
+
+lsh:QualityEvent-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:QualityEvent-status a sh:PropertyShape ;
+  sh:path ls:qualityEventStatus ;
+  sh:in ( lst:QualityEventStatus-open lst:QualityEventStatus-investigating lst:QualityEventStatus-capaAssigned lst:QualityEventStatus-closed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:QualityEvent-severity a sh:PropertyShape ;
+  sh:path ls:qualityEventSeverity ;
+  sh:in ( lst:QualityEventSeverity-minor lst:QualityEventSeverity-major lst:QualityEventSeverity-critical ) ;
+  sh:maxCount 1 ;
+  sh:name "Severity" .
+
+lsh:QualityEvent-raisedOn a sh:PropertyShape ;
+  sh:path ls:raisedOn ;
+  sh:class ls:Batch ;
+  sh:name "raised on" .
+
+lsh:QualityEvent a sh:NodeShape ;
+  sh:targetClass ls:QualityEvent ;
+  sh:property lsh:QualityEvent-identifier, lsh:QualityEvent-status, lsh:QualityEvent-severity, lsh:QualityEvent-raisedOn .
+
+lsh:CAPA-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:CAPA-status a sh:PropertyShape ;
+  sh:path ls:capaStatus ;
+  sh:in ( lst:CAPAStatus-planned lst:CAPAStatus-inProgress lst:CAPAStatus-effective lst:CAPAStatus-ineffective ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:CAPA-resolves a sh:PropertyShape ;
+  sh:path ls:resolves ;
+  sh:class ls:QualityEvent ;
+  sh:name "resolves" .
+
+lsh:CAPA a sh:NodeShape ;
+  sh:targetClass ls:CAPA ;
+  sh:property lsh:CAPA-identifier, lsh:CAPA-status, lsh:CAPA-resolves .
+
+lsh:MedicalInquiry-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:MedicalInquiry-status a sh:PropertyShape ;
+  sh:path ls:medicalInquiryStatus ;
+  sh:in ( lst:MedicalInquiryStatus-received lst:MedicalInquiryStatus-answered lst:MedicalInquiryStatus-closed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:MedicalInquiry a sh:NodeShape ;
+  sh:targetClass ls:MedicalInquiry ;
+  sh:property lsh:MedicalInquiry-identifier, lsh:MedicalInquiry-status .
+
+lsh:IsAdverseEvent a sh:NodeShape ;
+  sh:class ls:AdverseEvent .
+
+lsh:IsMedicalInquiry a sh:NodeShape ;
+  sh:class ls:MedicalInquiry .
+
+lsh:IsSafetyCase a sh:NodeShape ;
+  sh:class ls:SafetyCase .
+
+lsh:IsSignal a sh:NodeShape ;
+  sh:class ls:Signal .

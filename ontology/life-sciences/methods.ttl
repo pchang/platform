@@ -1,0 +1,1152 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://w3id.org/lsh/platform#> .
+@prefix ls:      <https://w3id.org/lsh/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://w3id.org/lsh/life-sciences/methods> a owl:Ontology ;
+  dcterms:title "LS&H life sciences methods" ;
+  rdfs:comment "Methods with their inputs, preconditions and effects (domain spec sections 2.3, 3.3 and 4.3). Preconditions are SHACL shapes; their messages explain blocks." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://w3id.org/lsh/life-sciences/methods/0.1.0> ;
+  dcterms:created "2026-11-08"^^xsd:date .
+
+ls:RunSimulation-modelType a p:Input ;
+  p:inputName "modelType" ;
+  rdfs:label "Model type" ;
+  p:datatype xsd:string .
+
+ls:RunSimulation-effect1 a p:Creation ;
+  p:createsType ls:Simulation ;
+  p:linkedBy ls:predicts ;
+  p:initialState lst:SimulationRun-queued ;
+  p:initialState lst:SimulationReview-unreviewed .
+
+ls:RunSimulation a p:Method ;
+  rdfs:label "Run simulation" ;
+  rdfs:comment "Runs an in silico prediction of a compound's properties." ;
+  p:appliesTo ls:Compound ;
+  p:input ls:RunSimulation-modelType ;
+  p:precondition lsh:RunSimulation-pre ;
+  p:effect ls:RunSimulation-effect1 .
+
+ls:GenerateAnalogs-targetProperty a p:Input ;
+  p:inputName "targetProperty" ;
+  rdfs:label "Target property" ;
+  p:datatype xsd:string .
+
+ls:GenerateAnalogs-effect1 a p:Creation ;
+  p:createsType ls:Compound ;
+  p:linkedBy ls:derivedFrom ;
+  p:initialState lst:CompoundStage-designed ;
+  p:initialState lst:CompoundRegistration-unregistered .
+
+ls:GenerateAnalogs-effect2 a p:DescribedEffect ;
+  p:description "A generative model proposes the analogs. Each is a draft until a person accepts it." .
+
+ls:GenerateAnalogs a p:Method ;
+  rdfs:label "Generate analogs" ;
+  rdfs:comment "Proposes new compounds derived from this one, aiming at a target property." ;
+  p:appliesTo ls:Compound ;
+  p:input ls:GenerateAnalogs-targetProperty ;
+  p:precondition lsh:GenerateAnalogs-pre-acceptedSimulation ;
+  p:effect ls:GenerateAnalogs-effect1 ;
+  p:effect ls:GenerateAnalogs-effect2 ;
+  p:producesDraft true ;
+  p:governedBy ls:HumanReview .
+
+ls:Register-effect1 a p:StateChange ;
+  p:dimension ls:compoundRegistration ;
+  p:value lst:CompoundRegistration-registered .
+
+ls:Register a p:Method ;
+  rdfs:label "Register" ;
+  rdfs:comment "Registers a synthesized compound." ;
+  p:appliesTo ls:Compound ;
+  p:precondition lsh:Register-pre ;
+  p:effect ls:Register-effect1 .
+
+ls:PromoteToCandidate-rationale a p:Input ;
+  p:inputName "rationale" ;
+  rdfs:label "Rationale" ;
+  p:datatype xsd:string .
+
+ls:PromoteToCandidate-effect1 a p:StateChange ;
+  p:dimension ls:compoundStage ;
+  p:value lst:CompoundStage-candidate .
+
+ls:PromoteToCandidate a p:Method ;
+  rdfs:label "Promote to candidate" ;
+  rdfs:comment "Promotes a tested compound to development candidate." ;
+  p:appliesTo ls:Compound ;
+  p:input ls:PromoteToCandidate-rationale ;
+  p:precondition lsh:PromoteToCandidate-pre, lsh:PromoteToCandidate-pre-validResult ;
+  p:effect ls:PromoteToCandidate-effect1 .
+
+ls:SignExperiment-signer a p:Input ;
+  p:inputName "signer" ;
+  rdfs:label "Signer" ;
+  p:isActor true .
+
+ls:SignExperiment-effect1 a p:StateChange ;
+  p:dimension ls:experimentSignOff ;
+  p:value lst:ExperimentSignOff-signed .
+
+ls:SignExperiment a p:Method ;
+  rdfs:label "Sign experiment" ;
+  rdfs:comment "Signs a completed notebook experiment." ;
+  p:appliesTo ls:Experiment ;
+  p:input ls:SignExperiment-signer ;
+  p:precondition lsh:SignExperiment-pre ;
+  p:effect ls:SignExperiment-effect1 ;
+  p:requiresSignature true ;
+  p:governedBy ls:DataIntegrity .
+
+ls:InvalidateResult-reason a p:Input ;
+  p:inputName "reason" ;
+  rdfs:label "Reason" ;
+  p:datatype xsd:string .
+
+ls:InvalidateResult-effect1 a p:StateChange ;
+  p:dimension ls:assayResultValidity ;
+  p:value lst:AssayResultValidity-invalidated .
+
+ls:InvalidateResult-effect2 a p:DescribedEffect ;
+  p:description "Re-evaluates promotions that depended on this result." .
+
+ls:InvalidateResult a p:Method ;
+  rdfs:label "Invalidate result" ;
+  rdfs:comment "Marks an assay result invalid." ;
+  p:appliesTo ls:AssayResult ;
+  p:input ls:InvalidateResult-reason ;
+  p:precondition lsh:InvalidateResult-pre ;
+  p:effect ls:InvalidateResult-effect1 ;
+  p:effect ls:InvalidateResult-effect2 ;
+  p:governedBy ls:DataIntegrity .
+
+ls:ReleaseBatch-reviewer a p:Input ;
+  p:inputName "reviewer" ;
+  rdfs:label "Reviewer" ;
+  p:isActor true .
+
+ls:ReleaseBatch-effect1 a p:StateChange ;
+  p:dimension ls:batchQuality ;
+  p:value lst:BatchQuality-released .
+
+ls:ReleaseBatch a p:Method ;
+  rdfs:label "Release batch" ;
+  rdfs:comment "Releases a completed batch for use." ;
+  p:appliesTo ls:Batch ;
+  p:input ls:ReleaseBatch-reviewer ;
+  p:precondition lsh:ReleaseBatch-pre, lsh:ReleaseBatch-pre-noOpenQualityEvent ;
+  p:effect ls:ReleaseBatch-effect1 ;
+  p:governedBy ls:BatchRelease .
+
+ls:QuarantineBatch-reason a p:Input ;
+  p:inputName "reason" ;
+  rdfs:label "Reason" ;
+  p:datatype xsd:string .
+
+ls:QuarantineBatch-effect1 a p:StateChange ;
+  p:dimension ls:batchQuality ;
+  p:value lst:BatchQuality-quarantined .
+
+ls:QuarantineBatch a p:Method ;
+  rdfs:label "Quarantine batch" ;
+  rdfs:comment "Holds a batch from use." ;
+  p:appliesTo ls:Batch ;
+  p:input ls:QuarantineBatch-reason ;
+  p:precondition lsh:QuarantineBatch-pre ;
+  p:effect ls:QuarantineBatch-effect1 .
+
+ls:Consent-eConsentRecord a p:Input ;
+  p:inputName "eConsentRecord" ;
+  rdfs:label "eConsent record" ;
+  p:datatype xsd:anyURI .
+
+ls:Consent-effect1 a p:StateChange ;
+  p:dimension ls:patientEnrollment ;
+  p:value lst:PatientEnrollment-consented .
+
+ls:Consent a p:Method ;
+  rdfs:label "Consent" ;
+  rdfs:comment "Records a screened patient's informed consent." ;
+  p:appliesTo ls:Patient ;
+  p:input ls:Consent-eConsentRecord ;
+  p:precondition lsh:Consent-pre ;
+  p:effect ls:Consent-effect1 .
+
+ls:Randomize-effect1 a p:StateChange ;
+  p:dimension ls:patientEnrollment ;
+  p:value lst:PatientEnrollment-randomized .
+
+ls:Randomize-effect2 a p:StateChange ;
+  p:dimension ls:patientArm ;
+  p:value lst:PatientArm-assigned .
+
+ls:Randomize-effect3 a p:DescribedEffect ;
+  p:description "Records the assigned arm from the randomization schedule. The arm stays hidden while the study is blinded." .
+
+ls:Randomize a p:Method ;
+  rdfs:label "Randomize" ;
+  rdfs:comment "Randomizes a consented patient to a study arm." ;
+  p:appliesTo ls:Patient ;
+  p:precondition lsh:Randomize-pre, lsh:Randomize-pre-studyEnrolling ;
+  p:effect ls:Randomize-effect1 ;
+  p:effect ls:Randomize-effect2 ;
+  p:effect ls:Randomize-effect3 ;
+  p:governedBy ls:Blinding .
+
+ls:RaiseQuery-question a p:Input ;
+  p:inputName "question" ;
+  rdfs:label "Question" ;
+  p:datatype xsd:string .
+
+ls:RaiseQuery-effect1 a p:Creation ;
+  p:createsType ls:DataQuery ;
+  p:linkedBy ls:raisedOn ;
+  p:initialState lst:DataQueryStatus-open .
+
+ls:RaiseQuery a p:Method ;
+  rdfs:label "Raise query" ;
+  rdfs:comment "Asks a question about a data record." ;
+  p:appliesTo ls:DataRecord ;
+  p:input ls:RaiseQuery-question ;
+  p:precondition lsh:RaiseQuery-pre ;
+  p:effect ls:RaiseQuery-effect1 .
+
+ls:AnswerQuery-answer a p:Input ;
+  p:inputName "answer" ;
+  rdfs:label "Answer" ;
+  p:datatype xsd:string .
+
+ls:AnswerQuery-effect1 a p:StateChange ;
+  p:dimension ls:dataQueryStatus ;
+  p:value lst:DataQueryStatus-answered .
+
+ls:AnswerQuery a p:Method ;
+  rdfs:label "Answer query" ;
+  rdfs:comment "Answers an open query." ;
+  p:appliesTo ls:DataQuery ;
+  p:input ls:AnswerQuery-answer ;
+  p:precondition lsh:AnswerQuery-pre ;
+  p:effect ls:AnswerQuery-effect1 .
+
+ls:CloseQuery-effect1 a p:StateChange ;
+  p:dimension ls:dataQueryStatus ;
+  p:value lst:DataQueryStatus-closed .
+
+ls:CloseQuery a p:Method ;
+  rdfs:label "Close query" ;
+  rdfs:comment "Closes an answered query." ;
+  p:appliesTo ls:DataQuery ;
+  p:precondition lsh:CloseQuery-pre ;
+  p:effect ls:CloseQuery-effect1 .
+
+ls:ReportToSafety-effect1 a p:Creation ;
+  p:createsType ls:SafetyCase ;
+  p:linkedBy ls:originatesFrom ;
+  p:initialState lst:SafetyCaseWorkflow-received ;
+  p:initialState lst:SafetyCaseCausality-unassessed ;
+  p:setsDate ls:receivedOn .
+
+ls:ReportToSafety-effect2 a p:StateChange ;
+  p:dimension ls:adverseEventReporting ;
+  p:value lst:AdverseEventReporting-reportedToSafety .
+
+ls:ReportToSafety a p:Method ;
+  rdfs:label "Report to safety" ;
+  rdfs:comment "Sends an adverse event to safety as a new safety case." ;
+  p:appliesTo ls:AdverseEvent ;
+  p:precondition lsh:ReportToSafety-pre ;
+  p:effect ls:ReportToSafety-effect1 ;
+  p:effect ls:ReportToSafety-effect2 .
+
+ls:UnblindPatient-justification a p:Input ;
+  p:inputName "justification" ;
+  rdfs:label "Justification" ;
+  p:datatype xsd:string .
+
+ls:UnblindPatient-effect1 a p:StateChange ;
+  p:dimension ls:patientArmVisibility ;
+  p:value lst:PatientArmVisibility-revealed .
+
+ls:UnblindPatient a p:Method ;
+  rdfs:label "Unblind patient" ;
+  rdfs:comment "Reveals one patient's arm, for safety assessment only." ;
+  p:appliesTo ls:Patient ;
+  p:input ls:UnblindPatient-justification ;
+  p:precondition lsh:UnblindPatient-pre, lsh:UnblindPatient-pre-studyBlinded, lsh:UnblindPatient-pre-rule2 ;
+  p:effect ls:UnblindPatient-effect1 ;
+  p:governedBy ls:Blinding .
+
+ls:LockStudy-effect1 a p:StateChange ;
+  p:dimension ls:studyStatus ;
+  p:value lst:StudyStatus-locked .
+
+ls:LockStudy a p:Method ;
+  rdfs:label "Lock study" ;
+  rdfs:comment "Locks a closed study's data." ;
+  p:appliesTo ls:Study ;
+  p:precondition lsh:LockStudy-pre, lsh:LockStudy-pre-noOpenQueries ;
+  p:effect ls:LockStudy-effect1 .
+
+ls:Triage-seriousness a p:Input ;
+  p:inputName "seriousness" ;
+  rdfs:label "Seriousness" ;
+  p:valuesFrom lst:SafetyCaseSeriousness .
+
+ls:Triage-expectedness a p:Input ;
+  p:inputName "expectedness" ;
+  rdfs:label "Expectedness" ;
+  p:valuesFrom lst:SafetyCaseExpectedness .
+
+ls:Triage-effect1 a p:StateChange ;
+  p:dimension ls:safetyCaseWorkflow ;
+  p:value lst:SafetyCaseWorkflow-triaged .
+
+ls:Triage-effect2 a p:StateChange ;
+  p:dimension ls:safetyCaseSeriousness ;
+  p:valueFromInput ls:Triage-seriousness .
+
+ls:Triage-effect3 a p:StateChange ;
+  p:dimension ls:safetyCaseExpectedness ;
+  p:valueFromInput ls:Triage-expectedness .
+
+ls:Triage a p:Method ;
+  rdfs:label "Triage" ;
+  rdfs:comment "Triages a received case: sets seriousness and expectedness." ;
+  p:appliesTo ls:SafetyCase ;
+  p:input ls:Triage-seriousness ;
+  p:input ls:Triage-expectedness ;
+  p:precondition lsh:Triage-pre ;
+  p:effect ls:Triage-effect1 ;
+  p:effect ls:Triage-effect2 ;
+  p:effect ls:Triage-effect3 .
+
+ls:FlagDuplicate-candidateCase a p:Input ;
+  p:inputName "candidateCase" ;
+  rdfs:label "Candidate case" ;
+  p:objectOf ls:SafetyCase ;
+  p:inputShape lsh:OpenSafetyCase .
+
+ls:FlagDuplicate-effect1 a p:Link ;
+  p:linkedBy ls:duplicateOf ;
+  p:toInput ls:FlagDuplicate-candidateCase .
+
+ls:FlagDuplicate a p:Method ;
+  rdfs:label "Flag duplicate" ;
+  rdfs:comment "Flags another case as a likely duplicate of this one." ;
+  p:appliesTo ls:SafetyCase ;
+  p:input ls:FlagDuplicate-candidateCase ;
+  p:precondition lsh:FlagDuplicate-pre ;
+  p:effect ls:FlagDuplicate-effect1 ;
+  p:producesDraft true ;
+  p:governedBy ls:HumanReview .
+
+ls:Assess-causality a p:Input ;
+  p:inputName "causality" ;
+  rdfs:label "Causality" ;
+  p:valuesFrom lst:SafetyCaseCausality ;
+  p:inputShape lsh:AssessedCausality .
+
+ls:Assess-effect1 a p:StateChange ;
+  p:dimension ls:safetyCaseWorkflow ;
+  p:value lst:SafetyCaseWorkflow-assessed .
+
+ls:Assess-effect2 a p:StateChange ;
+  p:dimension ls:safetyCaseCausality ;
+  p:valueFromInput ls:Assess-causality .
+
+ls:Assess a p:Method ;
+  rdfs:label "Assess" ;
+  rdfs:comment "Assesses causality for a triaged case." ;
+  p:appliesTo ls:SafetyCase ;
+  p:input ls:Assess-causality ;
+  p:precondition lsh:Assess-pre ;
+  p:effect ls:Assess-effect1 ;
+  p:effect ls:Assess-effect2 .
+
+ls:GenerateNarrative-effect1 a p:DescribedEffect ;
+  p:description "Drafts the case narrative from the case and its linked records. A draft until a person accepts it." .
+
+ls:GenerateNarrative a p:Method ;
+  rdfs:label "Generate narrative" ;
+  rdfs:comment "Drafts the case narrative for human review." ;
+  p:appliesTo ls:SafetyCase ;
+  p:precondition lsh:GenerateNarrative-pre ;
+  p:effect ls:GenerateNarrative-effect1 ;
+  p:producesDraft true ;
+  p:governedBy ls:HumanReview .
+
+ls:MergeDuplicate-targetCase a p:Input ;
+  p:inputName "targetCase" ;
+  rdfs:label "Target case" ;
+  p:objectOf ls:SafetyCase ;
+  p:choicesAlong ls:duplicateOf .
+
+ls:MergeDuplicate-effect1 a p:DescribedEffect ;
+  p:description "Moves this case's information into the target case and links them." .
+
+ls:MergeDuplicate-effect2 a p:StateChange ;
+  p:dimension ls:safetyCaseWorkflow ;
+  p:value lst:SafetyCaseWorkflow-closed .
+
+ls:MergeDuplicate a p:Method ;
+  rdfs:label "Merge duplicate" ;
+  rdfs:comment "Merges this case into a case it duplicates." ;
+  p:appliesTo ls:SafetyCase ;
+  p:input ls:MergeDuplicate-targetCase ;
+  p:precondition lsh:MergeDuplicate-pre-linkedDuplicate ;
+  p:effect ls:MergeDuplicate-effect1 ;
+  p:effect ls:MergeDuplicate-effect2 .
+
+ls:PrepareExpeditedReport-effect1 a p:Creation ;
+  p:createsType ls:Submission ;
+  p:linkedBy ls:reports ;
+  p:initialState lst:SubmissionStatus-draft ;
+  p:initialState lst:SubmissionDeadline-onTrack ;
+  p:recordsActorAs ls:preparedBy ;
+  p:setsDate ls:dueOn ;
+  p:fromDate ls:receivedOn ;
+  p:plusDays ls:ExpeditedReporting-reportingDays .
+
+ls:PrepareExpeditedReport a p:Method ;
+  rdfs:label "Prepare expedited report" ;
+  rdfs:comment "Prepares the expedited report a serious, unexpected, related case needs." ;
+  p:appliesTo ls:SafetyCase ;
+  p:precondition lsh:PrepareExpeditedReport-pre ;
+  p:effect ls:PrepareExpeditedReport-effect1 ;
+  p:governedBy ls:ExpeditedReporting .
+
+ls:CloseCase-effect1 a p:StateChange ;
+  p:dimension ls:safetyCaseWorkflow ;
+  p:value lst:SafetyCaseWorkflow-closed .
+
+ls:CloseCase a p:Method ;
+  rdfs:label "Close case" ;
+  rdfs:comment "Closes a reported case, or an assessed case that needs no expedited report." ;
+  p:appliesTo ls:SafetyCase ;
+  p:precondition lsh:CloseCase-pre-reportedOrNotRequired ;
+  p:effect ls:CloseCase-effect1 ;
+  p:governedBy ls:ExpeditedReporting .
+
+ls:SendForReview-reviewer a p:Input ;
+  p:inputName "reviewer" ;
+  rdfs:label "Reviewer" ;
+  p:isActor true .
+
+ls:SendForReview-effect1 a p:StateChange ;
+  p:dimension ls:submissionStatus ;
+  p:value lst:SubmissionStatus-inReview .
+
+ls:SendForReview a p:Method ;
+  rdfs:label "Send for review" ;
+  rdfs:comment "Sends a draft submission for review." ;
+  p:appliesTo ls:Submission ;
+  p:input ls:SendForReview-reviewer ;
+  p:precondition lsh:SendForReview-pre ;
+  p:effect ls:SendForReview-effect1 .
+
+ls:Submit-approver a p:Input ;
+  p:inputName "approver" ;
+  rdfs:label "Approver" ;
+  p:isActor true ;
+  p:distinctFrom ls:preparedBy .
+
+ls:Submit-effect1 a p:StateChange ;
+  p:dimension ls:submissionStatus ;
+  p:value lst:SubmissionStatus-submitted .
+
+ls:Submit-effect2 a p:StateChange ;
+  p:dimension ls:safetyCaseWorkflow ;
+  p:value lst:SafetyCaseWorkflow-reported ;
+  p:along ls:reports .
+
+ls:Submit a p:Method ;
+  rdfs:label "Submit" ;
+  rdfs:comment "Approves and submits a reviewed submission." ;
+  p:appliesTo ls:Submission ;
+  p:input ls:Submit-approver ;
+  p:precondition lsh:Submit-pre ;
+  p:effect ls:Submit-effect1 ;
+  p:effect ls:Submit-effect2 ;
+  p:requiresSignature true ;
+  p:governedBy ls:SeparationOfDuties .
+
+ls:RunSignalDetection-effect1 a p:DescribedEffect ;
+  p:description "Creates a Signal in detected, concerning the product and aggregating its cases, for each product and event pair whose disproportionality exceeds the threshold in business context. Also runs on the schedule set there." .
+
+ls:RunSignalDetection a p:Method ;
+  rdfs:label "Run signal detection" ;
+  rdfs:comment "Looks for new risks across a product's safety cases." ;
+  p:appliesTo ls:Product ;
+  p:precondition lsh:RunSignalDetection-pre-hasCases ;
+  p:effect ls:RunSignalDetection-effect1 .
+
+ls:EvaluateSignal-effect1 a p:StateChange ;
+  p:dimension ls:signalStatus ;
+  p:value lst:SignalStatus-underEvaluation .
+
+ls:EvaluateSignal a p:Method ;
+  rdfs:label "Evaluate signal" ;
+  rdfs:comment "Starts evaluating a detected signal." ;
+  p:appliesTo ls:Signal ;
+  p:precondition lsh:EvaluateSignal-pre ;
+  p:effect ls:EvaluateSignal-effect1 .
+
+ls:ConfirmSignal-rationale a p:Input ;
+  p:inputName "rationale" ;
+  rdfs:label "Rationale" ;
+  p:datatype xsd:string .
+
+ls:ConfirmSignal-effect1 a p:StateChange ;
+  p:dimension ls:signalStatus ;
+  p:value lst:SignalStatus-confirmed .
+
+ls:ConfirmSignal-effect2 a p:DescribedEffect ;
+  p:description "Suggests follow-up in other domains, found by traversing from the product to its formulation, compound and batches." .
+
+ls:ConfirmSignal a p:Method ;
+  rdfs:label "Confirm signal" ;
+  rdfs:comment "Confirms a signal as a real risk." ;
+  p:appliesTo ls:Signal ;
+  p:input ls:ConfirmSignal-rationale ;
+  p:precondition lsh:ConfirmSignal-pre ;
+  p:effect ls:ConfirmSignal-effect1 ;
+  p:effect ls:ConfirmSignal-effect2 .
+
+ls:RefuteSignal-rationale a p:Input ;
+  p:inputName "rationale" ;
+  rdfs:label "Rationale" ;
+  p:datatype xsd:string .
+
+ls:RefuteSignal-effect1 a p:StateChange ;
+  p:dimension ls:signalStatus ;
+  p:value lst:SignalStatus-refuted .
+
+ls:RefuteSignal a p:Method ;
+  rdfs:label "Refute signal" ;
+  rdfs:comment "Refutes a signal." ;
+  p:appliesTo ls:Signal ;
+  p:input ls:RefuteSignal-rationale ;
+  p:precondition lsh:RefuteSignal-pre ;
+  p:effect ls:RefuteSignal-effect1 .
+
+ls:OpenQualityEvent-description a p:Input ;
+  p:inputName "description" ;
+  rdfs:label "Description" ;
+  p:datatype xsd:string .
+
+ls:OpenQualityEvent-severity a p:Input ;
+  p:inputName "severity" ;
+  rdfs:label "Severity" ;
+  p:valuesFrom lst:QualityEventSeverity .
+
+ls:OpenQualityEvent-effect1 a p:Creation ;
+  p:createsType ls:QualityEvent ;
+  p:linkedBy ls:raisedOn ;
+  p:initialState lst:QualityEventStatus-open ;
+  p:initialFromInput ls:OpenQualityEvent-severity .
+
+ls:OpenQualityEvent a p:Method ;
+  rdfs:label "Open quality event" ;
+  rdfs:comment "Opens a quality event on a batch." ;
+  p:appliesTo ls:Batch ;
+  p:input ls:OpenQualityEvent-description ;
+  p:input ls:OpenQualityEvent-severity ;
+  p:effect ls:OpenQualityEvent-effect1 .
+
+ls:StartInvestigation-investigator a p:Input ;
+  p:inputName "investigator" ;
+  rdfs:label "Investigator" ;
+  p:isActor true .
+
+ls:StartInvestigation-effect1 a p:StateChange ;
+  p:dimension ls:qualityEventStatus ;
+  p:value lst:QualityEventStatus-investigating .
+
+ls:StartInvestigation a p:Method ;
+  rdfs:label "Start investigation" ;
+  rdfs:comment "Starts investigating an open quality event." ;
+  p:appliesTo ls:QualityEvent ;
+  p:input ls:StartInvestigation-investigator ;
+  p:precondition lsh:StartInvestigation-pre ;
+  p:effect ls:StartInvestigation-effect1 .
+
+ls:AssignCAPA-owner a p:Input ;
+  p:inputName "owner" ;
+  rdfs:label "Owner" ;
+  p:isActor true .
+
+ls:AssignCAPA-action a p:Input ;
+  p:inputName "action" ;
+  rdfs:label "Action" ;
+  p:datatype xsd:string .
+
+ls:AssignCAPA-effect1 a p:Creation ;
+  p:createsType ls:CAPA ;
+  p:linkedBy ls:resolves ;
+  p:initialState lst:CAPAStatus-planned .
+
+ls:AssignCAPA-effect2 a p:StateChange ;
+  p:dimension ls:qualityEventStatus ;
+  p:value lst:QualityEventStatus-capaAssigned .
+
+ls:AssignCAPA a p:Method ;
+  rdfs:label "Assign CAPA" ;
+  rdfs:comment "Assigns a corrective and preventive action." ;
+  p:appliesTo ls:QualityEvent ;
+  p:input ls:AssignCAPA-owner ;
+  p:input ls:AssignCAPA-action ;
+  p:precondition lsh:AssignCAPA-pre ;
+  p:effect ls:AssignCAPA-effect1 ;
+  p:effect ls:AssignCAPA-effect2 .
+
+ls:StartCAPA-effect1 a p:StateChange ;
+  p:dimension ls:capaStatus ;
+  p:value lst:CAPAStatus-inProgress .
+
+ls:StartCAPA a p:Method ;
+  rdfs:label "Start CAPA" ;
+  rdfs:comment "Starts work on a planned CAPA." ;
+  p:appliesTo ls:CAPA ;
+  p:precondition lsh:StartCAPA-pre ;
+  p:effect ls:StartCAPA-effect1 .
+
+ls:RecordCAPAOutcome-outcome a p:Input ;
+  p:inputName "outcome" ;
+  rdfs:label "Outcome" ;
+  p:valuesFrom lst:CAPAStatus ;
+  p:inputShape lsh:CAPAOutcome .
+
+ls:RecordCAPAOutcome-evidence a p:Input ;
+  p:inputName "evidence" ;
+  rdfs:label "Evidence" ;
+  p:datatype xsd:string .
+
+ls:RecordCAPAOutcome-effect1 a p:StateChange ;
+  p:dimension ls:capaStatus ;
+  p:valueFromInput ls:RecordCAPAOutcome-outcome .
+
+ls:RecordCAPAOutcome-effect2 a p:StateChange ;
+  p:dimension ls:qualityEventStatus ;
+  p:value lst:QualityEventStatus-investigating ;
+  p:along ls:resolves ;
+  p:whenInput ls:RecordCAPAOutcome-outcome ;
+  p:whenValue lst:CAPAStatus-ineffective .
+
+ls:RecordCAPAOutcome a p:Method ;
+  rdfs:label "Record CAPA outcome" ;
+  rdfs:comment "Records whether a CAPA worked." ;
+  p:appliesTo ls:CAPA ;
+  p:input ls:RecordCAPAOutcome-outcome ;
+  p:input ls:RecordCAPAOutcome-evidence ;
+  p:precondition lsh:RecordCAPAOutcome-pre ;
+  p:effect ls:RecordCAPAOutcome-effect1 ;
+  p:effect ls:RecordCAPAOutcome-effect2 .
+
+ls:CloseQualityEvent-effect1 a p:StateChange ;
+  p:dimension ls:qualityEventStatus ;
+  p:value lst:QualityEventStatus-closed .
+
+ls:CloseQualityEvent a p:Method ;
+  rdfs:label "Close quality event" ;
+  rdfs:comment "Closes a quality event whose CAPA worked." ;
+  p:appliesTo ls:QualityEvent ;
+  p:precondition lsh:CloseQualityEvent-pre, lsh:CloseQualityEvent-pre-effectiveCapa ;
+  p:effect ls:CloseQualityEvent-effect1 .
+
+# Preconditions and input shapes
+
+lsh:prefixes a owl:Ontology ;
+  sh:declare lsh:prefix-ls, lsh:prefix-lst .
+lsh:prefix-ls a sh:PrefixDeclaration ;
+  sh:prefix "ls" ;
+  sh:namespace "https://w3id.org/lsh/life-sciences#"^^xsd:anyURI .
+lsh:prefix-lst a sh:PrefixDeclaration ;
+  sh:prefix "lst" ;
+  sh:namespace "https://w3id.org/lsh/life-sciences/term#"^^xsd:anyURI .
+
+lsh:RunSimulation-pre-stage a sh:PropertyShape ;
+  sh:path ls:compoundStage ;
+  sh:in ( lst:CompoundStage-designed lst:CompoundStage-synthesized lst:CompoundStage-tested lst:CompoundStage-candidate ) ;
+  sh:minCount 1 ;
+  sh:message "The compound is retired" .
+
+lsh:RunSimulation-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Run simulation" ;
+  sh:property lsh:RunSimulation-pre-stage .
+
+lsh:GenerateAnalogs-pre-acceptedSimulation a sh:NodeShape ;
+  rdfs:label "The compound has no accepted simulation" ;
+  sh:sparql lsh:GenerateAnalogs-pre-acceptedSimulation-query .
+lsh:GenerateAnalogs-pre-acceptedSimulation-query a sh:SPARQLConstraint ;
+  sh:message "The compound has no accepted simulation" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?sim ls:predicts $this ; ls:simulationReview lst:SimulationReview-accepted }
+    }""" .
+
+lsh:Register-pre-stage a sh:PropertyShape ;
+  sh:path ls:compoundStage ;
+  sh:hasValue lst:CompoundStage-synthesized ;
+  sh:minCount 1 ;
+  sh:message "The compound is not synthesized" .
+
+lsh:Register-pre-registration a sh:PropertyShape ;
+  sh:path ls:compoundRegistration ;
+  sh:hasValue lst:CompoundRegistration-unregistered ;
+  sh:minCount 1 ;
+  sh:message "The compound is already registered" .
+
+lsh:Register-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Register" ;
+  sh:property lsh:Register-pre-stage, lsh:Register-pre-registration .
+
+lsh:PromoteToCandidate-pre-stage a sh:PropertyShape ;
+  sh:path ls:compoundStage ;
+  sh:hasValue lst:CompoundStage-tested ;
+  sh:minCount 1 ;
+  sh:message "The compound is not at the tested stage" .
+
+lsh:PromoteToCandidate-pre-validResult a sh:NodeShape ;
+  rdfs:label "The compound has no valid assay result" ;
+  sh:sparql lsh:PromoteToCandidate-pre-validResult-query .
+lsh:PromoteToCandidate-pre-validResult-query a sh:SPARQLConstraint ;
+  sh:message "The compound has no valid assay result" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?exp ls:tests $this ; ls:produces ?r . ?r ls:assayResultValidity lst:AssayResultValidity-valid }
+    }""" .
+
+lsh:PromoteToCandidate-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Promote to candidate" ;
+  sh:property lsh:PromoteToCandidate-pre-stage .
+
+lsh:SignExperiment-pre-record a sh:PropertyShape ;
+  sh:path ls:experimentRecord ;
+  sh:hasValue lst:ExperimentRecord-complete ;
+  sh:minCount 1 ;
+  sh:message "The experiment record is not complete" .
+
+lsh:SignExperiment-pre-signOff a sh:PropertyShape ;
+  sh:path ls:experimentSignOff ;
+  sh:hasValue lst:ExperimentSignOff-unsigned ;
+  sh:minCount 1 ;
+  sh:message "The experiment is already signed" .
+
+lsh:SignExperiment-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Sign experiment" ;
+  sh:property lsh:SignExperiment-pre-record, lsh:SignExperiment-pre-signOff .
+
+lsh:InvalidateResult-pre-validity a sh:PropertyShape ;
+  sh:path ls:assayResultValidity ;
+  sh:hasValue lst:AssayResultValidity-valid ;
+  sh:minCount 1 ;
+  sh:message "The result is already invalidated" .
+
+lsh:InvalidateResult-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Invalidate result" ;
+  sh:property lsh:InvalidateResult-pre-validity .
+
+lsh:ReleaseBatch-pre-production a sh:PropertyShape ;
+  sh:path ls:batchProduction ;
+  sh:hasValue lst:BatchProduction-complete ;
+  sh:minCount 1 ;
+  sh:message "Production is not complete" .
+
+lsh:ReleaseBatch-pre-quality a sh:PropertyShape ;
+  sh:path ls:batchQuality ;
+  sh:hasValue lst:BatchQuality-pending ;
+  sh:minCount 1 ;
+  sh:message "Quality is not pending" .
+
+lsh:ReleaseBatch-pre-noOpenQualityEvent a sh:NodeShape ;
+  rdfs:label "An open quality event is raised on this batch" ;
+  sh:sparql lsh:ReleaseBatch-pre-noOpenQualityEvent-query .
+lsh:ReleaseBatch-pre-noOpenQualityEvent-query a sh:SPARQLConstraint ;
+  sh:message "An open quality event is raised on this batch" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      ?qe ls:raisedOn $this ; ls:qualityEventStatus ?s . FILTER(?s != lst:QualityEventStatus-closed)
+    }""" .
+
+lsh:ReleaseBatch-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Release batch" ;
+  sh:property lsh:ReleaseBatch-pre-production, lsh:ReleaseBatch-pre-quality .
+
+lsh:QuarantineBatch-pre-quality a sh:PropertyShape ;
+  sh:path ls:batchQuality ;
+  sh:in ( lst:BatchQuality-pending lst:BatchQuality-released ) ;
+  sh:minCount 1 ;
+  sh:message "Quality is not pending or released" .
+
+lsh:QuarantineBatch-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Quarantine batch" ;
+  sh:property lsh:QuarantineBatch-pre-quality .
+
+lsh:Consent-pre-enrollment a sh:PropertyShape ;
+  sh:path ls:patientEnrollment ;
+  sh:hasValue lst:PatientEnrollment-screened ;
+  sh:minCount 1 ;
+  sh:message "The patient is not at screening" .
+
+lsh:Consent-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Consent" ;
+  sh:property lsh:Consent-pre-enrollment .
+
+lsh:Randomize-pre-enrollment a sh:PropertyShape ;
+  sh:path ls:patientEnrollment ;
+  sh:hasValue lst:PatientEnrollment-consented ;
+  sh:minCount 1 ;
+  sh:message "The patient has not consented" .
+
+lsh:Randomize-pre-studyEnrolling a sh:NodeShape ;
+  rdfs:label "The patient's study is not enrolling" ;
+  sh:sparql lsh:Randomize-pre-studyEnrolling-query .
+lsh:Randomize-pre-studyEnrolling-query a sh:SPARQLConstraint ;
+  sh:message "The patient's study is not enrolling" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:enrolledIn ?study . ?study ls:studyStatus lst:StudyStatus-enrolling }
+    }""" .
+
+lsh:Randomize-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Randomize" ;
+  sh:property lsh:Randomize-pre-enrollment .
+
+lsh:RaiseQuery-pre-entry a sh:PropertyShape ;
+  sh:path ls:dataRecordEntry ;
+  sh:hasValue lst:DataRecordEntry-entered ;
+  sh:minCount 1 ;
+  sh:message "The record is verified and cannot be queried" .
+
+lsh:RaiseQuery-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Raise query" ;
+  sh:property lsh:RaiseQuery-pre-entry .
+
+lsh:AnswerQuery-pre-status a sh:PropertyShape ;
+  sh:path ls:dataQueryStatus ;
+  sh:hasValue lst:DataQueryStatus-open ;
+  sh:minCount 1 ;
+  sh:message "The query is not open" .
+
+lsh:AnswerQuery-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Answer query" ;
+  sh:property lsh:AnswerQuery-pre-status .
+
+lsh:CloseQuery-pre-status a sh:PropertyShape ;
+  sh:path ls:dataQueryStatus ;
+  sh:hasValue lst:DataQueryStatus-answered ;
+  sh:minCount 1 ;
+  sh:message "The query has not been answered" .
+
+lsh:CloseQuery-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Close query" ;
+  sh:property lsh:CloseQuery-pre-status .
+
+lsh:ReportToSafety-pre-reporting a sh:PropertyShape ;
+  sh:path ls:adverseEventReporting ;
+  sh:hasValue lst:AdverseEventReporting-notReported ;
+  sh:minCount 1 ;
+  sh:message "The event was already reported to safety" .
+
+lsh:ReportToSafety-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Report to safety" ;
+  sh:property lsh:ReportToSafety-pre-reporting .
+
+lsh:UnblindPatient-pre-armVisibility a sh:PropertyShape ;
+  sh:path ls:patientArmVisibility ;
+  sh:hasValue lst:PatientArmVisibility-hidden ;
+  sh:minCount 1 ;
+  sh:message "The arm is already revealed" .
+
+lsh:UnblindPatient-pre-studyBlinded a sh:NodeShape ;
+  rdfs:label "The patient's study is not blinded" ;
+  sh:sparql lsh:UnblindPatient-pre-studyBlinded-query .
+lsh:UnblindPatient-pre-studyBlinded-query a sh:SPARQLConstraint ;
+  sh:message "The patient's study is not blinded" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:enrolledIn ?study . ?study ls:studyBlinding lst:StudyBlinding-blinded }
+    }""" .
+
+lsh:UnblindPatient-pre-rule2 a sh:NodeShape ;
+  rdfs:label "Rule 2: unblinding needs a triaged safety case for this patient that is serious and unexpected" ;
+  sh:sparql lsh:UnblindPatient-pre-rule2-query .
+lsh:UnblindPatient-pre-rule2-query a sh:SPARQLConstraint ;
+  sh:message "Rule 2: unblinding needs a triaged safety case for this patient that is serious and unexpected" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?ae ls:experiencedBy $this . ?case ls:originatesFrom ?ae ; ls:safetyCaseWorkflow ?w ; ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-serious ; ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-unexpected . FILTER(?w != lst:SafetyCaseWorkflow-received) }
+    }""" .
+
+lsh:UnblindPatient-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Unblind patient" ;
+  sh:property lsh:UnblindPatient-pre-armVisibility .
+
+lsh:LockStudy-pre-status a sh:PropertyShape ;
+  sh:path ls:studyStatus ;
+  sh:hasValue lst:StudyStatus-closed ;
+  sh:minCount 1 ;
+  sh:message "The study is not closed" .
+
+lsh:LockStudy-pre-noOpenQueries a sh:NodeShape ;
+  rdfs:label "The study has open data queries" ;
+  sh:sparql lsh:LockStudy-pre-noOpenQueries-query .
+lsh:LockStudy-pre-noOpenQueries-query a sh:SPARQLConstraint ;
+  sh:message "The study has open data queries" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      ?q ls:raisedOn ?record ; ls:dataQueryStatus lst:DataQueryStatus-open . ?record ls:capturedAt ?visit . ?visit ls:visitFor ?patient . ?patient ls:enrolledIn $this .
+    }""" .
+
+lsh:LockStudy-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Lock study" ;
+  sh:property lsh:LockStudy-pre-status .
+
+lsh:Triage-pre-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:hasValue lst:SafetyCaseWorkflow-received ;
+  sh:minCount 1 ;
+  sh:message "The case is not newly received" .
+
+lsh:Triage-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Triage" ;
+  sh:property lsh:Triage-pre-workflow .
+
+lsh:FlagDuplicate-pre-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:in ( lst:SafetyCaseWorkflow-received lst:SafetyCaseWorkflow-triaged lst:SafetyCaseWorkflow-assessed lst:SafetyCaseWorkflow-reported ) ;
+  sh:minCount 1 ;
+  sh:message "The case is closed" .
+
+lsh:FlagDuplicate-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Flag duplicate" ;
+  sh:property lsh:FlagDuplicate-pre-workflow .
+
+lsh:Assess-pre-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:hasValue lst:SafetyCaseWorkflow-triaged ;
+  sh:minCount 1 ;
+  sh:message "The case is not triaged" .
+
+lsh:Assess-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Assess" ;
+  sh:property lsh:Assess-pre-workflow .
+
+lsh:GenerateNarrative-pre-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:in ( lst:SafetyCaseWorkflow-triaged lst:SafetyCaseWorkflow-assessed lst:SafetyCaseWorkflow-reported lst:SafetyCaseWorkflow-closed ) ;
+  sh:minCount 1 ;
+  sh:message "The case has not been triaged" .
+
+lsh:GenerateNarrative-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Generate narrative" ;
+  sh:property lsh:GenerateNarrative-pre-workflow .
+
+lsh:MergeDuplicate-pre-linkedDuplicate a sh:NodeShape ;
+  rdfs:label "The case is not linked to a duplicate" ;
+  sh:sparql lsh:MergeDuplicate-pre-linkedDuplicate-query .
+lsh:MergeDuplicate-pre-linkedDuplicate-query a sh:SPARQLConstraint ;
+  sh:message "The case is not linked to a duplicate" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:duplicateOf ?other }
+    }""" .
+
+lsh:PrepareExpeditedReport-pre-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:hasValue lst:SafetyCaseWorkflow-assessed ;
+  sh:minCount 1 ;
+  sh:message "The case is not assessed" .
+
+lsh:PrepareExpeditedReport-pre-seriousness a sh:PropertyShape ;
+  sh:path ls:safetyCaseSeriousness ;
+  sh:hasValue lst:SafetyCaseSeriousness-serious ;
+  sh:minCount 1 ;
+  sh:message "The case is not serious" .
+
+lsh:PrepareExpeditedReport-pre-expectedness a sh:PropertyShape ;
+  sh:path ls:safetyCaseExpectedness ;
+  sh:hasValue lst:SafetyCaseExpectedness-unexpected ;
+  sh:minCount 1 ;
+  sh:message "The case is not unexpected" .
+
+lsh:PrepareExpeditedReport-pre-causality a sh:PropertyShape ;
+  sh:path ls:safetyCaseCausality ;
+  sh:in ( lst:SafetyCaseCausality-possible lst:SafetyCaseCausality-probable ) ;
+  sh:minCount 1 ;
+  sh:message "Causality is not possible or probable" .
+
+lsh:PrepareExpeditedReport-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Prepare expedited report" ;
+  sh:property lsh:PrepareExpeditedReport-pre-workflow, lsh:PrepareExpeditedReport-pre-seriousness, lsh:PrepareExpeditedReport-pre-expectedness, lsh:PrepareExpeditedReport-pre-causality .
+
+lsh:CloseCase-pre-reportedOrNotRequired a sh:NodeShape ;
+  rdfs:label "The case is not reported, and it is not an assessed case without an expedited report requirement" ;
+  sh:sparql lsh:CloseCase-pre-reportedOrNotRequired-query .
+lsh:CloseCase-pre-reportedOrNotRequired-query a sh:SPARQLConstraint ;
+  sh:message "The case is not reported, and it is not an assessed case without an expedited report requirement" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-reported } FILTER NOT EXISTS { $this ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-assessed . FILTER NOT EXISTS { $this ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-serious ; ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-unexpected ; ls:safetyCaseCausality ?cause . FILTER(?cause IN (lst:SafetyCaseCausality-possible, lst:SafetyCaseCausality-probable)) } }
+    }""" .
+
+lsh:SendForReview-pre-status a sh:PropertyShape ;
+  sh:path ls:submissionStatus ;
+  sh:hasValue lst:SubmissionStatus-draft ;
+  sh:minCount 1 ;
+  sh:message "The submission is not a draft" .
+
+lsh:SendForReview-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Send for review" ;
+  sh:property lsh:SendForReview-pre-status .
+
+lsh:Submit-pre-status a sh:PropertyShape ;
+  sh:path ls:submissionStatus ;
+  sh:hasValue lst:SubmissionStatus-inReview ;
+  sh:minCount 1 ;
+  sh:message "The submission is not in review" .
+
+lsh:Submit-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Submit" ;
+  sh:property lsh:Submit-pre-status .
+
+lsh:RunSignalDetection-pre-hasCases a sh:NodeShape ;
+  rdfs:label "The product has no safety cases" ;
+  sh:sparql lsh:RunSignalDetection-pre-hasCases-query .
+lsh:RunSignalDetection-pre-hasCases-query a sh:SPARQLConstraint ;
+  sh:message "The product has no safety cases" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?case ls:concerns $this ; a ls:SafetyCase }
+    }""" .
+
+lsh:EvaluateSignal-pre-status a sh:PropertyShape ;
+  sh:path ls:signalStatus ;
+  sh:hasValue lst:SignalStatus-detected ;
+  sh:minCount 1 ;
+  sh:message "The signal is not newly detected" .
+
+lsh:EvaluateSignal-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Evaluate signal" ;
+  sh:property lsh:EvaluateSignal-pre-status .
+
+lsh:ConfirmSignal-pre-status a sh:PropertyShape ;
+  sh:path ls:signalStatus ;
+  sh:hasValue lst:SignalStatus-underEvaluation ;
+  sh:minCount 1 ;
+  sh:message "The signal is not under evaluation" .
+
+lsh:ConfirmSignal-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Confirm signal" ;
+  sh:property lsh:ConfirmSignal-pre-status .
+
+lsh:RefuteSignal-pre-status a sh:PropertyShape ;
+  sh:path ls:signalStatus ;
+  sh:hasValue lst:SignalStatus-underEvaluation ;
+  sh:minCount 1 ;
+  sh:message "The signal is not under evaluation" .
+
+lsh:RefuteSignal-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Refute signal" ;
+  sh:property lsh:RefuteSignal-pre-status .
+
+lsh:StartInvestigation-pre-status a sh:PropertyShape ;
+  sh:path ls:qualityEventStatus ;
+  sh:hasValue lst:QualityEventStatus-open ;
+  sh:minCount 1 ;
+  sh:message "The quality event is not open" .
+
+lsh:StartInvestigation-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Start investigation" ;
+  sh:property lsh:StartInvestigation-pre-status .
+
+lsh:AssignCAPA-pre-status a sh:PropertyShape ;
+  sh:path ls:qualityEventStatus ;
+  sh:hasValue lst:QualityEventStatus-investigating ;
+  sh:minCount 1 ;
+  sh:message "The quality event is not under investigation" .
+
+lsh:AssignCAPA-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Assign CAPA" ;
+  sh:property lsh:AssignCAPA-pre-status .
+
+lsh:StartCAPA-pre-status a sh:PropertyShape ;
+  sh:path ls:capaStatus ;
+  sh:hasValue lst:CAPAStatus-planned ;
+  sh:minCount 1 ;
+  sh:message "The CAPA is not planned" .
+
+lsh:StartCAPA-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Start CAPA" ;
+  sh:property lsh:StartCAPA-pre-status .
+
+lsh:RecordCAPAOutcome-pre-status a sh:PropertyShape ;
+  sh:path ls:capaStatus ;
+  sh:hasValue lst:CAPAStatus-inProgress ;
+  sh:minCount 1 ;
+  sh:message "The CAPA is not in progress" .
+
+lsh:RecordCAPAOutcome-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Record CAPA outcome" ;
+  sh:property lsh:RecordCAPAOutcome-pre-status .
+
+lsh:CloseQualityEvent-pre-status a sh:PropertyShape ;
+  sh:path ls:qualityEventStatus ;
+  sh:hasValue lst:QualityEventStatus-capaAssigned ;
+  sh:minCount 1 ;
+  sh:message "No CAPA is assigned" .
+
+lsh:CloseQualityEvent-pre-effectiveCapa a sh:NodeShape ;
+  rdfs:label "No effective CAPA resolves this quality event" ;
+  sh:sparql lsh:CloseQualityEvent-pre-effectiveCapa-query .
+lsh:CloseQualityEvent-pre-effectiveCapa-query a sh:SPARQLConstraint ;
+  sh:message "No effective CAPA resolves this quality event" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?capa ls:resolves $this ; ls:capaStatus lst:CAPAStatus-effective }
+    }""" .
+
+lsh:CloseQualityEvent-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Close quality event" ;
+  sh:property lsh:CloseQualityEvent-pre-status .
+
+lsh:OpenSafetyCase a sh:NodeShape ;
+  rdfs:label "Open safety case" ;
+  sh:class ls:SafetyCase ;
+  sh:property lsh:OpenSafetyCase-workflow .
+lsh:OpenSafetyCase-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:in ( lst:SafetyCaseWorkflow-received lst:SafetyCaseWorkflow-triaged lst:SafetyCaseWorkflow-assessed lst:SafetyCaseWorkflow-reported ) ;
+  sh:message "The candidate case is closed" .
+
+lsh:AssessedCausality a sh:NodeShape ;
+  rdfs:label "Assessed causality" ;
+  sh:in ( lst:SafetyCaseCausality-unrelated lst:SafetyCaseCausality-possible lst:SafetyCaseCausality-probable ) ;
+  sh:message "Causality must be assessed as unrelated, possible or probable" .
+
+lsh:CAPAOutcome a sh:NodeShape ;
+  rdfs:label "CAPA outcome" ;
+  sh:in ( lst:CAPAStatus-effective lst:CAPAStatus-ineffective ) ;
+  sh:message "The outcome must be effective or ineffective" .
