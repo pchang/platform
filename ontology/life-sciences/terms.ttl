@@ -1,0 +1,692 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://example.org/lsh/platform#> .
+@prefix ls:      <https://example.org/lsh/life-sciences#> .
+@prefix lst:     <https://example.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://example.org/lsh/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://example.org/lsh/life-sciences/term> a owl:Ontology ;
+  dcterms:title "LS&H life sciences terms" ;
+  rdfs:comment "The values of every state dimension, as SKOS concepts. NCIt mappings were checked against the NCI Thesaurus service on 2026-11-08." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://example.org/lsh/life-sciences/term/0.1.0> ;
+  dcterms:created "2026-11-08"^^xsd:date .
+
+lst:CompoundStage a skos:ConceptScheme ;
+  skos:prefLabel "Compound stage" ;
+  skos:definition "The values of the stage dimension of a compound." .
+
+lst:CompoundStage-designed a skos:Concept ;
+  skos:inScheme lst:CompoundStage ;
+  skos:prefLabel "designed" .
+
+lst:CompoundStage-synthesized a skos:Concept ;
+  skos:inScheme lst:CompoundStage ;
+  skos:prefLabel "synthesized" .
+
+lst:CompoundStage-tested a skos:Concept ;
+  skos:inScheme lst:CompoundStage ;
+  skos:prefLabel "tested" .
+
+lst:CompoundStage-candidate a skos:Concept ;
+  skos:inScheme lst:CompoundStage ;
+  skos:prefLabel "candidate" .
+
+lst:CompoundStage-retired a skos:Concept ;
+  skos:inScheme lst:CompoundStage ;
+  skos:prefLabel "retired" .
+
+lst:CompoundRegistration a skos:ConceptScheme ;
+  skos:prefLabel "Compound registration" ;
+  skos:definition "The values of the registration dimension of a compound." .
+
+lst:CompoundRegistration-unregistered a skos:Concept ;
+  skos:inScheme lst:CompoundRegistration ;
+  skos:prefLabel "unregistered" .
+
+lst:CompoundRegistration-registered a skos:Concept ;
+  skos:inScheme lst:CompoundRegistration ;
+  skos:prefLabel "registered" .
+
+lst:SimulationRun a skos:ConceptScheme ;
+  skos:prefLabel "Simulation run" ;
+  skos:definition "The values of the run dimension of a simulation." .
+
+lst:SimulationRun-queued a skos:Concept ;
+  skos:inScheme lst:SimulationRun ;
+  skos:prefLabel "queued" .
+
+lst:SimulationRun-running a skos:Concept ;
+  skos:inScheme lst:SimulationRun ;
+  skos:prefLabel "running" .
+
+lst:SimulationRun-complete a skos:Concept ;
+  skos:inScheme lst:SimulationRun ;
+  skos:prefLabel "complete" .
+
+lst:SimulationRun-failed a skos:Concept ;
+  skos:inScheme lst:SimulationRun ;
+  skos:prefLabel "failed" .
+
+lst:SimulationReview a skos:ConceptScheme ;
+  skos:prefLabel "Simulation review" ;
+  skos:definition "The values of the review dimension of a simulation." .
+
+lst:SimulationReview-unreviewed a skos:Concept ;
+  skos:inScheme lst:SimulationReview ;
+  skos:prefLabel "unreviewed" .
+
+lst:SimulationReview-accepted a skos:Concept ;
+  skos:inScheme lst:SimulationReview ;
+  skos:prefLabel "accepted" .
+
+lst:SimulationReview-rejected a skos:Concept ;
+  skos:inScheme lst:SimulationReview ;
+  skos:prefLabel "rejected" .
+
+lst:ExperimentRecord a skos:ConceptScheme ;
+  skos:prefLabel "Experiment record" ;
+  skos:definition "The values of the record dimension of a experiment." .
+
+lst:ExperimentRecord-planned a skos:Concept ;
+  skos:inScheme lst:ExperimentRecord ;
+  skos:prefLabel "planned" .
+
+lst:ExperimentRecord-inProgress a skos:Concept ;
+  skos:inScheme lst:ExperimentRecord ;
+  skos:prefLabel "in progress" .
+
+lst:ExperimentRecord-complete a skos:Concept ;
+  skos:inScheme lst:ExperimentRecord ;
+  skos:prefLabel "complete" .
+
+lst:ExperimentSignOff a skos:ConceptScheme ;
+  skos:prefLabel "Experiment sign-off" ;
+  skos:definition "The values of the sign-off dimension of a experiment." .
+
+lst:ExperimentSignOff-unsigned a skos:Concept ;
+  skos:inScheme lst:ExperimentSignOff ;
+  skos:prefLabel "unsigned" .
+
+lst:ExperimentSignOff-signed a skos:Concept ;
+  skos:inScheme lst:ExperimentSignOff ;
+  skos:prefLabel "signed" .
+
+lst:ExperimentSignOff-witnessed a skos:Concept ;
+  skos:inScheme lst:ExperimentSignOff ;
+  skos:prefLabel "witnessed" .
+
+lst:AssayResultValidity a skos:ConceptScheme ;
+  skos:prefLabel "Assay Result validity" ;
+  skos:definition "The values of the validity dimension of a assay result." .
+
+lst:AssayResultValidity-valid a skos:Concept ;
+  skos:inScheme lst:AssayResultValidity ;
+  skos:prefLabel "valid" .
+
+lst:AssayResultValidity-invalidated a skos:Concept ;
+  skos:inScheme lst:AssayResultValidity ;
+  skos:prefLabel "invalidated" .
+
+lst:FormulationStage a skos:ConceptScheme ;
+  skos:prefLabel "Formulation stage" ;
+  skos:definition "The values of the stage dimension of a formulation." .
+
+lst:FormulationStage-draft a skos:Concept ;
+  skos:inScheme lst:FormulationStage ;
+  skos:prefLabel "draft" .
+
+lst:FormulationStage-underTest a skos:Concept ;
+  skos:inScheme lst:FormulationStage ;
+  skos:prefLabel "under test" .
+
+lst:FormulationStage-approved a skos:Concept ;
+  skos:inScheme lst:FormulationStage ;
+  skos:prefLabel "approved" .
+
+lst:FormulationStage-obsolete a skos:Concept ;
+  skos:inScheme lst:FormulationStage ;
+  skos:prefLabel "obsolete" .
+
+lst:ProcessStatus a skos:ConceptScheme ;
+  skos:prefLabel "Process status" ;
+  skos:definition "The values of the status dimension of a process." .
+
+lst:ProcessStatus-draft a skos:Concept ;
+  skos:inScheme lst:ProcessStatus ;
+  skos:prefLabel "draft" .
+
+lst:ProcessStatus-validated a skos:Concept ;
+  skos:inScheme lst:ProcessStatus ;
+  skos:prefLabel "validated" .
+
+lst:ProcessStatus-superseded a skos:Concept ;
+  skos:inScheme lst:ProcessStatus ;
+  skos:prefLabel "superseded" .
+
+lst:BatchProduction a skos:ConceptScheme ;
+  skos:prefLabel "Batch production" ;
+  skos:definition "The values of the production dimension of a batch." .
+
+lst:BatchProduction-planned a skos:Concept ;
+  skos:inScheme lst:BatchProduction ;
+  skos:prefLabel "planned" .
+
+lst:BatchProduction-inProduction a skos:Concept ;
+  skos:inScheme lst:BatchProduction ;
+  skos:prefLabel "in production" .
+
+lst:BatchProduction-complete a skos:Concept ;
+  skos:inScheme lst:BatchProduction ;
+  skos:prefLabel "complete" .
+
+lst:BatchQuality a skos:ConceptScheme ;
+  skos:prefLabel "Batch quality" ;
+  skos:definition "The values of the quality dimension of a batch." .
+
+lst:BatchQuality-pending a skos:Concept ;
+  skos:inScheme lst:BatchQuality ;
+  skos:prefLabel "pending" .
+
+lst:BatchQuality-released a skos:Concept ;
+  skos:inScheme lst:BatchQuality ;
+  skos:prefLabel "released" .
+
+lst:BatchQuality-quarantined a skos:Concept ;
+  skos:inScheme lst:BatchQuality ;
+  skos:prefLabel "quarantined" .
+
+lst:BatchQuality-rejected a skos:Concept ;
+  skos:inScheme lst:BatchQuality ;
+  skos:prefLabel "rejected" .
+
+lst:BatchDeviationRisk a skos:ConceptScheme ;
+  skos:prefLabel "Batch deviation risk" ;
+  skos:definition "The values of the deviation risk dimension of a batch." .
+
+lst:BatchDeviationRisk-low a skos:Concept ;
+  skos:inScheme lst:BatchDeviationRisk ;
+  skos:prefLabel "low" .
+
+lst:BatchDeviationRisk-elevated a skos:Concept ;
+  skos:inScheme lst:BatchDeviationRisk ;
+  skos:prefLabel "elevated" .
+
+lst:BatchDeviationRisk-high a skos:Concept ;
+  skos:inScheme lst:BatchDeviationRisk ;
+  skos:prefLabel "high" .
+
+lst:StudyPhase a skos:ConceptScheme ;
+  skos:prefLabel "Study phase" ;
+  skos:definition "The values of the phase dimension of a study." .
+
+lst:StudyPhase-i a skos:Concept ;
+  skos:inScheme lst:StudyPhase ;
+  skos:prefLabel "I" ;
+  skos:closeMatch ncit:C15600 .
+
+lst:StudyPhase-ii a skos:Concept ;
+  skos:inScheme lst:StudyPhase ;
+  skos:prefLabel "II" ;
+  skos:closeMatch ncit:C15601 .
+
+lst:StudyPhase-iii a skos:Concept ;
+  skos:inScheme lst:StudyPhase ;
+  skos:prefLabel "III" ;
+  skos:closeMatch ncit:C15602 .
+
+lst:StudyStatus a skos:ConceptScheme ;
+  skos:prefLabel "Study status" ;
+  skos:definition "The values of the status dimension of a study." .
+
+lst:StudyStatus-planned a skos:Concept ;
+  skos:inScheme lst:StudyStatus ;
+  skos:prefLabel "planned" .
+
+lst:StudyStatus-enrolling a skos:Concept ;
+  skos:inScheme lst:StudyStatus ;
+  skos:prefLabel "enrolling" .
+
+lst:StudyStatus-active a skos:Concept ;
+  skos:inScheme lst:StudyStatus ;
+  skos:prefLabel "active" .
+
+lst:StudyStatus-closed a skos:Concept ;
+  skos:inScheme lst:StudyStatus ;
+  skos:prefLabel "closed" .
+
+lst:StudyStatus-locked a skos:Concept ;
+  skos:inScheme lst:StudyStatus ;
+  skos:prefLabel "locked" .
+
+lst:StudyBlinding a skos:ConceptScheme ;
+  skos:prefLabel "Study blinding" ;
+  skos:definition "The values of the blinding dimension of a study." .
+
+lst:StudyBlinding-blinded a skos:Concept ;
+  skos:inScheme lst:StudyBlinding ;
+  skos:prefLabel "blinded" ;
+  skos:closeMatch ncit:C49068 .
+
+lst:StudyBlinding-unblinded a skos:Concept ;
+  skos:inScheme lst:StudyBlinding ;
+  skos:prefLabel "unblinded" .
+
+lst:SiteStatus a skos:ConceptScheme ;
+  skos:prefLabel "Site status" ;
+  skos:definition "The values of the status dimension of a site." .
+
+lst:SiteStatus-selected a skos:Concept ;
+  skos:inScheme lst:SiteStatus ;
+  skos:prefLabel "selected" .
+
+lst:SiteStatus-activated a skos:Concept ;
+  skos:inScheme lst:SiteStatus ;
+  skos:prefLabel "activated" .
+
+lst:SiteStatus-closed a skos:Concept ;
+  skos:inScheme lst:SiteStatus ;
+  skos:prefLabel "closed" .
+
+lst:SitePayment a skos:ConceptScheme ;
+  skos:prefLabel "Site payment" ;
+  skos:definition "The values of the payment dimension of a site." .
+
+lst:SitePayment-current a skos:Concept ;
+  skos:inScheme lst:SitePayment ;
+  skos:prefLabel "current" .
+
+lst:SitePayment-overdue a skos:Concept ;
+  skos:inScheme lst:SitePayment ;
+  skos:prefLabel "overdue" .
+
+lst:PatientEnrollment a skos:ConceptScheme ;
+  skos:prefLabel "Patient enrollment" ;
+  skos:definition "The values of the enrollment dimension of a patient." .
+
+lst:PatientEnrollment-screened a skos:Concept ;
+  skos:inScheme lst:PatientEnrollment ;
+  skos:prefLabel "screened" .
+
+lst:PatientEnrollment-consented a skos:Concept ;
+  skos:inScheme lst:PatientEnrollment ;
+  skos:prefLabel "consented" ;
+  skos:closeMatch ncit:C16735 .
+
+lst:PatientEnrollment-randomized a skos:Concept ;
+  skos:inScheme lst:PatientEnrollment ;
+  skos:prefLabel "randomized" ;
+  skos:closeMatch ncit:C25196 .
+
+lst:PatientEnrollment-completed a skos:Concept ;
+  skos:inScheme lst:PatientEnrollment ;
+  skos:prefLabel "completed" .
+
+lst:PatientEnrollment-withdrawn a skos:Concept ;
+  skos:inScheme lst:PatientEnrollment ;
+  skos:prefLabel "withdrawn" .
+
+lst:PatientArm a skos:ConceptScheme ;
+  skos:prefLabel "Patient arm" ;
+  skos:definition "The values of the arm dimension of a patient." .
+
+lst:PatientArm-unassigned a skos:Concept ;
+  skos:inScheme lst:PatientArm ;
+  skos:prefLabel "unassigned" .
+
+lst:PatientArm-assigned a skos:Concept ;
+  skos:inScheme lst:PatientArm ;
+  skos:prefLabel "assigned" .
+
+lst:PatientArmVisibility a skos:ConceptScheme ;
+  skos:prefLabel "Patient arm visibility" ;
+  skos:definition "The values of the arm visibility dimension of a patient." .
+
+lst:PatientArmVisibility-hidden a skos:Concept ;
+  skos:inScheme lst:PatientArmVisibility ;
+  skos:prefLabel "hidden" .
+
+lst:PatientArmVisibility-revealed a skos:Concept ;
+  skos:inScheme lst:PatientArmVisibility ;
+  skos:prefLabel "revealed" .
+
+lst:VisitStatus a skos:ConceptScheme ;
+  skos:prefLabel "Visit status" ;
+  skos:definition "The values of the status dimension of a visit." .
+
+lst:VisitStatus-scheduled a skos:Concept ;
+  skos:inScheme lst:VisitStatus ;
+  skos:prefLabel "scheduled" .
+
+lst:VisitStatus-completed a skos:Concept ;
+  skos:inScheme lst:VisitStatus ;
+  skos:prefLabel "completed" .
+
+lst:VisitStatus-missed a skos:Concept ;
+  skos:inScheme lst:VisitStatus ;
+  skos:prefLabel "missed" .
+
+lst:DataRecordEntry a skos:ConceptScheme ;
+  skos:prefLabel "Data Record entry" ;
+  skos:definition "The values of the entry dimension of a data record." .
+
+lst:DataRecordEntry-entered a skos:Concept ;
+  skos:inScheme lst:DataRecordEntry ;
+  skos:prefLabel "entered" .
+
+lst:DataRecordEntry-verified a skos:Concept ;
+  skos:inScheme lst:DataRecordEntry ;
+  skos:prefLabel "verified" .
+
+lst:DataRecordSource a skos:ConceptScheme ;
+  skos:prefLabel "Data Record source" ;
+  skos:definition "The values of the source dimension of a data record." .
+
+lst:DataRecordSource-site a skos:Concept ;
+  skos:inScheme lst:DataRecordSource ;
+  skos:prefLabel "site" .
+
+lst:DataRecordSource-patient a skos:Concept ;
+  skos:inScheme lst:DataRecordSource ;
+  skos:prefLabel "patient" .
+
+lst:DataRecordSource-device a skos:Concept ;
+  skos:inScheme lst:DataRecordSource ;
+  skos:prefLabel "device" .
+
+lst:DataRecordSource-healthRecord a skos:Concept ;
+  skos:inScheme lst:DataRecordSource ;
+  skos:prefLabel "health record" .
+
+lst:DataQueryStatus a skos:ConceptScheme ;
+  skos:prefLabel "Data Query status" ;
+  skos:definition "The values of the status dimension of a data query." .
+
+lst:DataQueryStatus-open a skos:Concept ;
+  skos:inScheme lst:DataQueryStatus ;
+  skos:prefLabel "open" .
+
+lst:DataQueryStatus-answered a skos:Concept ;
+  skos:inScheme lst:DataQueryStatus ;
+  skos:prefLabel "answered" .
+
+lst:DataQueryStatus-closed a skos:Concept ;
+  skos:inScheme lst:DataQueryStatus ;
+  skos:prefLabel "closed" .
+
+lst:AdverseEventEntry a skos:ConceptScheme ;
+  skos:prefLabel "Adverse Event entry" ;
+  skos:definition "The values of the entry dimension of a adverse event." .
+
+lst:AdverseEventEntry-entered a skos:Concept ;
+  skos:inScheme lst:AdverseEventEntry ;
+  skos:prefLabel "entered" .
+
+lst:AdverseEventEntry-verified a skos:Concept ;
+  skos:inScheme lst:AdverseEventEntry ;
+  skos:prefLabel "verified" .
+
+lst:AdverseEventSeriousness a skos:ConceptScheme ;
+  skos:prefLabel "Adverse Event seriousness" ;
+  skos:definition "The values of the seriousness dimension of a adverse event." .
+
+lst:AdverseEventSeriousness-nonSerious a skos:Concept ;
+  skos:inScheme lst:AdverseEventSeriousness ;
+  skos:prefLabel "non-serious" ;
+  skos:closeMatch ncit:C41336 .
+
+lst:AdverseEventSeriousness-serious a skos:Concept ;
+  skos:inScheme lst:AdverseEventSeriousness ;
+  skos:prefLabel "serious" ;
+  skos:closeMatch ncit:C41335 .
+
+lst:AdverseEventOutcome a skos:ConceptScheme ;
+  skos:prefLabel "Adverse Event outcome" ;
+  skos:definition "The values of the outcome dimension of a adverse event." .
+
+lst:AdverseEventOutcome-ongoing a skos:Concept ;
+  skos:inScheme lst:AdverseEventOutcome ;
+  skos:prefLabel "ongoing" ;
+  skos:closeMatch ncit:C49494 .
+
+lst:AdverseEventOutcome-resolved a skos:Concept ;
+  skos:inScheme lst:AdverseEventOutcome ;
+  skos:prefLabel "resolved" ;
+  skos:closeMatch ncit:C49498 .
+
+lst:AdverseEventReporting a skos:ConceptScheme ;
+  skos:prefLabel "Adverse Event reporting" ;
+  skos:definition "The values of the reporting dimension of a adverse event." .
+
+lst:AdverseEventReporting-notReported a skos:Concept ;
+  skos:inScheme lst:AdverseEventReporting ;
+  skos:prefLabel "not reported" .
+
+lst:AdverseEventReporting-reportedToSafety a skos:Concept ;
+  skos:inScheme lst:AdverseEventReporting ;
+  skos:prefLabel "reported to safety" .
+
+lst:SafetyCaseWorkflow a skos:ConceptScheme ;
+  skos:prefLabel "Safety Case workflow" ;
+  skos:definition "The values of the workflow dimension of a safety case." .
+
+lst:SafetyCaseWorkflow-received a skos:Concept ;
+  skos:inScheme lst:SafetyCaseWorkflow ;
+  skos:prefLabel "received" .
+
+lst:SafetyCaseWorkflow-triaged a skos:Concept ;
+  skos:inScheme lst:SafetyCaseWorkflow ;
+  skos:prefLabel "triaged" .
+
+lst:SafetyCaseWorkflow-assessed a skos:Concept ;
+  skos:inScheme lst:SafetyCaseWorkflow ;
+  skos:prefLabel "assessed" .
+
+lst:SafetyCaseWorkflow-reported a skos:Concept ;
+  skos:inScheme lst:SafetyCaseWorkflow ;
+  skos:prefLabel "reported" .
+
+lst:SafetyCaseWorkflow-closed a skos:Concept ;
+  skos:inScheme lst:SafetyCaseWorkflow ;
+  skos:prefLabel "closed" .
+
+lst:SafetyCaseSeriousness a skos:ConceptScheme ;
+  skos:prefLabel "Safety Case seriousness" ;
+  skos:definition "The values of the seriousness dimension of a safety case." .
+
+lst:SafetyCaseSeriousness-nonSerious a skos:Concept ;
+  skos:inScheme lst:SafetyCaseSeriousness ;
+  skos:prefLabel "non-serious" ;
+  skos:closeMatch ncit:C41336 .
+
+lst:SafetyCaseSeriousness-serious a skos:Concept ;
+  skos:inScheme lst:SafetyCaseSeriousness ;
+  skos:prefLabel "serious" ;
+  skos:closeMatch ncit:C41335 .
+
+lst:SafetyCaseExpectedness a skos:ConceptScheme ;
+  skos:prefLabel "Safety Case expectedness" ;
+  skos:definition "The values of the expectedness dimension of a safety case." .
+
+lst:SafetyCaseExpectedness-expected a skos:Concept ;
+  skos:inScheme lst:SafetyCaseExpectedness ;
+  skos:prefLabel "expected" ;
+  skos:closeMatch ncit:C41333 .
+
+lst:SafetyCaseExpectedness-unexpected a skos:Concept ;
+  skos:inScheme lst:SafetyCaseExpectedness ;
+  skos:prefLabel "unexpected" ;
+  skos:closeMatch ncit:C41334 .
+
+lst:SafetyCaseCausality a skos:ConceptScheme ;
+  skos:prefLabel "Safety Case causality" ;
+  skos:definition "The values of the causality dimension of a safety case." .
+
+lst:SafetyCaseCausality-unassessed a skos:Concept ;
+  skos:inScheme lst:SafetyCaseCausality ;
+  skos:prefLabel "unassessed" .
+
+lst:SafetyCaseCausality-unrelated a skos:Concept ;
+  skos:inScheme lst:SafetyCaseCausality ;
+  skos:prefLabel "unrelated" ;
+  skos:closeMatch ncit:C53256 .
+
+lst:SafetyCaseCausality-possible a skos:Concept ;
+  skos:inScheme lst:SafetyCaseCausality ;
+  skos:prefLabel "possible" ;
+  skos:closeMatch ncit:C53258 .
+
+lst:SafetyCaseCausality-probable a skos:Concept ;
+  skos:inScheme lst:SafetyCaseCausality ;
+  skos:prefLabel "probable" ;
+  skos:closeMatch ncit:C53259 .
+
+lst:ProductStatus a skos:ConceptScheme ;
+  skos:prefLabel "Product status" ;
+  skos:definition "The values of the status dimension of a product." .
+
+lst:ProductStatus-investigational a skos:Concept ;
+  skos:inScheme lst:ProductStatus ;
+  skos:prefLabel "investigational" .
+
+lst:ProductStatus-approved a skos:Concept ;
+  skos:inScheme lst:ProductStatus ;
+  skos:prefLabel "approved" .
+
+lst:ProductStatus-withdrawn a skos:Concept ;
+  skos:inScheme lst:ProductStatus ;
+  skos:prefLabel "withdrawn" .
+
+lst:SignalStatus a skos:ConceptScheme ;
+  skos:prefLabel "Signal status" ;
+  skos:definition "The values of the status dimension of a signal." .
+
+lst:SignalStatus-detected a skos:Concept ;
+  skos:inScheme lst:SignalStatus ;
+  skos:prefLabel "detected" .
+
+lst:SignalStatus-underEvaluation a skos:Concept ;
+  skos:inScheme lst:SignalStatus ;
+  skos:prefLabel "under evaluation" .
+
+lst:SignalStatus-confirmed a skos:Concept ;
+  skos:inScheme lst:SignalStatus ;
+  skos:prefLabel "confirmed" .
+
+lst:SignalStatus-refuted a skos:Concept ;
+  skos:inScheme lst:SignalStatus ;
+  skos:prefLabel "refuted" .
+
+lst:SubmissionStatus a skos:ConceptScheme ;
+  skos:prefLabel "Submission status" ;
+  skos:definition "The values of the status dimension of a submission." .
+
+lst:SubmissionStatus-draft a skos:Concept ;
+  skos:inScheme lst:SubmissionStatus ;
+  skos:prefLabel "draft" .
+
+lst:SubmissionStatus-inReview a skos:Concept ;
+  skos:inScheme lst:SubmissionStatus ;
+  skos:prefLabel "in review" .
+
+lst:SubmissionStatus-submitted a skos:Concept ;
+  skos:inScheme lst:SubmissionStatus ;
+  skos:prefLabel "submitted" .
+
+lst:SubmissionStatus-acknowledged a skos:Concept ;
+  skos:inScheme lst:SubmissionStatus ;
+  skos:prefLabel "acknowledged" .
+
+lst:SubmissionDeadline a skos:ConceptScheme ;
+  skos:prefLabel "Submission deadline" ;
+  skos:definition "The values of the deadline dimension of a submission." .
+
+lst:SubmissionDeadline-onTrack a skos:Concept ;
+  skos:inScheme lst:SubmissionDeadline ;
+  skos:prefLabel "on track" .
+
+lst:SubmissionDeadline-dueSoon a skos:Concept ;
+  skos:inScheme lst:SubmissionDeadline ;
+  skos:prefLabel "due soon" .
+
+lst:SubmissionDeadline-overdue a skos:Concept ;
+  skos:inScheme lst:SubmissionDeadline ;
+  skos:prefLabel "overdue" .
+
+lst:QualityEventStatus a skos:ConceptScheme ;
+  skos:prefLabel "Quality Event status" ;
+  skos:definition "The values of the status dimension of a quality event." .
+
+lst:QualityEventStatus-open a skos:Concept ;
+  skos:inScheme lst:QualityEventStatus ;
+  skos:prefLabel "open" .
+
+lst:QualityEventStatus-investigating a skos:Concept ;
+  skos:inScheme lst:QualityEventStatus ;
+  skos:prefLabel "investigating" .
+
+lst:QualityEventStatus-capaAssigned a skos:Concept ;
+  skos:inScheme lst:QualityEventStatus ;
+  skos:prefLabel "CAPA assigned" .
+
+lst:QualityEventStatus-closed a skos:Concept ;
+  skos:inScheme lst:QualityEventStatus ;
+  skos:prefLabel "closed" .
+
+lst:QualityEventSeverity a skos:ConceptScheme ;
+  skos:prefLabel "Quality Event severity" ;
+  skos:definition "The values of the severity dimension of a quality event." .
+
+lst:QualityEventSeverity-minor a skos:Concept ;
+  skos:inScheme lst:QualityEventSeverity ;
+  skos:prefLabel "minor" .
+
+lst:QualityEventSeverity-major a skos:Concept ;
+  skos:inScheme lst:QualityEventSeverity ;
+  skos:prefLabel "major" .
+
+lst:QualityEventSeverity-critical a skos:Concept ;
+  skos:inScheme lst:QualityEventSeverity ;
+  skos:prefLabel "critical" .
+
+lst:CAPAStatus a skos:ConceptScheme ;
+  skos:prefLabel "CAPA status" ;
+  skos:definition "The values of the status dimension of a capa." .
+
+lst:CAPAStatus-planned a skos:Concept ;
+  skos:inScheme lst:CAPAStatus ;
+  skos:prefLabel "planned" .
+
+lst:CAPAStatus-inProgress a skos:Concept ;
+  skos:inScheme lst:CAPAStatus ;
+  skos:prefLabel "in progress" .
+
+lst:CAPAStatus-effective a skos:Concept ;
+  skos:inScheme lst:CAPAStatus ;
+  skos:prefLabel "effective" .
+
+lst:CAPAStatus-ineffective a skos:Concept ;
+  skos:inScheme lst:CAPAStatus ;
+  skos:prefLabel "ineffective" .
+
+lst:MedicalInquiryStatus a skos:ConceptScheme ;
+  skos:prefLabel "Medical Inquiry status" ;
+  skos:definition "The values of the status dimension of a medical inquiry." .
+
+lst:MedicalInquiryStatus-received a skos:Concept ;
+  skos:inScheme lst:MedicalInquiryStatus ;
+  skos:prefLabel "received" .
+
+lst:MedicalInquiryStatus-answered a skos:Concept ;
+  skos:inScheme lst:MedicalInquiryStatus ;
+  skos:prefLabel "answered" .
+
+lst:MedicalInquiryStatus-closed a skos:Concept ;
+  skos:inScheme lst:MedicalInquiryStatus ;
+  skos:prefLabel "closed" .

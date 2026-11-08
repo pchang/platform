@@ -1,0 +1,96 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://example.org/lsh/platform#> .
+@prefix ls:      <https://example.org/lsh/life-sciences#> .
+@prefix lst:     <https://example.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://example.org/lsh/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://example.org/lsh/life-sciences/rules> a owl:Ontology ;
+  dcterms:title "LS&H life sciences business rules" ;
+  rdfs:comment "The business rules of domain spec section 7, as data." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://example.org/lsh/life-sciences/rules/0.1.0> ;
+  dcterms:created "2026-11-08"^^xsd:date .
+
+ls:ExpeditedReporting a p:BusinessRule ;
+  rdfs:label "Expedited reporting" ;
+  p:ruleNumber 1 ;
+  rdfs:comment "A serious, unexpected case with possible or probable causality must be submitted within the reporting days of receipt. Within the due-soon days of the deadline, its submission is due soon." ;
+  p:parameter ls:ExpeditedReporting-reportingDays, ls:ExpeditedReporting-dueSoonDays .
+ls:ExpeditedReporting-reportingDays a p:Parameter ;
+  rdfs:label "Reporting days" ;
+  p:parameterValue 15 .
+ls:ExpeditedReporting-dueSoonDays a p:Parameter ;
+  rdfs:label "Due-soon days" ;
+  p:parameterValue 3 .
+
+ls:Blinding a p:BusinessRule ;
+  rdfs:label "Blinding" ;
+  p:ruleNumber 2 ;
+  rdfs:comment "While a study is blinded, no persona sees a patient's arm. A Drug Safety Physician may unblind one patient only when that patient's safety case is triaged as serious and unexpected. Every unblinding is logged with its justification." ;
+  p:hides ls:assignedArm ;
+  p:hiddenWhen lsh:ArmHidden ;
+  p:enforcedBy lsh:UnblindPatient-pre-rule2 .
+
+ls:BatchRelease a p:BusinessRule ;
+  rdfs:label "Batch release" ;
+  p:ruleNumber 3 ;
+  rdfs:comment "A batch with an open quality event cannot be released." ;
+  p:enforcedBy lsh:ReleaseBatch-pre-noOpenQualityEvent .
+
+ls:DataIntegrity a p:BusinessRule ;
+  rdfs:label "Data integrity" ;
+  p:ruleNumber 4 ;
+  rdfs:comment "Signed experiments and verified data records cannot be edited. They can only be corrected by a new linked record." ;
+  p:freezes lsh:SignedExperiment, lsh:VerifiedDataRecord, lsh:VerifiedAdverseEvent .
+
+ls:SeparationOfDuties a p:BusinessRule ;
+  rdfs:label "Separation of duties" ;
+  p:ruleNumber 5 ;
+  rdfs:comment "The person who prepares a submission cannot approve it. Enforced through the Submit approver input, which must differ from the submission's preparer." .
+
+ls:HumanReview a p:BusinessRule ;
+  rdfs:label "Human review" ;
+  p:ruleNumber 6 ;
+  rdfs:comment "Generated narratives, generated analogs and flagged duplicates are drafts until a human accepts them. Methods that produce drafts say so with p:producesDraft." .
+
+# Shapes the rules use
+
+lsh:ArmHidden a sh:NodeShape ;
+  rdfs:label "Arm hidden" ;
+  sh:class ls:Patient ;
+  sh:property lsh:ArmHidden-visibility .
+lsh:ArmHidden-visibility a sh:PropertyShape ;
+  sh:path ls:patientArmVisibility ;
+  sh:hasValue lst:PatientArmVisibility-hidden .
+
+lsh:SignedExperiment a sh:NodeShape ;
+  rdfs:label "Signed experiment" ;
+  sh:class ls:Experiment ;
+  sh:property lsh:SignedExperiment-signOff .
+lsh:SignedExperiment-signOff a sh:PropertyShape ;
+  sh:path ls:experimentSignOff ;
+  sh:in ( lst:ExperimentSignOff-signed lst:ExperimentSignOff-witnessed ) ;
+  sh:minCount 1 .
+
+lsh:VerifiedDataRecord a sh:NodeShape ;
+  rdfs:label "Verified data record" ;
+  sh:class ls:DataRecord ;
+  sh:property lsh:VerifiedDataRecord-entry .
+lsh:VerifiedDataRecord-entry a sh:PropertyShape ;
+  sh:path ls:dataRecordEntry ;
+  sh:hasValue lst:DataRecordEntry-verified .
+
+lsh:VerifiedAdverseEvent a sh:NodeShape ;
+  rdfs:label "Verified adverse event" ;
+  sh:class ls:AdverseEvent ;
+  sh:property lsh:VerifiedAdverseEvent-entry .
+lsh:VerifiedAdverseEvent-entry a sh:PropertyShape ;
+  sh:path ls:adverseEventEntry ;
+  sh:hasValue lst:AdverseEventEntry-verified .

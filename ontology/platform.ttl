@@ -1,0 +1,340 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://example.org/lsh/platform#> .
+@prefix ls:      <https://example.org/lsh/life-sciences#> .
+@prefix lst:     <https://example.org/lsh/life-sciences/term#> .
+@prefix lsh:     <https://example.org/lsh/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://example.org/lsh/platform> a owl:Ontology ;
+  dcterms:title "LS&H platform vocabulary" ;
+  rdfs:comment "Domain-free vocabulary for what SHACL does not describe: object types, state dimensions, methods, inputs, effects, business rules and roles (platform spec section 3.1)." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://example.org/lsh/platform/0.1.0> ;
+  dcterms:created "2026-11-08"^^xsd:date .
+
+p:Domain a rdfs:Class ;
+  rdfs:label "domain" ;
+  rdfs:comment "A business domain that groups object types." .
+
+p:ObjectType a rdfs:Class ;
+  rdfs:label "object type" ;
+  rdfs:comment "A class whose instances are objects people and agents find and act on." ;
+  rdfs:subClassOf rdfs:Class .
+
+p:StateDimension a rdfs:Class ;
+  rdfs:label "state dimension" ;
+  rdfs:comment "A property that places an object in one dimension of its state space. Its values come from a SKOS concept scheme." ;
+  rdfs:subClassOf rdf:Property .
+
+p:Relationship a rdfs:Class ;
+  rdfs:label "relationship" ;
+  rdfs:comment "A typed link between objects." ;
+  rdfs:subClassOf rdf:Property .
+
+p:Method a rdfs:Class ;
+  rdfs:label "method" ;
+  rdfs:comment "An operation an object type supports: what it needs, what must be true before it runs, and what it changes." .
+
+p:Input a rdfs:Class ;
+  rdfs:label "input" ;
+  rdfs:comment "Something a method needs from the person or agent running it." .
+
+p:Effect a rdfs:Class ;
+  rdfs:label "effect" ;
+  rdfs:comment "A change a method makes when it commits." .
+
+p:StateChange a rdfs:Class ;
+  rdfs:label "state change" ;
+  rdfs:comment "An effect that moves an object, or objects related to it, to a new value in one state dimension." ;
+  rdfs:subClassOf p:Effect .
+
+p:Creation a rdfs:Class ;
+  rdfs:label "creation" ;
+  rdfs:comment "An effect that creates a new object, linked to the object the method ran on." ;
+  rdfs:subClassOf p:Effect .
+
+p:Link a rdfs:Class ;
+  rdfs:label "link" ;
+  rdfs:comment "An effect that links the object to an object given as an input." ;
+  rdfs:subClassOf p:Effect .
+
+p:DescribedEffect a rdfs:Class ;
+  rdfs:label "described effect" ;
+  rdfs:comment "An effect not yet declarative. Its description says what the gateway does." ;
+  rdfs:subClassOf p:Effect .
+
+p:BusinessRule a rdfs:Class ;
+  rdfs:label "business rule" ;
+  rdfs:comment "A rule of the business context. Rules are data: their parameters live here, and shapes or the gateway enforce them." .
+
+p:Parameter a rdfs:Class ;
+  rdfs:label "parameter" ;
+  rdfs:comment "A value a business rule depends on, such as a number of days." .
+
+p:Role a rdfs:Class ;
+  rdfs:label "role" ;
+  rdfs:comment "A persona or agent role: the methods it may run and what it may not read." .
+
+p:Person a rdfs:Class ;
+  rdfs:label "person" ;
+  rdfs:comment "Someone who runs methods, signs, reviews or approves. Identities come from the platform's identity provider." .
+
+p:inDomain a rdf:Property ;
+  rdfs:label "in domain" ;
+  rdfs:comment "The domain an object type belongs to." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range p:Domain .
+
+p:dimensionOf a rdf:Property ;
+  rdfs:label "dimension of" ;
+  rdfs:comment "The object type a state dimension belongs to." ;
+  rdfs:domain p:StateDimension ;
+  rdfs:range p:ObjectType .
+
+p:valuesFrom a rdf:Property ;
+  rdfs:label "values from" ;
+  rdfs:comment "The concept scheme whose concepts are the allowed values." ;
+  rdfs:range skos:ConceptScheme .
+
+p:appliesTo a rdf:Property ;
+  rdfs:label "applies to" ;
+  rdfs:comment "The object type a method runs on." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:ObjectType .
+
+p:input a rdf:Property ;
+  rdfs:label "input" ;
+  rdfs:comment "An input the method needs." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:Input .
+
+p:inputName a rdf:Property ;
+  rdfs:label "input name" ;
+  rdfs:comment "The input's name, used by agents and APIs." ;
+  rdfs:domain p:Input ;
+  rdfs:range xsd:string .
+
+p:datatype a rdf:Property ;
+  rdfs:label "datatype" ;
+  rdfs:comment "The datatype of a literal input." ;
+  rdfs:domain p:Input .
+
+p:objectOf a rdf:Property ;
+  rdfs:label "object of" ;
+  rdfs:comment "The object type an input must be an instance of." ;
+  rdfs:domain p:Input ;
+  rdfs:range p:ObjectType .
+
+p:isActor a rdf:Property ;
+  rdfs:label "is actor" ;
+  rdfs:comment "True when the input is a person, such as a signer, reviewer or approver." ;
+  rdfs:domain p:Input ;
+  rdfs:range xsd:boolean .
+
+p:choicesAlong a rdf:Property ;
+  rdfs:label "choices along" ;
+  rdfs:comment "The input must be one of the objects reached from the target along this relationship." ;
+  rdfs:domain p:Input ;
+  rdfs:range rdf:Property .
+
+p:inputShape a rdf:Property ;
+  rdfs:label "input shape" ;
+  rdfs:comment "A SHACL shape the input value must conform to." ;
+  rdfs:domain p:Input ;
+  rdfs:range sh:NodeShape .
+
+p:distinctFrom a rdf:Property ;
+  rdfs:label "distinct from" ;
+  rdfs:comment "The input must differ from the value of this property on the target." ;
+  rdfs:domain p:Input ;
+  rdfs:range rdf:Property .
+
+p:precondition a rdf:Property ;
+  rdfs:label "precondition" ;
+  rdfs:comment "A SHACL shape the target must conform to before the method runs. A method may have several; its messages explain a block." ;
+  rdfs:domain p:Method ;
+  rdfs:range sh:NodeShape .
+
+p:effect a rdf:Property ;
+  rdfs:label "effect" ;
+  rdfs:comment "A change the method makes on commit." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:Effect .
+
+p:dimension a rdf:Property ;
+  rdfs:label "dimension" ;
+  rdfs:comment "The state dimension a state change sets." ;
+  rdfs:domain p:StateChange ;
+  rdfs:range p:StateDimension .
+
+p:value a rdf:Property ;
+  rdfs:label "value" ;
+  rdfs:comment "The value a state change sets." ;
+  rdfs:domain p:StateChange ;
+  rdfs:range skos:Concept .
+
+p:valueFromInput a rdf:Property ;
+  rdfs:label "value from input" ;
+  rdfs:comment "The state change takes its value from this input." ;
+  rdfs:domain p:StateChange ;
+  rdfs:range p:Input .
+
+p:along a rdf:Property ;
+  rdfs:label "along" ;
+  rdfs:comment "The state change applies to objects reached from the target along this relationship." ;
+  rdfs:domain p:StateChange ;
+  rdfs:range rdf:Property .
+
+p:alongInverse a rdf:Property ;
+  rdfs:label "along inverse" ;
+  rdfs:comment "The state change applies to objects that link to the target with this relationship." ;
+  rdfs:domain p:StateChange ;
+  rdfs:range rdf:Property .
+
+p:whenInput a rdf:Property ;
+  rdfs:label "when input" ;
+  rdfs:comment "The effect applies only when this input has the value in whenValue." ;
+  rdfs:domain p:Effect ;
+  rdfs:range p:Input .
+
+p:whenValue a rdf:Property ;
+  rdfs:label "when value" ;
+  rdfs:comment "The input value that makes a conditional effect apply." ;
+  rdfs:domain p:Effect ;
+  rdfs:range skos:Concept .
+
+p:createsType a rdf:Property ;
+  rdfs:label "creates type" ;
+  rdfs:comment "The object type a creation makes." ;
+  rdfs:domain p:Creation ;
+  rdfs:range p:ObjectType .
+
+p:linkedBy a rdf:Property ;
+  rdfs:label "linked by" ;
+  rdfs:comment "The relationship between the new object and the target, from the new object to the target." ;
+  rdfs:domain p:Effect ;
+  rdfs:range rdf:Property .
+
+p:initialState a rdf:Property ;
+  rdfs:label "initial state" ;
+  rdfs:comment "A state value the new object starts in." ;
+  rdfs:domain p:Creation ;
+  rdfs:range skos:Concept .
+
+p:initialFromInput a rdf:Property ;
+  rdfs:label "initial from input" ;
+  rdfs:comment "The new object takes a state value from this input." ;
+  rdfs:domain p:Creation ;
+  rdfs:range p:Input .
+
+p:recordsActorAs a rdf:Property ;
+  rdfs:label "records actor as" ;
+  rdfs:comment "The person running the method is recorded on the new object with this property." ;
+  rdfs:domain p:Creation ;
+  rdfs:range rdf:Property .
+
+p:setsDate a rdf:Property ;
+  rdfs:label "sets date" ;
+  rdfs:comment "A date property set on the new object: the commit date, or with fromDate and plusDays, a date counted from the target's date." ;
+  rdfs:domain p:Creation ;
+  rdfs:range rdf:Property .
+
+p:fromDate a rdf:Property ;
+  rdfs:label "from date" ;
+  rdfs:comment "The target's date the new date is counted from." ;
+  rdfs:domain p:Creation ;
+  rdfs:range rdf:Property .
+
+p:plusDays a rdf:Property ;
+  rdfs:label "plus days" ;
+  rdfs:comment "The parameter giving the number of days to add." ;
+  rdfs:domain p:Creation ;
+  rdfs:range p:Parameter .
+
+p:toInput a rdf:Property ;
+  rdfs:label "to input" ;
+  rdfs:comment "The input a link effect links to." ;
+  rdfs:domain p:Link ;
+  rdfs:range p:Input .
+
+p:description a rdf:Property ;
+  rdfs:label "description" ;
+  rdfs:comment "What a described effect does, until it is declarative." ;
+  rdfs:domain p:DescribedEffect ;
+  rdfs:range xsd:string .
+
+p:producesDraft a rdf:Property ;
+  rdfs:label "produces draft" ;
+  rdfs:comment "True when the method's output is a draft until a human accepts it." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:requiresSignature a rdf:Property ;
+  rdfs:label "requires signature" ;
+  rdfs:comment "True when committing the method needs an electronic signature bound to the record." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:governedBy a rdf:Property ;
+  rdfs:label "governed by" ;
+  rdfs:comment "A business rule the method is subject to." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:BusinessRule .
+
+p:ruleNumber a rdf:Property ;
+  rdfs:label "rule number" ;
+  rdfs:comment "The rule's number in its domain spec." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range xsd:integer .
+
+p:parameter a rdf:Property ;
+  rdfs:label "parameter" ;
+  rdfs:comment "A parameter of the rule." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range p:Parameter .
+
+p:enforcedBy a rdf:Property ;
+  rdfs:label "enforced by" ;
+  rdfs:comment "A SHACL shape that enforces the rule." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range sh:Shape .
+
+p:hides a rdf:Property ;
+  rdfs:label "hides" ;
+  rdfs:comment "A property the rule hides from everyone while hiddenWhen holds." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range rdf:Property .
+
+p:hiddenWhen a rdf:Property ;
+  rdfs:label "hidden when" ;
+  rdfs:comment "A shape: while the object conforms, the hidden property is not shown." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range sh:NodeShape .
+
+p:freezes a rdf:Property ;
+  rdfs:label "freezes" ;
+  rdfs:comment "A shape: objects that conform cannot be edited, only corrected by a new linked record." ;
+  rdfs:domain p:BusinessRule ;
+  rdfs:range sh:NodeShape .
+
+p:mayRun a rdf:Property ;
+  rdfs:label "may run" ;
+  rdfs:comment "A method the role may run." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Method .
+
+p:mayNotRead a rdf:Property ;
+  rdfs:label "may not read" ;
+  rdfs:comment "An object type or property the role may never read." ;
+  rdfs:domain p:Role .
+
+p:parameterValue a rdf:Property ;
+  rdfs:label "parameter value" ;
+  rdfs:comment "The value of a parameter." ;
+  rdfs:domain p:Parameter .
