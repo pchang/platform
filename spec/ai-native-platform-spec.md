@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.8. November 9, 2026. Author: Paul Chang.
+Version 0.9. November 9, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -93,6 +93,19 @@ Holds what the platform knows about the current situation.
 - **Session context.** What is happening right now in the interaction.
 
 Context is queryable by agents and changes what is surfaced, ranked and allowed.
+
+#### Roles and permissions
+
+Agents must know more than the business context and the state of objects. They must know the context of the person they are assisting: what that person does, and what they may do. Real organizations do not fit fixed roles, so the model starts from canonical roles and lets reality vary from them.
+
+- **Permissions are the unit.** A permission allows one thing: running a method, or reading an object type or property. It may be scoped, for example to particular studies or sites. A person's role in their organization is ultimately expressed by the permissions they hold.
+- **Canonical roles with smart defaults.** Each domain defines a canonical set of user types, each with a default set of permissions. They are starting points, not fixed boxes.
+- **Organizations vary.** Each organization can change what a canonical role grants. The platform records each change as variance from the canonical defaults, as data, so it can be seen, explained and audited.
+- **Many hats, or one.** In a small organization one person may hold several roles; in a large, matrixed one, people are specialized. A person can hold any number of roles, plus personal grants and removals. Their effective permissions are the combination. Rules about people, such as separation of duties, apply to the person, not to a role.
+- **Both directions.** From roles to permissions: start from the canonical defaults and track the variance. From permissions to roles: given what a person may do, find the canonical roles that match it most closely, and show the difference. This explains a person to agents, and maps people when permissions come from another system.
+- **Agents receive the user context.** Every agent request carries the person's roles, effective permissions, variance and scope. Agents use it to decide what to surface and suggest. The gateway still enforces every permission, whatever an agent infers.
+
+The first release implements canonical roles with their default permissions only. Variance, multiple roles and role inference follow.
 
 ### 3.4 Intelligence Gateway
 The single contract through which anything, human interface or agent, reads and acts on the platform.
@@ -254,6 +267,9 @@ To resolve in future versions of this spec.
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
 - Which identity provider authenticates people and agents?
+- Who in an organization may change permissions and role defaults, and how is that change approved and audited?
+- How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
+- How are permissions scoped: by study, site, product, region, or other objects in the graph?
 - Where does the graph persist between restarts? The gateway holds it in memory for now.
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
@@ -272,3 +288,4 @@ To resolve in future versions of this spec.
 | 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Chose the namespace, `https://w3id.org/lsh/`. |
 | 0.7 | 2026-11-09 | Renamed the namespace to `https://w3id.org/lsh-platform/` before registration, because w3id.org declines short, generic names. |
 | 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
+| 0.9 | 2026-11-09 | Added Roles and permissions to the context layer (section 3.3): permissions as the unit, canonical roles with smart defaults, organizational variance, people with many roles, role inference from permissions, and user context for agents. Three open questions. |

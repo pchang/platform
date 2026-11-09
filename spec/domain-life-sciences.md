@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.6. November 9, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.8.
+Version 0.7. November 9, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.9.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -184,6 +184,8 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 
 ## 6. Personas
 
+These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles.
+
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
 | Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See patient-level clinical data |
@@ -331,7 +333,7 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 - Which models back Run simulation and Generate analogs, and how are they validated for their intended use?
 - Which systems of record does each domain integrate first?
 - Who runs Sign experiment, Invalidate result, Consent, Randomize and Start CAPA? No persona in section 6 does yet.
-- How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites.
+- How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
 - Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, drafting a narrative, detecting signals and suggesting follow-up. The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
 ---
@@ -346,3 +348,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.4 | 2026-11-08 | Added the Ontology section (9) and renumbered later sections. Closed gaps found while modeling: Triage takes seriousness and expectedness, Patient is enrolled in a Study, Arm and Arm visibility are separate dimensions, Safety Case has a receipt date, Submission records who prepared it and its due date, Record CAPA outcome takes the outcome. External agents may answer and close queries. Two open questions. |
 | 0.5 | 2026-11-09 | Namespace renamed to `https://w3id.org/lsh-platform/life-sciences#`, following the platform spec. |
 | 0.6 | 2026-11-09 | Seed graph: file, namespace, people, and where each journey starts. Named the object types that hold personal health data. |
+| 0.7 | 2026-11-09 | Personas are the canonical roles, with their default permissions; organizations may vary them and people may hold several. |
