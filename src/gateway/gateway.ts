@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fromNQuads, Journal, seedFingerprint } from './journal';
 import oxigraph from 'oxigraph';
-import { conformanceProblems, methodsFor, validateData, type MethodOption } from '../ontology/methods';
+import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, loadOntology, NS, select, SEED_FILE, type Graph } from '../ontology/ontology';
 
 /**
@@ -47,6 +47,24 @@ export interface TypeDescription {
   domain: string;
   dimensions: Record<string, unknown>[];
   methods: Record<string, unknown>[];
+}
+
+export interface NavigationDomain {
+  domain: string;
+  label: string;
+  types: { type: string; label: string; pluralLabel: string; count: number }[];
+}
+
+export interface ToDoItem {
+  object: ObjectSummary;
+  /** Tasks the principal can run now. Empty for an urgent object with only on-demand methods available. */
+  tasks: { method: string; label: string }[];
+  /** On-demand methods available now, shown for urgent objects. */
+  actions: { method: string; label: string }[];
+  /** Highest urgency of the object's state values; 0 when none is urgent. */
+  urgency: number;
+  /** Earliest deadline, as an ISO date. */
+  deadline?: string;
 }
 
 export interface CommitResult {
@@ -159,6 +177,63 @@ export class Gateway {
         <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label .
         OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
         OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } }`);
+  }
+
+  // ---------------------------------------------------------------- navigation and to do
+
+  /** The object world of the principal's work: their roles' work domains, limited to what they may read (spec 5.1). */
+  navigation(principal: Principal): NavigationDomain[] {
+    this.authorize(principal);
+    const hidden = this.unreadable(principal.role);
+    const domains = this.q(`SELECT ?domain ?label WHERE { <${principal.role}> p:worksIn ?domain . ?domain rdfs:label ?label } ORDER BY ?label`);
+    return domains.map(({ domain, label }) => ({
+      domain,
+      label,
+      types: this.q(`SELECT ?type ?label ?pluralLabel (COUNT(?o) AS ?count) WHERE {
+          ?type a p:ObjectType ; p:inDomain <${domain}> ; rdfs:label ?label ; p:pluralLabel ?pluralLabel .
+          OPTIONAL { ?o a ?type } } GROUP BY ?type ?label ?pluralLabel ORDER BY ?label`)
+        .filter((t) => !hidden.has(t.type))
+        .map((t) => ({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, count: Number(t.count) })),
+    }));
+  }
+
+  /**
+   * To do (spec 5.1): objects where the principal can run a task now, or urgent objects where they can run
+   * any method. Ordered by nearest deadline, then urgency.
+   */
+  async todo(principal: Principal): Promise<ToDoItem[]> {
+    this.authorize(principal);
+    const hidden = this.unreadable(principal.role);
+    const methods = this.q(`SELECT ?method ?label ?type ?onDemand WHERE {
+        <${principal.role}> p:mayRun ?method . ?method p:appliesTo ?type ; rdfs:label ?label .
+        OPTIONAL { ?method p:onDemand ?onDemand } } ORDER BY ?label`).filter((m) => !hidden.has(m.type));
+    const preconditions = new Map<string, string[]>();
+    for (const { method } of methods) preconditions.set(method, this.q(`SELECT ?pre WHERE { <${method}> p:precondition ?pre }`).map((r) => r.pre));
+    const validator = validatorFor(this.graph);
+
+    const items: ToDoItem[] = [];
+    for (const type of new Set(methods.map((m) => m.type))) {
+      for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> }`)) {
+        const urgency = Number(this.q(`SELECT (MAX(?u) AS ?max) WHERE { <${o}> ?d ?v . ?d a p:StateDimension . ?v p:urgency ?u }`)[0]?.max ?? 0);
+        const tasks: ToDoItem['tasks'] = [];
+        const actions: ToDoItem['actions'] = [];
+        for (const m of methods.filter((m) => m.type === type)) {
+          const isTask = m.onDemand !== 'true';
+          if (!isTask && urgency < 3) continue;
+          if ((await conformanceProblems(this.graph, o, preconditions.get(m.method)!, validator)).length) continue;
+          (isTask ? tasks : actions).push({ method: m.method, label: m.label });
+        }
+        if (!tasks.length && !(urgency >= 3 && actions.length)) continue;
+        const deadline = this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${o}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+        items.push({ object: this.summary(o), tasks, actions, urgency, ...(deadline ? { deadline } : {}) });
+      }
+    }
+    return items.sort(
+      (a, b) =>
+        (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999') ||
+        b.urgency - a.urgency ||
+        a.object.identifier.localeCompare(b.object.identifier, undefined, { numeric: true }),
+    );
   }
 
   // ---------------------------------------------------------------- reads

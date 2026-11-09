@@ -35,7 +35,8 @@ ls:RunSimulation a p:Method ;
   p:appliesTo ls:Compound ;
   p:input ls:RunSimulation-modelType ;
   p:precondition lsh:RunSimulation-pre ;
-  p:effect ls:RunSimulation-effect1 .
+  p:effect ls:RunSimulation-effect1 ;
+  p:onDemand true .
 
 ls:GenerateAnalogs-targetProperty a p:Input ;
   p:inputName "targetProperty" ;
@@ -59,6 +60,7 @@ ls:GenerateAnalogs a p:Method ;
   p:precondition lsh:GenerateAnalogs-pre-acceptedSimulation ;
   p:effect ls:GenerateAnalogs-effect1 ;
   p:effect ls:GenerateAnalogs-effect2 ;
+  p:onDemand true ;
   p:producesDraft true ;
   p:governedBy ls:HumanReview .
 
@@ -129,6 +131,7 @@ ls:InvalidateResult a p:Method ;
   p:precondition lsh:InvalidateResult-pre ;
   p:effect ls:InvalidateResult-effect1 ;
   p:effect ls:InvalidateResult-effect2 ;
+  p:onDemand true ;
   p:governedBy ls:DataIntegrity .
 
 ls:ReleaseBatch-reviewer a p:Input ;
@@ -164,7 +167,8 @@ ls:QuarantineBatch a p:Method ;
   p:appliesTo ls:Batch ;
   p:input ls:QuarantineBatch-reason ;
   p:precondition lsh:QuarantineBatch-pre ;
-  p:effect ls:QuarantineBatch-effect1 .
+  p:effect ls:QuarantineBatch-effect1 ;
+  p:onDemand true .
 
 ls:Consent-eConsentRecord a p:Input ;
   p:inputName "eConsentRecord" ;
@@ -220,7 +224,8 @@ ls:RaiseQuery a p:Method ;
   p:appliesTo ls:DataRecord ;
   p:input ls:RaiseQuery-question ;
   p:precondition lsh:RaiseQuery-pre ;
-  p:effect ls:RaiseQuery-effect1 .
+  p:effect ls:RaiseQuery-effect1 ;
+  p:onDemand true .
 
 ls:AnswerQuery-answer a p:Input ;
   p:inputName "answer" ;
@@ -285,6 +290,7 @@ ls:UnblindPatient a p:Method ;
   p:input ls:UnblindPatient-justification ;
   p:precondition lsh:UnblindPatient-pre, lsh:UnblindPatient-pre-studyBlinded, lsh:UnblindPatient-pre-rule2 ;
   p:effect ls:UnblindPatient-effect1 ;
+  p:onDemand true ;
   p:governedBy ls:Blinding .
 
 ls:LockStudy-effect1 a p:StateChange ;
@@ -348,6 +354,7 @@ ls:FlagDuplicate a p:Method ;
   p:input ls:FlagDuplicate-candidateCase ;
   p:precondition lsh:FlagDuplicate-pre ;
   p:effect ls:FlagDuplicate-effect1 ;
+  p:onDemand true ;
   p:producesDraft true ;
   p:governedBy ls:HumanReview .
 
@@ -383,6 +390,7 @@ ls:GenerateNarrative a p:Method ;
   p:appliesTo ls:SafetyCase ;
   p:precondition lsh:GenerateNarrative-pre ;
   p:effect ls:GenerateNarrative-effect1 ;
+  p:onDemand true ;
   p:producesDraft true ;
   p:governedBy ls:HumanReview .
 
@@ -422,7 +430,7 @@ ls:PrepareExpeditedReport a p:Method ;
   rdfs:label "Prepare expedited report" ;
   rdfs:comment "Prepares the expedited report a serious, unexpected, related case needs." ;
   p:appliesTo ls:SafetyCase ;
-  p:precondition lsh:PrepareExpeditedReport-pre ;
+  p:precondition lsh:PrepareExpeditedReport-pre, lsh:PrepareExpeditedReport-pre-noSubmission ;
   p:effect ls:PrepareExpeditedReport-effect1 ;
   p:governedBy ls:ExpeditedReporting .
 
@@ -489,7 +497,8 @@ ls:RunSignalDetection a p:Method ;
   rdfs:comment "Looks for new risks across a product's safety cases." ;
   p:appliesTo ls:Product ;
   p:precondition lsh:RunSignalDetection-pre-hasCases ;
-  p:effect ls:RunSignalDetection-effect1 .
+  p:effect ls:RunSignalDetection-effect1 ;
+  p:onDemand true .
 
 ls:EvaluateSignal-effect1 a p:StateChange ;
   p:dimension ls:signalStatus ;
@@ -562,7 +571,8 @@ ls:OpenQualityEvent a p:Method ;
   p:appliesTo ls:Batch ;
   p:input ls:OpenQualityEvent-description ;
   p:input ls:OpenQualityEvent-severity ;
-  p:effect ls:OpenQualityEvent-effect1 .
+  p:effect ls:OpenQualityEvent-effect1 ;
+  p:onDemand true .
 
 ls:StartInvestigation-investigator a p:Input ;
   p:inputName "investigator" ;
@@ -994,6 +1004,17 @@ lsh:PrepareExpeditedReport-pre-causality a sh:PropertyShape ;
   sh:in ( lst:SafetyCaseCausality-possible lst:SafetyCaseCausality-probable ) ;
   sh:minCount 1 ;
   sh:message "Causality is not possible or probable" .
+
+lsh:PrepareExpeditedReport-pre-noSubmission a sh:NodeShape ;
+  rdfs:label "A submission already reports this case" ;
+  sh:sparql lsh:PrepareExpeditedReport-pre-noSubmission-query .
+lsh:PrepareExpeditedReport-pre-noSubmission-query a sh:SPARQLConstraint ;
+  sh:message "A submission already reports this case" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      ?submission ls:reports $this .
+    }""" .
 
 lsh:PrepareExpeditedReport-pre a sh:NodeShape ;
   rdfs:label "Precondition of Prepare expedited report" ;

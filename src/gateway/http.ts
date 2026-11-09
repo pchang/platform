@@ -8,6 +8,8 @@ import { createMcpServer } from './mcp';
  * JSON over HTTP for the experience layer (platform spec section 3.4, Transport).
  *
  *   GET  /api/ontology                       describe the ontology
+ *   GET  /api/navigation                     the domains and object types of the principal's work
+ *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
@@ -62,6 +64,10 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
     switch (route) {
       case 'GET ontology':
         return send(res, 200, gateway.describe(principal));
+      case 'GET navigation':
+        return send(res, 200, gateway.navigation(principal));
+      case 'GET todo':
+        return send(res, 200, await gateway.todo(principal));
       case 'GET objects': {
         const type = url.searchParams.get('type');
         if (!type) throw new GatewayError(400, ['Give a type, such as ?type=Batch']);

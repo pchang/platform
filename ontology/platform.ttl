@@ -415,6 +415,36 @@ p:pendingEffect a rdf:Property ;
   rdfs:domain p:Commit ;
   rdfs:range p:DescribedEffect .
 
+p:worksIn a rdf:Property ;
+  rdfs:label "works in" ;
+  rdfs:comment "A domain the role's work is in. Decides the role's navigation (platform spec 5.1)." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Domain .
+
+p:onDemand a rdf:Property ;
+  rdfs:label "on demand" ;
+  rdfs:comment "True when the method is an action a person chooses to take, not work waiting. On-demand methods do not put an object on To do." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:urgency a rdf:Property ;
+  rdfs:label "urgency" ;
+  rdfs:comment "How urgent an object in this state is, from 2 (medium) upward. Orders To do; 3 or more makes an object urgent." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range xsd:integer .
+
+p:isDeadline a rdf:Property ;
+  rdfs:label "is deadline" ;
+  rdfs:comment "True when a date property is a deadline. Orders To do." ;
+  rdfs:domain rdf:Property ;
+  rdfs:range xsd:boolean .
+
+p:pluralLabel a rdf:Property ;
+  rdfs:label "plural label" ;
+  rdfs:comment "The plural name of an object type, for navigation and lists." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:string .
+
 p:mayRun a rdf:Property ;
   rdfs:label "may run" ;
   rdfs:comment "A method the role may run." ;

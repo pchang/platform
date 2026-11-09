@@ -47,9 +47,13 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
   return options;
 }
 
+/** A validator for the graph's current state. Reuse it across checks of the same state; building one compiles every shape. */
+export function validatorFor(graph: Graph): Validator {
+  return new Validator(graph.dataset, { factory: rdf, validations });
+}
+
 /** The messages of every shape the focus node does not conform to. Empty when it conforms to all. */
-export async function conformanceProblems(graph: Graph, focus: string, shapes: string[]): Promise<string[]> {
-  const validator = new Validator(graph.dataset, { factory: rdf, validations });
+export async function conformanceProblems(graph: Graph, focus: string, shapes: string[], validator = validatorFor(graph)): Promise<string[]> {
   const problems: string[] = [];
   for (const shape of shapes) {
     const report = await validator.validate({ dataset: graph.dataset, terms: [iri(focus)] }, [{ terms: [iri(shape)] }]);

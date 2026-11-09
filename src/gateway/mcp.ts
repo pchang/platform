@@ -37,6 +37,16 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'list_todo',
+    {
+      title: 'To do',
+      description: 'Objects with work waiting for you: tasks you can run now, and urgent objects. Nearest deadline first.',
+      annotations: { readOnlyHint: true },
+    },
+    () => result(() => gateway.todo(principal)),
+  );
+
+  server.registerTool(
     'find_objects',
     {
       title: 'Find objects',

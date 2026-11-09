@@ -29,10 +29,10 @@ async function connect(gateway: Gateway) {
 }
 
 describe('MCP transport', () => {
-  it('offers the five gateway requests as tools', async () => {
+  it('offers the gateway requests as tools', async () => {
     const client = await connect(Gateway.withSeed());
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'describe_ontology', 'find_objects', 'offer_methods', 'read_object']);
+    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'describe_ontology', 'find_objects', 'list_todo', 'offer_methods', 'read_object']);
   });
 
   it('runs the External agent journey: answers and closes open queries, under the same policy and log', async () => {
