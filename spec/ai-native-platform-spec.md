@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.9. November 9, 2026. Author: Paul Chang.
+Version 0.10. November 9, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -140,6 +140,17 @@ Every request carries a **principal**: the person or agent making it and the rol
 
 Effects described in words are recorded with the commit as pending work, so nothing is silently skipped.
 
+**Persistence.** The graph's state survives restarts. The source of truth is an append-only **journal** on disk:
+
+- Every commit and every recorded read is written to the journal, and flushed to disk, before the gateway answers. A request the gateway answered is never lost.
+- Each entry holds exactly what changed: the statements removed and added, including the commit's own provenance record.
+- Each entry carries a SHA-256 fingerprint of itself and of the entry before it. Changing, removing or reordering any past entry breaks the chain, and the gateway refuses to start until the journal is restored. This makes the audit trail tamper-evident.
+- The journal's first entry fingerprints the seed graph it builds on. The gateway refuses to replay a journal onto a different seed.
+- On start, the gateway loads the ontology and seed, checks the chain, and replays every entry.
+- Commits run one at a time, on a working copy of the graph. Readers never see a commit that has not finished, and two commits never interleave.
+
+A database server can later hold the current state for larger data or several gateways. The journal stays as the audit record.
+
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
 
 **Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
@@ -270,7 +281,7 @@ To resolve in future versions of this spec.
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
-- Where does the graph persist between restarts? The gateway holds it in memory for now.
+- When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
 
@@ -289,3 +300,4 @@ To resolve in future versions of this spec.
 | 0.7 | 2026-11-09 | Renamed the namespace to `https://w3id.org/lsh-platform/` before registration, because w3id.org declines short, generic names. |
 | 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
 | 0.9 | 2026-11-09 | Added Roles and permissions to the context layer (section 3.3): permissions as the unit, canonical roles with smart defaults, organizational variance, people with many roles, role inference from permissions, and user context for agents. Three open questions. |
+| 0.10 | 2026-11-09 | Added Persistence to the gateway contract (section 3.4): an append-only, fingerprinted journal written before every answer, replayed on start; commits one at a time on a working copy. Replaced the persistence question with one on snapshots. |
