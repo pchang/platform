@@ -1,0 +1,777 @@
+# LS&H seed graph for the life sciences thread (domain spec section 11).
+# Small and fictional: every name, compound, site, person and record is invented.
+# Used for development and automated testing only. Never mix with real records.
+
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix p:    <https://w3id.org/lsh-platform/platform#> .
+@prefix ls:   <https://w3id.org/lsh-platform/life-sciences#> .
+@prefix lst:  <https://w3id.org/lsh-platform/life-sciences/term#> .
+@prefix d:    <https://example.org/lsh-data/> .
+
+# People: one per persona, a second Drug Safety Physician for separation of duties (rule 5), and an external CRO agent.
+
+d:person-ada a p:Person ;
+  rdfs:label "Ada Moreno" ;
+  p:actsAs ls:ComputationalChemist .
+
+d:person-ben a p:Person ;
+  rdfs:label "Ben Okafor" ;
+  p:actsAs ls:ClinicalDataManager .
+
+d:person-chloe a p:Person ;
+  rdfs:label "Chloé Martin" ;
+  p:actsAs ls:DrugSafetyPhysician .
+
+d:person-dev a p:Person ;
+  rdfs:label "Dev Raman" ;
+  p:actsAs ls:DrugSafetyPhysician .
+
+d:person-elena a p:Person ;
+  rdfs:label "Elena Kovacs" ;
+  p:actsAs ls:QualityLead .
+
+d:agent-northbridge a p:Person ;
+  rdfs:label "Northbridge CRO agent" ;
+  p:actsAs ls:ExternalCROAgent .
+
+# Scientific Innovation: 5 compounds, including 1 candidate and 2 analogs
+
+d:C-101 a ls:Compound ;
+  ls:identifier "C-101" ;
+  ls:compoundStage lst:CompoundStage-candidate ;
+  ls:compoundRegistration lst:CompoundRegistration-registered .
+
+d:C-102 a ls:Compound ;
+  ls:identifier "C-102" ;
+  ls:compoundStage lst:CompoundStage-tested ;
+  ls:compoundRegistration lst:CompoundRegistration-registered .
+
+d:C-103 a ls:Compound ;
+  ls:identifier "C-103" ;
+  ls:compoundStage lst:CompoundStage-synthesized ;
+  ls:compoundRegistration lst:CompoundRegistration-unregistered .
+
+d:C-104 a ls:Compound ;
+  ls:identifier "C-104" ;
+  ls:compoundStage lst:CompoundStage-designed ;
+  ls:compoundRegistration lst:CompoundRegistration-unregistered ;
+  ls:derivedFrom d:C-101 .
+
+d:C-105 a ls:Compound ;
+  ls:identifier "C-105" ;
+  ls:compoundStage lst:CompoundStage-designed ;
+  ls:compoundRegistration lst:CompoundRegistration-unregistered ;
+  ls:derivedFrom d:C-101 .
+
+d:SIM-1 a ls:Simulation ;
+  ls:identifier "SIM-1" ;
+  ls:predicts d:C-101 ;
+  ls:simulationRun lst:SimulationRun-complete ;
+  ls:simulationReview lst:SimulationReview-accepted .
+
+d:SIM-2 a ls:Simulation ;
+  ls:identifier "SIM-2" ;
+  ls:predicts d:C-102 ;
+  ls:simulationRun lst:SimulationRun-complete ;
+  ls:simulationReview lst:SimulationReview-unreviewed .
+
+d:EXP-1 a ls:Experiment ;
+  ls:identifier "EXP-1" ;
+  ls:tests d:C-101 ;
+  ls:produces d:AR-1, d:AR-2 ;
+  ls:experimentRecord lst:ExperimentRecord-complete ;
+  ls:experimentSignOff lst:ExperimentSignOff-signed .
+
+d:EXP-2 a ls:Experiment ;
+  ls:identifier "EXP-2" ;
+  ls:tests d:C-102 ;
+  ls:produces d:AR-3 ;
+  ls:experimentRecord lst:ExperimentRecord-complete ;
+  ls:experimentSignOff lst:ExperimentSignOff-unsigned .
+
+d:AR-1 a ls:AssayResult ;
+  ls:identifier "AR-1" ;
+  ls:assayResultValidity lst:AssayResultValidity-valid .
+
+d:AR-2 a ls:AssayResult ;
+  ls:identifier "AR-2" ;
+  ls:assayResultValidity lst:AssayResultValidity-valid .
+
+d:AR-3 a ls:AssayResult ;
+  ls:identifier "AR-3" ;
+  ls:assayResultValidity lst:AssayResultValidity-valid .
+
+d:F-101 a ls:Formulation ;
+  ls:identifier "F-101" ;
+  ls:contains d:C-101 ;
+  ls:formulationStage lst:FormulationStage-underTest .
+
+d:PR-1 a ls:Process ;
+  ls:identifier "PR-1" ;
+  ls:manufactures d:F-101 ;
+  ls:processStatus lst:ProcessStatus-validated .
+
+# 3 batches. B-002 starts J3: complete, pending quality, high deviation risk, with an open quality event.
+
+d:B-001 a ls:Batch ;
+  ls:identifier "B-001" ;
+  ls:follows d:PR-1 ;
+  ls:batchProduction lst:BatchProduction-complete ;
+  ls:batchQuality lst:BatchQuality-released ;
+  ls:batchDeviationRisk lst:BatchDeviationRisk-low .
+
+d:B-002 a ls:Batch ;
+  ls:identifier "B-002" ;
+  ls:follows d:PR-1 ;
+  ls:batchProduction lst:BatchProduction-complete ;
+  ls:batchQuality lst:BatchQuality-pending ;
+  ls:batchDeviationRisk lst:BatchDeviationRisk-high .
+
+d:B-003 a ls:Batch ;
+  ls:identifier "B-003" ;
+  ls:follows d:PR-1 ;
+  ls:batchProduction lst:BatchProduction-inProduction ;
+  ls:batchQuality lst:BatchQuality-pending ;
+  ls:batchDeviationRisk lst:BatchDeviationRisk-low .
+
+# Clinical Development: 1 blinded Phase II study at 3 sites, 12 patients, 2 arms
+
+d:ST-01 a ls:Study ;
+  ls:identifier "ST-01" ;
+  ls:tests d:F-101 ;
+  ls:runsAt d:SITE-1, d:SITE-2, d:SITE-3 ;
+  ls:studyPhase lst:StudyPhase-ii ;
+  ls:studyStatus lst:StudyStatus-enrolling ;
+  ls:studyBlinding lst:StudyBlinding-blinded .
+
+d:SITE-1 a ls:Site ;
+  ls:identifier "SITE-1" ;
+  ls:siteStatus lst:SiteStatus-activated ;
+  ls:sitePayment lst:SitePayment-current .
+
+d:SITE-2 a ls:Site ;
+  ls:identifier "SITE-2" ;
+  ls:siteStatus lst:SiteStatus-activated ;
+  ls:sitePayment lst:SitePayment-current .
+
+d:SITE-3 a ls:Site ;
+  ls:identifier "SITE-3" ;
+  ls:siteStatus lst:SiteStatus-activated ;
+  ls:sitePayment lst:SitePayment-overdue .
+
+d:PT-01 a ls:Patient ;
+  ls:identifier "PT-01" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-1 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "A" ;
+  ls:receives d:B-002 .
+
+d:PT-02 a ls:Patient ;
+  ls:identifier "PT-02" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-2 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "B" ;
+  ls:receives d:B-002 .
+
+d:PT-03 a ls:Patient ;
+  ls:identifier "PT-03" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-3 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "A" ;
+  ls:receives d:B-002 .
+
+d:PT-04 a ls:Patient ;
+  ls:identifier "PT-04" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-1 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "B" ;
+  ls:receives d:B-002 .
+
+d:PT-05 a ls:Patient ;
+  ls:identifier "PT-05" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-2 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "A" ;
+  ls:receives d:B-002 .
+
+d:PT-06 a ls:Patient ;
+  ls:identifier "PT-06" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-3 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "B" ;
+  ls:receives d:B-001 .
+
+d:PT-07 a ls:Patient ;
+  ls:identifier "PT-07" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-1 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "A" ;
+  ls:receives d:B-001 .
+
+d:PT-08 a ls:Patient ;
+  ls:identifier "PT-08" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-2 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "B" ;
+  ls:receives d:B-001 .
+
+d:PT-09 a ls:Patient ;
+  ls:identifier "PT-09" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-3 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "A" ;
+  ls:receives d:B-001 .
+
+d:PT-10 a ls:Patient ;
+  ls:identifier "PT-10" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-1 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-randomized ;
+  ls:patientArm lst:PatientArm-assigned ;
+  ls:assignedArm "B" ;
+  ls:receives d:B-001 .
+
+d:PT-11 a ls:Patient ;
+  ls:identifier "PT-11" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-2 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-consented ;
+  ls:patientArm lst:PatientArm-unassigned .
+
+d:PT-12 a ls:Patient ;
+  ls:identifier "PT-12" ;
+  ls:enrolledIn d:ST-01 ;
+  ls:enrolledAt d:SITE-3 ;
+  ls:patientArmVisibility lst:PatientArmVisibility-hidden ;
+  ls:patientEnrollment lst:PatientEnrollment-screened ;
+  ls:patientArm lst:PatientArm-unassigned .
+
+# 20 visits and 40 data records. Queries: 4 open, 2 closed.
+
+d:V-01-1 a ls:Visit ;
+  ls:identifier "V-01-1" ;
+  ls:visitFor d:PT-01 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-001 a ls:DataRecord ;
+  ls:identifier "DR-001" ;
+  ls:capturedAt d:V-01-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-002 a ls:DataRecord ;
+  ls:identifier "DR-002" ;
+  ls:capturedAt d:V-01-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-01-2 a ls:Visit ;
+  ls:identifier "V-01-2" ;
+  ls:visitFor d:PT-01 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-003 a ls:DataRecord ;
+  ls:identifier "DR-003" ;
+  ls:capturedAt d:V-01-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-004 a ls:DataRecord ;
+  ls:identifier "DR-004" ;
+  ls:capturedAt d:V-01-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-02-1 a ls:Visit ;
+  ls:identifier "V-02-1" ;
+  ls:visitFor d:PT-02 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-005 a ls:DataRecord ;
+  ls:identifier "DR-005" ;
+  ls:capturedAt d:V-02-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-006 a ls:DataRecord ;
+  ls:identifier "DR-006" ;
+  ls:capturedAt d:V-02-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-02-2 a ls:Visit ;
+  ls:identifier "V-02-2" ;
+  ls:visitFor d:PT-02 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-007 a ls:DataRecord ;
+  ls:identifier "DR-007" ;
+  ls:capturedAt d:V-02-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-008 a ls:DataRecord ;
+  ls:identifier "DR-008" ;
+  ls:capturedAt d:V-02-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-03-1 a ls:Visit ;
+  ls:identifier "V-03-1" ;
+  ls:visitFor d:PT-03 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-009 a ls:DataRecord ;
+  ls:identifier "DR-009" ;
+  ls:capturedAt d:V-03-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-010 a ls:DataRecord ;
+  ls:identifier "DR-010" ;
+  ls:capturedAt d:V-03-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-03-2 a ls:Visit ;
+  ls:identifier "V-03-2" ;
+  ls:visitFor d:PT-03 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-011 a ls:DataRecord ;
+  ls:identifier "DR-011" ;
+  ls:capturedAt d:V-03-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-012 a ls:DataRecord ;
+  ls:identifier "DR-012" ;
+  ls:capturedAt d:V-03-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-04-1 a ls:Visit ;
+  ls:identifier "V-04-1" ;
+  ls:visitFor d:PT-04 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-013 a ls:DataRecord ;
+  ls:identifier "DR-013" ;
+  ls:capturedAt d:V-04-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-014 a ls:DataRecord ;
+  ls:identifier "DR-014" ;
+  ls:capturedAt d:V-04-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-04-2 a ls:Visit ;
+  ls:identifier "V-04-2" ;
+  ls:visitFor d:PT-04 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-015 a ls:DataRecord ;
+  ls:identifier "DR-015" ;
+  ls:capturedAt d:V-04-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-016 a ls:DataRecord ;
+  ls:identifier "DR-016" ;
+  ls:capturedAt d:V-04-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-05-1 a ls:Visit ;
+  ls:identifier "V-05-1" ;
+  ls:visitFor d:PT-05 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-017 a ls:DataRecord ;
+  ls:identifier "DR-017" ;
+  ls:capturedAt d:V-05-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-018 a ls:DataRecord ;
+  ls:identifier "DR-018" ;
+  ls:capturedAt d:V-05-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-05-2 a ls:Visit ;
+  ls:identifier "V-05-2" ;
+  ls:visitFor d:PT-05 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-019 a ls:DataRecord ;
+  ls:identifier "DR-019" ;
+  ls:capturedAt d:V-05-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-020 a ls:DataRecord ;
+  ls:identifier "DR-020" ;
+  ls:capturedAt d:V-05-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-06-1 a ls:Visit ;
+  ls:identifier "V-06-1" ;
+  ls:visitFor d:PT-06 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-021 a ls:DataRecord ;
+  ls:identifier "DR-021" ;
+  ls:capturedAt d:V-06-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-022 a ls:DataRecord ;
+  ls:identifier "DR-022" ;
+  ls:capturedAt d:V-06-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-06-2 a ls:Visit ;
+  ls:identifier "V-06-2" ;
+  ls:visitFor d:PT-06 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-023 a ls:DataRecord ;
+  ls:identifier "DR-023" ;
+  ls:capturedAt d:V-06-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-024 a ls:DataRecord ;
+  ls:identifier "DR-024" ;
+  ls:capturedAt d:V-06-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-07-1 a ls:Visit ;
+  ls:identifier "V-07-1" ;
+  ls:visitFor d:PT-07 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-025 a ls:DataRecord ;
+  ls:identifier "DR-025" ;
+  ls:capturedAt d:V-07-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-026 a ls:DataRecord ;
+  ls:identifier "DR-026" ;
+  ls:capturedAt d:V-07-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-07-2 a ls:Visit ;
+  ls:identifier "V-07-2" ;
+  ls:visitFor d:PT-07 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-027 a ls:DataRecord ;
+  ls:identifier "DR-027" ;
+  ls:capturedAt d:V-07-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-028 a ls:DataRecord ;
+  ls:identifier "DR-028" ;
+  ls:capturedAt d:V-07-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-08-1 a ls:Visit ;
+  ls:identifier "V-08-1" ;
+  ls:visitFor d:PT-08 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-029 a ls:DataRecord ;
+  ls:identifier "DR-029" ;
+  ls:capturedAt d:V-08-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-030 a ls:DataRecord ;
+  ls:identifier "DR-030" ;
+  ls:capturedAt d:V-08-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-08-2 a ls:Visit ;
+  ls:identifier "V-08-2" ;
+  ls:visitFor d:PT-08 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-031 a ls:DataRecord ;
+  ls:identifier "DR-031" ;
+  ls:capturedAt d:V-08-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-032 a ls:DataRecord ;
+  ls:identifier "DR-032" ;
+  ls:capturedAt d:V-08-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-09-1 a ls:Visit ;
+  ls:identifier "V-09-1" ;
+  ls:visitFor d:PT-09 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-033 a ls:DataRecord ;
+  ls:identifier "DR-033" ;
+  ls:capturedAt d:V-09-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-034 a ls:DataRecord ;
+  ls:identifier "DR-034" ;
+  ls:capturedAt d:V-09-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-09-2 a ls:Visit ;
+  ls:identifier "V-09-2" ;
+  ls:visitFor d:PT-09 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-035 a ls:DataRecord ;
+  ls:identifier "DR-035" ;
+  ls:capturedAt d:V-09-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-036 a ls:DataRecord ;
+  ls:identifier "DR-036" ;
+  ls:capturedAt d:V-09-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:V-10-1 a ls:Visit ;
+  ls:identifier "V-10-1" ;
+  ls:visitFor d:PT-10 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-037 a ls:DataRecord ;
+  ls:identifier "DR-037" ;
+  ls:capturedAt d:V-10-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-patient .
+
+d:DR-038 a ls:DataRecord ;
+  ls:identifier "DR-038" ;
+  ls:capturedAt d:V-10-1 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-device .
+
+d:V-10-2 a ls:Visit ;
+  ls:identifier "V-10-2" ;
+  ls:visitFor d:PT-10 ;
+  ls:visitStatus lst:VisitStatus-completed .
+
+d:DR-039 a ls:DataRecord ;
+  ls:identifier "DR-039" ;
+  ls:capturedAt d:V-10-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-verified ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+
+d:DR-040 a ls:DataRecord ;
+  ls:identifier "DR-040" ;
+  ls:capturedAt d:V-10-2 ;
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-site .
+
+d:Q-01 a ls:DataQuery ;
+  ls:identifier "Q-01" ;
+  ls:raisedOn d:DR-005 ;
+  ls:dataQueryStatus lst:DataQueryStatus-open .
+
+d:Q-02 a ls:DataQuery ;
+  ls:identifier "Q-02" ;
+  ls:raisedOn d:DR-010 ;
+  ls:dataQueryStatus lst:DataQueryStatus-open .
+
+d:Q-03 a ls:DataQuery ;
+  ls:identifier "Q-03" ;
+  ls:raisedOn d:DR-015 ;
+  ls:dataQueryStatus lst:DataQueryStatus-open .
+
+d:Q-04 a ls:DataQuery ;
+  ls:identifier "Q-04" ;
+  ls:raisedOn d:DR-020 ;
+  ls:dataQueryStatus lst:DataQueryStatus-open .
+
+d:Q-05 a ls:DataQuery ;
+  ls:identifier "Q-05" ;
+  ls:raisedOn d:DR-025 ;
+  ls:dataQueryStatus lst:DataQueryStatus-closed .
+
+d:Q-06 a ls:DataQuery ;
+  ls:identifier "Q-06" ;
+  ls:raisedOn d:DR-030 ;
+  ls:dataQueryStatus lst:DataQueryStatus-closed .
+
+# 3 adverse events. AE-003 starts J1: serious, verified, not yet reported to safety.
+
+d:AE-001 a ls:AdverseEvent ;
+  ls:identifier "AE-001" ;
+  ls:experiencedBy d:PT-02 ;
+  ls:adverseEventEntry lst:AdverseEventEntry-verified ;
+  ls:adverseEventSeriousness lst:AdverseEventSeriousness-nonSerious ;
+  ls:adverseEventOutcome lst:AdverseEventOutcome-resolved ;
+  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety .
+
+d:AE-002 a ls:AdverseEvent ;
+  ls:identifier "AE-002" ;
+  ls:experiencedBy d:PT-04 ;
+  ls:adverseEventEntry lst:AdverseEventEntry-verified ;
+  ls:adverseEventSeriousness lst:AdverseEventSeriousness-nonSerious ;
+  ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
+  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety .
+
+d:AE-003 a ls:AdverseEvent ;
+  ls:identifier "AE-003" ;
+  ls:experiencedBy d:PT-03 ;
+  ls:adverseEventEntry lst:AdverseEventEntry-verified ;
+  ls:adverseEventSeriousness lst:AdverseEventSeriousness-serious ;
+  ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
+  ls:adverseEventReporting lst:AdverseEventReporting-notReported .
+
+# Safety and Regulatory: 1 investigational product, 4 medical inquiries, 6 safety cases
+
+d:P-101 a ls:Product ;
+  ls:identifier "P-101" ;
+  ls:isFormulation d:F-101 ;
+  ls:productStatus lst:ProductStatus-investigational .
+
+d:MI-1 a ls:MedicalInquiry ;
+  ls:identifier "MI-1" ;
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered .
+
+d:MI-2 a ls:MedicalInquiry ;
+  ls:identifier "MI-2" ;
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered .
+
+d:MI-3 a ls:MedicalInquiry ;
+  ls:identifier "MI-3" ;
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received .
+
+d:MI-4 a ls:MedicalInquiry ;
+  ls:identifier "MI-4" ;
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received .
+
+# SC-005 reports the same event as SC-002, from a medical inquiry instead of the trial: the duplicate pair, not yet flagged.
+
+d:SC-001 a ls:SafetyCase ;
+  ls:identifier "SC-001" ;
+  ls:originatesFrom d:AE-001 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-assessed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-unrelated ;
+  ls:receivedOn "2026-10-20"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected .
+
+d:SC-002 a ls:SafetyCase ;
+  ls:identifier "SC-002" ;
+  ls:originatesFrom d:AE-002 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-triaged ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
+  ls:receivedOn "2026-10-28"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected .
+
+d:SC-003 a ls:SafetyCase ;
+  ls:identifier "SC-003" ;
+  ls:originatesFrom d:MI-1 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-assessed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-probable ;
+  ls:receivedOn "2026-11-02"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-serious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-unexpected ;
+  ls:mayInvolve d:B-002 .
+
+d:SC-004 a ls:SafetyCase ;
+  ls:identifier "SC-004" ;
+  ls:originatesFrom d:MI-2 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
+  ls:receivedOn "2026-11-05"^^xsd:date .
+
+d:SC-005 a ls:SafetyCase ;
+  ls:identifier "SC-005" ;
+  ls:originatesFrom d:MI-3 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
+  ls:receivedOn "2026-11-06"^^xsd:date .
+
+d:SC-006 a ls:SafetyCase ;
+  ls:identifier "SC-006" ;
+  ls:originatesFrom d:MI-4 ;
+  ls:concerns d:P-101 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
+  ls:receivedOn "2026-11-07"^^xsd:date .
+
+# J2 starts with the detected signal.
+
+d:SIG-1 a ls:Signal ;
+  ls:identifier "SIG-1" ;
+  ls:concerns d:P-101 ;
+  ls:aggregates d:SC-001, d:SC-003, d:SC-004 ;
+  ls:signalStatus lst:SignalStatus-detected .
+
+d:SUB-1 a ls:Submission ;
+  ls:identifier "SUB-1" ;
+  ls:reports d:SC-003 ;
+  ls:submissionStatus lst:SubmissionStatus-draft ;
+  ls:submissionDeadline lst:SubmissionDeadline-onTrack ;
+  ls:preparedBy d:person-chloe ;
+  ls:dueOn "2026-11-17"^^xsd:date .
+
+d:QE-1 a ls:QualityEvent ;
+  ls:identifier "QE-1" ;
+  ls:raisedOn d:B-002 ;
+  ls:qualityEventStatus lst:QualityEventStatus-open ;
+  ls:qualityEventSeverity lst:QualityEventSeverity-major .

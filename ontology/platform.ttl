@@ -81,6 +81,24 @@ p:Role a rdfs:Class ;
   rdfs:label "role" ;
   rdfs:comment "A persona or agent role: the methods it may run and what it may not read." .
 
+p:Commit a rdfs:Class ;
+  rdfs:label "commit" ;
+  rdfs:comment "One committed method run: who ran which method on which object, when, with which inputs, and every value it changed. A PROV-O activity." ;
+  rdfs:subClassOf prov:Activity .
+
+p:ValueChange a rdfs:Class ;
+  rdfs:label "value change" ;
+  rdfs:comment "One value a commit changed, from its old value to its new one." .
+
+p:InputValue a rdfs:Class ;
+  rdfs:label "input value" ;
+  rdfs:comment "The value given for one input of a commit." .
+
+p:Read a rdfs:Class ;
+  rdfs:label "read" ;
+  rdfs:comment "A read of an object that holds personal data, recorded in the audit trail. A PROV-O activity." ;
+  rdfs:subClassOf prov:Activity .
+
 p:Person a rdfs:Class ;
   rdfs:label "person" ;
   rdfs:comment "Someone who runs methods, signs, reviews or approves. Identities come from the platform's identity provider." .
@@ -322,6 +340,80 @@ p:freezes a rdf:Property ;
   rdfs:comment "A shape: objects that conform cannot be edited, only corrected by a new linked record." ;
   rdfs:domain p:BusinessRule ;
   rdfs:range sh:NodeShape .
+
+p:holdsPersonalData a rdf:Property ;
+  rdfs:label "holds personal data" ;
+  rdfs:comment "True when objects of this type hold personal health data. The gateway records every read of them." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:boolean .
+
+p:actsAs a rdf:Property ;
+  rdfs:label "acts as" ;
+  rdfs:comment "A role the person may act in." ;
+  rdfs:domain p:Person ;
+  rdfs:range p:Role .
+
+p:method a rdf:Property ;
+  rdfs:label "method" ;
+  rdfs:comment "The method a commit ran." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Method .
+
+p:actedAs a rdf:Property ;
+  rdfs:label "acted as" ;
+  rdfs:comment "The role the person acted in." ;
+  rdfs:domain prov:Activity ;
+  rdfs:range p:Role .
+
+p:target a rdf:Property ;
+  rdfs:label "target" ;
+  rdfs:comment "The object a commit ran on, or a read read." ;
+  rdfs:domain prov:Activity .
+
+p:inputValue a rdf:Property ;
+  rdfs:label "input value" ;
+  rdfs:comment "A value given for an input." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:InputValue .
+
+p:forInput a rdf:Property ;
+  rdfs:label "for input" ;
+  rdfs:comment "The input this value is for." ;
+  rdfs:domain p:InputValue ;
+  rdfs:range p:Input .
+
+p:change a rdf:Property ;
+  rdfs:label "change" ;
+  rdfs:comment "A value the commit changed." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:ValueChange .
+
+p:changedSubject a rdf:Property ;
+  rdfs:label "changed subject" ;
+  rdfs:comment "The object whose value changed." ;
+  rdfs:domain p:ValueChange .
+
+p:changedProperty a rdf:Property ;
+  rdfs:label "changed property" ;
+  rdfs:comment "The property that changed." ;
+  rdfs:domain p:ValueChange ;
+  rdfs:range rdf:Property .
+
+p:oldValue a rdf:Property ;
+  rdfs:label "old value" ;
+  rdfs:comment "The value before the commit. Absent when the value was added." ;
+  rdfs:domain p:ValueChange .
+
+p:newValue a rdf:Property ;
+  rdfs:label "new value" ;
+  rdfs:comment "The value after the commit. Absent when the value was removed." ;
+  rdfs:domain p:ValueChange .
+
+p:pendingEffect a rdf:Property ;
+  rdfs:label "pending effect" ;
+  rdfs:comment "A described effect the gateway recorded as work still to do." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:DescribedEffect .
 
 p:mayRun a rdf:Property ;
   rdfs:label "may run" ;

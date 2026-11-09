@@ -17,6 +17,7 @@ The spec is the asset. The spec leads and the code follows.
 |---|---|
 | `spec/` | The prompt specification and domain specs. Versioned and kept. |
 | `ontology/` | The ontology in RDF 1.2 with SHACL: the platform vocabulary and each domain. Kept. |
+| `data/` | Seed graphs: small, fictional data for development and tests. |
 | `design-system/` | The run-time design system catalog the Compose agent reads: tokens, components, patterns and the view spec schema. Kept. |
 | `src/` | Platform code, built from the specs. Changes when the specs do. |
 | `e2e/` | Browser tests, including responsive checks at 320px, md and xl. |
@@ -28,6 +29,7 @@ Needs Node 22 or later.
 ```bash
 npm install
 npm run dev        # local dev server; the design system catalog is at /#/catalog
+npm run gateway    # the gateway in development mode: HTTP at /api, MCP at /mcp. State is kept in var/journal.jsonl
 npm test           # unit and accessibility tests
 npm run test:e2e   # browser tests at phone, tablet and desktop widths
 npm run build      # type check and production build

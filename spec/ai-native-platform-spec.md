@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.7. November 9, 2026. Author: Paul Chang.
+Version 0.10. November 9, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -94,6 +94,19 @@ Holds what the platform knows about the current situation.
 
 Context is queryable by agents and changes what is surfaced, ranked and allowed.
 
+#### Roles and permissions
+
+Agents must know more than the business context and the state of objects. They must know the context of the person they are assisting: what that person does, and what they may do. Real organizations do not fit fixed roles, so the model starts from canonical roles and lets reality vary from them.
+
+- **Permissions are the unit.** A permission allows one thing: running a method, or reading an object type or property. It may be scoped, for example to particular studies or sites. A person's role in their organization is ultimately expressed by the permissions they hold.
+- **Canonical roles with smart defaults.** Each domain defines a canonical set of user types, each with a default set of permissions. They are starting points, not fixed boxes.
+- **Organizations vary.** Each organization can change what a canonical role grants. The platform records each change as variance from the canonical defaults, as data, so it can be seen, explained and audited.
+- **Many hats, or one.** In a small organization one person may hold several roles; in a large, matrixed one, people are specialized. A person can hold any number of roles, plus personal grants and removals. Their effective permissions are the combination. Rules about people, such as separation of duties, apply to the person, not to a role.
+- **Both directions.** From roles to permissions: start from the canonical defaults and track the variance. From permissions to roles: given what a person may do, find the canonical roles that match it most closely, and show the difference. This explains a person to agents, and maps people when permissions come from another system.
+- **Agents receive the user context.** Every agent request carries the person's roles, effective permissions, variance and scope. Agents use it to decide what to surface and suggest. The gateway still enforces every permission, whatever an agent infers.
+
+The first release implements canonical roles with their default permissions only. Variance, multiple roles and role inference follow.
+
 ### 3.4 Intelligence Gateway
 The single contract through which anything, human interface or agent, reads and acts on the platform.
 
@@ -101,6 +114,46 @@ The single contract through which anything, human interface or agent, reads and 
 - Enforces permissions and policy on every read and every write.
 - Speaks open agent protocols so external agents connect as first-class citizens.
 - Records every action and its outcome.
+
+#### Gateway contract
+
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers five kinds of request.
+
+| Request | Answer |
+|---|---|
+| Describe the ontology | Object types, their state dimensions, relationships and methods |
+| Find objects | Objects of a type, filtered by state |
+| Read an object | Its identifier, state, relationships and properties, as the principal may see them |
+| Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
+| Commit a method | Runs one method on one object with its inputs (core loop step 6) |
+
+**Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
+
+**Commits** run as one transaction, in this order, and stop at the first failure with its reasons:
+
+1. The role may run the method.
+2. Every input is present, of the right kind, and meets its constraints.
+3. The object meets every precondition.
+4. The declared effects are applied: state changes, new objects and links.
+5. The changed graph is validated against every shape. Any violation undoes the whole commit.
+6. The commit is recorded as an activity with PROV-O provenance: who, when, which method, the inputs, and every value changed from old to new. Nothing is overwritten; history is the sequence of commits.
+
+Effects described in words are recorded with the commit as pending work, so nothing is silently skipped.
+
+**Persistence.** The graph's state survives restarts. The source of truth is an append-only **journal** on disk:
+
+- Every commit and every recorded read is written to the journal, and flushed to disk, before the gateway answers. A request the gateway answered is never lost.
+- Each entry holds exactly what changed: the statements removed and added, including the commit's own provenance record.
+- Each entry carries a SHA-256 fingerprint of itself and of the entry before it. Changing, removing or reordering any past entry breaks the chain, and the gateway refuses to start until the journal is restored. This makes the audit trail tamper-evident.
+- The journal's first entry fingerprints the seed graph it builds on. The gateway refuses to replay a journal onto a different seed.
+- On start, the gateway loads the ontology and seed, checks the chain, and replays every entry.
+- Commits run one at a time, on a working copy of the graph. Readers never see a commit that has not finished, and two commits never interleave.
+
+A database server can later hold the current state for larger data or several gateways. The journal stays as the audit record.
+
+**Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
+
+**Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
 
 ### 3.5 Agent Layer
 Agents do the work. The roles below are illustrative. The platform may split or combine them.
@@ -224,6 +277,11 @@ To resolve in future versions of this spec.
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
+- Which identity provider authenticates people and agents?
+- Who in an organization may change permissions and role defaults, and how is that change approved and audited?
+- How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
+- How are permissions scoped: by study, site, product, region, or other objects in the graph?
+- When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
 
@@ -240,3 +298,6 @@ To resolve in future versions of this spec.
 | 0.5 | 2026-11-08 | Added the responsive requirement to section 7. |
 | 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Chose the namespace, `https://w3id.org/lsh/`. |
 | 0.7 | 2026-11-09 | Renamed the namespace to `https://w3id.org/lsh-platform/` before registration, because w3id.org declines short, generic names. |
+| 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
+| 0.9 | 2026-11-09 | Added Roles and permissions to the context layer (section 3.3): permissions as the unit, canonical roles with smart defaults, organizational variance, people with many roles, role inference from permissions, and user context for agents. Three open questions. |
+| 0.10 | 2026-11-09 | Added Persistence to the gateway contract (section 3.4): an append-only, fingerprinted journal written before every answer, replayed on start; commits one at a time on a working copy. Replaced the persistence question with one on snapshots. |

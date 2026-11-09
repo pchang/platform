@@ -13,12 +13,15 @@ export const NS = {
   rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
   owl: 'http://www.w3.org/2002/07/owl#',
+  xsd: 'http://www.w3.org/2001/XMLSchema#',
+  prov: 'http://www.w3.org/ns/prov#',
   sh: 'http://www.w3.org/ns/shacl#',
   skos: 'http://www.w3.org/2004/02/skos/core#',
   p: 'https://w3id.org/lsh-platform/platform#',
   ls: 'https://w3id.org/lsh-platform/life-sciences#',
   lst: 'https://w3id.org/lsh-platform/life-sciences/term#',
   lsh: 'https://w3id.org/lsh-platform/life-sciences/shape#',
+  d: 'https://example.org/lsh-data/',
 } as const;
 
 export const PREFIXES = Object.entries(NS)
@@ -45,9 +48,18 @@ export interface Graph {
 export function loadGraph(turtle: string[]): Graph {
   const store = new oxigraph.Store();
   for (const source of turtle) store.load(source, { format: 'text/turtle' });
-  const dataset = rdf.dataset(store.match(null, null, null, null) as unknown as Quad[]);
-  return { store, dataset };
+  return { store, dataset: defaultGraphDataset(store) };
 }
+
+/**
+ * The default graph as an RDF/JS dataset, for SHACL validation. Named graphs hold the
+ * commit and audit records, which are not validated against the domain shapes.
+ */
+export function defaultGraphDataset(store: oxigraph.Store): DatasetCore {
+  return rdf.dataset(store.match(null, null, null, oxigraph.defaultGraph()) as unknown as Quad[]);
+}
+
+export const SEED_FILE = join(import.meta.dirname, '../../data/life-sciences/seed.ttl');
 
 export function loadOntology(extraTurtle: string[] = [], dir = ONTOLOGY_DIR): Graph {
   return loadGraph([...ontologyFiles(dir).map((f) => readFileSync(f, 'utf8')), ...extraTurtle]);

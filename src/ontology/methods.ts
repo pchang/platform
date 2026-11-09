@@ -37,18 +37,26 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
     ? new Set(select(graph.store, `SELECT ?m WHERE { <${role}> p:mayRun ?m }`).map((r) => r.m))
     : undefined;
 
-  const validator = new Validator(graph.dataset, { factory: rdf, validations });
   const options: MethodOption[] = [];
   for (const [method, { label, preconditions }] of methods) {
     const blocks: string[] = [];
     if (allowed && !allowed.has(method)) blocks.push('Your role cannot run this method');
-    for (const pre of preconditions) {
-      const report = await validator.validate({ dataset: graph.dataset, terms: [iri(object)] }, [{ terms: [iri(pre)] }]);
-      for (const result of report.results) blocks.push(...result.message.map((m) => m.value));
-    }
+    blocks.push(...(await conformanceProblems(graph, object, preconditions)));
     options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)] });
   }
   return options;
+}
+
+/** The messages of every shape the focus node does not conform to. Empty when it conforms to all. */
+export async function conformanceProblems(graph: Graph, focus: string, shapes: string[]): Promise<string[]> {
+  const validator = new Validator(graph.dataset, { factory: rdf, validations });
+  const problems: string[] = [];
+  for (const shape of shapes) {
+    const report = await validator.validate({ dataset: graph.dataset, terms: [iri(focus)] }, [{ terms: [iri(shape)] }]);
+    for (const result of report.results) problems.push(...result.message.map((m) => m.value));
+    if (!report.conforms && report.results.every((r) => r.message.length === 0)) problems.push(`Does not conform to ${shape}`);
+  }
+  return [...new Set(problems)];
 }
 
 /** Validates instance data against every shape that targets it. Returns the problems found. */

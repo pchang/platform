@@ -186,7 +186,8 @@ ls:Patient a p:ObjectType, rdfs:Class ;
   rdfs:label "Patient" ;
   rdfs:comment "A person enrolled in a study. Labeled participant in studies without a disease state." ;
   p:inDomain ls:ClinicalDevelopment ;
-  skos:closeMatch ncit:C16960 .
+  skos:closeMatch ncit:C16960 ;
+  p:holdsPersonalData true .
 
 ls:patientEnrollment a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Enrollment" ;
@@ -210,7 +211,8 @@ ls:Visit a p:ObjectType, rdfs:Class ;
   rdfs:label "Visit" ;
   rdfs:comment "A scheduled encounter with a patient." ;
   p:inDomain ls:ClinicalDevelopment ;
-  skos:exactMatch ncit:C191214 .
+  skos:exactMatch ncit:C191214 ;
+  p:holdsPersonalData true .
 
 ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -221,7 +223,8 @@ ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
 ls:DataRecord a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Record" ;
   rdfs:comment "A captured data point: a lab value, vital sign, diary entry or device reading." ;
-  p:inDomain ls:ClinicalDevelopment .
+  p:inDomain ls:ClinicalDevelopment ;
+  p:holdsPersonalData true .
 
 ls:dataRecordEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
@@ -250,7 +253,8 @@ ls:AdverseEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Adverse Event" ;
   rdfs:comment "Something harmful that happened to a patient during the study." ;
   p:inDomain ls:ClinicalDevelopment ;
-  skos:exactMatch ncit:C41331 .
+  skos:exactMatch ncit:C41331 ;
+  p:holdsPersonalData true .
 
 ls:adverseEventEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
@@ -279,7 +283,8 @@ ls:adverseEventReporting a p:StateDimension, owl:ObjectProperty ;
 ls:SafetyCase a p:ObjectType, rdfs:Class ;
   rdfs:label "Safety Case" ;
   rdfs:comment "One report of an adverse reaction in one patient." ;
-  p:inDomain ls:SafetyAndRegulatory .
+  p:inDomain ls:SafetyAndRegulatory ;
+  p:holdsPersonalData true .
 
 ls:safetyCaseWorkflow a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Workflow" ;
@@ -377,7 +382,8 @@ ls:capaStatus a p:StateDimension, owl:ObjectProperty ;
 ls:MedicalInquiry a p:ObjectType, rdfs:Class ;
   rdfs:label "Medical Inquiry" ;
   rdfs:comment "A question from a clinician or patient about a product." ;
-  p:inDomain ls:SafetyAndRegulatory .
+  p:inDomain ls:SafetyAndRegulatory ;
+  p:holdsPersonalData true .
 
 ls:medicalInquiryStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
