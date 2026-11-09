@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.7. November 9, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.9.
+Version 0.8. November 9, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.11.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -147,7 +147,7 @@ Covers patient safety and regulatory obligations, during trials and after launch
 | Assess | Safety Case | Causality | Workflow is triaged | Workflow: assessed |
 | Generate narrative | Safety Case | None | Workflow is triaged or later | Drafts the case narrative for human review |
 | Merge duplicate | Safety Case | Target case | Cases are linked by duplicate of | Merges into target. Source workflow: closed |
-| Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable | Creates a Submission in draft, prepared by the person, due 15 days after the case was received (rule 1) |
+| Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable, and no submission reports it yet | Creates a Submission in draft, prepared by the person, due 15 days after the case was received (rule 1) |
 | Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
 | Send for review | Submission | Reviewer | Status is draft | Status: in review |
 | Submit | Submission | Approver | Status is in review | Status: submitted. Each Safety Case it reports moves to Workflow: reported |
@@ -184,7 +184,7 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 
 ## 6. Personas
 
-These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles.
+These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles. The Works mainly in column sets the role's work domains, which decide its navigation (platform spec section 5.1).
 
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
@@ -196,6 +196,16 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
 
 The same object must look different to each persona. A Batch is a production record to the Quality Lead, a supply item to the Clinical Data Manager and a possible cause to the Drug Safety Physician. The platform must explain why each persona sees what it sees.
+
+---
+
+### To do
+
+These make To do work for this domain (platform spec section 5.1).
+
+- **On-demand methods**, which a person chooses to run rather than work waiting: Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
+- **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
+- **Deadlines:** a submission's due date.
 
 ---
 
@@ -349,3 +359,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.5 | 2026-11-09 | Namespace renamed to `https://w3id.org/lsh-platform/life-sciences#`, following the platform spec. |
 | 0.6 | 2026-11-09 | Seed graph: file, namespace, people, and where each journey starts. Named the object types that hold personal health data. |
 | 0.7 | 2026-11-09 | Personas are the canonical roles, with their default permissions; organizations may vary them and people may hold several. |
+| 0.8 | 2026-11-09 | Works mainly in sets each role's work domains. Added To do settings: on-demand methods, urgent values and deadlines. Prepare expedited report requires that no submission reports the case yet. |

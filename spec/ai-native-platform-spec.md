@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.10. November 9, 2026. Author: Paul Chang.
+Version 0.11. November 9, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -117,7 +117,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers five kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers seven kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -126,6 +126,8 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Read an object | Its identifier, state, relationships and properties, as the principal may see them |
 | Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
 | Commit a method | Runs one method on one object with its inputs (core loop step 6) |
+| Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
+| To do | The objects with work waiting for the principal, in order (section 5.1) |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -197,6 +199,16 @@ Every interaction follows the same loop. The platform supports it end to end, fo
 - Adapts to user and business context.
 - Offers multiple views of the same graph.
 - Surfaces proactive starting points.
+- **Each person sees the object world of their work.** Navigation lists the object types of the domains their roles work in, grouped by domain, limited to what they may read. A clinical role does not see discovery or safety navigation. Objects outside that world stay reachable through links and search when the person may read them.
+
+#### To do
+
+Orient opens on **To do**: the objects where the person has work waiting, as cards. It is generated from the ontology, not designed per role.
+
+- An object is on the list when the person can run a **task** on it now: a method whose preconditions hold and that their role may run. Methods marked **on demand**, such as running a simulation, are actions a person chooses to take; they do not put an object on the list.
+- An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
+- The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines.
+- Each card shows the object, its state, its deadline and the tasks waiting.
 
 ### 5.2 AI Search
 - Accepts natural language and structured queries.
@@ -301,3 +313,4 @@ To resolve in future versions of this spec.
 | 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
 | 0.9 | 2026-11-09 | Added Roles and permissions to the context layer (section 3.3): permissions as the unit, canonical roles with smart defaults, organizational variance, people with many roles, role inference from permissions, and user context for agents. Three open questions. |
 | 0.10 | 2026-11-09 | Added Persistence to the gateway contract (section 3.4): an append-only, fingerprinted journal written before every answer, replayed on start; commits one at a time on a working copy. Replaced the persistence question with one on snapshots. |
+| 0.11 | 2026-11-09 | Navigation shows each person the object world of their work (section 5.1). Added To do: tasks, on-demand methods, urgency and deadlines. The gateway answers Navigation and To do requests. |
