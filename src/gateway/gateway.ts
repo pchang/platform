@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { fromNQuads, Journal, seedFingerprint } from './journal';
 import oxigraph from 'oxigraph';
 import { conformanceProblems, methodsFor, validateData, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, loadOntology, NS, select, SEED_FILE, type Graph } from '../ontology/ontology';
@@ -66,18 +67,47 @@ interface Change {
 const { namedNode, literal, quad, defaultGraph } = oxigraph;
 const RDF_TYPE = `${NS.rdf}type`;
 
+export interface GatewayOptions {
+  dataNamespace?: string;
+  now?: () => Date;
+  /** Where the journal lives. Without one, state is held in memory only, as in tests. */
+  journal?: Journal;
+}
+
 export class Gateway {
   private commitCount = 0;
   private readCount = 0;
+  /** Commits run one at a time, in the order they arrive. */
+  private queue: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly graph: Graph,
-    private readonly options: { dataNamespace?: string; now?: () => Date } = {},
-  ) {}
+    private readonly options: GatewayOptions = {},
+  ) {
+    this.commitCount = Number(this.q(`SELECT (COUNT(?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit } }`)[0].n);
+    this.readCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?g { ?r a p:Read } }`)[0].n);
+  }
 
-  /** The ontology with the seed graph, the starting point for development and tests. */
-  static withSeed(extraTurtle: string[] = [], options: ConstructorParameters<typeof Gateway>[1] = {}): Gateway {
+  /** The ontology with the seed graph, in memory only: the starting point for tests. */
+  static withSeed(extraTurtle: string[] = [], options: GatewayOptions = {}): Gateway {
     return new Gateway(loadOntology([readFileSync(SEED_FILE, 'utf8'), ...extraTurtle]), options);
+  }
+
+  /**
+   * The ontology with the seed graph and everything in the journal at journalPath (platform spec
+   * section 3.4, Persistence). Creates the journal if it does not exist. Refuses to start if the
+   * journal's chain is broken or it was written on a different seed.
+   */
+  static open(journalPath: string, options: Omit<GatewayOptions, 'journal'> & { extraTurtle?: string[] } = {}): Gateway {
+    const sources = [readFileSync(SEED_FILE, 'utf8'), ...(options.extraTurtle ?? [])];
+    const graph = loadOntology(sources);
+    const { journal, entries } = Journal.open(journalPath, seedFingerprint(sources), options.now?.() ?? new Date());
+    for (const entry of entries) {
+      for (const q of fromNQuads(entry.removed)) graph.store.delete(q);
+      for (const q of fromNQuads(entry.added)) graph.store.add(q);
+    }
+    graph.dataset = defaultGraphDataset(graph.store);
+    return new Gateway(graph, { ...options, journal });
   }
 
   private get dataNamespace() {
@@ -88,8 +118,8 @@ export class Gateway {
     return this.options.now?.() ?? new Date();
   }
 
-  private q(query: string) {
-    return select(this.graph.store, query);
+  private q(query: string, graph: Graph = this.graph) {
+    return select(graph.store, query);
   }
 
   // ---------------------------------------------------------------- principals
@@ -212,20 +242,26 @@ export class Gateway {
   }
 
   private recordRead(principal: Principal, object: string) {
-    const read = namedNode(`${this.dataNamespace}audit/read-${++this.readCount}`);
+    const at = this.now();
+    const read = namedNode(`${this.dataNamespace}audit/read-${this.readCount + 1}`);
     const g = namedNode(`${this.dataNamespace}audit`);
-    const add = (p: string, o: Term) => this.graph.store.add(quad(read, namedNode(p), o, g));
-    add(RDF_TYPE, namedNode(`${NS.p}Read`));
-    add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person));
-    add(`${NS.p}actedAs`, namedNode(principal.role));
-    add(`${NS.p}target`, namedNode(object));
-    add(`${NS.prov}startedAtTime`, literal(this.now().toISOString(), namedNode(`${NS.xsd}dateTime`)));
+    const quads = [
+      quad(read, namedNode(RDF_TYPE), namedNode(`${NS.p}Read`), g),
+      quad(read, namedNode(`${NS.prov}wasAssociatedWith`), namedNode(principal.person), g),
+      quad(read, namedNode(`${NS.p}actedAs`), namedNode(principal.role), g),
+      quad(read, namedNode(`${NS.p}target`), namedNode(object), g),
+      quad(read, namedNode(`${NS.prov}startedAtTime`), literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)), g),
+    ];
+    // Journal first: if the read cannot be recorded durably, it is not answered.
+    this.options.journal?.append('read', at, [], quads);
+    for (const q of quads) this.graph.store.add(q);
+    this.readCount++;
   }
 
   /** The audit trail of personal-data reads, newest last. */
   reads(): { person: string; role: string; object: string; at: string }[] {
     return this.q(`SELECT ?person ?role ?object ?at WHERE { GRAPH <${this.dataNamespace}audit> {
-        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at } } ORDER BY ?at ?r`) as never;
+        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at } } ORDER BY ?at STRLEN(STR(?r)) ?r`) as never;
   }
 
   // ---------------------------------------------------------------- methods
@@ -239,7 +275,14 @@ export class Gateway {
 
   // ---------------------------------------------------------------- commits
 
-  async commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<CommitResult> {
+  /** Commits run one at a time: each waits for the one before it to finish. */
+  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<CommitResult> {
+    const run = this.queue.then(() => this.runCommit(principal, idOrIri, method, inputs));
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
@@ -256,31 +299,38 @@ export class Gateway {
     const blocks = await conformanceProblems(this.graph, object, preconditions);
     if (blocks.length) throw new GatewayError(400, blocks);
 
-    // 4. Apply the declared effects.
+    // 4. Apply the declared effects, to a working copy that readers never see.
+    // Only the current state is copied; commit and audit records live in named graphs, which grow with history.
+    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
     const at = this.now();
     const changes: Change[] = [];
     const created: string[] = [];
     const pending: string[] = [];
-    try {
-      for (const effect of this.q(`SELECT ?e ?kind WHERE { <${method}> p:effect ?e . ?e a ?kind FILTER(STRSTARTS(STR(?kind), "${NS.p}")) } ORDER BY ?e`)) {
-        const kind = effect.kind.slice(NS.p.length);
-        if (kind === 'StateChange') this.applyStateChange(object, effect.e, resolvedInputs, changes);
-        else if (kind === 'Creation') created.push(this.applyCreation(object, effect.e, resolvedInputs, principal, at, changes));
-        else if (kind === 'Link') this.applyLink(object, effect.e, resolvedInputs, changes);
-        else if (kind === 'DescribedEffect') pending.push(effect.e);
-      }
-
-      // 5. Validate the changed graph against every shape; any violation undoes the commit.
-      this.graph.dataset = defaultGraphDataset(this.graph.store);
-      const problems = await validateData(this.graph);
-      if (problems.length) throw new GatewayError(400, problems);
-    } catch (error) {
-      this.undo(changes);
-      throw error;
+    for (const effect of this.q(`SELECT ?e ?kind WHERE { <${method}> p:effect ?e . ?e a ?kind FILTER(STRSTARTS(STR(?kind), "${NS.p}")) } ORDER BY ?e`)) {
+      const kind = effect.kind.slice(NS.p.length);
+      if (kind === 'StateChange') this.applyStateChange(work, object, effect.e, resolvedInputs, changes);
+      else if (kind === 'Creation') created.push(this.applyCreation(work, object, effect.e, resolvedInputs, principal, at, changes));
+      else if (kind === 'Link') this.applyLink(work, object, effect.e, resolvedInputs, changes);
+      else if (kind === 'DescribedEffect') pending.push(effect.e);
     }
 
-    // 6. Record the commit with its provenance.
-    const commit = this.record(principal, object, method, resolvedInputs, changes, created, pending, at);
+    // 5. Validate the changed copy against every shape. Any violation discards it.
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work);
+    if (problems.length) throw new GatewayError(400, problems);
+
+    // 6. Record the commit: journal first, flushed to disk, then the live graph.
+    const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
+    const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at);
+    const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
+    const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
+    this.options.journal?.append('commit', at, removed, added);
+    for (const q of removed) this.graph.store.delete(q);
+    for (const q of added) this.graph.store.add(q);
+    // The working copy's default graph is now exactly the live one, so its validated dataset is reused.
+    this.graph.dataset = work.dataset;
+    this.commitCount++;
+
     return {
       commit,
       changes: changes.map((c) => ({ subject: c.subject, property: c.property, oldValue: c.oldValue?.value, newValue: c.newValue?.value })),
@@ -334,89 +384,80 @@ export class Gateway {
     }
   }
 
-  private set(subject: string, property: string, value: Term | undefined, changes: Change[], replace = true) {
+  private set(work: Graph, subject: string, property: string, value: Term | undefined, changes: Change[], replace = true) {
     const s = namedNode(subject);
     const p = namedNode(property);
-    const old = replace ? (this.graph.store.match(s, p, null, defaultGraph()) as oxigraph.Quad[]) : [];
+    const old = replace ? (work.store.match(s, p, null, defaultGraph()) as oxigraph.Quad[]) : [];
     for (const q of old) {
-      this.graph.store.delete(q);
+      work.store.delete(q);
       changes.push({ subject, property, oldValue: q.object as Term });
     }
     if (value) {
-      this.graph.store.add(quad(s, p, value, defaultGraph()));
+      work.store.add(quad(s, p, value, defaultGraph()));
       const last = changes.at(-1);
       if (old.length && last && last.subject === subject && last.property === property && !last.newValue) last.newValue = value;
       else changes.push({ subject, property, newValue: value });
     }
   }
 
-  private applyStateChange(object: string, effect: string, inputs: Map<string, Term>, changes: Change[]) {
+  private applyStateChange(work: Graph, object: string, effect: string, inputs: Map<string, Term>, changes: Change[]) {
     const e = this.q(`SELECT ?dim ?value ?fromInput ?along ?alongInverse ?whenInput ?whenValue WHERE { <${effect}> p:dimension ?dim .
         OPTIONAL { <${effect}> p:value ?value } OPTIONAL { <${effect}> p:valueFromInput ?fromInput } OPTIONAL { <${effect}> p:along ?along }
         OPTIONAL { <${effect}> p:alongInverse ?alongInverse } OPTIONAL { <${effect}> p:whenInput ?whenInput ; p:whenValue ?whenValue } }`)[0];
     if (e.whenInput && inputs.get(e.whenInput)?.value !== e.whenValue) return;
     const value = e.value ? namedNode(e.value) : inputs.get(e.fromInput);
     const targets = e.along
-      ? this.q(`SELECT ?t WHERE { <${object}> <${e.along}> ?t }`).map((r) => r.t)
+      ? this.q(`SELECT ?t WHERE { <${object}> <${e.along}> ?t }`, work).map((r) => r.t)
       : e.alongInverse
-        ? this.q(`SELECT ?t WHERE { ?t <${e.alongInverse}> <${object}> }`).map((r) => r.t)
+        ? this.q(`SELECT ?t WHERE { ?t <${e.alongInverse}> <${object}> }`, work).map((r) => r.t)
         : [object];
-    for (const target of targets) this.set(target, e.dim, value, changes);
+    for (const target of targets) this.set(work, target, e.dim, value, changes);
   }
 
-  private applyCreation(object: string, effect: string, inputs: Map<string, Term>, principal: Principal, at: Date, changes: Change[]): string {
+  private applyCreation(work: Graph, object: string, effect: string, inputs: Map<string, Term>, principal: Principal, at: Date, changes: Change[]): string {
     const e = this.q(`SELECT ?type ?typeLabel ?link ?actorAs ?setsDate ?fromDate ?days WHERE { <${effect}> p:createsType ?type . ?type rdfs:label ?typeLabel .
         OPTIONAL { <${effect}> p:linkedBy ?link } OPTIONAL { <${effect}> p:recordsActorAs ?actorAs } OPTIONAL { <${effect}> p:setsDate ?setsDate }
         OPTIONAL { <${effect}> p:fromDate ?fromDate } OPTIONAL { <${effect}> p:plusDays/p:parameterValue ?days } }`)[0];
     const prefix = e.typeLabel.replace(/[^A-Za-z]+/g, '');
-    let n = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${e.type}> }`)[0].n) + 1;
-    while (ask(this.graph.store, `ASK { ?o ls:identifier "${prefix}-${n}" }`)) n++;
+    let n = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${e.type}> }`, work)[0].n) + 1;
+    while (ask(work.store, `ASK { ?o ls:identifier "${prefix}-${n}" }`)) n++;
     const identifier = `${prefix}-${n}`;
     const created = `${this.dataNamespace}${identifier}`;
-    this.set(created, RDF_TYPE, namedNode(e.type), changes, false);
-    this.set(created, `${NS.ls}identifier`, literal(identifier), changes, false);
-    if (e.link) this.set(created, e.link, namedNode(object), changes, false);
+    this.set(work, created, RDF_TYPE, namedNode(e.type), changes, false);
+    this.set(work, created, `${NS.ls}identifier`, literal(identifier), changes, false);
+    if (e.link) this.set(work, created, e.link, namedNode(object), changes, false);
     const states = [
       ...this.q(`SELECT ?v WHERE { <${effect}> p:initialState ?v }`).map((r) => r.v),
       ...this.q(`SELECT ?i WHERE { <${effect}> p:initialFromInput ?i }`).map((r) => inputs.get(r.i)!.value),
     ];
     for (const value of states) {
       const dim = this.q(`SELECT ?d WHERE { ?d p:dimensionOf <${e.type}> ; p:valuesFrom ?s . <${value}> skos:inScheme ?s }`)[0].d;
-      this.set(created, dim, namedNode(value), changes, false);
+      this.set(work, created, dim, namedNode(value), changes, false);
     }
-    if (e.actorAs) this.set(created, e.actorAs, namedNode(principal.person), changes, false);
+    if (e.actorAs) this.set(work, created, e.actorAs, namedNode(principal.person), changes, false);
     if (e.setsDate) {
       let day = at;
       if (e.fromDate) {
-        const from = this.q(`SELECT ?d WHERE { <${object}> <${e.fromDate}> ?d }`)[0]?.d;
+        const from = this.q(`SELECT ?d WHERE { <${object}> <${e.fromDate}> ?d }`, work)[0]?.d;
         if (!from) throw new GatewayError(400, [`The object has no ${e.fromDate.split('#').pop()} to count from`]);
         day = new Date(`${from}T00:00:00Z`);
         day.setUTCDate(day.getUTCDate() + Number(e.days ?? 0));
       }
-      this.set(created, e.setsDate, literal(day.toISOString().slice(0, 10), namedNode(`${NS.xsd}date`)), changes, false);
+      this.set(work, created, e.setsDate, literal(day.toISOString().slice(0, 10), namedNode(`${NS.xsd}date`)), changes, false);
     }
     return created;
   }
 
-  private applyLink(object: string, effect: string, inputs: Map<string, Term>, changes: Change[]) {
+  private applyLink(work: Graph, object: string, effect: string, inputs: Map<string, Term>, changes: Change[]) {
     const e = this.q(`SELECT ?link ?input WHERE { <${effect}> p:linkedBy ?link ; p:toInput ?input }`)[0];
-    this.set(object, e.link, inputs.get(e.input), changes, false);
+    this.set(work, object, e.link, inputs.get(e.input), changes, false);
   }
 
-  private undo(changes: Change[]) {
-    for (const c of [...changes].reverse()) {
-      const s = namedNode(c.subject);
-      const p = namedNode(c.property);
-      if (c.newValue) this.graph.store.delete(quad(s, p, c.newValue, defaultGraph()));
-      if (c.oldValue) this.graph.store.add(quad(s, p, c.oldValue, defaultGraph()));
-    }
-    this.graph.dataset = defaultGraphDataset(this.graph.store);
-  }
-
-  private record(principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date): string {
-    const id = `${this.dataNamespace}commit/${++this.commitCount}`;
+  /** The commit's provenance record, as statements in its own named graph. */
+  private record(id: string, principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date): oxigraph.Quad[] {
     const g = namedNode(id);
-    const add = (s: string, p: string, o: Term) => this.graph.store.add(quad(namedNode(s), namedNode(p), o, g));
+    const quads: oxigraph.Quad[] = [];
+    const add = (s: string, p: string, o: Term) => quads.push(quad(namedNode(s), namedNode(p), o, g));
     add(id, RDF_TYPE, namedNode(`${NS.p}Commit`));
     add(id, `${NS.p}method`, namedNode(method));
     add(id, `${NS.p}target`, namedNode(object));
@@ -442,13 +483,13 @@ export class Gateway {
     });
     for (const o of created) add(id, `${NS.prov}generated`, namedNode(o));
     for (const e of pending) add(id, `${NS.p}pendingEffect`, namedNode(e));
-    return id;
+    return quads;
   }
 
   /** Every commit, oldest first. */
   commits(): { commit: string; method: string; target: string; person: string; role: string; at: string }[] {
     return this.q(`SELECT ?commit ?method ?target ?person ?role ?at WHERE { GRAPH ?commit {
         ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at } }
-        ORDER BY ?at ?commit`) as never;
+        ORDER BY ?at STRLEN(STR(?commit)) ?commit`) as never;
   }
 }

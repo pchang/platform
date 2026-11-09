@@ -3,11 +3,14 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { AddressInfo } from 'node:net';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
 import { Gateway } from './gateway';
 import { createGatewayServer } from './http';
 import { createMcpServer } from './mcp';
+
+// Journeys run many commits, and each validates the whole graph (see the PR note on validation cost).
+vi.setConfig({ testTimeout: 20_000 });
 
 const agent = { person: `${NS.d}agent-northbridge`, role: `${NS.ls}ExternalCROAgent` };
 type ToolResult = { isError?: boolean; content: { type: string; text: string }[] };
