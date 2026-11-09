@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
-import { Gateway, GatewayError, type Principal } from './gateway';
+import { GatewayError, type Principal } from './gateway';
+import { withSeed } from './node';
 
 // Journeys run many commits, and each validates the whole graph (see the PR note on validation cost).
 vi.setConfig({ testTimeout: 20_000 });
@@ -30,20 +31,20 @@ async function rejected(promise: Promise<unknown> | (() => unknown)) {
 
 describe('principals', () => {
   it('refuses a person acting in a role they do not hold', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     expect(await rejected(() => gateway.read(as('ada', 'QualityLead'), 'B-002'))).toEqual(['This person cannot act in this role']);
   });
 });
 
 describe('reads', () => {
   it('shows an object with its state, links and properties', () => {
-    const batch = Gateway.withSeed().read(elena, 'B-002');
+    const batch = withSeed().read(elena, 'B-002');
     expect(batch.state).toEqual({ Production: 'complete', Quality: 'pending', 'Deviation risk': 'high' });
     expect(batch.links.find((l) => l.label === 'raised on' && l.direction === 'in')?.objects.map((o) => o.identifier)).toEqual(['QE-1']);
   });
 
   it('never shows the Computational Chemist patient-level data', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     expect(await rejected(() => gateway.read(ada, 'PT-03'))).toEqual(['Your role cannot read this object']);
     expect(gateway.describe(ada).map((t) => t.label)).not.toContain('Patient');
     const batch = gateway.read(ada, 'B-002');
@@ -51,27 +52,27 @@ describe('reads', () => {
   });
 
   it('hides a patient’s arm while it is hidden (rule 2), and never shows it to the Clinical Data Manager', () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     expect(gateway.read(chloe, 'PT-03').properties).not.toHaveProperty('assigned arm');
     expect(gateway.read(ben, 'PT-03').properties).not.toHaveProperty('assigned arm');
   });
 
   it('records every read of personal data in the audit trail', () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     gateway.read(ben, 'PT-03');
     gateway.read(elena, 'B-002');
     expect(gateway.reads().map((r) => [r.person, r.object])).toEqual([[person('ben'), `${NS.d}PT-03`]]);
   });
 
   it('finds objects by type and state', () => {
-    const open = Gateway.withSeed().find(ben, ls('DataQuery'), { [ls('dataQueryStatus')]: lst('DataQueryStatus-open') });
+    const open = withSeed().find(ben, ls('DataQuery'), { [ls('dataQueryStatus')]: lst('DataQueryStatus-open') });
     expect(open.map((q) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
   });
 });
 
 describe('J1 through the gateway: from trial adverse event to expedited report', () => {
   it('runs end to end, with the unblinding edge case and separation of duties', async () => {
-    const gateway = Gateway.withSeed([], { now: fixedClock });
+    const gateway = withSeed([], { now: fixedClock });
 
     // Clinical Data Manager: report the serious event to safety.
     const reported = await gateway.commit(ben, 'AE-003', ls('ReportToSafety'));
@@ -121,7 +122,7 @@ describe('J1 through the gateway: from trial adverse event to expedited report',
 
 describe('J3 through the gateway: from manufacturing deviation to quarantine', () => {
   it('blocks release, quarantines the batch, and investigates the quality event', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     const release = (await gateway.methods(elena, 'B-002')).find((m) => m.label === 'Release batch');
     expect(release).toMatchObject({ available: false, blocks: ['An open quality event is raised on this batch'] });
     expect(await rejected(gateway.commit(elena, 'B-002', ls('ReleaseBatch'), { reviewer: person('elena') }))).toEqual(['An open quality event is raised on this batch']);
@@ -137,11 +138,11 @@ describe('J3 through the gateway: from manufacturing deviation to quarantine', (
 
 describe('commits', () => {
   it('refuse a role that may not run the method', async () => {
-    expect(await rejected(Gateway.withSeed().commit(ada, 'B-002', ls('QuarantineBatch'), { reason: 'x' }))).toEqual(['Your role cannot run this method']);
+    expect(await rejected(withSeed().commit(ada, 'B-002', ls('QuarantineBatch'), { reason: 'x' }))).toEqual(['Your role cannot run this method']);
   });
 
   it('refuse missing, unknown and wrong-kind inputs, naming each problem', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     expect(await rejected(gateway.commit(elena, 'B-002', ls('QuarantineBatch'), {}))).toEqual(['Reason is required']);
     expect(await rejected(gateway.commit(elena, 'QE-1', ls('StartInvestigation'), { investigator: 'B-001', color: 'red' }))).toEqual([
       'Unknown input color',
@@ -152,7 +153,7 @@ describe('commits', () => {
   it('undo everything when the result breaks a shape', async () => {
     // A stricter rule for this test only: every new safety case must name a batch. Report to safety
     // does not set one, so the commit breaks the shape after its effects are applied (step 5).
-    const scoped = Gateway.withSeed([`@prefix sh: <http://www.w3.org/ns/shacl#> . @prefix ls: <${NS.ls}> .
+    const scoped = withSeed([`@prefix sh: <http://www.w3.org/ns/shacl#> . @prefix ls: <${NS.ls}> .
       <urn:test:shape> a sh:NodeShape ; sh:targetNode <${NS.d}SafetyCase-7> ; sh:property <urn:test:p> .
       <urn:test:p> sh:path ls:mayInvolve ; sh:minCount 1 ; sh:message "Every case must name a batch" .`]);
     // The shape targets only the case this commit creates, so the seed itself conforms.
@@ -164,11 +165,11 @@ describe('commits', () => {
     expect(scoped.commits()).toEqual([]);
 
     // Control: without the stricter rule, the same commit succeeds and creates exactly that case.
-    expect((await Gateway.withSeed().commit(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-7`]);
+    expect((await withSeed().commit(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-7`]);
   });
 
   it('record described effects as pending work', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     const result = await gateway.commit(chloe, 'SIG-1', ls('EvaluateSignal'));
     expect(result.pending).toEqual([]);
     await gateway.commit(chloe, 'SC-001', ls('GenerateNarrative'));

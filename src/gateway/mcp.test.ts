@@ -5,7 +5,8 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
-import { Gateway } from './gateway';
+import type { Gateway } from './gateway';
+import { withSeed } from './node';
 import { createGatewayServer } from './http';
 import { createMcpServer } from './mcp';
 
@@ -30,13 +31,13 @@ async function connect(gateway: Gateway) {
 
 describe('MCP transport', () => {
   it('offers the gateway requests as tools', async () => {
-    const client = await connect(Gateway.withSeed());
+    const client = await connect(withSeed());
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'describe_ontology', 'find_objects', 'list_todo', 'offer_methods', 'read_object']);
   });
 
   it('runs the External agent journey: answers and closes open queries, under the same policy and log', async () => {
-    const gateway = Gateway.withSeed();
+    const gateway = withSeed();
     const client = await connect(gateway);
 
     const open = parse(await client.callTool({ name: 'find_objects', arguments: { type: 'DataQuery', state: { dataQueryStatus: 'DataQueryStatus-open' } } }));
@@ -56,7 +57,7 @@ describe('MCP transport', () => {
   });
 
   it('returns the reasons when the agent is refused', async () => {
-    const client = await connect(Gateway.withSeed());
+    const client = await connect(withSeed());
     const refused = await client.callTool({ name: 'commit_method', arguments: { id: 'B-002', method: 'ReleaseBatch', inputs: { reviewer: 'person-elena' } } });
     expect((refused as ToolResult).isError).toBe(true);
     expect(parse(refused)).toEqual({ reasons: ['Your role cannot run this method'] });
@@ -65,7 +66,7 @@ describe('MCP transport', () => {
   });
 
   it('works over HTTP at /mcp, with the principal from development headers', async () => {
-    const server = createGatewayServer(Gateway.withSeed(), { developmentMode: true });
+    const server = createGatewayServer(withSeed(), { developmentMode: true });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const url = new URL(`http://127.0.0.1:${(server.address() as AddressInfo).port}/mcp`);
     const client = new Client({ name: 'http-agent', version: '1.0.0' });

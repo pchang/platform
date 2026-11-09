@@ -1,8 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { fromNQuads, Journal, seedFingerprint } from './journal';
-import oxigraph from 'oxigraph';
+import * as oxigraph from 'oxigraph';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
-import { ask, defaultGraphDataset, loadOntology, NS, select, SEED_FILE, type Graph } from '../ontology/ontology';
+import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
 
 /**
  * The intelligence gateway (platform spec section 3.4): the only code path that reads or
@@ -85,11 +83,16 @@ interface Change {
 const { namedNode, literal, quad, defaultGraph } = oxigraph;
 const RDF_TYPE = `${NS.rdf}type`;
 
+/** The part of the journal the gateway writes to (see journal.ts, server only). */
+export interface JournalWriter {
+  append(kind: 'commit' | 'read', at: Date, removed: oxigraph.Quad[], added: oxigraph.Quad[]): unknown;
+}
+
 export interface GatewayOptions {
   dataNamespace?: string;
   now?: () => Date;
-  /** Where the journal lives. Without one, state is held in memory only, as in tests. */
-  journal?: Journal;
+  /** Where commits and recorded reads are written before the gateway answers. Without one, state is in memory only. */
+  journal?: JournalWriter;
 }
 
 export class Gateway {
@@ -104,28 +107,6 @@ export class Gateway {
   ) {
     this.commitCount = Number(this.q(`SELECT (COUNT(?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit } }`)[0].n);
     this.readCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?g { ?r a p:Read } }`)[0].n);
-  }
-
-  /** The ontology with the seed graph, in memory only: the starting point for tests. */
-  static withSeed(extraTurtle: string[] = [], options: GatewayOptions = {}): Gateway {
-    return new Gateway(loadOntology([readFileSync(SEED_FILE, 'utf8'), ...extraTurtle]), options);
-  }
-
-  /**
-   * The ontology with the seed graph and everything in the journal at journalPath (platform spec
-   * section 3.4, Persistence). Creates the journal if it does not exist. Refuses to start if the
-   * journal's chain is broken or it was written on a different seed.
-   */
-  static open(journalPath: string, options: Omit<GatewayOptions, 'journal'> & { extraTurtle?: string[] } = {}): Gateway {
-    const sources = [readFileSync(SEED_FILE, 'utf8'), ...(options.extraTurtle ?? [])];
-    const graph = loadOntology(sources);
-    const { journal, entries } = Journal.open(journalPath, seedFingerprint(sources), options.now?.() ?? new Date());
-    for (const entry of entries) {
-      for (const q of fromNQuads(entry.removed)) graph.store.delete(q);
-      for (const q of fromNQuads(entry.added)) graph.store.add(q);
-    }
-    graph.dataset = defaultGraphDataset(graph.store);
-    return new Gateway(graph, { ...options, journal });
   }
 
   private get dataNamespace() {
@@ -177,6 +158,23 @@ export class Gateway {
         <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label .
         OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
         OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } }`);
+  }
+
+  // ---------------------------------------------------------------- people (development)
+
+  /**
+   * The people and agents in the graph, with the roles each may act in. For the development persona
+   * switcher only (design system spec 4.1); the HTTP transport serves it in development mode only.
+   */
+  people(): { person: string; name: string; roles: { role: string; label: string }[] }[] {
+    const rows = this.q(`SELECT ?person ?name ?role ?label WHERE { ?person a p:Person ; rdfs:label ?name ; p:actsAs ?role . ?role rdfs:label ?label } ORDER BY ?name ?label`);
+    const people = new Map<string, { person: string; name: string; roles: { role: string; label: string }[] }>();
+    for (const r of rows) {
+      const entry = people.get(r.person) ?? { person: r.person, name: r.name, roles: [] };
+      entry.roles.push({ role: r.role, label: r.label });
+      people.set(r.person, entry);
+    }
+    return [...people.values()];
   }
 
   // ---------------------------------------------------------------- navigation and to do

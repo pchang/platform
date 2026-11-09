@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, writeSync } from 'node:fs';
 import { dirname } from 'node:path';
-import oxigraph from 'oxigraph';
+import * as oxigraph from 'oxigraph';
 
 /**
  * The gateway's append-only journal (platform spec section 3.4, Persistence).

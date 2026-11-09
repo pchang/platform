@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ask, loadOntology, ontologyFiles, select, type Graph } from './ontology';
+import { loadOntology, ontologyFiles } from './files';
+import { ask, select, type Graph } from './ontology';
 import { validateData } from './methods';
 
 let graph: Graph;

@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { validateData } from '../ontology/methods';
-import { loadOntology, select, SEED_FILE, type Graph } from '../ontology/ontology';
+import { loadOntology, SEED_FILE } from '../ontology/files';
+import { select, type Graph } from '../ontology/ontology';
 
 let graph: Graph;
 beforeAll(() => {

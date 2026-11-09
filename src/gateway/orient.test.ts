@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
-import { Gateway } from './gateway';
+import { withSeed } from './node';
 
 // To do checks every method a role may run on every object it could apply to.
 vi.setConfig({ testTimeout: 20_000 });
@@ -14,7 +14,7 @@ const quality = as('person-elena', 'QualityLead');
 const agent = as('agent-northbridge', 'ExternalCROAgent');
 
 describe('navigation shows each person the object world of their work (spec 5.1)', () => {
-  const gateway = Gateway.withSeed();
+  const gateway = withSeed();
   const nav = (p: typeof chemist) => gateway.navigation(p).map((d) => [d.label, d.types.map((t) => t.pluralLabel)]);
 
   it('gives the Clinical Data Manager only Clinical Development', () => {
@@ -38,7 +38,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
 });
 
 describe('To do (spec 5.1)', () => {
-  const gateway = Gateway.withSeed();
+  const gateway = withSeed();
   const list = async (p: typeof chemist) =>
     (await gateway.todo(p)).map((i) => [i.object.identifier, i.tasks.map((t) => t.label).join(', ') || `urgent: ${i.actions.map((a) => a.label).join(', ')}`]);
 
@@ -79,7 +79,7 @@ describe('To do (spec 5.1)', () => {
   });
 
   it('drops an object once its work is done', async () => {
-    const fresh = Gateway.withSeed();
+    const fresh = withSeed();
     await fresh.commit(quality, 'QE-1', `${NS.ls}StartInvestigation`, { investigator: 'person-elena' });
     expect((await fresh.todo(quality)).map((i) => i.object.identifier)).toEqual(['B-002', 'QE-1']);
     expect((await fresh.todo(quality))[1].tasks.map((t) => t.label)).toEqual(['Assign CAPA']);
@@ -87,6 +87,6 @@ describe('To do (spec 5.1)', () => {
 });
 
 it('does not offer a second expedited report for a case that already has one', async () => {
-  const sc003 = (await Gateway.withSeed().methods(physician, 'SC-003')).find((m) => m.label === 'Prepare expedited report');
+  const sc003 = (await withSeed().methods(physician, 'SC-003')).find((m) => m.label === 'Prepare expedited report');
   expect(sc003?.blocks).toEqual(['A submission already reports this case']);
 });

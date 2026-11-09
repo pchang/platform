@@ -15,6 +15,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/objects/:id/methods            offer methods
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... } }
  *   GET  /api/commits                        the history of commits
+ *   GET  /api/dev/people                     the seed graph's people and roles (development mode only)
  *   POST /mcp                                the same requests over the Model Context Protocol, for agents
  *
  * Identity: until an identity provider is connected, development mode reads the principal from
@@ -58,6 +59,10 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'mcp' && parts.length === 1) return await mcp(gateway, principalFrom(req, options), req, res);
     if (parts[0] !== 'api') throw new GatewayError(404, ['Not found']);
+    if (req.method === 'GET' && parts[1] === 'dev' && parts[2] === 'people' && parts.length === 3) {
+      if (!options.developmentMode) throw new GatewayError(404, ['Not found']);
+      return send(res, 200, gateway.people());
+    }
     const principal = principalFrom(req, options);
     const route = `${req.method} ${parts.slice(1).map((p, i) => (i % 2 === 1 ? ':' : p)).join('/')}`;
 
