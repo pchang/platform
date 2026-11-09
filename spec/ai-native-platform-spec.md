@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.7. November 9, 2026. Author: Paul Chang.
+Version 0.8. November 9, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -101,6 +101,35 @@ The single contract through which anything, human interface or agent, reads and 
 - Enforces permissions and policy on every read and every write.
 - Speaks open agent protocols so external agents connect as first-class citizens.
 - Records every action and its outcome.
+
+#### Gateway contract
+
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers five kinds of request.
+
+| Request | Answer |
+|---|---|
+| Describe the ontology | Object types, their state dimensions, relationships and methods |
+| Find objects | Objects of a type, filtered by state |
+| Read an object | Its identifier, state, relationships and properties, as the principal may see them |
+| Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
+| Commit a method | Runs one method on one object with its inputs (core loop step 6) |
+
+**Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
+
+**Commits** run as one transaction, in this order, and stop at the first failure with its reasons:
+
+1. The role may run the method.
+2. Every input is present, of the right kind, and meets its constraints.
+3. The object meets every precondition.
+4. The declared effects are applied: state changes, new objects and links.
+5. The changed graph is validated against every shape. Any violation undoes the whole commit.
+6. The commit is recorded as an activity with PROV-O provenance: who, when, which method, the inputs, and every value changed from old to new. Nothing is overwritten; history is the sequence of commits.
+
+Effects described in words are recorded with the commit as pending work, so nothing is silently skipped.
+
+**Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
+
+**Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
 
 ### 3.5 Agent Layer
 Agents do the work. The roles below are illustrative. The platform may split or combine them.
@@ -224,6 +253,8 @@ To resolve in future versions of this spec.
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
+- Which identity provider authenticates people and agents?
+- Where does the graph persist between restarts? The gateway holds it in memory for now.
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
 
@@ -240,3 +271,4 @@ To resolve in future versions of this spec.
 | 0.5 | 2026-11-08 | Added the responsive requirement to section 7. |
 | 0.6 | 2026-11-08 | Answered how the ontology is expressed (section 3.1): RDF 1.2 with SHACL, a platform vocabulary, modeling rules and the runtime. Chose the namespace, `https://w3id.org/lsh/`. |
 | 0.7 | 2026-11-09 | Renamed the namespace to `https://w3id.org/lsh-platform/` before registration, because w3id.org declines short, generic names. |
+| 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
