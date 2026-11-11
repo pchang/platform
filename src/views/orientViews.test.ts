@@ -5,8 +5,8 @@ import { buildTodoView, buildTypeView, loadingView } from './orientViews';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [
-  { object, tasks: [{ method: 'urn:m', label: 'Send for review' }], actions: [], urgency: 0, deadline: '2026-11-17' },
-  { object: { ...object, identifier: 'B-002', typeLabel: 'Batch', state: { Quality: 'pending' } }, tasks: [], actions: [{ method: 'urn:q', label: 'Quarantine batch' }], urgency: 3 },
+  { object, tasks: [{ method: 'urn:m', label: 'Send for review', archetype: { archetype: 'urn:a', label: 'Fill in' } }], actions: [], urgency: 0, deadline: '2026-11-17' },
+  { object: { ...object, identifier: 'B-002', typeLabel: 'Batch', state: { Quality: 'pending' } }, tasks: [], actions: [{ method: 'urn:q', label: 'Quarantine batch', archetype: { archetype: 'urn:a', label: 'Fill in' } }], urgency: 3 },
 ];
 
 describe('Orient views are valid view specs drawn only from the catalog (design system 4.3)', () => {

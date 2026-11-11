@@ -1,4 +1,5 @@
 import * as oxigraph from 'oxigraph';
+import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
 
@@ -56,9 +57,9 @@ export interface NavigationDomain {
 export interface ToDoItem {
   object: ObjectSummary;
   /** Tasks the principal can run now. Empty for an urgent object with only on-demand methods available. */
-  tasks: { method: string; label: string }[];
+  tasks: { method: string; label: string; archetype: Archetype }[];
   /** On-demand methods available now, shown for urgent objects. */
-  actions: { method: string; label: string }[];
+  actions: { method: string; label: string; archetype: Archetype }[];
   /** Highest urgency of the object's state values; 0 when none is urgent. */
   urgency: number;
   /** Earliest deadline, as an ISO date. */
@@ -148,7 +149,7 @@ export class Gateway {
         (d) => ({ ...d, values: this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${d.scheme}> ; skos:prefLabel ?label }`) }),
       ),
       methods: this.q(`SELECT ?method ?label ?comment WHERE { ?method p:appliesTo <${t.type}> ; rdfs:label ?label ; rdfs:comment ?comment } ORDER BY ?label`).map(
-        (m) => ({ ...m, inputs: this.inputs(m.method) }),
+        (m) => ({ ...m, archetype: archetypeOf(this.graph.store, m.method), inputs: this.inputs(m.method) }),
       ),
     }));
   }
@@ -219,7 +220,7 @@ export class Gateway {
           const isTask = m.onDemand !== 'true';
           if (!isTask && urgency < 3) continue;
           if ((await conformanceProblems(this.graph, o, preconditions.get(m.method)!, validator)).length) continue;
-          (isTask ? tasks : actions).push({ method: m.method, label: m.label });
+          (isTask ? tasks : actions).push({ method: m.method, label: m.label, archetype: archetypeOf(this.graph.store, m.method) });
         }
         if (!tasks.length && !(urgency >= 3 && actions.length)) continue;
         const deadline = this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${o}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;

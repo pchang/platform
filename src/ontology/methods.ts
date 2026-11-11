@@ -1,6 +1,7 @@
 import rdf from 'rdf-ext';
 import { Validator } from 'shacl-engine';
 import { validations } from 'shacl-engine/sparql.js';
+import { archetypeOf, type Archetype } from './archetypes';
 import { iri, select, type Graph } from './ontology';
 
 /**
@@ -15,6 +16,8 @@ export interface MethodOption {
   available: boolean;
   /** Why the method is blocked, from its precondition shape and the role. Empty when available. */
   blocks: string[];
+  /** How the person runs it (platform spec 5.4). */
+  archetype: Archetype;
 }
 
 export async function methodsFor(graph: Graph, object: string, role?: string): Promise<MethodOption[]> {
@@ -42,7 +45,7 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
     const blocks: string[] = [];
     if (allowed && !allowed.has(method)) blocks.push('Your role cannot run this method');
     blocks.push(...(await conformanceProblems(graph, object, preconditions)));
-    options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)] });
+    options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)], archetype: archetypeOf(graph.store, method) });
   }
   return options;
 }

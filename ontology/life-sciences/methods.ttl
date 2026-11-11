@@ -36,7 +36,8 @@ ls:RunSimulation a p:Method ;
   p:input ls:RunSimulation-modelType ;
   p:precondition lsh:RunSimulation-pre ;
   p:effect ls:RunSimulation-effect1 ;
-  p:onDemand true .
+  p:onDemand true ;
+  p:runsInBackground true .
 
 ls:GenerateAnalogs-targetProperty a p:Input ;
   p:inputName "targetProperty" ;
@@ -498,7 +499,8 @@ ls:RunSignalDetection a p:Method ;
   p:appliesTo ls:Product ;
   p:precondition lsh:RunSignalDetection-pre-hasCases ;
   p:effect ls:RunSignalDetection-effect1 ;
-  p:onDemand true .
+  p:onDemand true ;
+  p:runsInBackground true .
 
 ls:EvaluateSignal-effect1 a p:StateChange ;
   p:dimension ls:signalStatus ;
