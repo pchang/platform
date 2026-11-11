@@ -87,7 +87,10 @@ export interface CommitResult {
   commit: string;
   changes: ChangeView[];
   created: string[];
+  /** Described effects recorded as pending work (spec 3.4). */
   pending: string[];
+  /** What each pending effect will do, in words, in the same order. */
+  pendingDescriptions: string[];
 }
 
 type Term = oxigraph.NamedNode | oxigraph.Literal;
@@ -435,7 +438,7 @@ export class Gateway {
   /** Preview a method (spec 3.4): what a commit would change, without saving anything. */
   async preview(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
     const { changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
-    return { changes: changes.map((c) => this.changeView(c, work)), created, pending };
+    return { changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
   }
 
   private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
@@ -453,7 +456,11 @@ export class Gateway {
     this.graph.dataset = work.dataset;
     this.commitCount++;
 
-    return { commit, changes: changes.map((c) => this.changeView(c, work)), created, pending };
+    return { commit, changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
+  }
+
+  private describe_(effects: string[]): string[] {
+    return effects.map((e) => this.q(`SELECT ?d WHERE { <${e}> p:description ?d }`)[0]?.d ?? e);
   }
 
   /** Labels a change from the graph it was made in: identifiers for objects, labels for concepts and people. */
@@ -476,7 +483,7 @@ export class Gateway {
   }
 
   /** Compose a method (spec 3.4): its inputs with their kinds, choices and defaults, and its archetype. */
-  compose(principal: Principal, idOrIri: string, method: string): MethodComposition {
+  async compose(principal: Principal, idOrIri: string, method: string): Promise<MethodComposition> {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
@@ -485,7 +492,8 @@ export class Gateway {
     if (!m) throw new GatewayError(400, ['This method does not apply to this object']);
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
 
-    const inputs = this.inputs(method).map((input): ComposedInput => {
+    const validator = validatorFor(this.graph);
+    const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
       const base = { name: input.name, label: input.label };
       if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
       if (input.valuesFrom) {
@@ -502,11 +510,15 @@ export class Gateway {
         const self = people.some((p) => p.value === principal.person) ? principal.person : undefined;
         return { ...base, kind: 'person', choices: asChoices(people), ...(self ? { default: self } : {}) };
       }
-      const objects = input.choicesAlong
+      const candidates = input.choicesAlong
         ? this.q(`SELECT ?value ?label WHERE { <${object}> <${input.choicesAlong}> ?value . ?value ls:identifier ?label } ORDER BY ?label`)
         : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) } ORDER BY ?label`);
-      return { ...base, kind: 'object', choices: asChoices(objects) };
-    });
+      // Only objects that meet the input's shape qualify, such as cases that are not closed.
+      const shapes = this.q(`SELECT ?shape WHERE { <${input.input}> p:inputShape ?shape }`).map((r) => r.shape);
+      const qualifying = [];
+      for (const c of candidates) if (!(await conformanceProblems(this.graph, c.value, shapes, validator)).length) qualifying.push(c);
+      return { ...base, kind: 'object', choices: asChoices(qualifying) };
+    }));
     return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs };
   }
 

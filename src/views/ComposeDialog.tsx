@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefusedError, type CommitResult, type MethodComposition } from '../data/client';
+import { RefusedError, type CommitResult, type MethodComposition, type ObjectView } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildComposeView, buildRefusedView, type PreviewState } from './composeView';
+import { buildCompareView, buildComposeView, buildRefusedView, PAGE_ARCHETYPES, type PreviewState } from './composeView';
 
 /**
  * Runs one method on one object through its archetype's pattern (platform spec 5.4, steps 3 to 6):
  * collect the inputs, preview what will change, commit, and report the outcome to the caller.
+ * Confirm and Fill in open as a modal; Compare and decide is a page that takes the caller's place.
  */
 export function ComposeDialog({
   object,
@@ -25,6 +26,36 @@ export function ComposeDialog({
   const [state, setState] = useState<PreviewState>({ status: 'incomplete' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string[]>();
+  // Compare and decide: the object and the one chosen, as the gateway lets this person read them.
+  const [self, setSelf] = useState<ObjectView>();
+  const [other, setOther] = useState<ObjectView>();
+  const isPage = Boolean(composition && PAGE_ARCHETYPES.has(composition.archetype.label));
+  const picked = composition?.inputs.find((i) => i.kind === 'object');
+  const pickedValue = picked ? values[picked.name] : undefined;
+
+  useEffect(() => {
+    if (!isPage) return;
+    let cancelled = false;
+    client.read(principal, object).then((v) => !cancelled && setSelf(v));
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, object, isPage]);
+
+  useEffect(() => {
+    if (!isPage || !pickedValue) {
+      setOther(undefined);
+      return;
+    }
+    let cancelled = false;
+    client.read(principal, pickedValue).then(
+      (v) => !cancelled && setOther(v),
+      () => !cancelled && setOther(undefined),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, isPage, pickedValue]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +98,8 @@ export function ComposeDialog({
   if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: onCancel }} />;
   if (!composition) return null;
 
-  const view = buildComposeView(composition, state, submitting);
+  if (isPage && !self) return null;
+  const view = isPage ? buildCompareView(composition, state, self!, other, submitting) : buildComposeView(composition, state, submitting);
   return (
     <ViewRenderer
       view={view}

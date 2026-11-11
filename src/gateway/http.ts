@@ -86,7 +86,7 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
       case 'GET objects/:/methods':
         return send(res, 200, await gateway.methods(principal, parts[2]));
       case 'GET objects/:/methods/:':
-        return send(res, 200, gateway.compose(principal, parts[2], expand(parts[4], NS.ls)));
+        return send(res, 200, await gateway.compose(principal, parts[2], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:/preview': {
         const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
         return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));

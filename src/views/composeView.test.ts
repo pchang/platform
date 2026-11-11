@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { MethodComposition } from '../data/client';
-import { buildComposeView, buildRefusedView, changeLines, successNotice } from './composeView';
+import { buildCompareView, buildComposeView, buildRefusedView, changeLines, successNotice } from './composeView';
 
 const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', state: {} };
 const triage: MethodComposition = {
@@ -24,6 +24,7 @@ const preview = {
   ],
   created: ['urn:new'],
   pending: [],
+  pendingDescriptions: [],
 };
 
 describe('Confirm and Fill in views (design system spec 5.1)', () => {
@@ -67,5 +68,34 @@ describe('Confirm and Fill in views (design system spec 5.1)', () => {
 
   it('says what changed after the commit', () => {
     expect(validateView({ pattern: 'card-view', because: 't', root: successNotice(triage, { commit: 'urn:c', ...preview }) }).errors).toEqual([]);
+  });
+});
+
+describe('Compare and decide (design system spec 5.1)', () => {
+  const flag: MethodComposition = {
+    method: 'urn:Flag',
+    label: 'Flag duplicate',
+    archetype: { archetype: 'urn:Compare', label: 'Compare and decide' },
+    object,
+    inputs: [{ name: 'candidateCase', label: 'Candidate case', kind: 'object', choices: [{ value: 'urn:sc6', label: 'SC-006' }] }],
+  };
+  const self = { ...object, state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-05' }, links: [] };
+  const other = { ...object, iri: 'urn:sc6', identifier: 'SC-006', state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-07' }, links: [] };
+
+  it.each([
+    ['before a case is chosen', buildCompareView(flag, { status: 'incomplete' }, self, undefined)],
+    ['side by side, ready', buildCompareView(flag, { status: 'ready', preview }, self, other)],
+    ['refused', buildCompareView(flag, { status: 'refused', reasons: ['The candidate case is closed'] }, self, other)],
+  ])('%s is a valid view spec', (_name, view) => {
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('marks exactly the rows that differ, on both cards', () => {
+    const json = JSON.stringify(buildCompareView(flag, { status: 'incomplete' }, self, other));
+    expect(json.match(/"label":"Different"/g)).toHaveLength(2);
+  });
+
+  it('shows pending work as recorded for later', () => {
+    expect(changeLines(flag, { ...preview, pendingDescriptions: ['Moves this case into the target.'] })).toContainEqual({ term: 'Recorded for later', value: 'Moves this case into the target.' });
   });
 });

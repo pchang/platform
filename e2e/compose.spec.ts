@@ -70,6 +70,50 @@ test('Cancel and Escape change nothing', async ({ page }) => {
   await expect(page.getByText(/done on/)).toHaveCount(0);
 });
 
+test('Compare and decide: flag a duplicate side by side, then merge it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTodo(page);
+  await card(page, 'SC-003').getByRole('button', { name: 'Flag duplicate' }).click();
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Flag duplicate SC-003' })).toBeVisible();
+  await expect(page.getByText('Choose candidate case to compare')).toBeVisible();
+  await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
+  await expect(page.getByRole('heading', { level: 2, name: 'SC-006' })).toBeVisible();
+  await expect(page.getByText('Different').first()).toBeVisible();
+  await expect(page.getByText('set to SC-006')).toBeVisible();
+  await page.getByRole('button', { name: 'Flag duplicate' }).click();
+
+  await expect(page.getByText('Flag duplicate done on SC-003')).toBeVisible();
+  await card(page, 'SC-003').getByRole('button', { name: 'Merge duplicate' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Merge duplicate SC-003' })).toBeVisible();
+  await page.getByLabel('Target case').selectOption({ label: 'SC-006' });
+  await expect(page.getByText('assessed → closed')).toBeVisible();
+  await expect(page.getByText("Moves this case's information into the target case and links them.")).toBeVisible();
+  await page.getByRole('button', { name: 'Merge duplicate' }).click();
+  await expect(page.getByText('Merge duplicate done on SC-003')).toBeVisible();
+});
+
+test('Compare and decide stacks the cards on a phone, with no accessibility violations', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await openTodo(page);
+  await card(page, 'SC-003').getByRole('button', { name: 'Flag duplicate' }).click();
+  await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
+  await expect(page.getByText('set to SC-006')).toBeVisible();
+  const [a, b] = await Promise.all([
+    page.getByRole('heading', { level: 2, name: 'SC-003' }).boundingBox(),
+    page.getByRole('heading', { level: 2, name: 'SC-006' }).boundingBox(),
+  ]);
+  expect(b!.y).toBeGreaterThan(a!.y);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  await page.addScriptTag({ path: axePath });
+  const violations = await page.evaluate(async () => {
+    const axe = (window as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
+    const results = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] } });
+    return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+  });
+  expect(violations).toEqual([]);
+});
+
 for (const mode of ['light', 'dark'] as const) {
   for (const width of [320, 1280]) {
     test(`the open dialog has no accessibility violations at ${width}px in ${mode} mode, and fits the screen`, async ({ page }) => {
