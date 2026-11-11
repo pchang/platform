@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.14. November 11, 2026. Author: Paul Chang.
+Version 0.15. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -129,7 +129,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
 | To do | The objects with work waiting for the principal, in order (section 5.1) |
 | Compose a method | What the method needs from the principal: each input with its kind, its choices and its default, and the method's archetype (section 5.4) |
-| Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change and every object that would be created, or the reasons it would fail |
+| Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change, every object that would be created and every described effect that would be recorded as pending work, or the reasons it would fail |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -357,3 +357,4 @@ To resolve in future versions of this spec.
 | 0.12 | 2026-11-09 | Previews may run the gateway inside the page, with the seed graph and nothing saved (section 3.4). |
 | 0.13 | 2026-11-11 | Added interaction archetypes (section 5.4): predictable, repeatable patterns on the A2UI declarative model; the seven-step sequence for running a method; eight archetypes derived by ordered rules; acting on many objects as a mode; AI fills patterns but never chooses them. Two open questions. |
 | 0.14 | 2026-11-11 | The gateway answers Compose a method and Preview a method (section 3.4). Input choices and defaults come from the ontology (section 5.4). |
+| 0.15 | 2026-11-11 | Previews and commits name the described effects they record as pending work. |

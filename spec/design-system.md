@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.9. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.14, sections 3.6, 5.1, 5.4 and 7.
+Version 0.10. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.15, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -180,6 +180,14 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 5. The commit button is named for the method. Cancel closes the modal and changes nothing.
 6. After the commit, the modal closes, a success Alert at the top of the view says what changed, and To do refreshes.
 
+**Compare and decide, step by step:**
+
+1. The task's button on a To do card opens the pattern in place of To do, titled with the method and the object.
+2. A select offers the objects that qualify for the method's object input, from the gateway.
+3. The object and the chosen one appear side by side as cards: their state, properties and links, in the same order on both. Each row whose values differ is marked Different. On phones the cards stack.
+4. Below them, the preview: each value that will change, and each effect the gateway records as pending work, said plainly as later work, not as done.
+5. The commit button is named for the method. Cancel returns to To do and changes nothing. After the commit, To do returns with the success Alert.
+
 **Overlays in the catalog preview.** Components that open over the page, such as Modal, are validated like every other entry, but the catalog preview describes them in words instead of opening them. They can be tried from To do.
 | Continue | Cards of suggested next actions | New state, links to other domains |
 
@@ -271,3 +279,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.7 | 2026-11-09 | Chrome gains the sidebar: generated navigation, open from xl up and a drawer below. Profile shows the person and role, with a development persona switcher. Added To do and object lists as card views (4.3). |
 | 0.8 | 2026-11-11 | Compose uses the pattern of the method's interaction archetype: one surface and pattern per archetype, full screen on phones; fields derived from input kinds; the same ending after every commit. |
 | 0.9 | 2026-11-11 | The view spec gains `field` and `intent`. Confirm and Fill in specified step by step. Overlays are described, not opened, in the catalog preview. |
+| 0.10 | 2026-11-11 | Compare and decide specified step by step. Previews show pending work as later work. |
