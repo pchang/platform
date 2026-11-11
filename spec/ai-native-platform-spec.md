@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.12. November 9, 2026. Author: Paul Chang.
+Version 0.13. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -230,6 +230,39 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 - Consistent and predictable. The same task produces the same UI shape.
 - Can explain why it shows what it shows.
 
+#### Running a method: interaction archetypes
+
+In regulated work such as healthcare and clinical trials, the experience must be **predictable and repeatable**. The context and content change; the patterns do not. The platform follows the declarative model of A2UI (Google's Agent-to-User Interface): the experience is described as data, drawn only from a closed catalog of components, with the data bound separately. No interface is generated free-form.
+
+Running a method always follows the same sequence:
+
+1. **Select** an object.
+2. **Run** one of its methods.
+3. **Collect** the context the method needs: its inputs, and what the person must see to decide.
+4. **Assemble** the method's interaction from its archetype.
+5. **Traverse** the interaction until it is complete or the person cancels.
+6. **Show** what changed on the object: a preview before commit, then the outcome.
+7. **Return** to where the person came from, ready for the next thing.
+
+Every method has exactly one **interaction archetype**, derived from what the ontology says about it. The rules are checked in this order, and the first that matches decides:
+
+| Archetype | When | What the person does |
+|---|---|---|
+| Review and sign | The method requires an electronic signature | Review what will be signed, then sign with its meaning |
+| Start and track | The method runs in the background | Start it, then follow its progress and get notified when it ends |
+| Compare and decide | An input is another object of the same type | See both objects side by side, then decide |
+| Review a draft | The method produces a draft | Read the generated draft, marked as such, then accept, edit or discard it |
+| Choose an object | An input is an object of another type | Pick it from a list of the objects that qualify |
+| Step by step | The method needs five or more inputs | Give them in steps, one group at a time |
+| Fill in | The method has inputs | Fill in a short form |
+| Confirm | The method has no inputs | Confirm the change |
+
+- Deriving the archetype by rule means a new domain gets its interactions without designing them method by method. A method may override its archetype in the ontology when a rule gives the wrong one; overrides are recorded and rare.
+- Each archetype has one pattern in the design system (design system spec 5.1). The same archetype always looks and behaves the same way.
+- Every archetype ends the same way: a preview of each value that will change and each object that will be created, the commit, and the outcome. A blocked commit shows the gateway's reasons.
+- **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
+- Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
+
 ### 5.5 Interoperability
 - **Internal.** Any agent inside the platform can act on any object through the gateway.
 - **External.** Outside agents and platforms connect through the same gateway.
@@ -291,6 +324,8 @@ To resolve in future versions of this spec.
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
+- Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
+- Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
 - Which identity provider authenticates people and agents?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
@@ -317,3 +352,4 @@ To resolve in future versions of this spec.
 | 0.10 | 2026-11-09 | Added Persistence to the gateway contract (section 3.4): an append-only, fingerprinted journal written before every answer, replayed on start; commits one at a time on a working copy. Replaced the persistence question with one on snapshots. |
 | 0.11 | 2026-11-09 | Navigation shows each person the object world of their work (section 5.1). Added To do: tasks, on-demand methods, urgency and deadlines. The gateway answers Navigation and To do requests. |
 | 0.12 | 2026-11-09 | Previews may run the gateway inside the page, with the seed graph and nothing saved (section 3.4). |
+| 0.13 | 2026-11-11 | Added interaction archetypes (section 5.4): predictable, repeatable patterns on the A2UI declarative model; the seven-step sequence for running a method; eight archetypes derived by ordered rules; acting on many objects as a mode; AI fills patterns but never chooses them. Two open questions. |

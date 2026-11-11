@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.8. November 9, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.11.
+Version 0.9. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.13.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -207,6 +207,50 @@ These make To do work for this domain (platform spec section 5.1).
 - **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
 - **Deadlines:** a submission's due date.
 
+### Interaction archetypes
+
+Each method's interaction archetype, derived by the rules in platform spec section 5.4. No method overrides its rule. Run simulation and Run signal detection are marked as running in the background.
+
+| Method | On | Archetype |
+|---|---|---|
+| Sign experiment | Experiment | Review and sign |
+| Submit | Submission | Review and sign |
+| Run signal detection | Product | Start and track |
+| Run simulation | Compound | Start and track |
+| Flag duplicate | Safety Case | Compare and decide |
+| Merge duplicate | Safety Case | Compare and decide |
+| Generate analogs | Compound | Review a draft |
+| Generate narrative | Safety Case | Review a draft |
+| Answer query | Data Query | Fill in |
+| Assess | Safety Case | Fill in |
+| Assign CAPA | Quality Event | Fill in |
+| Confirm signal | Signal | Fill in |
+| Consent | Patient | Fill in |
+| Invalidate result | Assay Result | Fill in |
+| Open quality event | Batch | Fill in |
+| Promote to candidate | Compound | Fill in |
+| Quarantine batch | Batch | Fill in |
+| Raise query | Data Record | Fill in |
+| Record CAPA outcome | CAPA | Fill in |
+| Refute signal | Signal | Fill in |
+| Release batch | Batch | Fill in |
+| Send for review | Submission | Fill in |
+| Start investigation | Quality Event | Fill in |
+| Triage | Safety Case | Fill in |
+| Unblind patient | Patient | Fill in |
+| Close case | Safety Case | Confirm |
+| Close quality event | Quality Event | Confirm |
+| Close query | Data Query | Confirm |
+| Evaluate signal | Signal | Confirm |
+| Lock study | Study | Confirm |
+| Prepare expedited report | Safety Case | Confirm |
+| Randomize | Patient | Confirm |
+| Register | Compound | Confirm |
+| Report to safety | Adverse Event | Confirm |
+| Start CAPA | CAPA | Confirm |
+
+No method in this domain needs Choose an object or Step by step yet.
+
 ---
 
 ## 7. Business Context
@@ -360,3 +404,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.6 | 2026-11-09 | Seed graph: file, namespace, people, and where each journey starts. Named the object types that hold personal health data. |
 | 0.7 | 2026-11-09 | Personas are the canonical roles, with their default permissions; organizations may vary them and people may hold several. |
 | 0.8 | 2026-11-09 | Works mainly in sets each role's work domains. Added To do settings: on-demand methods, urgent values and deadlines. Prepare expedited report requires that no submission reports the case yet. |
+| 0.9 | 2026-11-11 | Added each method's interaction archetype (section 6). Run simulation and Run signal detection run in the background. |
