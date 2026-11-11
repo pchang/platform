@@ -28,7 +28,8 @@ Needs Node 22 or later.
 
 ```bash
 npm install
-npm run dev        # local dev server; the design system catalog is at /#/catalog
+npm run dev        # local dev server, with the gateway running inside the page on the seed graph (nothing saved); the design system catalog is at /#/catalog
+VITE_GATEWAY=http npm run dev   # the same, using a running gateway (npm run gateway) through /api
 npm run gateway    # the gateway in development mode: HTTP at /api, MCP at /mcp. State is kept in var/journal.jsonl
 npm test           # unit and accessibility tests
 npm run test:e2e   # browser tests at phone, tablet and desktop widths

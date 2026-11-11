@@ -216,11 +216,13 @@ lst:BatchDeviationRisk-low a skos:Concept ;
 
 lst:BatchDeviationRisk-elevated a skos:Concept ;
   skos:inScheme lst:BatchDeviationRisk ;
-  skos:prefLabel "elevated" .
+  skos:prefLabel "elevated" ;
+  p:urgency 2 .
 
 lst:BatchDeviationRisk-high a skos:Concept ;
   skos:inScheme lst:BatchDeviationRisk ;
-  skos:prefLabel "high" .
+  skos:prefLabel "high" ;
+  p:urgency 3 .
 
 lst:StudyPhase a skos:ConceptScheme ;
   skos:prefLabel "Study phase" ;
@@ -444,7 +446,8 @@ lst:AdverseEventSeriousness-nonSerious a skos:Concept ;
 lst:AdverseEventSeriousness-serious a skos:Concept ;
   skos:inScheme lst:AdverseEventSeriousness ;
   skos:prefLabel "serious" ;
-  skos:closeMatch ncit:C41335 .
+  skos:closeMatch ncit:C41335 ;
+  p:urgency 3 .
 
 lst:AdverseEventOutcome a skos:ConceptScheme ;
   skos:prefLabel "Adverse Event outcome" ;
@@ -508,7 +511,8 @@ lst:SafetyCaseSeriousness-nonSerious a skos:Concept ;
 lst:SafetyCaseSeriousness-serious a skos:Concept ;
   skos:inScheme lst:SafetyCaseSeriousness ;
   skos:prefLabel "serious" ;
-  skos:closeMatch ncit:C41335 .
+  skos:closeMatch ncit:C41335 ;
+  p:urgency 3 .
 
 lst:SafetyCaseExpectedness a skos:ConceptScheme ;
   skos:prefLabel "Safety Case expectedness" ;
@@ -613,11 +617,13 @@ lst:SubmissionDeadline-onTrack a skos:Concept ;
 
 lst:SubmissionDeadline-dueSoon a skos:Concept ;
   skos:inScheme lst:SubmissionDeadline ;
-  skos:prefLabel "due soon" .
+  skos:prefLabel "due soon" ;
+  p:urgency 3 .
 
 lst:SubmissionDeadline-overdue a skos:Concept ;
   skos:inScheme lst:SubmissionDeadline ;
-  skos:prefLabel "overdue" .
+  skos:prefLabel "overdue" ;
+  p:urgency 4 .
 
 lst:QualityEventStatus a skos:ConceptScheme ;
   skos:prefLabel "Quality Event status" ;
@@ -649,11 +655,13 @@ lst:QualityEventSeverity-minor a skos:Concept ;
 
 lst:QualityEventSeverity-major a skos:Concept ;
   skos:inScheme lst:QualityEventSeverity ;
-  skos:prefLabel "major" .
+  skos:prefLabel "major" ;
+  p:urgency 2 .
 
 lst:QualityEventSeverity-critical a skos:Concept ;
   skos:inScheme lst:QualityEventSeverity ;
-  skos:prefLabel "critical" .
+  skos:prefLabel "critical" ;
+  p:urgency 3 .
 
 lst:CAPAStatus a skos:ConceptScheme ;
   skos:prefLabel "CAPA status" ;

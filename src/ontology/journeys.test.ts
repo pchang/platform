@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { methodsFor, validateData } from './methods';
-import { loadOntology, NS } from './ontology';
+import { loadOntology } from './files';
+import { NS } from './ontology';
 
 /** Example graphs for the journeys in domain spec section 10. Fictional, like the seed graph. */
 const PREFIX = `@prefix ls: <${NS.ls}> . @prefix lst: <${NS.lst}> . @prefix d: <https://example.org/lsh/data/> .\n`;

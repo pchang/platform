@@ -19,29 +19,34 @@
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
+  p:worksIn ls:ScientificInnovation ;
   rdfs:label "Computational Chemist" ;
   rdfs:comment "Finds a better compound." ;
   p:mayRun ls:RunSimulation, ls:GenerateAnalogs, ls:Register, ls:PromoteToCandidate ;
   p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
 
 ls:ClinicalDataManager a p:Role ;
+  p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
   rdfs:comment "Gets clean data to study lock." ;
   p:mayRun ls:RaiseQuery, ls:CloseQuery, ls:ReportToSafety, ls:LockStudy ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;
+  p:worksIn ls:SafetyAndRegulatory ;
   rdfs:label "Drug Safety Physician" ;
   rdfs:comment "Protects patients and meets reporting deadlines." ;
   p:mayRun ls:Triage, ls:Assess, ls:FlagDuplicate, ls:MergeDuplicate, ls:GenerateNarrative, ls:PrepareExpeditedReport, ls:CloseCase,
     ls:SendForReview, ls:Submit, ls:RunSignalDetection, ls:EvaluateSignal, ls:ConfirmSignal, ls:RefuteSignal, ls:UnblindPatient .
 
 ls:QualityLead a p:Role ;
+  p:worksIn ls:ScientificInnovation, ls:SafetyAndRegulatory ;
   rdfs:label "Quality Lead" ;
   rdfs:comment "Keeps every batch compliant." ;
   p:mayRun ls:ReleaseBatch, ls:QuarantineBatch, ls:OpenQualityEvent, ls:StartInvestigation, ls:AssignCAPA, ls:RecordCAPAOutcome, ls:CloseQualityEvent .
 
 ls:ExternalCROAgent a p:Role ;
+  p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "External CRO agent" ;
   rdfs:comment "A contract research organization's agent. Answers and closes data queries at its own sites, through the gateway, under the same policy as people." ;
   p:mayRun ls:AnswerQuery, ls:CloseQuery ;

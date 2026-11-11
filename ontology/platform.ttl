@@ -99,6 +99,10 @@ p:Read a rdfs:Class ;
   rdfs:comment "A read of an object that holds personal data, recorded in the audit trail. A PROV-O activity." ;
   rdfs:subClassOf prov:Activity .
 
+p:Archetype a rdfs:Class ;
+  rdfs:label "interaction archetype" ;
+  rdfs:comment "How a person runs a method: one of a closed set, each with one pattern in the design system (platform spec 5.4)." .
+
 p:Person a rdfs:Class ;
   rdfs:label "person" ;
   rdfs:comment "Someone who runs methods, signs, reviews or approves. Identities come from the platform's identity provider." .
@@ -415,6 +419,54 @@ p:pendingEffect a rdf:Property ;
   rdfs:domain p:Commit ;
   rdfs:range p:DescribedEffect .
 
+p:worksIn a rdf:Property ;
+  rdfs:label "works in" ;
+  rdfs:comment "A domain the role's work is in. Decides the role's navigation (platform spec 5.1)." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Domain .
+
+p:onDemand a rdf:Property ;
+  rdfs:label "on demand" ;
+  rdfs:comment "True when the method is an action a person chooses to take, not work waiting. On-demand methods do not put an object on To do." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:urgency a rdf:Property ;
+  rdfs:label "urgency" ;
+  rdfs:comment "How urgent an object in this state is, from 2 (medium) upward. Orders To do; 3 or more makes an object urgent." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range xsd:integer .
+
+p:isDeadline a rdf:Property ;
+  rdfs:label "is deadline" ;
+  rdfs:comment "True when a date property is a deadline. Orders To do." ;
+  rdfs:domain rdf:Property ;
+  rdfs:range xsd:boolean .
+
+p:pluralLabel a rdf:Property ;
+  rdfs:label "plural label" ;
+  rdfs:comment "The plural name of an object type, for navigation and lists." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:string .
+
+p:runsInBackground a rdf:Property ;
+  rdfs:label "runs in background" ;
+  rdfs:comment "True when the method starts work that finishes later, such as a computation." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:archetype a rdf:Property ;
+  rdfs:label "archetype" ;
+  rdfs:comment "Overrides the method's derived interaction archetype. Rare, and only when a rule gives the wrong one." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:Archetype .
+
+p:ruleOrder a rdf:Property ;
+  rdfs:label "rule order" ;
+  rdfs:comment "The order in which the archetype's rule is checked. The first rule that matches decides." ;
+  rdfs:domain p:Archetype ;
+  rdfs:range xsd:integer .
+
 p:mayRun a rdf:Property ;
   rdfs:label "may run" ;
   rdfs:comment "A method the role may run." ;
@@ -430,3 +482,43 @@ p:parameterValue a rdf:Property ;
   rdfs:label "parameter value" ;
   rdfs:comment "The value of a parameter." ;
   rdfs:domain p:Parameter .
+
+p:ReviewAndSign a p:Archetype ;
+  rdfs:label "Review and sign" ;
+  rdfs:comment "The method requires an electronic signature. The person reviews what will be signed, then signs with its meaning." ;
+  p:ruleOrder 1 .
+
+p:StartAndTrack a p:Archetype ;
+  rdfs:label "Start and track" ;
+  rdfs:comment "The method runs in the background. The person starts it, follows its progress and is notified when it ends." ;
+  p:ruleOrder 2 .
+
+p:CompareAndDecide a p:Archetype ;
+  rdfs:label "Compare and decide" ;
+  rdfs:comment "An input is another object of the same type. The person sees both side by side, then decides." ;
+  p:ruleOrder 3 .
+
+p:ReviewADraft a p:Archetype ;
+  rdfs:label "Review a draft" ;
+  rdfs:comment "The method produces a draft. The person reads it, marked as generated, then accepts, edits or discards it." ;
+  p:ruleOrder 4 .
+
+p:ChooseAnObject a p:Archetype ;
+  rdfs:label "Choose an object" ;
+  rdfs:comment "An input is an object of another type. The person picks it from the objects that qualify." ;
+  p:ruleOrder 5 .
+
+p:StepByStep a p:Archetype ;
+  rdfs:label "Step by step" ;
+  rdfs:comment "The method needs five or more inputs. The person gives them in steps." ;
+  p:ruleOrder 6 .
+
+p:FillIn a p:Archetype ;
+  rdfs:label "Fill in" ;
+  rdfs:comment "The method has inputs. The person fills in a short form." ;
+  p:ruleOrder 7 .
+
+p:Confirm a p:Archetype ;
+  rdfs:label "Confirm" ;
+  rdfs:comment "The method has no inputs. The person confirms the change." ;
+  p:ruleOrder 8 .

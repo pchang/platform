@@ -1,14 +1,14 @@
 // @vitest-environment node
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Gateway } from './gateway';
+import { withSeed } from './node';
 import { createGatewayServer } from './http';
 
 let close: (() => void) | undefined;
 afterEach(() => close?.());
 
 async function start(developmentMode = true) {
-  const server = createGatewayServer(Gateway.withSeed(), { developmentMode });
+  const server = createGatewayServer(withSeed(), { developmentMode });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   close = () => server.close();
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;

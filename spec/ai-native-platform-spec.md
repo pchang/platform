@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.10. November 9, 2026. Author: Paul Chang.
+Version 0.13. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -117,7 +117,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers five kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers seven kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -126,6 +126,8 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Read an object | Its identifier, state, relationships and properties, as the principal may see them |
 | Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
 | Commit a method | Runs one method on one object with its inputs (core loop step 6) |
+| Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
+| To do | The objects with work waiting for the principal, in order (section 5.1) |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -152,6 +154,8 @@ Effects described in words are recorded with the commit as pending work, so noth
 A database server can later hold the current state for larger data or several gateways. The journal stays as the audit record.
 
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
+
+**Previews.** For reviewing the experience on any device without a server, the same gateway code can run inside the page, with the seed graph, in development mode and without a journal. Nothing a preview does is saved.
 
 **Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
 
@@ -197,6 +201,16 @@ Every interaction follows the same loop. The platform supports it end to end, fo
 - Adapts to user and business context.
 - Offers multiple views of the same graph.
 - Surfaces proactive starting points.
+- **Each person sees the object world of their work.** Navigation lists the object types of the domains their roles work in, grouped by domain, limited to what they may read. A clinical role does not see discovery or safety navigation. Objects outside that world stay reachable through links and search when the person may read them.
+
+#### To do
+
+Orient opens on **To do**: the objects where the person has work waiting, as cards. It is generated from the ontology, not designed per role.
+
+- An object is on the list when the person can run a **task** on it now: a method whose preconditions hold and that their role may run. Methods marked **on demand**, such as running a simulation, are actions a person chooses to take; they do not put an object on the list.
+- An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
+- The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines.
+- Each card shows the object, its state, its deadline and the tasks waiting.
 
 ### 5.2 AI Search
 - Accepts natural language and structured queries.
@@ -215,6 +229,39 @@ Every interaction follows the same loop. The platform supports it end to end, fo
 - Each generated view has one job: move the object from its current state to the target state.
 - Consistent and predictable. The same task produces the same UI shape.
 - Can explain why it shows what it shows.
+
+#### Running a method: interaction archetypes
+
+In regulated work such as healthcare and clinical trials, the experience must be **predictable and repeatable**. The context and content change; the patterns do not. The platform follows the declarative model of A2UI (Google's Agent-to-User Interface): the experience is described as data, drawn only from a closed catalog of components, with the data bound separately. No interface is generated free-form.
+
+Running a method always follows the same sequence:
+
+1. **Select** an object.
+2. **Run** one of its methods.
+3. **Collect** the context the method needs: its inputs, and what the person must see to decide.
+4. **Assemble** the method's interaction from its archetype.
+5. **Traverse** the interaction until it is complete or the person cancels.
+6. **Show** what changed on the object: a preview before commit, then the outcome.
+7. **Return** to where the person came from, ready for the next thing.
+
+Every method has exactly one **interaction archetype**, derived from what the ontology says about it. The rules are checked in this order, and the first that matches decides:
+
+| Archetype | When | What the person does |
+|---|---|---|
+| Review and sign | The method requires an electronic signature | Review what will be signed, then sign with its meaning |
+| Start and track | The method runs in the background | Start it, then follow its progress and get notified when it ends |
+| Compare and decide | An input is another object of the same type | See both objects side by side, then decide |
+| Review a draft | The method produces a draft | Read the generated draft, marked as such, then accept, edit or discard it |
+| Choose an object | An input is an object of another type | Pick it from a list of the objects that qualify |
+| Step by step | The method needs five or more inputs | Give them in steps, one group at a time |
+| Fill in | The method has inputs | Fill in a short form |
+| Confirm | The method has no inputs | Confirm the change |
+
+- Deriving the archetype by rule means a new domain gets its interactions without designing them method by method. A method may override its archetype in the ontology when a rule gives the wrong one; overrides are recorded and rare.
+- Each archetype has one pattern in the design system (design system spec 5.1). The same archetype always looks and behaves the same way.
+- Every archetype ends the same way: a preview of each value that will change and each object that will be created, the commit, and the outcome. A blocked commit shows the gateway's reasons.
+- **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
+- Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
 
 ### 5.5 Interoperability
 - **Internal.** Any agent inside the platform can act on any object through the gateway.
@@ -277,6 +324,8 @@ To resolve in future versions of this spec.
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
 - How is the generated UI tested for consistency and accessibility at scale?
+- Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
+- Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
 - Which identity provider authenticates people and agents?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
@@ -301,3 +350,6 @@ To resolve in future versions of this spec.
 | 0.8 | 2026-11-09 | Added the gateway contract (section 3.4): principals, five requests, read filtering, the commit sequence, provenance, transport and identity. Two open questions on identity and persistence. |
 | 0.9 | 2026-11-09 | Added Roles and permissions to the context layer (section 3.3): permissions as the unit, canonical roles with smart defaults, organizational variance, people with many roles, role inference from permissions, and user context for agents. Three open questions. |
 | 0.10 | 2026-11-09 | Added Persistence to the gateway contract (section 3.4): an append-only, fingerprinted journal written before every answer, replayed on start; commits one at a time on a working copy. Replaced the persistence question with one on snapshots. |
+| 0.11 | 2026-11-09 | Navigation shows each person the object world of their work (section 5.1). Added To do: tasks, on-demand methods, urgency and deadlines. The gateway answers Navigation and To do requests. |
+| 0.12 | 2026-11-09 | Previews may run the gateway inside the page, with the seed graph and nothing saved (section 3.4). |
+| 0.13 | 2026-11-11 | Added interaction archetypes (section 5.4): predictable, repeatable patterns on the A2UI declarative model; the seven-step sequence for running a method; eight archetypes derived by ordered rules; acting on many objects as a mode; AI fills patterns but never chooses them. Two open questions. |

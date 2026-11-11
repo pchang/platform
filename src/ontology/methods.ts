@@ -1,6 +1,7 @@
 import rdf from 'rdf-ext';
 import { Validator } from 'shacl-engine';
 import { validations } from 'shacl-engine/sparql.js';
+import { archetypeOf, type Archetype } from './archetypes';
 import { iri, select, type Graph } from './ontology';
 
 /**
@@ -15,6 +16,8 @@ export interface MethodOption {
   available: boolean;
   /** Why the method is blocked, from its precondition shape and the role. Empty when available. */
   blocks: string[];
+  /** How the person runs it (platform spec 5.4). */
+  archetype: Archetype;
 }
 
 export async function methodsFor(graph: Graph, object: string, role?: string): Promise<MethodOption[]> {
@@ -42,14 +45,18 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
     const blocks: string[] = [];
     if (allowed && !allowed.has(method)) blocks.push('Your role cannot run this method');
     blocks.push(...(await conformanceProblems(graph, object, preconditions)));
-    options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)] });
+    options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)], archetype: archetypeOf(graph.store, method) });
   }
   return options;
 }
 
+/** A validator for the graph's current state. Reuse it across checks of the same state; building one compiles every shape. */
+export function validatorFor(graph: Graph): Validator {
+  return new Validator(graph.dataset, { factory: rdf, validations });
+}
+
 /** The messages of every shape the focus node does not conform to. Empty when it conforms to all. */
-export async function conformanceProblems(graph: Graph, focus: string, shapes: string[]): Promise<string[]> {
-  const validator = new Validator(graph.dataset, { factory: rdf, validations });
+export async function conformanceProblems(graph: Graph, focus: string, shapes: string[], validator = validatorFor(graph)): Promise<string[]> {
   const problems: string[] = [];
   for (const shape of shapes) {
     const report = await validator.validate({ dataset: graph.dataset, terms: [iri(focus)] }, [{ terms: [iri(shape)] }]);

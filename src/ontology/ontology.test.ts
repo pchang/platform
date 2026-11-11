@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ask, loadOntology, ontologyFiles, select, type Graph } from './ontology';
+import { loadOntology, ontologyFiles } from './files';
+import { ask, select, type Graph } from './ontology';
 import { validateData } from './methods';
 
 let graph: Graph;
@@ -168,6 +169,22 @@ describe('agrees with the domain spec', () => {
     }
     expect(count).toBe(35);
     expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(35);
+  });
+
+  it('marks exactly the on-demand methods the To do section lists', () => {
+    const line = spec.split('### To do')[1].split('\n').find((l) => l.startsWith('- **On-demand methods**'))!;
+    const listed = line.split(': ')[1].replace(/\.$/, '').split(', ').sort();
+    const marked = q(`SELECT ?l WHERE { ?m p:onDemand true ; rdfs:label ?l }`).map((r) => r.l).sort();
+    expect(marked).toEqual(listed);
+  });
+
+  it('gives each role the work domains of its Works mainly in column', () => {
+    for (const [persona, works] of tableRows('## 6. Personas').filter((r) => r[0] !== 'Persona')) {
+      const domains = q(`SELECT ?l WHERE { ?r rdfs:label "${persona}" ; p:worksIn/rdfs:label ?l }`).map((r) => r.l).sort();
+      const named = q(`SELECT ?l WHERE { ?d a p:Domain ; rdfs:label ?l }`).map((r) => r.l).filter((d) => works.includes(d)).sort();
+      expect(domains, persona).toEqual(named);
+      expect(named.length, persona).toBeGreaterThan(0);
+    }
   });
 
   it('has a role for every persona in section 6', () => {

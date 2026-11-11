@@ -1,12 +1,10 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import oxigraph from 'oxigraph';
+import * as oxigraph from 'oxigraph';
 import rdf from 'rdf-ext';
 import type { DatasetCore, NamedNode, Quad } from '@rdfjs/types';
 
 /**
  * Loads the ontology (platform spec section 3.1) into Oxigraph for queries and an RDF/JS
- * dataset for SHACL validation. Server-side only: the gateway uses this, never the browser.
+ * dataset for SHACL validation. Runs on the server and, for previews, in the browser; file loading is in files.ts.
  */
 
 export const NS = {
@@ -28,17 +26,6 @@ export const PREFIXES = Object.entries(NS)
   .map(([prefix, iri]) => `PREFIX ${prefix}: <${iri}>`)
   .join('\n');
 
-export const ONTOLOGY_DIR = join(import.meta.dirname, '../../ontology');
-
-/** Every Turtle file of the ontology: the platform vocabulary, then each domain. */
-export function ontologyFiles(dir = ONTOLOGY_DIR): string[] {
-  const walk = (d: string): string[] =>
-    readdirSync(d, { withFileTypes: true }).flatMap((e) =>
-      e.isDirectory() ? walk(join(d, e.name)) : e.name.endsWith('.ttl') ? [join(d, e.name)] : [],
-    );
-  return walk(dir).sort((a, b) => (a.endsWith('platform.ttl') ? -1 : b.endsWith('platform.ttl') ? 1 : a.localeCompare(b)));
-}
-
 export interface Graph {
   store: oxigraph.Store;
   dataset: DatasetCore;
@@ -57,12 +44,6 @@ export function loadGraph(turtle: string[]): Graph {
  */
 export function defaultGraphDataset(store: oxigraph.Store): DatasetCore {
   return rdf.dataset(store.match(null, null, null, oxigraph.defaultGraph()) as unknown as Quad[]);
-}
-
-export const SEED_FILE = join(import.meta.dirname, '../../data/life-sciences/seed.ttl');
-
-export function loadOntology(extraTurtle: string[] = [], dir = ONTOLOGY_DIR): Graph {
-  return loadGraph([...ontologyFiles(dir).map((f) => readFileSync(f, 'utf8')), ...extraTurtle]);
 }
 
 /** Runs a SELECT query with the ontology prefixes and returns rows of plain strings. */

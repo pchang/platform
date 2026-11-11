@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.6. November 8, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.5, sections 3.6 and 7.
+Version 0.8. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.13, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -85,16 +85,25 @@ Every token, component, organism, layout, template and pattern works at every wi
 
 ### 4.1 Chrome
 
-The masthead of the Page template is the platform chrome. It is the same in every domain.
+The masthead and the sidebar of the Page template are the platform chrome. Their structure is the same in every domain; the sidebar's content is generated for each person.
 
 | Position | Content |
 |---|---|
-| Left | Text-based logo: the product name, set in configuration. Links to home |
-| Right | Notifications, settings and profile, as icon buttons with accessible names |
+| Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
+| Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
+| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
-All right-hand items stay visible at every width, on one row with the logo. The product name is LS&H.
+All masthead items stay visible at every width, on one row with the logo. The product name is LS&H.
+
+The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
+
+Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
+
+### 4.3 To do and object lists
+
+To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card shows the object's identifier and type, its state as labels, its deadline and urgency as status labels, and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
 
 ### 4.2 Light and dark mode
 
@@ -140,8 +149,27 @@ Patterns are chosen by rules, not by free generation. The rules read the core lo
 | Find | Filters and Toolbar over a Table, or Card view for few, visual objects | Result count, object type |
 | Choose | Primary-detail: the object in a Drawer, valid methods as actions | Object state, persona permissions |
 | Declare | Chatbot input or method buttons, side by side | Persona preference, task complexity |
-| Compose | Form for one step, Wizard for several, Modal for a confirmation | Number of inputs a method needs |
+| Compose | The pattern of the method's interaction archetype, in the table below | The archetype (platform spec 5.4) |
 | Commit | Preview as a Description list of before and after, then an Alert with the outcome | Whether the change is reversible |
+
+Each interaction archetype has one pattern. On phones, every surface below fills the screen.
+
+| Archetype | Surface | Pattern |
+|---|---|---|
+| Confirm | Modal, small | The question, the preview of what changes, then Confirm and Cancel |
+| Fill in | Modal, medium | A Form with one field per input, the preview, then the commit button named for the method |
+| Choose an object | Modal, medium | A searchable list of the objects that qualify, then the preview |
+| Step by step | Wizard | One step per group of inputs, a review step with the preview, then commit |
+| Compare and decide | Page | The two objects side by side as cards, differences marked; they stack on phones. The decision, then the preview |
+| Review a draft | Page | The draft, marked as generated until accepted (rule 5); Accept, Edit and Discard |
+| Review and sign | Wizard | A review step with the preview, then a signature step showing the signer, the time and the meaning of the signature |
+| Start and track | Modal, then the object | Confirm the start; progress then shows on the object, and Notifications tells the person when it ends |
+
+**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons for up to five values and a select beyond that, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
+
+**After every commit**, a success Alert says what changed, and the person returns to where they came from, with the object updated and its next tasks, if any, shown.
+
+The components these patterns need, such as Modal, Form, Description list, Alert and Wizard, join the catalog as each archetype is built.
 | Continue | Cards of suggested next actions | New state, links to other domains |
 
 ### 5.2 View spec
@@ -227,3 +255,5 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.4 | 2026-11-08 | Visual style is PatternFly's default. Product name is LS&H. Catalog is curated by hand and checked by tests; added entry contents, prop convention and growth by level. Closed two open questions. |
 | 0.5 | 2026-11-08 | Added the renderer (5.3) and the catalog preview (5.4). Added Card, CardTitle and CardBody and the card-view pattern, which the preview needs. Clarified the label exception. |
 | 0.6 | 2026-11-08 | Added light and dark mode (4.2): automatic by time of day, with a Light or Dark override in a Settings menu. Tests run in both modes. |
+| 0.7 | 2026-11-09 | Chrome gains the sidebar: generated navigation, open from xl up and a drawer below. Profile shows the person and role, with a development persona switcher. Added To do and object lists as card views (4.3). |
+| 0.8 | 2026-11-11 | Compose uses the pattern of the method's interaction archetype: one surface and pattern per archetype, full screen on phones; fields derived from input kinds; the same ending after every commit. |

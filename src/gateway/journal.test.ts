@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
-import { Gateway, GatewayError } from './gateway';
+import { GatewayError } from './gateway';
+import { openGateway } from './node';
 import { JournalError } from './journal';
 
 // Each test restarts the gateway, which replays the journal and validates a commit or two.
@@ -19,7 +20,7 @@ const journalPath = () => join(dir, 'journal.jsonl');
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 const fresh = () => {
   dir = mkdtempSync(join(tmpdir(), 'lsh-journal-'));
-  return Gateway.open(journalPath());
+  return openGateway(journalPath());
 };
 const lines = () => readFileSync(journalPath(), 'utf8').split('\n').filter(Boolean);
 
@@ -29,7 +30,7 @@ describe('persistence (platform spec 3.4)', () => {
     await first.commit(elena, 'B-002', ls('QuarantineBatch'), { reason: 'Deviation' });
     await first.commit(elena, 'QE-1', ls('StartInvestigation'), { investigator: 'person-elena' });
 
-    const restarted = Gateway.open(journalPath());
+    const restarted = openGateway(journalPath());
     expect(restarted.read(elena, 'B-002').state.Quality).toBe('quarantined');
     expect(restarted.read(elena, 'QE-1').state.Status).toBe('investigating');
     expect(restarted.commits().map((c) => c.method)).toEqual([ls('QuarantineBatch'), ls('StartInvestigation')]);
@@ -37,12 +38,12 @@ describe('persistence (platform spec 3.4)', () => {
     // New commits continue the numbering and the chain.
     const next = await restarted.commit(elena, 'QE-1', ls('AssignCAPA'), { owner: 'person-elena', action: 'Requalify the line' });
     expect(next.commit).toBe(`${NS.d}commit/3`);
-    expect(Gateway.open(journalPath()).read(elena, next.created[0]).state.Status).toBe('planned');
+    expect(openGateway(journalPath()).read(elena, next.created[0]).state.Status).toBe('planned');
   });
 
   it('keeps the audit trail of personal-data reads', () => {
     fresh().read(ben, 'PT-03');
-    expect(Gateway.open(journalPath()).reads().map((r) => r.object)).toEqual([`${NS.d}PT-03`]);
+    expect(openGateway(journalPath()).reads().map((r) => r.object)).toEqual([`${NS.d}PT-03`]);
   });
 
   it('writes nothing for a refused commit', async () => {
@@ -58,7 +59,7 @@ describe('persistence (platform spec 3.4)', () => {
     const tampered = lines();
     tampered[1] = tampered[1].replace('quarantined', 'released');
     writeFileSync(journalPath(), `${tampered.join('\n')}\n`);
-    expect(() => Gateway.open(journalPath())).toThrow(new JournalError('Journal entry 1 does not match its fingerprint. The journal may have been changed.'));
+    expect(() => openGateway(journalPath())).toThrow(new JournalError('Journal entry 1 does not match its fingerprint. The journal may have been changed.'));
   });
 
   it('refuses to start when an entry was removed', async () => {
@@ -67,12 +68,12 @@ describe('persistence (platform spec 3.4)', () => {
     await gateway.commit(elena, 'QE-1', ls('StartInvestigation'), { investigator: 'person-elena' });
     const [genesis, , second] = lines();
     writeFileSync(journalPath(), `${genesis}\n${second}\n`);
-    expect(() => Gateway.open(journalPath())).toThrow(JournalError);
+    expect(() => openGateway(journalPath())).toThrow(JournalError);
   });
 
   it('refuses to replay a journal onto a different seed graph', () => {
     fresh();
-    expect(() => Gateway.open(journalPath(), { extraTurtle: ['<urn:x> <urn:y> <urn:z> .'] })).toThrow(
+    expect(() => openGateway(journalPath(), { extraTurtle: ['<urn:x> <urn:y> <urn:z> .'] })).toThrow(
       new JournalError('The journal was written on a different seed graph. Replaying it would give a wrong state.'),
     );
   });

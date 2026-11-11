@@ -33,6 +33,7 @@ ls:identifier a owl:DatatypeProperty ;
 
 ls:Compound a p:ObjectType, rdfs:Class ;
   rdfs:label "Compound" ;
+  p:pluralLabel "Compounds" ;
   rdfs:comment "A molecule under research." ;
   p:inDomain ls:ScientificInnovation .
 
@@ -50,6 +51,7 @@ ls:compoundRegistration a p:StateDimension, owl:ObjectProperty ;
 
 ls:Simulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Simulation" ;
+  p:pluralLabel "Simulations" ;
   rdfs:comment "An in silico run predicting a compound's properties." ;
   p:inDomain ls:ScientificInnovation .
 
@@ -67,6 +69,7 @@ ls:simulationReview a p:StateDimension, owl:ObjectProperty ;
 
 ls:Experiment a p:ObjectType, rdfs:Class ;
   rdfs:label "Experiment" ;
+  p:pluralLabel "Experiments" ;
   rdfs:comment "A lab experiment recorded in an electronic notebook." ;
   p:inDomain ls:ScientificInnovation ;
   skos:closeMatch ncit:C42790 .
@@ -85,6 +88,7 @@ ls:experimentSignOff a p:StateDimension, owl:ObjectProperty ;
 
 ls:AssayResult a p:ObjectType, rdfs:Class ;
   rdfs:label "Assay Result" ;
+  p:pluralLabel "Assay Results" ;
   rdfs:comment "A measured property from an experiment." ;
   p:inDomain ls:ScientificInnovation .
 
@@ -96,6 +100,7 @@ ls:assayResultValidity a p:StateDimension, owl:ObjectProperty ;
 
 ls:Formulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Formulation" ;
+  p:pluralLabel "Formulations" ;
   rdfs:comment "A compound combined with other ingredients into a product." ;
   p:inDomain ls:ScientificInnovation .
 
@@ -107,6 +112,7 @@ ls:formulationStage a p:StateDimension, owl:ObjectProperty ;
 
 ls:Process a p:ObjectType, rdfs:Class ;
   rdfs:label "Process" ;
+  p:pluralLabel "Processes" ;
   rdfs:comment "The approved way a formulation is manufactured." ;
   p:inDomain ls:ScientificInnovation .
 
@@ -118,6 +124,7 @@ ls:processStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:Batch a p:ObjectType, rdfs:Class ;
   rdfs:label "Batch" ;
+  p:pluralLabel "Batches" ;
   rdfs:comment "One manufactured lot of a formulation." ;
   p:inDomain ls:ScientificInnovation ;
   skos:exactMatch ncit:C41396 .
@@ -142,6 +149,7 @@ ls:batchDeviationRisk a p:StateDimension, owl:ObjectProperty ;
 
 ls:Study a p:ObjectType, rdfs:Class ;
   rdfs:label "Study" ;
+  p:pluralLabel "Studies" ;
   rdfs:comment "A clinical trial of one or more formulations, in patients or in people without the disease." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:closeMatch ncit:C15206 .
@@ -166,6 +174,7 @@ ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
 
 ls:Site a p:ObjectType, rdfs:Class ;
   rdfs:label "Site" ;
+  p:pluralLabel "Sites" ;
   rdfs:comment "A hospital or clinic running the study." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:exactMatch ncit:C85838 .
@@ -184,6 +193,7 @@ ls:sitePayment a p:StateDimension, owl:ObjectProperty ;
 
 ls:Patient a p:ObjectType, rdfs:Class ;
   rdfs:label "Patient" ;
+  p:pluralLabel "Patients" ;
   rdfs:comment "A person enrolled in a study. Labeled participant in studies without a disease state." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:closeMatch ncit:C16960 ;
@@ -209,6 +219,7 @@ ls:patientArmVisibility a p:StateDimension, owl:ObjectProperty ;
 
 ls:Visit a p:ObjectType, rdfs:Class ;
   rdfs:label "Visit" ;
+  p:pluralLabel "Visits" ;
   rdfs:comment "A scheduled encounter with a patient." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:exactMatch ncit:C191214 ;
@@ -222,6 +233,7 @@ ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:DataRecord a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Record" ;
+  p:pluralLabel "Data Records" ;
   rdfs:comment "A captured data point: a lab value, vital sign, diary entry or device reading." ;
   p:inDomain ls:ClinicalDevelopment ;
   p:holdsPersonalData true .
@@ -240,6 +252,7 @@ ls:dataRecordSource a p:StateDimension, owl:ObjectProperty ;
 
 ls:DataQuery a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Query" ;
+  p:pluralLabel "Data Queries" ;
   rdfs:comment "A question raised about a data record." ;
   p:inDomain ls:ClinicalDevelopment .
 
@@ -251,6 +264,7 @@ ls:dataQueryStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:AdverseEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Adverse Event" ;
+  p:pluralLabel "Adverse Events" ;
   rdfs:comment "Something harmful that happened to a patient during the study." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:exactMatch ncit:C41331 ;
@@ -282,6 +296,7 @@ ls:adverseEventReporting a p:StateDimension, owl:ObjectProperty ;
 
 ls:SafetyCase a p:ObjectType, rdfs:Class ;
   rdfs:label "Safety Case" ;
+  p:pluralLabel "Safety Cases" ;
   rdfs:comment "One report of an adverse reaction in one patient." ;
   p:inDomain ls:SafetyAndRegulatory ;
   p:holdsPersonalData true .
@@ -312,6 +327,7 @@ ls:safetyCaseCausality a p:StateDimension, owl:ObjectProperty ;
 
 ls:Product a p:ObjectType, rdfs:Class ;
   rdfs:label "Product" ;
+  p:pluralLabel "Products" ;
   rdfs:comment "A marketed or investigational product." ;
   p:inDomain ls:SafetyAndRegulatory ;
   skos:closeMatch ncit:C221818 .
@@ -324,6 +340,7 @@ ls:productStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:Signal a p:ObjectType, rdfs:Class ;
   rdfs:label "Signal" ;
+  p:pluralLabel "Signals" ;
   rdfs:comment "A possible new risk detected across many cases." ;
   p:inDomain ls:SafetyAndRegulatory .
 
@@ -335,6 +352,7 @@ ls:signalStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:Submission a p:ObjectType, rdfs:Class ;
   rdfs:label "Submission" ;
+  p:pluralLabel "Submissions" ;
   rdfs:comment "A regulatory filing to an authority." ;
   p:inDomain ls:SafetyAndRegulatory ;
   skos:exactMatch ncit:C70885 .
@@ -353,6 +371,7 @@ ls:submissionDeadline a p:StateDimension, owl:ObjectProperty ;
 
 ls:QualityEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Quality Event" ;
+  p:pluralLabel "Quality Events" ;
   rdfs:comment "A deviation, complaint or audit finding." ;
   p:inDomain ls:SafetyAndRegulatory .
 
@@ -370,6 +389,7 @@ ls:qualityEventSeverity a p:StateDimension, owl:ObjectProperty ;
 
 ls:CAPA a p:ObjectType, rdfs:Class ;
   rdfs:label "CAPA" ;
+  p:pluralLabel "CAPAs" ;
   rdfs:comment "A corrective and preventive action." ;
   p:inDomain ls:SafetyAndRegulatory .
 
@@ -381,6 +401,7 @@ ls:capaStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:MedicalInquiry a p:ObjectType, rdfs:Class ;
   rdfs:label "Medical Inquiry" ;
+  p:pluralLabel "Medical Inquiries" ;
   rdfs:comment "A question from a clinician or patient about a product." ;
   p:inDomain ls:SafetyAndRegulatory ;
   p:holdsPersonalData true .
@@ -489,7 +510,8 @@ ls:receivedOn a owl:DatatypeProperty ;
 
 ls:dueOn a owl:DatatypeProperty ;
   rdfs:label "due on" ;
-  rdfs:comment "The date the submission is due." .
+  rdfs:comment "The date the submission is due." ;
+  p:isDeadline true .
 
 ls:preparedBy a owl:ObjectProperty ;
   rdfs:label "prepared by" ;
