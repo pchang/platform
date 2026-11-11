@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.9. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.13.
+Version 0.10. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.16.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -251,6 +251,13 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 
 No method in this domain needs Choose an object or Step by step yet.
 
+The two signed methods carry these meanings (platform spec section 3.4, Electronic signatures):
+
+| Method | Meaning of the signature |
+|---|---|
+| Sign experiment | Authorship: I performed this experiment, and its record is complete and accurate. |
+| Submit | Approval: I approve this report for submission to the regulatory authority. |
+
 ---
 
 ## 7. Business Context
@@ -405,3 +412,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.7 | 2026-11-09 | Personas are the canonical roles, with their default permissions; organizations may vary them and people may hold several. |
 | 0.8 | 2026-11-09 | Works mainly in sets each role's work domains. Added To do settings: on-demand methods, urgent values and deadlines. Prepare expedited report requires that no submission reports the case yet. |
 | 0.9 | 2026-11-11 | Added each method's interaction archetype (section 6). Run simulation and Run signal detection run in the background. |
+| 0.10 | 2026-11-11 | The meaning of each signed method's signature. |
