@@ -83,7 +83,7 @@ describe('signal detection, as a background run', () => {
     expect(ended.endedAt).toBeDefined();
     expect(ended.created).toEqual([{ iri: `${NS.d}Signal-2`, identifier: 'Signal-2' }]);
     expect(ended.message).toBe(
-      'Found 1 new signal: Signal-2 for skin rash, in 4 safety cases (PRR 13.3, chi-squared 7.7). drug-induced liver injury meets the thresholds and already has SIG-1.',
+      'Found 1 new signal: Signal-2 for skin rash, in 4 safety cases (PRR 13.3, chi-squared 7.7). Drug-induced liver injury meets the thresholds and already has SIG-1.',
     );
 
     const signal = gateway.read(chloe, 'Signal-2');
@@ -113,7 +113,7 @@ describe('signal detection, as a background run', () => {
     const second = gateway.run(chloe, run!.run);
     expect(second.created).toEqual([]);
     expect(second.message).toMatch(/^No new signals\. /);
-    expect(second.message).toContain('skin rash meets the thresholds and already has Signal-2.');
+    expect(second.message).toContain('Skin rash meets the thresholds and already has Signal-2.');
     expect(gateway.commits()).toHaveLength(3);
   });
 

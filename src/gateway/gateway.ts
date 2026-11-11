@@ -909,7 +909,7 @@ export class Gateway {
       await yieldToReaders();
       if (!f.meets) continue;
       if (f.existing) {
-        again.push(`${f.outcomeLabel} meets the thresholds and already has ${f.existing}.`);
+        again.push(`${f.outcomeLabel[0].toUpperCase()}${f.outcomeLabel.slice(1)} meets the thresholds and already has ${f.existing}.`);
         continue;
       }
       const iri = this.applyCreation(work, object, analysis.effect, new Map(), starter, at, changes);

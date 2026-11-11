@@ -206,7 +206,7 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 1. The method's button on a card opens a small modal, titled with the method and the object.
 2. Any inputs, then the preview: what starting the run changes now, and what the run will do in the background, said plainly as work that starts when they press the button. If the method cannot run, the reasons instead.
 3. The start button is named for the method. Cancel closes the modal and changes nothing.
-4. Once started, the modal shows the run: a Progress bar with its status, and that the person can close the modal and keep working, because Notifications will tell them when it ends.
+4. Once started, the modal shows the run: a Progress bar with its status, and that the person can close the modal and keep working, because Notifications will tell them when it ends. Its button is Keep working while the run goes on, and Done once it ends; neither stops the run.
 5. When the run ends while the modal is open, it shows the outcome: what was found and created, or why it failed.
 6. Closing the modal returns to the list, with an Alert saying the run started or how it ended. The object's card shows the run while it is running.
 

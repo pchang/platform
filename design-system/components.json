@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.4",
+  "version": "0.5",
   "components": [
     {
       "id": "Button",
@@ -2331,6 +2331,98 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "Progress",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Progress"
+      },
+      "purpose": "Shows how far a background run has got, and how it ended.",
+      "useWhen": [
+        "Following a background run (archetype Start and track)"
+      ],
+      "avoidWhen": [
+        "Waits with unknown progress: use Spinner"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Percent done"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What is in progress, and its status"
+          },
+          "valueText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The progress in words, for screen readers"
+          },
+          "measureLocation": {
+            "enum": [
+              "outside",
+              "inside",
+              "top",
+              "none"
+            ],
+            "description": "Where the percentage is shown"
+          },
+          "variant": {
+            "enum": [
+              "success",
+              "danger",
+              "warning"
+            ],
+            "description": "How it ended, shown by icon and color"
+          },
+          "size": {
+            "enum": [
+              "sm",
+              "md",
+              "lg"
+            ],
+            "description": "Bar height"
+          }
+        },
+        "required": [
+          "value",
+          "title"
+        ]
+      },
+      "children": null,
+      "responsive": "Full width of its container. The title wraps above the bar; the percentage stays beside it.",
+      "accessibility": [
+        "A progressbar with its title as its name and the progress in words",
+        "How it ended is shown by an icon as well as color (rule 4)"
+      ],
+      "examples": [
+        {
+          "component": "Progress",
+          "props": {
+            "value": 40,
+            "title": "Run signal detection on P-101: running",
+            "valueText": "40 percent done",
+            "measureLocation": "top"
+          }
+        },
+        {
+          "component": "Progress",
+          "props": {
+            "value": 100,
+            "title": "Run signal detection on P-101: finished",
+            "variant": "success",
+            "measureLocation": "top"
+          }
         }
       ]
     },

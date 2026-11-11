@@ -1,0 +1,9 @@
+/* The notification drawer's own spacing. Tokens only, no raw values (design system spec, rule 2). */
+.app-notifications__actions {
+  padding-inline: var(--pf-t--global--spacer--lg);
+  padding-block-end: var(--pf-t--global--spacer--sm);
+}
+
+.app-notifications__empty {
+  padding: var(--pf-t--global--spacer--lg);
+}
