@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.8. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.13, sections 3.6, 5.1, 5.4 and 7.
+Version 0.9. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.14, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -152,7 +152,7 @@ Patterns are chosen by rules, not by free generation. The rules read the core lo
 | Compose | The pattern of the method's interaction archetype, in the table below | The archetype (platform spec 5.4) |
 | Commit | Preview as a Description list of before and after, then an Alert with the outcome | Whether the change is reversible |
 
-Each interaction archetype has one pattern. On phones, every surface below fills the screen.
+Each interaction archetype has one pattern. On phones, every surface below takes the full width of the screen, less PatternFly's standard margin, and scrolls inside itself when tall.
 
 | Archetype | Surface | Pattern |
 |---|---|---|
@@ -165,11 +165,22 @@ Each interaction archetype has one pattern. On phones, every surface below fills
 | Review and sign | Wizard | A review step with the preview, then a signature step showing the signer, the time and the meaning of the signature |
 | Start and track | Modal, then the object | Confirm the start; progress then shows on the object, and Notifications tells the person when it ends |
 
-**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons for up to five values and a select beyond that, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
+**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
 
 **After every commit**, a success Alert says what changed, and the person returns to where they came from, with the object updated and its next tasks, if any, shown.
 
 The components these patterns need, such as Modal, Form, Description list, Alert and Wizard, join the catalog as each archetype is built.
+
+**Confirm and Fill in, step by step:**
+
+1. On a To do card, each task waiting is a button named for the method. Tasks whose archetype is not built yet are shown as text.
+2. The button opens the archetype's modal, titled with the method and the object.
+3. Fill in shows one field per input, with the input's choices and default from the gateway. Confirm shows no fields.
+4. As soon as every input has a value, the modal shows the preview from the gateway: each value that will change, from old to new, and each object that will be created. If the method would fail, it shows the reasons instead, and the commit button stays disabled.
+5. The commit button is named for the method. Cancel closes the modal and changes nothing.
+6. After the commit, the modal closes, a success Alert at the top of the view says what changed, and To do refreshes.
+
+**Overlays in the catalog preview.** Components that open over the page, such as Modal, are validated like every other entry, but the catalog preview describes them in words instead of opening them. They can be tried from To do.
 | Continue | Cards of suggested next actions | New state, links to other domains |
 
 ### 5.2 View spec
@@ -203,6 +214,8 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 - `bind` points to a graph object. Data is read through the gateway, never embedded by the agent.
 - `action` names an ontology method. The gateway checks it again on commit.
 - `because` records why a node is there. It powers "why am I seeing this" (platform spec 5.4).
+- `field` binds a form control to one input of the method being composed, by the input's name. The renderer keeps the value; the view spec never holds it.
+- `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything.
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
@@ -257,3 +270,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.6 | 2026-11-08 | Added light and dark mode (4.2): automatic by time of day, with a Light or Dark override in a Settings menu. Tests run in both modes. |
 | 0.7 | 2026-11-09 | Chrome gains the sidebar: generated navigation, open from xl up and a drawer below. Profile shows the person and role, with a development persona switcher. Added To do and object lists as card views (4.3). |
 | 0.8 | 2026-11-11 | Compose uses the pattern of the method's interaction archetype: one surface and pattern per archetype, full screen on phones; fields derived from input kinds; the same ending after every commit. |
+| 0.9 | 2026-11-11 | The view spec gains `field` and `intent`. Confirm and Fill in specified step by step. Overlays are described, not opened, in the catalog preview. |

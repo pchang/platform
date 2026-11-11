@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.13. November 11, 2026. Author: Paul Chang.
+Version 0.14. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -117,7 +117,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers seven kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers nine kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -128,6 +128,8 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Commit a method | Runs one method on one object with its inputs (core loop step 6) |
 | Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
 | To do | The objects with work waiting for the principal, in order (section 5.1) |
+| Compose a method | What the method needs from the principal: each input with its kind, its choices and its default, and the method's archetype (section 5.4) |
+| Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change and every object that would be created, or the reasons it would fail |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -262,6 +264,7 @@ Every method has exactly one **interaction archetype**, derived from what the on
 - Every archetype ends the same way: a preview of each value that will change and each object that will be created, the commit, and the outcome. A blocked commit shows the gateway's reasons.
 - **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
 - Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
+- **Choices come from the ontology.** A value from a concept scheme offers the scheme's values, narrowed by the input's shape. A person offers the people who may act. An object offers the objects that qualify. A person input defaults to the principal.
 
 ### 5.5 Interoperability
 - **Internal.** Any agent inside the platform can act on any object through the gateway.
@@ -353,3 +356,4 @@ To resolve in future versions of this spec.
 | 0.11 | 2026-11-09 | Navigation shows each person the object world of their work (section 5.1). Added To do: tasks, on-demand methods, urgency and deadlines. The gateway answers Navigation and To do requests. |
 | 0.12 | 2026-11-09 | Previews may run the gateway inside the page, with the seed graph and nothing saved (section 3.4). |
 | 0.13 | 2026-11-11 | Added interaction archetypes (section 5.4): predictable, repeatable patterns on the A2UI declarative model; the seven-step sequence for running a method; eight archetypes derived by ordered rules; acting on many objects as a mode; AI fills patterns but never chooses them. Two open questions. |
+| 0.14 | 2026-11-11 | The gateway answers Compose a method and Preview a method (section 3.4). Input choices and defaults come from the ontology (section 5.4). |
