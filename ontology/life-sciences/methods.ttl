@@ -30,6 +30,9 @@ ls:RunSimulation-effect1 a p:Creation ;
   p:initialState lst:SimulationRun-queued ;
   p:initialState lst:SimulationReview-unreviewed .
 
+ls:RunSimulation-effect2 a p:DescribedEffect ;
+  p:description "A model of the chosen type predicts the compound's properties and records them on the simulation. No model is connected yet." .
+
 ls:RunSimulation a p:Method ;
   rdfs:label "Run simulation" ;
   rdfs:comment "Runs an in silico prediction of a compound's properties." ;
@@ -37,6 +40,7 @@ ls:RunSimulation a p:Method ;
   p:input ls:RunSimulation-modelType ;
   p:precondition lsh:RunSimulation-pre ;
   p:effect ls:RunSimulation-effect1 ;
+  p:effect ls:RunSimulation-effect2 ;
   p:onDemand true ;
   p:runsInBackground true .
 
@@ -510,8 +514,20 @@ ls:Submit a p:Method ;
   p:signatureMeaning "Approval: I approve this report for submission to the regulatory authority." ;
   p:governedBy ls:SeparationOfDuties .
 
-ls:RunSignalDetection-effect1 a p:DescribedEffect ;
-  p:description "Creates a Signal in detected, concerning the product and aggregating its cases, for each product and event pair whose disproportionality exceeds the threshold in business context. Also runs on the schedule set there." .
+ls:RunSignalDetection-effect1 a p:DisproportionalityAnalysis ;
+  p:description "Looks for reactions reported disproportionately often for this product, compared with every other product (rule 7), and creates a Signal in detected for each one that has no Signal on the product yet." ;
+  p:counts ls:SafetyCase ;
+  p:exposure ls:concerns ;
+  p:outcome ls:reaction ;
+  p:excludes ls:duplicateOf ;
+  p:createsType ls:Signal ;
+  p:linkedBy ls:concerns ;
+  p:recordsOutcomeAs ls:reaction ;
+  p:aggregatesBy ls:aggregates ;
+  p:initialState lst:SignalStatus-detected ;
+  p:minimumCount ls:SignalDetection-minimumCases ;
+  p:minimumRatio ls:SignalDetection-minimumPRR ;
+  p:minimumChiSquare ls:SignalDetection-minimumChiSquare .
 
 ls:RunSignalDetection a p:Method ;
   rdfs:label "Run signal detection" ;
@@ -520,7 +536,8 @@ ls:RunSignalDetection a p:Method ;
   p:precondition lsh:RunSignalDetection-pre-hasCases ;
   p:effect ls:RunSignalDetection-effect1 ;
   p:onDemand true ;
-  p:runsInBackground true .
+  p:runsInBackground true ;
+  p:governedBy ls:SignalDetection .
 
 ls:EvaluateSignal-effect1 a p:StateChange ;
   p:dimension ls:signalStatus ;

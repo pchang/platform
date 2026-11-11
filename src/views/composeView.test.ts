@@ -25,6 +25,7 @@ const preview = {
   created: ['urn:new'],
   pending: [],
   pendingDescriptions: [],
+  background: [],
 };
 
 describe('Confirm and Fill in views (design system spec 5.1)', () => {

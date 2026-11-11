@@ -81,6 +81,6 @@ describe('Preview a method (spec 3.4)', () => {
     const preview = await withSeed().preview(elena, 'QE-1', ls('StartInvestigation'), { investigator: elena.person });
     expect(preview.created).toEqual([]);
     const ben = { person: `${NS.d}person-ben`, role: ls('ClinicalDataManager') };
-    expect((await withSeed().preview(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-7`]);
+    expect((await withSeed().preview(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-27`]);
   });
 });

@@ -1,6 +1,7 @@
 import rdf from 'rdf-ext';
 import { Validator } from 'shacl-engine';
 import { validations } from 'shacl-engine/sparql.js';
+import { backgroundBlocks } from './analyses';
 import { archetypeOf, type Archetype } from './archetypes';
 import { iri, select, type Graph } from './ontology';
 
@@ -44,6 +45,7 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
   for (const [method, { label, preconditions }] of methods) {
     const blocks: string[] = [];
     if (allowed && !allowed.has(method)) blocks.push('Your role cannot run this method');
+    blocks.push(...backgroundBlocks(graph.store, method));
     blocks.push(...(await conformanceProblems(graph, object, preconditions)));
     options.push({ method, label, available: blocks.length === 0, blocks: [...new Set(blocks)], archetype: archetypeOf(graph.store, method) });
   }

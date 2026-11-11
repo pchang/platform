@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, writeSync } from 'node:fs';
 import { dirname } from 'node:path';
 import * as oxigraph from 'oxigraph';
+import type { JournalKind } from './gateway';
 
 /**
  * The gateway's append-only journal (platform spec section 3.4, Persistence).
@@ -13,7 +14,7 @@ import * as oxigraph from 'oxigraph';
 
 export interface JournalEntry {
   seq: number;
-  kind: 'genesis' | 'commit' | 'read';
+  kind: 'genesis' | JournalKind;
   at: string;
   /** Fingerprint of the seed graph this journal builds on. Genesis entry only. */
   seed?: string;
@@ -95,7 +96,7 @@ export class Journal {
   }
 
   /** Appends an entry and flushes it to disk. Throws if it cannot, so the caller changes nothing. */
-  append(kind: 'commit' | 'read', at: Date, removed: oxigraph.Quad[], added: oxigraph.Quad[]): JournalEntry {
+  append(kind: JournalKind, at: Date, removed: oxigraph.Quad[], added: oxigraph.Quad[]): JournalEntry {
     const body = { seq: this.last.seq + 1, kind, at: at.toISOString(), removed: toNQuads(removed), added: toNQuads(added), prev: this.last.hash };
     const entry = { ...body, hash: fingerprint(body) };
     this.write(entry);

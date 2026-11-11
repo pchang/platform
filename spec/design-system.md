@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.11. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.16, sections 3.6, 5.1, 5.4 and 7.
+Version 0.12. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.17, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -99,11 +99,16 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
+Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its badge shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
+
 Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
 
 ### 4.3 To do and object lists
 
 To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card shows the object's identifier and type, its state as labels, its deadline and urgency as status labels, and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
+
+- On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
+- An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
 ### 4.2 Light and dark mode
 
@@ -196,6 +201,15 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 4. The final button is named for the method and stays disabled until the typed name matches. Back returns to Review. Cancel closes without changing anything.
 5. After the commit, To do returns with the success Alert, which says the change was signed and by whom.
 
+**Start and track, step by step:**
+
+1. The method's button on a card opens a small modal, titled with the method and the object.
+2. Any inputs, then the preview: what starting the run changes now, and what the run will do in the background, said plainly as work that starts when they press the button. If the method cannot run, the reasons instead.
+3. The start button is named for the method. Cancel closes the modal and changes nothing.
+4. Once started, the modal shows the run: a Progress bar with its status, and that the person can close the modal and keep working, because Notifications will tell them when it ends.
+5. When the run ends while the modal is open, it shows the outcome: what was found and created, or why it failed.
+6. Closing the modal returns to the list, with an Alert saying the run started or how it ended. The object's card shows the run while it is running.
+
 **Overlays in the catalog preview.** Components that open over the page, such as Modal, are validated like every other entry, but the catalog preview describes them in words instead of opening them. They can be tried from To do.
 | Continue | Cards of suggested next actions | New state, links to other domains |
 
@@ -269,7 +283,8 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 
 - How small can the component subset be while still covering every journey?
 - Should the platform add its own composites (for example, a state-transition preview) to the catalog?
-- What do notifications and profile open: a drawer, a menu or a page? Settings opens a menu; does it later need its own page?
+- Settings opens a menu; does it later need its own page?
+- Which events besides a run ending should notify a person, such as work assigned to them, and may they choose how they are notified?
 - Should Automatic follow sunrise and sunset at the person's location instead of fixed hours?
 
 ---
@@ -289,3 +304,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.9 | 2026-11-11 | The view spec gains `field` and `intent`. Confirm and Fill in specified step by step. Overlays are described, not opened, in the catalog preview. |
 | 0.10 | 2026-11-11 | Compare and decide specified step by step. Previews show pending work as later work. |
 | 0.11 | 2026-11-11 | Review and sign specified step by step: a Wizard with Review and Sign steps. |
+| 0.12 | 2026-11-11 | Start and track specified step by step: a modal to start, then the run's progress and outcome. Notifications opens a notification drawer with an unread count. Object list cards offer the methods the person can run now and show runs in progress. Closed the question of what notifications open. |

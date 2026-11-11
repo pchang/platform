@@ -20,9 +20,9 @@ const parse = (r: unknown) => JSON.parse((r as ToolResult).content[0].text);
 let cleanup: (() => Promise<void>) | undefined;
 afterEach(async () => cleanup?.());
 
-async function connect(gateway: Gateway) {
+async function connect(gateway: Gateway, principal = agent) {
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-  await createMcpServer(gateway, agent).connect(serverSide);
+  await createMcpServer(gateway, principal).connect(serverSide);
   const client = new Client({ name: 'test-agent', version: '1.0.0' });
   await client.connect(clientSide);
   cleanup = () => client.close();
@@ -33,7 +33,7 @@ describe('MCP transport', () => {
   it('offers the gateway requests as tools', async () => {
     const client = await connect(withSeed());
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'compose_method', 'describe_ontology', 'find_objects', 'list_todo', 'offer_methods', 'preview_method', 'read_object']);
+    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'compose_method', 'describe_ontology', 'find_objects', 'list_notifications', 'list_todo', 'mark_notifications_read', 'offer_methods', 'preview_method', 'read_object', 'track_runs']);
   });
 
   it('runs the External agent journey: answers and closes open queries, under the same policy and log', async () => {
@@ -63,6 +63,20 @@ describe('MCP transport', () => {
     expect(parse(refused)).toEqual({ reasons: ['Your role cannot run this method'] });
     const blinded = await client.callTool({ name: 'read_object', arguments: { id: 'PT-03' } });
     expect(parse(blinded).properties).not.toHaveProperty('assigned arm');
+  });
+
+  it('starts a background run, tracks it and reads the notification it ends with', async () => {
+    const gateway = withSeed();
+    const chloe = { person: `${NS.d}person-chloe`, role: `${NS.ls}DrugSafetyPhysician` };
+    const client = await connect(gateway, chloe);
+    const started = parse(await client.callTool({ name: 'commit_method', arguments: { id: 'P-101', method: 'RunSignalDetection' } }));
+    expect(started.run.status).toBe('queued');
+    await gateway.idle();
+    const [run] = parse(await client.callTool({ name: 'track_runs', arguments: { id: 'P-101' } }));
+    expect(run).toMatchObject({ status: 'succeeded', created: [{ identifier: 'Signal-2' }] });
+    const [notice] = parse(await client.callTool({ name: 'list_notifications', arguments: {} }));
+    expect(notice).toMatchObject({ title: 'Run signal detection finished', read: false });
+    expect(parse(await client.callTool({ name: 'mark_notifications_read', arguments: {} }))).toEqual({ marked: 1 });
   });
 
   it('works over HTTP at /mcp, with the principal from development headers', async () => {
