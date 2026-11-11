@@ -13,6 +13,8 @@ import { createMcpServer } from './mcp';
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
+ *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
+ *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... } }
  *   GET  /api/commits                        the history of commits
  *   GET  /api/dev/people                     the seed graph's people and roles (development mode only)
@@ -83,6 +85,12 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.read(principal, parts[2]));
       case 'GET objects/:/methods':
         return send(res, 200, await gateway.methods(principal, parts[2]));
+      case 'GET objects/:/methods/:':
+        return send(res, 200, await gateway.compose(principal, parts[2], expand(parts[4], NS.ls)));
+      case 'POST objects/:/methods/:/preview': {
+        const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
+        return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));
+      }
       case 'POST objects/:/methods/:': {
         const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs));

@@ -467,6 +467,11 @@ p:ruleOrder a rdf:Property ;
   rdfs:domain p:Archetype ;
   rdfs:range xsd:integer .
 
+p:order a rdf:Property ;
+  rdfs:label "order" ;
+  rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme. Keeps forms and choices in the same order every time." ;
+  rdfs:range xsd:integer .
+
 p:mayRun a rdf:Property ;
   rdfs:label "may run" ;
   rdfs:comment "A method the role may run." ;

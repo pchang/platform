@@ -21,6 +21,7 @@
 ls:RunSimulation-modelType a p:Input ;
   p:inputName "modelType" ;
   rdfs:label "Model type" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:RunSimulation-effect1 a p:Creation ;
@@ -42,6 +43,7 @@ ls:RunSimulation a p:Method ;
 ls:GenerateAnalogs-targetProperty a p:Input ;
   p:inputName "targetProperty" ;
   rdfs:label "Target property" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:GenerateAnalogs-effect1 a p:Creation ;
@@ -79,6 +81,7 @@ ls:Register a p:Method ;
 ls:PromoteToCandidate-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:PromoteToCandidate-effect1 a p:StateChange ;
@@ -96,6 +99,7 @@ ls:PromoteToCandidate a p:Method ;
 ls:SignExperiment-signer a p:Input ;
   p:inputName "signer" ;
   rdfs:label "Signer" ;
+  p:order 1 ;
   p:isActor true .
 
 ls:SignExperiment-effect1 a p:StateChange ;
@@ -115,6 +119,7 @@ ls:SignExperiment a p:Method ;
 ls:InvalidateResult-reason a p:Input ;
   p:inputName "reason" ;
   rdfs:label "Reason" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:InvalidateResult-effect1 a p:StateChange ;
@@ -138,6 +143,7 @@ ls:InvalidateResult a p:Method ;
 ls:ReleaseBatch-reviewer a p:Input ;
   p:inputName "reviewer" ;
   rdfs:label "Reviewer" ;
+  p:order 1 ;
   p:isActor true .
 
 ls:ReleaseBatch-effect1 a p:StateChange ;
@@ -156,6 +162,7 @@ ls:ReleaseBatch a p:Method ;
 ls:QuarantineBatch-reason a p:Input ;
   p:inputName "reason" ;
   rdfs:label "Reason" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:QuarantineBatch-effect1 a p:StateChange ;
@@ -174,6 +181,7 @@ ls:QuarantineBatch a p:Method ;
 ls:Consent-eConsentRecord a p:Input ;
   p:inputName "eConsentRecord" ;
   rdfs:label "eConsent record" ;
+  p:order 1 ;
   p:datatype xsd:anyURI .
 
 ls:Consent-effect1 a p:StateChange ;
@@ -212,6 +220,7 @@ ls:Randomize a p:Method ;
 ls:RaiseQuery-question a p:Input ;
   p:inputName "question" ;
   rdfs:label "Question" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:RaiseQuery-effect1 a p:Creation ;
@@ -231,6 +240,7 @@ ls:RaiseQuery a p:Method ;
 ls:AnswerQuery-answer a p:Input ;
   p:inputName "answer" ;
   rdfs:label "Answer" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:AnswerQuery-effect1 a p:StateChange ;
@@ -278,6 +288,7 @@ ls:ReportToSafety a p:Method ;
 ls:UnblindPatient-justification a p:Input ;
   p:inputName "justification" ;
   rdfs:label "Justification" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:UnblindPatient-effect1 a p:StateChange ;
@@ -308,11 +319,13 @@ ls:LockStudy a p:Method ;
 ls:Triage-seriousness a p:Input ;
   p:inputName "seriousness" ;
   rdfs:label "Seriousness" ;
+  p:order 1 ;
   p:valuesFrom lst:SafetyCaseSeriousness .
 
 ls:Triage-expectedness a p:Input ;
   p:inputName "expectedness" ;
   rdfs:label "Expectedness" ;
+  p:order 2 ;
   p:valuesFrom lst:SafetyCaseExpectedness .
 
 ls:Triage-effect1 a p:StateChange ;
@@ -341,6 +354,7 @@ ls:Triage a p:Method ;
 ls:FlagDuplicate-candidateCase a p:Input ;
   p:inputName "candidateCase" ;
   rdfs:label "Candidate case" ;
+  p:order 1 ;
   p:objectOf ls:SafetyCase ;
   p:inputShape lsh:OpenSafetyCase .
 
@@ -362,6 +376,7 @@ ls:FlagDuplicate a p:Method ;
 ls:Assess-causality a p:Input ;
   p:inputName "causality" ;
   rdfs:label "Causality" ;
+  p:order 1 ;
   p:valuesFrom lst:SafetyCaseCausality ;
   p:inputShape lsh:AssessedCausality .
 
@@ -398,6 +413,7 @@ ls:GenerateNarrative a p:Method ;
 ls:MergeDuplicate-targetCase a p:Input ;
   p:inputName "targetCase" ;
   rdfs:label "Target case" ;
+  p:order 1 ;
   p:objectOf ls:SafetyCase ;
   p:choicesAlong ls:duplicateOf .
 
@@ -450,6 +466,7 @@ ls:CloseCase a p:Method ;
 ls:SendForReview-reviewer a p:Input ;
   p:inputName "reviewer" ;
   rdfs:label "Reviewer" ;
+  p:order 1 ;
   p:isActor true .
 
 ls:SendForReview-effect1 a p:StateChange ;
@@ -467,6 +484,7 @@ ls:SendForReview a p:Method ;
 ls:Submit-approver a p:Input ;
   p:inputName "approver" ;
   rdfs:label "Approver" ;
+  p:order 1 ;
   p:isActor true ;
   p:distinctFrom ls:preparedBy .
 
@@ -516,6 +534,7 @@ ls:EvaluateSignal a p:Method ;
 ls:ConfirmSignal-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:ConfirmSignal-effect1 a p:StateChange ;
@@ -537,6 +556,7 @@ ls:ConfirmSignal a p:Method ;
 ls:RefuteSignal-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:RefuteSignal-effect1 a p:StateChange ;
@@ -554,11 +574,13 @@ ls:RefuteSignal a p:Method ;
 ls:OpenQualityEvent-description a p:Input ;
   p:inputName "description" ;
   rdfs:label "Description" ;
+  p:order 1 ;
   p:datatype xsd:string .
 
 ls:OpenQualityEvent-severity a p:Input ;
   p:inputName "severity" ;
   rdfs:label "Severity" ;
+  p:order 2 ;
   p:valuesFrom lst:QualityEventSeverity .
 
 ls:OpenQualityEvent-effect1 a p:Creation ;
@@ -579,6 +601,7 @@ ls:OpenQualityEvent a p:Method ;
 ls:StartInvestigation-investigator a p:Input ;
   p:inputName "investigator" ;
   rdfs:label "Investigator" ;
+  p:order 1 ;
   p:isActor true .
 
 ls:StartInvestigation-effect1 a p:StateChange ;
@@ -596,11 +619,13 @@ ls:StartInvestigation a p:Method ;
 ls:AssignCAPA-owner a p:Input ;
   p:inputName "owner" ;
   rdfs:label "Owner" ;
+  p:order 1 ;
   p:isActor true .
 
 ls:AssignCAPA-action a p:Input ;
   p:inputName "action" ;
   rdfs:label "Action" ;
+  p:order 2 ;
   p:datatype xsd:string .
 
 ls:AssignCAPA-effect1 a p:Creation ;
@@ -636,12 +661,14 @@ ls:StartCAPA a p:Method ;
 ls:RecordCAPAOutcome-outcome a p:Input ;
   p:inputName "outcome" ;
   rdfs:label "Outcome" ;
+  p:order 1 ;
   p:valuesFrom lst:CAPAStatus ;
   p:inputShape lsh:CAPAOutcome .
 
 ls:RecordCAPAOutcome-evidence a p:Input ;
   p:inputName "evidence" ;
   rdfs:label "Evidence" ;
+  p:order 2 ;
   p:datatype xsd:string .
 
 ls:RecordCAPAOutcome-effect1 a p:StateChange ;

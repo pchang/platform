@@ -1,4 +1,4 @@
-import { useId, useMemo, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useId, useMemo, type ReactNode, type Ref } from 'react';
 import { componentsById, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { icons } from './icons';
@@ -14,12 +14,23 @@ export interface RenderHost {
   onAction?: (action: NonNullable<ViewNode['action']>, node: ViewNode) => void;
   /** Called with the reasons when a view is rejected. */
   onInvalid?: (errors: string[]) => void;
+  /** The values of the fields being composed, by input name (view spec `field`). The renderer never stores them. */
+  values?: Record<string, string>;
+  /** Called when the person changes a field. */
+  onField?: (field: string, value: string) => void;
+  /** Called when the person presses a button with an intent, or closes a Modal (cancel). */
+  onIntent?: (intent: 'submit' | 'cancel') => void;
 }
 
+/** A FormGroup's id, so the control inside it is labeled by the group's label. */
+const FieldIdContext = createContext<string | undefined>(undefined);
+
 /** Components whose PatternFly API takes `label` as a prop rather than as children. */
-const LABEL_IS_PROP = new Set(['Checkbox', 'Radio', 'Switch']);
+const LABEL_IS_PROP = new Set(['Checkbox', 'Radio', 'Switch', 'FormGroup', 'FormSelectOption']);
 /** Components that need an id so their label stays connected to the control. */
-const NEEDS_ID = new Set(['Checkbox', 'Radio', 'Switch', 'TextInput']);
+const NEEDS_ID = new Set(['Checkbox', 'Radio', 'Switch', 'TextInput', 'TextArea', 'FormSelect']);
+/** Controls whose value comes from the field they are bound to. */
+const VALUE_FIELDS = new Set(['TextInput', 'TextArea', 'FormSelect']);
 
 /** Components that take exactly one child element, not a list (PatternFly attaches to it). */
 const SINGLE_CHILD = new Set(['Tooltip']);
@@ -27,11 +38,34 @@ const SINGLE_CHILD = new Set(['Tooltip']);
 // `ref` is passed through so components like Tooltip can attach to the element a node draws.
 function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref<unknown> }) {
   const generatedId = useId();
+  const groupId = useContext(FieldIdContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
-  if (NEEDS_ID.has(entry.id)) props.id = generatedId;
+  if (NEEDS_ID.has(entry.id)) props.id = entry.id !== 'Radio' && groupId ? groupId : generatedId;
+  if (entry.id === 'FormGroup' && props.role !== 'radiogroup') props.fieldId = generatedId;
+
+  // Fields: the value comes from the host, and changes go back to it.
+  const field = node.field;
+  if (field && VALUE_FIELDS.has(entry.id)) {
+    props.value = host.values?.[field] ?? '';
+    props.onChange = (_event: unknown, value: string) => host.onField?.(field, value);
+  }
+  if (field && entry.id === 'Radio') {
+    const value = props.value as string;
+    props.isChecked = host.values?.[field] === value;
+    props.onChange = () => host.onField?.(field, value);
+  }
+  if (node.intent) {
+    const intent = node.intent;
+    props.onClick = () => host.onIntent?.(intent);
+  }
+  // A Modal is open while it is drawn; Escape and its close button cancel.
+  if (entry.id === 'Modal') {
+    props.isOpen = true;
+    props.onClose = () => host.onIntent?.('cancel');
+  }
 
   let content: ReactNode = undefined;
   if (node.children?.length) {
@@ -58,7 +92,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   }
 
   // Void elements, such as inputs and dividers, must get no children at all.
-  return content === undefined ? <Component {...props} /> : <Component {...props}>{content}</Component>;
+  const element = content === undefined ? <Component {...props} /> : <Component {...props}>{content}</Component>;
+  return entry.id === 'FormGroup' && props.fieldId ? <FieldIdContext.Provider value={generatedId}>{element}</FieldIdContext.Provider> : element;
 }
 
 export function ViewRenderer({ view, host = {} }: { view: ViewSpec; host?: RenderHost }) {

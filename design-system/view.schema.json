@@ -43,7 +43,7 @@
         },
         "bind": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9._-]+$",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
           "description": "A graph object, as type:id. Data is read through the gateway, never embedded."
         },
         "action": {
@@ -60,7 +60,7 @@
             },
             "target": {
               "type": "string",
-              "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9._-]+$"
+              "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$"
             }
           },
           "description": "An ontology method. The gateway checks it again on commit."
@@ -75,6 +75,18 @@
           "items": {
             "$ref": "#/$defs/node"
           }
+        },
+        "field": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9]*$",
+          "description": "Binds a form control to one input of the method being composed, by the input's name. The renderer keeps the value."
+        },
+        "intent": {
+          "enum": [
+            "submit",
+            "cancel"
+          ],
+          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything."
         }
       }
     }

@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.2",
+  "version": "0.3",
   "components": [
     {
       "id": "Button",
@@ -457,6 +457,11 @@
           "isDisabled": {
             "type": "boolean",
             "description": "Not available"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value this option sets, such as an IRI"
           }
         },
         "required": [
@@ -1099,6 +1104,1218 @@
                   }
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Modal",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Modal"
+      },
+      "purpose": "A dialog over the page for one focused interaction, such as running a method.",
+      "useWhen": [
+        "Running a Confirm or Fill in method (design system 5.1)"
+      ],
+      "avoidWhen": [
+        "Content people need to compare with the page behind it"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "variant": {
+            "enum": [
+              "small",
+              "medium"
+            ],
+            "description": "Small for Confirm, medium for Fill in"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the dialog is for, such as the method and the object"
+          }
+        },
+        "required": [
+          "aria-label"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "ModalHeader",
+          "ModalBody",
+          "ModalFooter"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Centered on wide screens; on phones, the full width less PatternFly's standard margin, scrolling inside itself when tall.",
+      "accessibility": [
+        "Traps focus while open and returns it on close",
+        "Escape and Cancel close it without changing anything"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Triage SC-004"
+          },
+          "children": [
+            {
+              "component": "ModalHeader",
+              "props": {
+                "title": "Triage SC-004",
+                "description": "Safety Case"
+              }
+            },
+            {
+              "component": "ModalBody",
+              "children": [
+                {
+                  "component": "Form",
+                  "children": [
+                    {
+                      "component": "FormGroup",
+                      "props": {
+                        "label": "Seriousness",
+                        "isRequired": true,
+                        "role": "radiogroup"
+                      },
+                      "children": [
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "non-serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-nonSerious"
+                          },
+                          "field": "seriousness"
+                        },
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-serious"
+                          },
+                          "field": "seriousness"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "component": "DescriptionList",
+                  "props": {
+                    "isCompact": true
+                  },
+                  "children": [
+                    {
+                      "component": "DescriptionListGroup",
+                      "children": [
+                        {
+                          "component": "DescriptionListTerm",
+                          "props": {
+                            "label": "Workflow"
+                          }
+                        },
+                        {
+                          "component": "DescriptionListDescription",
+                          "children": [
+                            {
+                              "component": "Content",
+                              "props": {
+                                "label": "received → triaged"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "ModalFooter",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Triage",
+                    "variant": "primary"
+                  },
+                  "intent": "submit"
+                },
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Cancel",
+                    "variant": "link"
+                  },
+                  "intent": "cancel"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "overlay": true
+    },
+    {
+      "id": "ModalHeader",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ModalHeader"
+      },
+      "purpose": "The title of a Modal.",
+      "useWhen": [
+        "Every Modal"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The method and the object"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The object's type, or a short explanation"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "children": null,
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "The title names the dialog"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Triage SC-004"
+          },
+          "children": [
+            {
+              "component": "ModalHeader",
+              "props": {
+                "title": "Triage SC-004",
+                "description": "Safety Case"
+              }
+            },
+            {
+              "component": "ModalBody",
+              "children": [
+                {
+                  "component": "Form",
+                  "children": [
+                    {
+                      "component": "FormGroup",
+                      "props": {
+                        "label": "Seriousness",
+                        "isRequired": true,
+                        "role": "radiogroup"
+                      },
+                      "children": [
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "non-serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-nonSerious"
+                          },
+                          "field": "seriousness"
+                        },
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-serious"
+                          },
+                          "field": "seriousness"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "component": "DescriptionList",
+                  "props": {
+                    "isCompact": true
+                  },
+                  "children": [
+                    {
+                      "component": "DescriptionListGroup",
+                      "children": [
+                        {
+                          "component": "DescriptionListTerm",
+                          "props": {
+                            "label": "Workflow"
+                          }
+                        },
+                        {
+                          "component": "DescriptionListDescription",
+                          "children": [
+                            {
+                              "component": "Content",
+                              "props": {
+                                "label": "received → triaged"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "ModalFooter",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Triage",
+                    "variant": "primary"
+                  },
+                  "intent": "submit"
+                },
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Cancel",
+                    "variant": "link"
+                  },
+                  "intent": "cancel"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ModalBody",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ModalBody"
+      },
+      "purpose": "The content of a Modal.",
+      "useWhen": [
+        "Every Modal with content"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Scrolls inside the dialog when tall.",
+      "accessibility": [
+        "Purely a container"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Triage SC-004"
+          },
+          "children": [
+            {
+              "component": "ModalHeader",
+              "props": {
+                "title": "Triage SC-004",
+                "description": "Safety Case"
+              }
+            },
+            {
+              "component": "ModalBody",
+              "children": [
+                {
+                  "component": "Form",
+                  "children": [
+                    {
+                      "component": "FormGroup",
+                      "props": {
+                        "label": "Seriousness",
+                        "isRequired": true,
+                        "role": "radiogroup"
+                      },
+                      "children": [
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "non-serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-nonSerious"
+                          },
+                          "field": "seriousness"
+                        },
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-serious"
+                          },
+                          "field": "seriousness"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "component": "DescriptionList",
+                  "props": {
+                    "isCompact": true
+                  },
+                  "children": [
+                    {
+                      "component": "DescriptionListGroup",
+                      "children": [
+                        {
+                          "component": "DescriptionListTerm",
+                          "props": {
+                            "label": "Workflow"
+                          }
+                        },
+                        {
+                          "component": "DescriptionListDescription",
+                          "children": [
+                            {
+                              "component": "Content",
+                              "props": {
+                                "label": "received → triaged"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "ModalFooter",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Triage",
+                    "variant": "primary"
+                  },
+                  "intent": "submit"
+                },
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Cancel",
+                    "variant": "link"
+                  },
+                  "intent": "cancel"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ModalFooter",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ModalFooter"
+      },
+      "purpose": "The actions of a Modal.",
+      "useWhen": [
+        "Every Modal"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Button"
+        ]
+      },
+      "responsive": "Buttons wrap at narrow widths.",
+      "accessibility": [
+        "The primary action comes first"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Triage SC-004"
+          },
+          "children": [
+            {
+              "component": "ModalHeader",
+              "props": {
+                "title": "Triage SC-004",
+                "description": "Safety Case"
+              }
+            },
+            {
+              "component": "ModalBody",
+              "children": [
+                {
+                  "component": "Form",
+                  "children": [
+                    {
+                      "component": "FormGroup",
+                      "props": {
+                        "label": "Seriousness",
+                        "isRequired": true,
+                        "role": "radiogroup"
+                      },
+                      "children": [
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "non-serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-nonSerious"
+                          },
+                          "field": "seriousness"
+                        },
+                        {
+                          "component": "Radio",
+                          "props": {
+                            "label": "serious",
+                            "name": "seriousness",
+                            "value": "https://w3id.org/lsh-platform/life-sciences/term#SafetyCaseSeriousness-serious"
+                          },
+                          "field": "seriousness"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "component": "DescriptionList",
+                  "props": {
+                    "isCompact": true
+                  },
+                  "children": [
+                    {
+                      "component": "DescriptionListGroup",
+                      "children": [
+                        {
+                          "component": "DescriptionListTerm",
+                          "props": {
+                            "label": "Workflow"
+                          }
+                        },
+                        {
+                          "component": "DescriptionListDescription",
+                          "children": [
+                            {
+                              "component": "Content",
+                              "props": {
+                                "label": "received → triaged"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "ModalFooter",
+              "children": [
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Triage",
+                    "variant": "primary"
+                  },
+                  "intent": "submit"
+                },
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Cancel",
+                    "variant": "link"
+                  },
+                  "intent": "cancel"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Form",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Form"
+      },
+      "purpose": "Groups the fields of an interaction.",
+      "useWhen": [
+        "Collecting a method's inputs"
+      ],
+      "avoidWhen": [
+        "Showing read-only facts: use Description list"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "FormGroup",
+          "Alert"
+        ]
+      },
+      "responsive": "Fields stack at every width.",
+      "accessibility": [
+        "Every field has a visible label"
+      ],
+      "examples": [
+        {
+          "component": "Form",
+          "children": [
+            {
+              "component": "FormGroup",
+              "props": {
+                "label": "Answer",
+                "isRequired": true
+              },
+              "children": [
+                {
+                  "component": "TextArea",
+                  "props": {
+                    "aria-label": "Answer",
+                    "isRequired": true
+                  },
+                  "field": "answer"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FormGroup",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "FormGroup"
+      },
+      "purpose": "One labeled field: a control with its label.",
+      "useWhen": [
+        "Each input of a method"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The input's name"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "The field must be filled"
+          },
+          "role": {
+            "enum": [
+              "radiogroup"
+            ],
+            "description": "Set for a group of radio buttons"
+          },
+          "isInline": {
+            "type": "boolean",
+            "description": "Places radio buttons side by side, wrapping as needed, so each has room to be tapped (WCAG 2.2 target size)"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "TextArea",
+          "FormSelect",
+          "Radio",
+          "TextInput"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Full width of its form. Inline radio buttons wrap onto new lines at narrow widths.",
+      "accessibility": [
+        "The label names the control, or the group of radio buttons"
+      ],
+      "examples": [
+        {
+          "component": "FormGroup",
+          "props": {
+            "label": "Reason",
+            "isRequired": true
+          },
+          "children": [
+            {
+              "component": "TextArea",
+              "props": {
+                "aria-label": "Reason",
+                "isRequired": true
+              },
+              "field": "reason"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TextArea",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "TextArea"
+      },
+      "purpose": "Multi-line text entry.",
+      "useWhen": [
+        "A text input of a method"
+      ],
+      "avoidWhen": [
+        "Short identifiers"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The field's name"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "Must be filled"
+          }
+        },
+        "required": [
+          "aria-label"
+        ]
+      },
+      "children": null,
+      "responsive": "Fills the width of its form group and grows vertically.",
+      "accessibility": [
+        "Named by its form group's label and aria-label"
+      ],
+      "examples": [
+        {
+          "component": "TextArea",
+          "props": {
+            "aria-label": "Rationale"
+          },
+          "field": "rationale"
+        }
+      ]
+    },
+    {
+      "id": "FormSelect",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "FormSelect"
+      },
+      "purpose": "Picks one value from a list.",
+      "useWhen": [
+        "A choice with more than five values, a person or an object"
+      ],
+      "avoidWhen": [
+        "Five values or fewer: use Radio"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The field's name"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "Must be chosen"
+          }
+        },
+        "required": [
+          "aria-label"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "FormSelectOption"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Fills the width of its form group.",
+      "accessibility": [
+        "Uses the platform's native select, so it works with every assistive technology"
+      ],
+      "examples": [
+        {
+          "component": "FormSelect",
+          "props": {
+            "aria-label": "Reviewer"
+          },
+          "field": "reviewer",
+          "children": [
+            {
+              "component": "FormSelectOption",
+              "props": {
+                "value": "",
+                "label": "Choose a person"
+              }
+            },
+            {
+              "component": "FormSelectOption",
+              "props": {
+                "value": "https://example.org/lsh-data/person-dev",
+                "label": "Dev Raman"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FormSelectOption",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "FormSelectOption"
+      },
+      "purpose": "One value of a FormSelect.",
+      "useWhen": [
+        "Each value of a FormSelect"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The value, such as an IRI; empty for the placeholder"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the person sees"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Fixed.",
+      "accessibility": [
+        "The label describes the value"
+      ],
+      "examples": [
+        {
+          "component": "FormSelect",
+          "props": {
+            "aria-label": "Owner"
+          },
+          "field": "owner",
+          "children": [
+            {
+              "component": "FormSelectOption",
+              "props": {
+                "value": "https://example.org/lsh-data/person-elena",
+                "label": "Elena Kovacs"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DescriptionList",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DescriptionList"
+      },
+      "purpose": "Shows facts as terms and their values.",
+      "useWhen": [
+        "The preview of what a method will change"
+      ],
+      "avoidWhen": [
+        "Collecting input: use Form"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isCompact": {
+            "type": "boolean",
+            "description": "Less space between groups"
+          },
+          "isHorizontal": {
+            "type": "boolean",
+            "description": "Terms beside their values"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "DescriptionListGroup"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Terms stack above their values on phones.",
+      "accessibility": [
+        "Reads as a list of term and value pairs"
+      ],
+      "examples": [
+        {
+          "component": "DescriptionList",
+          "props": {
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "DescriptionListGroup",
+              "children": [
+                {
+                  "component": "DescriptionListTerm",
+                  "props": {
+                    "label": "Workflow"
+                  }
+                },
+                {
+                  "component": "DescriptionListDescription",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "received → triaged"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DescriptionListGroup",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DescriptionListGroup"
+      },
+      "purpose": "One term and its value.",
+      "useWhen": [
+        "Each fact"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "DescriptionListTerm",
+          "DescriptionListDescription"
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "responsive": "Stacks on phones.",
+      "accessibility": [
+        "Purely a container"
+      ],
+      "examples": [
+        {
+          "component": "DescriptionList",
+          "props": {
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "DescriptionListGroup",
+              "children": [
+                {
+                  "component": "DescriptionListTerm",
+                  "props": {
+                    "label": "Workflow"
+                  }
+                },
+                {
+                  "component": "DescriptionListDescription",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "received → triaged"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DescriptionListTerm",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DescriptionListTerm"
+      },
+      "purpose": "The term of a fact.",
+      "useWhen": [
+        "Each fact"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The term"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "children": null,
+      "responsive": "Wraps.",
+      "accessibility": [
+        "Announced as a term"
+      ],
+      "examples": [
+        {
+          "component": "DescriptionList",
+          "props": {
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "DescriptionListGroup",
+              "children": [
+                {
+                  "component": "DescriptionListTerm",
+                  "props": {
+                    "label": "Workflow"
+                  }
+                },
+                {
+                  "component": "DescriptionListDescription",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "received → triaged"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DescriptionListDescription",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DescriptionListDescription"
+      },
+      "purpose": "The value of a fact.",
+      "useWhen": [
+        "Each fact"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:layout"
+        ]
+      },
+      "responsive": "Wraps.",
+      "accessibility": [
+        "Announced as the term's value"
+      ],
+      "examples": [
+        {
+          "component": "DescriptionList",
+          "props": {
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "DescriptionListGroup",
+              "children": [
+                {
+                  "component": "DescriptionListTerm",
+                  "props": {
+                    "label": "Workflow"
+                  }
+                },
+                {
+                  "component": "DescriptionListDescription",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "received → triaged"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Alert",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Alert"
+      },
+      "purpose": "A message about the outcome of an action, or why it cannot run.",
+      "useWhen": [
+        "After a commit, or when the gateway refuses one"
+      ],
+      "avoidWhen": [
+        "Permanent page content"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "variant": {
+            "enum": [
+              "success",
+              "danger",
+              "warning",
+              "info"
+            ],
+            "description": "Kind of message, shown by icon and color"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The message"
+          },
+          "isInline": {
+            "type": "boolean",
+            "description": "Inside a form or page section"
+          }
+        },
+        "required": [
+          "variant",
+          "title"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "Content"
+        ]
+      },
+      "responsive": "Full width of its container; wraps.",
+      "accessibility": [
+        "Variant is shown by an icon as well as color (rule 4)",
+        "Announced to screen readers"
+      ],
+      "examples": [
+        {
+          "component": "Alert",
+          "props": {
+            "variant": "success",
+            "title": "Triage done on SC-004"
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "Workflow: received → triaged"
+              }
+            }
+          ]
+        },
+        {
+          "component": "Alert",
+          "props": {
+            "variant": "danger",
+            "title": "Release batch cannot run",
+            "isInline": true
+          },
+          "children": [
+            {
+              "component": "Content",
+              "props": {
+                "label": "An open quality event is raised on this batch"
+              }
             }
           ]
         }

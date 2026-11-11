@@ -66,11 +66,31 @@ export interface ToDoItem {
   deadline?: string;
 }
 
+export interface ComposedInput {
+  name: string;
+  label: string;
+  kind: 'text' | 'url' | 'choice' | 'person' | 'object';
+  /** The values the person may choose from, with their labels. */
+  choices?: { value: string; label: string }[];
+  default?: string;
+}
+
+export interface MethodComposition {
+  method: string;
+  label: string;
+  archetype: Archetype;
+  object: ObjectSummary;
+  inputs: ComposedInput[];
+}
+
 export interface CommitResult {
   commit: string;
-  changes: { subject: string; property: string; oldValue?: string; newValue?: string }[];
+  changes: ChangeView[];
   created: string[];
+  /** Described effects recorded as pending work (spec 3.4). */
   pending: string[];
+  /** What each pending effect will do, in words, in the same order. */
+  pendingDescriptions: string[];
 }
 
 type Term = oxigraph.NamedNode | oxigraph.Literal;
@@ -82,6 +102,21 @@ interface Change {
 }
 
 const { namedNode, literal, quad, defaultGraph } = oxigraph;
+
+/** Query rows with ?value and ?label, as choices. */
+const asChoices = (rows: Record<string, string>[]) => rows.map((r) => ({ value: r.value, label: r.label }));
+
+/** A change as the person reads it: who, what, from and to, with labels. */
+export interface ChangeView {
+  subject: string;
+  property: string;
+  oldValue?: string;
+  newValue?: string;
+  subjectLabel: string;
+  propertyLabel: string;
+  oldLabel?: string;
+  newLabel?: string;
+}
 const RDF_TYPE = `${NS.rdf}type`;
 
 /** The part of the journal the gateway writes to (see journal.ts, server only). */
@@ -156,9 +191,9 @@ export class Gateway {
 
   private inputs(method: string) {
     return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong WHERE {
-        <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label .
+        <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label ; p:order ?order .
         OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
-        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } }`);
+        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } } ORDER BY ?order`);
   }
 
   // ---------------------------------------------------------------- people (development)
@@ -356,7 +391,11 @@ export class Gateway {
     return run;
   }
 
-  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
+  /**
+   * Commit steps 1 to 5 (spec 3.4) on a working copy: role, inputs, preconditions, effects and validation.
+   * Throws with the reasons at the first failure. Nothing reaches the live graph.
+   */
+  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>) {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
@@ -393,6 +432,18 @@ export class Gateway {
     const problems = await validateData(work);
     if (problems.length) throw new GatewayError(400, problems);
 
+    return { object, method, resolvedInputs, work, at, changes, created, pending };
+  }
+
+  /** Preview a method (spec 3.4): what a commit would change, without saving anything. */
+  async preview(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
+    const { changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
+    return { changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
+  }
+
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
+    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs);
+
     // 6. Record the commit: journal first, flushed to disk, then the live graph.
     const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
     const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at);
@@ -405,12 +456,70 @@ export class Gateway {
     this.graph.dataset = work.dataset;
     this.commitCount++;
 
-    return {
-      commit,
-      changes: changes.map((c) => ({ subject: c.subject, property: c.property, oldValue: c.oldValue?.value, newValue: c.newValue?.value })),
-      created,
-      pending,
+    return { commit, changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
+  }
+
+  private describe_(effects: string[]): string[] {
+    return effects.map((e) => this.q(`SELECT ?d WHERE { <${e}> p:description ?d }`)[0]?.d ?? e);
+  }
+
+  /** Labels a change from the graph it was made in: identifiers for objects, labels for concepts and people. */
+  private changeView(c: Change, graph: Graph): ChangeView {
+    const label = (term?: Term) => {
+      if (!term) return undefined;
+      if (term.termType === 'Literal') return term.value;
+      return this.q(`SELECT ?l WHERE { { <${term.value}> skos:prefLabel ?l } UNION { <${term.value}> ls:identifier ?l } UNION { <${term.value}> rdfs:label ?l } } LIMIT 1`, graph)[0]?.l ?? term.value;
     };
+    return {
+      subject: c.subject,
+      property: c.property,
+      oldValue: c.oldValue?.value,
+      newValue: c.newValue?.value,
+      subjectLabel: label(namedNode(c.subject))!,
+      propertyLabel: c.property === RDF_TYPE ? 'type' : label(namedNode(c.property))!,
+      ...(c.oldValue ? { oldLabel: label(c.oldValue) } : {}),
+      ...(c.newValue ? { newLabel: label(c.newValue) } : {}),
+    };
+  }
+
+  /** Compose a method (spec 3.4): its inputs with their kinds, choices and defaults, and its archetype. */
+  async compose(principal: Principal, idOrIri: string, method: string): Promise<MethodComposition> {
+    this.authorize(principal);
+    const object = this.resolve(idOrIri);
+    const { type } = this.typeOf(object);
+    if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this object']);
+    const m = this.q(`SELECT ?label WHERE { <${method}> a p:Method ; p:appliesTo <${type}> ; rdfs:label ?label }`)[0];
+    if (!m) throw new GatewayError(400, ['This method does not apply to this object']);
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+
+    const validator = validatorFor(this.graph);
+    const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
+      const base = { name: input.name, label: input.label };
+      if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
+      if (input.valuesFrom) {
+        // The input's shape may narrow the scheme, such as causality without "unassessed".
+        const narrowed = this.q(`SELECT ?value WHERE { <${input.input}> p:inputShape ?shape . ?shape sh:in/rdf:rest*/rdf:first ?value }`).map((r) => r.value);
+        const choices = this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${input.valuesFrom}> ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`)
+          .filter((c) => !narrowed.length || narrowed.includes(c.value));
+        return { ...base, kind: 'choice', choices: asChoices(choices) };
+      }
+      if (input.isActor) {
+        // People whose roles may run this method, or everyone when no role may yet. The principal by default.
+        let people = this.q(`SELECT DISTINCT ?value ?label WHERE { ?value a p:Person ; rdfs:label ?label ; p:actsAs/p:mayRun <${method}> } ORDER BY ?label`);
+        if (!people.length) people = this.q(`SELECT ?value ?label WHERE { ?value a p:Person ; rdfs:label ?label } ORDER BY ?label`);
+        const self = people.some((p) => p.value === principal.person) ? principal.person : undefined;
+        return { ...base, kind: 'person', choices: asChoices(people), ...(self ? { default: self } : {}) };
+      }
+      const candidates = input.choicesAlong
+        ? this.q(`SELECT ?value ?label WHERE { <${object}> <${input.choicesAlong}> ?value . ?value ls:identifier ?label } ORDER BY ?label`)
+        : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) } ORDER BY ?label`);
+      // Only objects that meet the input's shape qualify, such as cases that are not closed.
+      const shapes = this.q(`SELECT ?shape WHERE { <${input.input}> p:inputShape ?shape }`).map((r) => r.shape);
+      const qualifying = [];
+      for (const c of candidates) if (!(await conformanceProblems(this.graph, c.value, shapes, validator)).length) qualifying.push(c);
+      return { ...base, kind: 'object', choices: asChoices(qualifying) };
+    }));
+    return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs };
   }
 
   private async checkInputs(object: string, method: string, given: Record<string, string>): Promise<Map<string, Term>> {

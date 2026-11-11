@@ -83,6 +83,28 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'compose_method',
+    {
+      title: 'Compose a method',
+      description: 'What a method needs before it can run on an object: each input with its kind, choices and default, and the method\'s interaction archetype.',
+      inputSchema: { id: z.string(), method: z.string() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id, method }) => result(() => gateway.compose(principal, id, expand(method, NS.ls))),
+  );
+
+  server.registerTool(
+    'preview_method',
+    {
+      title: 'Preview a method',
+      description: 'What running a method would change, without saving anything: every value from old to new and every object created, or the reasons it would fail.',
+      inputSchema: { id: z.string(), method: z.string(), inputs: z.record(z.string(), z.string()).optional() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id, method, inputs = {} }) => result(() => gateway.preview(principal, id, expand(method, NS.ls), inputs)),
+  );
+
+  server.registerTool(
     'commit_method',
     {
       title: 'Commit a method',

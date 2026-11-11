@@ -46,6 +46,15 @@ describe('terms are documented', () => {
     expect(missing).toEqual([]);
   });
 
+  it('orders every input and every value, with no gaps or ties', () => {
+    for (const parent of ['?m p:input ?x', '?x skos:inScheme ?m']) {
+      const groups = q(`SELECT ?m (GROUP_CONCAT(STR(?o); separator=",") AS ?orders) WHERE { ${parent} . ?x p:order ?o } GROUP BY ?m`);
+      expect(groups.length).toBeGreaterThan(20);
+      for (const { m, orders } of groups) expect(orders.split(',').map(Number).sort((a, b) => a - b), m).toEqual(orders.split(',').map((_, i) => i + 1));
+    }
+    expect(q(`SELECT ?x WHERE { { ?m p:input ?x } UNION { ?x a skos:Concept } FILTER NOT EXISTS { ?x p:order ?o } }`)).toEqual([]);
+  });
+
   it('every concept has a label and a scheme', () => {
     expect(q(`SELECT ?c WHERE { ?c a skos:Concept FILTER NOT EXISTS { ?c skos:prefLabel ?l ; skos:inScheme ?s } }`)).toEqual([]);
   });

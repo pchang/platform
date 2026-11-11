@@ -24,23 +24,28 @@ lst:CompoundStage a skos:ConceptScheme ;
 
 lst:CompoundStage-designed a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
-  skos:prefLabel "designed" .
+  skos:prefLabel "designed" ;
+  p:order 1 .
 
 lst:CompoundStage-synthesized a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
-  skos:prefLabel "synthesized" .
+  skos:prefLabel "synthesized" ;
+  p:order 2 .
 
 lst:CompoundStage-tested a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
-  skos:prefLabel "tested" .
+  skos:prefLabel "tested" ;
+  p:order 3 .
 
 lst:CompoundStage-candidate a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
-  skos:prefLabel "candidate" .
+  skos:prefLabel "candidate" ;
+  p:order 4 .
 
 lst:CompoundStage-retired a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
-  skos:prefLabel "retired" .
+  skos:prefLabel "retired" ;
+  p:order 5 .
 
 lst:CompoundRegistration a skos:ConceptScheme ;
   skos:prefLabel "Compound registration" ;
@@ -48,11 +53,13 @@ lst:CompoundRegistration a skos:ConceptScheme ;
 
 lst:CompoundRegistration-unregistered a skos:Concept ;
   skos:inScheme lst:CompoundRegistration ;
-  skos:prefLabel "unregistered" .
+  skos:prefLabel "unregistered" ;
+  p:order 1 .
 
 lst:CompoundRegistration-registered a skos:Concept ;
   skos:inScheme lst:CompoundRegistration ;
-  skos:prefLabel "registered" .
+  skos:prefLabel "registered" ;
+  p:order 2 .
 
 lst:SimulationRun a skos:ConceptScheme ;
   skos:prefLabel "Simulation run" ;
@@ -60,19 +67,23 @@ lst:SimulationRun a skos:ConceptScheme ;
 
 lst:SimulationRun-queued a skos:Concept ;
   skos:inScheme lst:SimulationRun ;
-  skos:prefLabel "queued" .
+  skos:prefLabel "queued" ;
+  p:order 1 .
 
 lst:SimulationRun-running a skos:Concept ;
   skos:inScheme lst:SimulationRun ;
-  skos:prefLabel "running" .
+  skos:prefLabel "running" ;
+  p:order 2 .
 
 lst:SimulationRun-complete a skos:Concept ;
   skos:inScheme lst:SimulationRun ;
-  skos:prefLabel "complete" .
+  skos:prefLabel "complete" ;
+  p:order 3 .
 
 lst:SimulationRun-failed a skos:Concept ;
   skos:inScheme lst:SimulationRun ;
-  skos:prefLabel "failed" .
+  skos:prefLabel "failed" ;
+  p:order 4 .
 
 lst:SimulationReview a skos:ConceptScheme ;
   skos:prefLabel "Simulation review" ;
@@ -80,15 +91,18 @@ lst:SimulationReview a skos:ConceptScheme ;
 
 lst:SimulationReview-unreviewed a skos:Concept ;
   skos:inScheme lst:SimulationReview ;
-  skos:prefLabel "unreviewed" .
+  skos:prefLabel "unreviewed" ;
+  p:order 1 .
 
 lst:SimulationReview-accepted a skos:Concept ;
   skos:inScheme lst:SimulationReview ;
-  skos:prefLabel "accepted" .
+  skos:prefLabel "accepted" ;
+  p:order 2 .
 
 lst:SimulationReview-rejected a skos:Concept ;
   skos:inScheme lst:SimulationReview ;
-  skos:prefLabel "rejected" .
+  skos:prefLabel "rejected" ;
+  p:order 3 .
 
 lst:ExperimentRecord a skos:ConceptScheme ;
   skos:prefLabel "Experiment record" ;
@@ -96,15 +110,18 @@ lst:ExperimentRecord a skos:ConceptScheme ;
 
 lst:ExperimentRecord-planned a skos:Concept ;
   skos:inScheme lst:ExperimentRecord ;
-  skos:prefLabel "planned" .
+  skos:prefLabel "planned" ;
+  p:order 1 .
 
 lst:ExperimentRecord-inProgress a skos:Concept ;
   skos:inScheme lst:ExperimentRecord ;
-  skos:prefLabel "in progress" .
+  skos:prefLabel "in progress" ;
+  p:order 2 .
 
 lst:ExperimentRecord-complete a skos:Concept ;
   skos:inScheme lst:ExperimentRecord ;
-  skos:prefLabel "complete" .
+  skos:prefLabel "complete" ;
+  p:order 3 .
 
 lst:ExperimentSignOff a skos:ConceptScheme ;
   skos:prefLabel "Experiment sign-off" ;
@@ -112,15 +129,18 @@ lst:ExperimentSignOff a skos:ConceptScheme ;
 
 lst:ExperimentSignOff-unsigned a skos:Concept ;
   skos:inScheme lst:ExperimentSignOff ;
-  skos:prefLabel "unsigned" .
+  skos:prefLabel "unsigned" ;
+  p:order 1 .
 
 lst:ExperimentSignOff-signed a skos:Concept ;
   skos:inScheme lst:ExperimentSignOff ;
-  skos:prefLabel "signed" .
+  skos:prefLabel "signed" ;
+  p:order 2 .
 
 lst:ExperimentSignOff-witnessed a skos:Concept ;
   skos:inScheme lst:ExperimentSignOff ;
-  skos:prefLabel "witnessed" .
+  skos:prefLabel "witnessed" ;
+  p:order 3 .
 
 lst:AssayResultValidity a skos:ConceptScheme ;
   skos:prefLabel "Assay Result validity" ;
@@ -128,11 +148,13 @@ lst:AssayResultValidity a skos:ConceptScheme ;
 
 lst:AssayResultValidity-valid a skos:Concept ;
   skos:inScheme lst:AssayResultValidity ;
-  skos:prefLabel "valid" .
+  skos:prefLabel "valid" ;
+  p:order 1 .
 
 lst:AssayResultValidity-invalidated a skos:Concept ;
   skos:inScheme lst:AssayResultValidity ;
-  skos:prefLabel "invalidated" .
+  skos:prefLabel "invalidated" ;
+  p:order 2 .
 
 lst:FormulationStage a skos:ConceptScheme ;
   skos:prefLabel "Formulation stage" ;
@@ -140,19 +162,23 @@ lst:FormulationStage a skos:ConceptScheme ;
 
 lst:FormulationStage-draft a skos:Concept ;
   skos:inScheme lst:FormulationStage ;
-  skos:prefLabel "draft" .
+  skos:prefLabel "draft" ;
+  p:order 1 .
 
 lst:FormulationStage-underTest a skos:Concept ;
   skos:inScheme lst:FormulationStage ;
-  skos:prefLabel "under test" .
+  skos:prefLabel "under test" ;
+  p:order 2 .
 
 lst:FormulationStage-approved a skos:Concept ;
   skos:inScheme lst:FormulationStage ;
-  skos:prefLabel "approved" .
+  skos:prefLabel "approved" ;
+  p:order 3 .
 
 lst:FormulationStage-obsolete a skos:Concept ;
   skos:inScheme lst:FormulationStage ;
-  skos:prefLabel "obsolete" .
+  skos:prefLabel "obsolete" ;
+  p:order 4 .
 
 lst:ProcessStatus a skos:ConceptScheme ;
   skos:prefLabel "Process status" ;
@@ -160,15 +186,18 @@ lst:ProcessStatus a skos:ConceptScheme ;
 
 lst:ProcessStatus-draft a skos:Concept ;
   skos:inScheme lst:ProcessStatus ;
-  skos:prefLabel "draft" .
+  skos:prefLabel "draft" ;
+  p:order 1 .
 
 lst:ProcessStatus-validated a skos:Concept ;
   skos:inScheme lst:ProcessStatus ;
-  skos:prefLabel "validated" .
+  skos:prefLabel "validated" ;
+  p:order 2 .
 
 lst:ProcessStatus-superseded a skos:Concept ;
   skos:inScheme lst:ProcessStatus ;
-  skos:prefLabel "superseded" .
+  skos:prefLabel "superseded" ;
+  p:order 3 .
 
 lst:BatchProduction a skos:ConceptScheme ;
   skos:prefLabel "Batch production" ;
@@ -176,15 +205,18 @@ lst:BatchProduction a skos:ConceptScheme ;
 
 lst:BatchProduction-planned a skos:Concept ;
   skos:inScheme lst:BatchProduction ;
-  skos:prefLabel "planned" .
+  skos:prefLabel "planned" ;
+  p:order 1 .
 
 lst:BatchProduction-inProduction a skos:Concept ;
   skos:inScheme lst:BatchProduction ;
-  skos:prefLabel "in production" .
+  skos:prefLabel "in production" ;
+  p:order 2 .
 
 lst:BatchProduction-complete a skos:Concept ;
   skos:inScheme lst:BatchProduction ;
-  skos:prefLabel "complete" .
+  skos:prefLabel "complete" ;
+  p:order 3 .
 
 lst:BatchQuality a skos:ConceptScheme ;
   skos:prefLabel "Batch quality" ;
@@ -192,19 +224,23 @@ lst:BatchQuality a skos:ConceptScheme ;
 
 lst:BatchQuality-pending a skos:Concept ;
   skos:inScheme lst:BatchQuality ;
-  skos:prefLabel "pending" .
+  skos:prefLabel "pending" ;
+  p:order 1 .
 
 lst:BatchQuality-released a skos:Concept ;
   skos:inScheme lst:BatchQuality ;
-  skos:prefLabel "released" .
+  skos:prefLabel "released" ;
+  p:order 2 .
 
 lst:BatchQuality-quarantined a skos:Concept ;
   skos:inScheme lst:BatchQuality ;
-  skos:prefLabel "quarantined" .
+  skos:prefLabel "quarantined" ;
+  p:order 3 .
 
 lst:BatchQuality-rejected a skos:Concept ;
   skos:inScheme lst:BatchQuality ;
-  skos:prefLabel "rejected" .
+  skos:prefLabel "rejected" ;
+  p:order 4 .
 
 lst:BatchDeviationRisk a skos:ConceptScheme ;
   skos:prefLabel "Batch deviation risk" ;
@@ -212,16 +248,19 @@ lst:BatchDeviationRisk a skos:ConceptScheme ;
 
 lst:BatchDeviationRisk-low a skos:Concept ;
   skos:inScheme lst:BatchDeviationRisk ;
-  skos:prefLabel "low" .
+  skos:prefLabel "low" ;
+  p:order 1 .
 
 lst:BatchDeviationRisk-elevated a skos:Concept ;
   skos:inScheme lst:BatchDeviationRisk ;
   skos:prefLabel "elevated" ;
+  p:order 2 ;
   p:urgency 2 .
 
 lst:BatchDeviationRisk-high a skos:Concept ;
   skos:inScheme lst:BatchDeviationRisk ;
   skos:prefLabel "high" ;
+  p:order 3 ;
   p:urgency 3 .
 
 lst:StudyPhase a skos:ConceptScheme ;
@@ -231,16 +270,19 @@ lst:StudyPhase a skos:ConceptScheme ;
 lst:StudyPhase-i a skos:Concept ;
   skos:inScheme lst:StudyPhase ;
   skos:prefLabel "I" ;
+  p:order 1 ;
   skos:closeMatch ncit:C15600 .
 
 lst:StudyPhase-ii a skos:Concept ;
   skos:inScheme lst:StudyPhase ;
   skos:prefLabel "II" ;
+  p:order 2 ;
   skos:closeMatch ncit:C15601 .
 
 lst:StudyPhase-iii a skos:Concept ;
   skos:inScheme lst:StudyPhase ;
   skos:prefLabel "III" ;
+  p:order 3 ;
   skos:closeMatch ncit:C15602 .
 
 lst:StudyStatus a skos:ConceptScheme ;
@@ -249,23 +291,28 @@ lst:StudyStatus a skos:ConceptScheme ;
 
 lst:StudyStatus-planned a skos:Concept ;
   skos:inScheme lst:StudyStatus ;
-  skos:prefLabel "planned" .
+  skos:prefLabel "planned" ;
+  p:order 1 .
 
 lst:StudyStatus-enrolling a skos:Concept ;
   skos:inScheme lst:StudyStatus ;
-  skos:prefLabel "enrolling" .
+  skos:prefLabel "enrolling" ;
+  p:order 2 .
 
 lst:StudyStatus-active a skos:Concept ;
   skos:inScheme lst:StudyStatus ;
-  skos:prefLabel "active" .
+  skos:prefLabel "active" ;
+  p:order 3 .
 
 lst:StudyStatus-closed a skos:Concept ;
   skos:inScheme lst:StudyStatus ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 4 .
 
 lst:StudyStatus-locked a skos:Concept ;
   skos:inScheme lst:StudyStatus ;
-  skos:prefLabel "locked" .
+  skos:prefLabel "locked" ;
+  p:order 5 .
 
 lst:StudyBlinding a skos:ConceptScheme ;
   skos:prefLabel "Study blinding" ;
@@ -274,11 +321,13 @@ lst:StudyBlinding a skos:ConceptScheme ;
 lst:StudyBlinding-blinded a skos:Concept ;
   skos:inScheme lst:StudyBlinding ;
   skos:prefLabel "blinded" ;
+  p:order 1 ;
   skos:closeMatch ncit:C49068 .
 
 lst:StudyBlinding-unblinded a skos:Concept ;
   skos:inScheme lst:StudyBlinding ;
-  skos:prefLabel "unblinded" .
+  skos:prefLabel "unblinded" ;
+  p:order 2 .
 
 lst:SiteStatus a skos:ConceptScheme ;
   skos:prefLabel "Site status" ;
@@ -286,15 +335,18 @@ lst:SiteStatus a skos:ConceptScheme ;
 
 lst:SiteStatus-selected a skos:Concept ;
   skos:inScheme lst:SiteStatus ;
-  skos:prefLabel "selected" .
+  skos:prefLabel "selected" ;
+  p:order 1 .
 
 lst:SiteStatus-activated a skos:Concept ;
   skos:inScheme lst:SiteStatus ;
-  skos:prefLabel "activated" .
+  skos:prefLabel "activated" ;
+  p:order 2 .
 
 lst:SiteStatus-closed a skos:Concept ;
   skos:inScheme lst:SiteStatus ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 3 .
 
 lst:SitePayment a skos:ConceptScheme ;
   skos:prefLabel "Site payment" ;
@@ -302,11 +354,13 @@ lst:SitePayment a skos:ConceptScheme ;
 
 lst:SitePayment-current a skos:Concept ;
   skos:inScheme lst:SitePayment ;
-  skos:prefLabel "current" .
+  skos:prefLabel "current" ;
+  p:order 1 .
 
 lst:SitePayment-overdue a skos:Concept ;
   skos:inScheme lst:SitePayment ;
-  skos:prefLabel "overdue" .
+  skos:prefLabel "overdue" ;
+  p:order 2 .
 
 lst:PatientEnrollment a skos:ConceptScheme ;
   skos:prefLabel "Patient enrollment" ;
@@ -314,25 +368,30 @@ lst:PatientEnrollment a skos:ConceptScheme ;
 
 lst:PatientEnrollment-screened a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
-  skos:prefLabel "screened" .
+  skos:prefLabel "screened" ;
+  p:order 1 .
 
 lst:PatientEnrollment-consented a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
   skos:prefLabel "consented" ;
+  p:order 2 ;
   skos:closeMatch ncit:C16735 .
 
 lst:PatientEnrollment-randomized a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
   skos:prefLabel "randomized" ;
+  p:order 3 ;
   skos:closeMatch ncit:C25196 .
 
 lst:PatientEnrollment-completed a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
-  skos:prefLabel "completed" .
+  skos:prefLabel "completed" ;
+  p:order 4 .
 
 lst:PatientEnrollment-withdrawn a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
-  skos:prefLabel "withdrawn" .
+  skos:prefLabel "withdrawn" ;
+  p:order 5 .
 
 lst:PatientArm a skos:ConceptScheme ;
   skos:prefLabel "Patient arm" ;
@@ -340,11 +399,13 @@ lst:PatientArm a skos:ConceptScheme ;
 
 lst:PatientArm-unassigned a skos:Concept ;
   skos:inScheme lst:PatientArm ;
-  skos:prefLabel "unassigned" .
+  skos:prefLabel "unassigned" ;
+  p:order 1 .
 
 lst:PatientArm-assigned a skos:Concept ;
   skos:inScheme lst:PatientArm ;
-  skos:prefLabel "assigned" .
+  skos:prefLabel "assigned" ;
+  p:order 2 .
 
 lst:PatientArmVisibility a skos:ConceptScheme ;
   skos:prefLabel "Patient arm visibility" ;
@@ -352,11 +413,13 @@ lst:PatientArmVisibility a skos:ConceptScheme ;
 
 lst:PatientArmVisibility-hidden a skos:Concept ;
   skos:inScheme lst:PatientArmVisibility ;
-  skos:prefLabel "hidden" .
+  skos:prefLabel "hidden" ;
+  p:order 1 .
 
 lst:PatientArmVisibility-revealed a skos:Concept ;
   skos:inScheme lst:PatientArmVisibility ;
-  skos:prefLabel "revealed" .
+  skos:prefLabel "revealed" ;
+  p:order 2 .
 
 lst:VisitStatus a skos:ConceptScheme ;
   skos:prefLabel "Visit status" ;
@@ -364,15 +427,18 @@ lst:VisitStatus a skos:ConceptScheme ;
 
 lst:VisitStatus-scheduled a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
-  skos:prefLabel "scheduled" .
+  skos:prefLabel "scheduled" ;
+  p:order 1 .
 
 lst:VisitStatus-completed a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
-  skos:prefLabel "completed" .
+  skos:prefLabel "completed" ;
+  p:order 2 .
 
 lst:VisitStatus-missed a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
-  skos:prefLabel "missed" .
+  skos:prefLabel "missed" ;
+  p:order 3 .
 
 lst:DataRecordEntry a skos:ConceptScheme ;
   skos:prefLabel "Data Record entry" ;
@@ -380,11 +446,13 @@ lst:DataRecordEntry a skos:ConceptScheme ;
 
 lst:DataRecordEntry-entered a skos:Concept ;
   skos:inScheme lst:DataRecordEntry ;
-  skos:prefLabel "entered" .
+  skos:prefLabel "entered" ;
+  p:order 1 .
 
 lst:DataRecordEntry-verified a skos:Concept ;
   skos:inScheme lst:DataRecordEntry ;
-  skos:prefLabel "verified" .
+  skos:prefLabel "verified" ;
+  p:order 2 .
 
 lst:DataRecordSource a skos:ConceptScheme ;
   skos:prefLabel "Data Record source" ;
@@ -392,19 +460,23 @@ lst:DataRecordSource a skos:ConceptScheme ;
 
 lst:DataRecordSource-site a skos:Concept ;
   skos:inScheme lst:DataRecordSource ;
-  skos:prefLabel "site" .
+  skos:prefLabel "site" ;
+  p:order 1 .
 
 lst:DataRecordSource-patient a skos:Concept ;
   skos:inScheme lst:DataRecordSource ;
-  skos:prefLabel "patient" .
+  skos:prefLabel "patient" ;
+  p:order 2 .
 
 lst:DataRecordSource-device a skos:Concept ;
   skos:inScheme lst:DataRecordSource ;
-  skos:prefLabel "device" .
+  skos:prefLabel "device" ;
+  p:order 3 .
 
 lst:DataRecordSource-healthRecord a skos:Concept ;
   skos:inScheme lst:DataRecordSource ;
-  skos:prefLabel "health record" .
+  skos:prefLabel "health record" ;
+  p:order 4 .
 
 lst:DataQueryStatus a skos:ConceptScheme ;
   skos:prefLabel "Data Query status" ;
@@ -412,15 +484,18 @@ lst:DataQueryStatus a skos:ConceptScheme ;
 
 lst:DataQueryStatus-open a skos:Concept ;
   skos:inScheme lst:DataQueryStatus ;
-  skos:prefLabel "open" .
+  skos:prefLabel "open" ;
+  p:order 1 .
 
 lst:DataQueryStatus-answered a skos:Concept ;
   skos:inScheme lst:DataQueryStatus ;
-  skos:prefLabel "answered" .
+  skos:prefLabel "answered" ;
+  p:order 2 .
 
 lst:DataQueryStatus-closed a skos:Concept ;
   skos:inScheme lst:DataQueryStatus ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 3 .
 
 lst:AdverseEventEntry a skos:ConceptScheme ;
   skos:prefLabel "Adverse Event entry" ;
@@ -428,11 +503,13 @@ lst:AdverseEventEntry a skos:ConceptScheme ;
 
 lst:AdverseEventEntry-entered a skos:Concept ;
   skos:inScheme lst:AdverseEventEntry ;
-  skos:prefLabel "entered" .
+  skos:prefLabel "entered" ;
+  p:order 1 .
 
 lst:AdverseEventEntry-verified a skos:Concept ;
   skos:inScheme lst:AdverseEventEntry ;
-  skos:prefLabel "verified" .
+  skos:prefLabel "verified" ;
+  p:order 2 .
 
 lst:AdverseEventSeriousness a skos:ConceptScheme ;
   skos:prefLabel "Adverse Event seriousness" ;
@@ -441,11 +518,13 @@ lst:AdverseEventSeriousness a skos:ConceptScheme ;
 lst:AdverseEventSeriousness-nonSerious a skos:Concept ;
   skos:inScheme lst:AdverseEventSeriousness ;
   skos:prefLabel "non-serious" ;
+  p:order 1 ;
   skos:closeMatch ncit:C41336 .
 
 lst:AdverseEventSeriousness-serious a skos:Concept ;
   skos:inScheme lst:AdverseEventSeriousness ;
   skos:prefLabel "serious" ;
+  p:order 2 ;
   skos:closeMatch ncit:C41335 ;
   p:urgency 3 .
 
@@ -456,11 +535,13 @@ lst:AdverseEventOutcome a skos:ConceptScheme ;
 lst:AdverseEventOutcome-ongoing a skos:Concept ;
   skos:inScheme lst:AdverseEventOutcome ;
   skos:prefLabel "ongoing" ;
+  p:order 1 ;
   skos:closeMatch ncit:C49494 .
 
 lst:AdverseEventOutcome-resolved a skos:Concept ;
   skos:inScheme lst:AdverseEventOutcome ;
   skos:prefLabel "resolved" ;
+  p:order 2 ;
   skos:closeMatch ncit:C49498 .
 
 lst:AdverseEventReporting a skos:ConceptScheme ;
@@ -469,11 +550,13 @@ lst:AdverseEventReporting a skos:ConceptScheme ;
 
 lst:AdverseEventReporting-notReported a skos:Concept ;
   skos:inScheme lst:AdverseEventReporting ;
-  skos:prefLabel "not reported" .
+  skos:prefLabel "not reported" ;
+  p:order 1 .
 
 lst:AdverseEventReporting-reportedToSafety a skos:Concept ;
   skos:inScheme lst:AdverseEventReporting ;
-  skos:prefLabel "reported to safety" .
+  skos:prefLabel "reported to safety" ;
+  p:order 2 .
 
 lst:SafetyCaseWorkflow a skos:ConceptScheme ;
   skos:prefLabel "Safety Case workflow" ;
@@ -481,23 +564,28 @@ lst:SafetyCaseWorkflow a skos:ConceptScheme ;
 
 lst:SafetyCaseWorkflow-received a skos:Concept ;
   skos:inScheme lst:SafetyCaseWorkflow ;
-  skos:prefLabel "received" .
+  skos:prefLabel "received" ;
+  p:order 1 .
 
 lst:SafetyCaseWorkflow-triaged a skos:Concept ;
   skos:inScheme lst:SafetyCaseWorkflow ;
-  skos:prefLabel "triaged" .
+  skos:prefLabel "triaged" ;
+  p:order 2 .
 
 lst:SafetyCaseWorkflow-assessed a skos:Concept ;
   skos:inScheme lst:SafetyCaseWorkflow ;
-  skos:prefLabel "assessed" .
+  skos:prefLabel "assessed" ;
+  p:order 3 .
 
 lst:SafetyCaseWorkflow-reported a skos:Concept ;
   skos:inScheme lst:SafetyCaseWorkflow ;
-  skos:prefLabel "reported" .
+  skos:prefLabel "reported" ;
+  p:order 4 .
 
 lst:SafetyCaseWorkflow-closed a skos:Concept ;
   skos:inScheme lst:SafetyCaseWorkflow ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 5 .
 
 lst:SafetyCaseSeriousness a skos:ConceptScheme ;
   skos:prefLabel "Safety Case seriousness" ;
@@ -506,11 +594,13 @@ lst:SafetyCaseSeriousness a skos:ConceptScheme ;
 lst:SafetyCaseSeriousness-nonSerious a skos:Concept ;
   skos:inScheme lst:SafetyCaseSeriousness ;
   skos:prefLabel "non-serious" ;
+  p:order 1 ;
   skos:closeMatch ncit:C41336 .
 
 lst:SafetyCaseSeriousness-serious a skos:Concept ;
   skos:inScheme lst:SafetyCaseSeriousness ;
   skos:prefLabel "serious" ;
+  p:order 2 ;
   skos:closeMatch ncit:C41335 ;
   p:urgency 3 .
 
@@ -521,11 +611,13 @@ lst:SafetyCaseExpectedness a skos:ConceptScheme ;
 lst:SafetyCaseExpectedness-expected a skos:Concept ;
   skos:inScheme lst:SafetyCaseExpectedness ;
   skos:prefLabel "expected" ;
+  p:order 1 ;
   skos:closeMatch ncit:C41333 .
 
 lst:SafetyCaseExpectedness-unexpected a skos:Concept ;
   skos:inScheme lst:SafetyCaseExpectedness ;
   skos:prefLabel "unexpected" ;
+  p:order 2 ;
   skos:closeMatch ncit:C41334 .
 
 lst:SafetyCaseCausality a skos:ConceptScheme ;
@@ -534,21 +626,25 @@ lst:SafetyCaseCausality a skos:ConceptScheme ;
 
 lst:SafetyCaseCausality-unassessed a skos:Concept ;
   skos:inScheme lst:SafetyCaseCausality ;
-  skos:prefLabel "unassessed" .
+  skos:prefLabel "unassessed" ;
+  p:order 1 .
 
 lst:SafetyCaseCausality-unrelated a skos:Concept ;
   skos:inScheme lst:SafetyCaseCausality ;
   skos:prefLabel "unrelated" ;
+  p:order 2 ;
   skos:closeMatch ncit:C53256 .
 
 lst:SafetyCaseCausality-possible a skos:Concept ;
   skos:inScheme lst:SafetyCaseCausality ;
   skos:prefLabel "possible" ;
+  p:order 3 ;
   skos:closeMatch ncit:C53258 .
 
 lst:SafetyCaseCausality-probable a skos:Concept ;
   skos:inScheme lst:SafetyCaseCausality ;
   skos:prefLabel "probable" ;
+  p:order 4 ;
   skos:closeMatch ncit:C53259 .
 
 lst:ProductStatus a skos:ConceptScheme ;
@@ -557,15 +653,18 @@ lst:ProductStatus a skos:ConceptScheme ;
 
 lst:ProductStatus-investigational a skos:Concept ;
   skos:inScheme lst:ProductStatus ;
-  skos:prefLabel "investigational" .
+  skos:prefLabel "investigational" ;
+  p:order 1 .
 
 lst:ProductStatus-approved a skos:Concept ;
   skos:inScheme lst:ProductStatus ;
-  skos:prefLabel "approved" .
+  skos:prefLabel "approved" ;
+  p:order 2 .
 
 lst:ProductStatus-withdrawn a skos:Concept ;
   skos:inScheme lst:ProductStatus ;
-  skos:prefLabel "withdrawn" .
+  skos:prefLabel "withdrawn" ;
+  p:order 3 .
 
 lst:SignalStatus a skos:ConceptScheme ;
   skos:prefLabel "Signal status" ;
@@ -573,19 +672,23 @@ lst:SignalStatus a skos:ConceptScheme ;
 
 lst:SignalStatus-detected a skos:Concept ;
   skos:inScheme lst:SignalStatus ;
-  skos:prefLabel "detected" .
+  skos:prefLabel "detected" ;
+  p:order 1 .
 
 lst:SignalStatus-underEvaluation a skos:Concept ;
   skos:inScheme lst:SignalStatus ;
-  skos:prefLabel "under evaluation" .
+  skos:prefLabel "under evaluation" ;
+  p:order 2 .
 
 lst:SignalStatus-confirmed a skos:Concept ;
   skos:inScheme lst:SignalStatus ;
-  skos:prefLabel "confirmed" .
+  skos:prefLabel "confirmed" ;
+  p:order 3 .
 
 lst:SignalStatus-refuted a skos:Concept ;
   skos:inScheme lst:SignalStatus ;
-  skos:prefLabel "refuted" .
+  skos:prefLabel "refuted" ;
+  p:order 4 .
 
 lst:SubmissionStatus a skos:ConceptScheme ;
   skos:prefLabel "Submission status" ;
@@ -593,19 +696,23 @@ lst:SubmissionStatus a skos:ConceptScheme ;
 
 lst:SubmissionStatus-draft a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;
-  skos:prefLabel "draft" .
+  skos:prefLabel "draft" ;
+  p:order 1 .
 
 lst:SubmissionStatus-inReview a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;
-  skos:prefLabel "in review" .
+  skos:prefLabel "in review" ;
+  p:order 2 .
 
 lst:SubmissionStatus-submitted a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;
-  skos:prefLabel "submitted" .
+  skos:prefLabel "submitted" ;
+  p:order 3 .
 
 lst:SubmissionStatus-acknowledged a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;
-  skos:prefLabel "acknowledged" .
+  skos:prefLabel "acknowledged" ;
+  p:order 4 .
 
 lst:SubmissionDeadline a skos:ConceptScheme ;
   skos:prefLabel "Submission deadline" ;
@@ -613,16 +720,19 @@ lst:SubmissionDeadline a skos:ConceptScheme ;
 
 lst:SubmissionDeadline-onTrack a skos:Concept ;
   skos:inScheme lst:SubmissionDeadline ;
-  skos:prefLabel "on track" .
+  skos:prefLabel "on track" ;
+  p:order 1 .
 
 lst:SubmissionDeadline-dueSoon a skos:Concept ;
   skos:inScheme lst:SubmissionDeadline ;
   skos:prefLabel "due soon" ;
+  p:order 2 ;
   p:urgency 3 .
 
 lst:SubmissionDeadline-overdue a skos:Concept ;
   skos:inScheme lst:SubmissionDeadline ;
   skos:prefLabel "overdue" ;
+  p:order 3 ;
   p:urgency 4 .
 
 lst:QualityEventStatus a skos:ConceptScheme ;
@@ -631,19 +741,23 @@ lst:QualityEventStatus a skos:ConceptScheme ;
 
 lst:QualityEventStatus-open a skos:Concept ;
   skos:inScheme lst:QualityEventStatus ;
-  skos:prefLabel "open" .
+  skos:prefLabel "open" ;
+  p:order 1 .
 
 lst:QualityEventStatus-investigating a skos:Concept ;
   skos:inScheme lst:QualityEventStatus ;
-  skos:prefLabel "investigating" .
+  skos:prefLabel "investigating" ;
+  p:order 2 .
 
 lst:QualityEventStatus-capaAssigned a skos:Concept ;
   skos:inScheme lst:QualityEventStatus ;
-  skos:prefLabel "CAPA assigned" .
+  skos:prefLabel "CAPA assigned" ;
+  p:order 3 .
 
 lst:QualityEventStatus-closed a skos:Concept ;
   skos:inScheme lst:QualityEventStatus ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 4 .
 
 lst:QualityEventSeverity a skos:ConceptScheme ;
   skos:prefLabel "Quality Event severity" ;
@@ -651,16 +765,19 @@ lst:QualityEventSeverity a skos:ConceptScheme ;
 
 lst:QualityEventSeverity-minor a skos:Concept ;
   skos:inScheme lst:QualityEventSeverity ;
-  skos:prefLabel "minor" .
+  skos:prefLabel "minor" ;
+  p:order 1 .
 
 lst:QualityEventSeverity-major a skos:Concept ;
   skos:inScheme lst:QualityEventSeverity ;
   skos:prefLabel "major" ;
+  p:order 2 ;
   p:urgency 2 .
 
 lst:QualityEventSeverity-critical a skos:Concept ;
   skos:inScheme lst:QualityEventSeverity ;
   skos:prefLabel "critical" ;
+  p:order 3 ;
   p:urgency 3 .
 
 lst:CAPAStatus a skos:ConceptScheme ;
@@ -669,19 +786,23 @@ lst:CAPAStatus a skos:ConceptScheme ;
 
 lst:CAPAStatus-planned a skos:Concept ;
   skos:inScheme lst:CAPAStatus ;
-  skos:prefLabel "planned" .
+  skos:prefLabel "planned" ;
+  p:order 1 .
 
 lst:CAPAStatus-inProgress a skos:Concept ;
   skos:inScheme lst:CAPAStatus ;
-  skos:prefLabel "in progress" .
+  skos:prefLabel "in progress" ;
+  p:order 2 .
 
 lst:CAPAStatus-effective a skos:Concept ;
   skos:inScheme lst:CAPAStatus ;
-  skos:prefLabel "effective" .
+  skos:prefLabel "effective" ;
+  p:order 3 .
 
 lst:CAPAStatus-ineffective a skos:Concept ;
   skos:inScheme lst:CAPAStatus ;
-  skos:prefLabel "ineffective" .
+  skos:prefLabel "ineffective" ;
+  p:order 4 .
 
 lst:MedicalInquiryStatus a skos:ConceptScheme ;
   skos:prefLabel "Medical Inquiry status" ;
@@ -689,12 +810,15 @@ lst:MedicalInquiryStatus a skos:ConceptScheme ;
 
 lst:MedicalInquiryStatus-received a skos:Concept ;
   skos:inScheme lst:MedicalInquiryStatus ;
-  skos:prefLabel "received" .
+  skos:prefLabel "received" ;
+  p:order 1 .
 
 lst:MedicalInquiryStatus-answered a skos:Concept ;
   skos:inScheme lst:MedicalInquiryStatus ;
-  skos:prefLabel "answered" .
+  skos:prefLabel "answered" ;
+  p:order 2 .
 
 lst:MedicalInquiryStatus-closed a skos:Concept ;
   skos:inScheme lst:MedicalInquiryStatus ;
-  skos:prefLabel "closed" .
+  skos:prefLabel "closed" ;
+  p:order 3 .

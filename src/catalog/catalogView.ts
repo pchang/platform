@@ -51,6 +51,11 @@ function annotations(node: ViewNode): ViewNode[] {
   return [...notes, ...(node.children ?? []).flatMap(annotations)];
 }
 
+/** Whether an example opens over the page, such as a Modal (design system spec 5.1, Overlays in the catalog preview). */
+function opensOverPage(node: ViewNode): boolean {
+  return Boolean(catalog.components.find((c) => c.id === node.component)?.overlay) || (node.children ?? []).some(opensOverPage);
+}
+
 function componentCard(entry: CatalogComponent): ViewNode {
   const details: ViewNode[][] = [
     [{ component: 'Label', props: { label: entry.level, color: 'blue', isCompact: true } }],
@@ -62,7 +67,10 @@ function componentCard(entry: CatalogComponent): ViewNode {
   details.push([text(`Accessibility: ${entry.accessibility.join('. ')}.`, 'small')]);
   details.push([{ component: 'Divider' }]);
   details.push([heading(entry.examples.length > 1 ? 'Examples' : 'Example', 'h4')]);
-  for (const example of entry.examples) details.push([example, ...annotations(example)]);
+  for (const example of entry.examples) {
+    if (opensOverPage(example)) details.push([text('This example opens as a dialog over the page, so it is described here rather than opened. Try it from To do.', 'small')]);
+    else details.push([example, ...annotations(example)]);
+  }
   return card(entry.id, [stack(details)]);
 }
 

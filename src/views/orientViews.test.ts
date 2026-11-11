@@ -20,10 +20,19 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
     expect(validateView(view).errors).toEqual([]);
   });
 
+  it('shows tasks whose pattern is not built yet as text, not as buttons', () => {
+    const sign = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Submit', archetype: { archetype: 'urn:a', label: 'Review and sign' } }] }];
+    const json = JSON.stringify(buildTodoView(sign, 'Dev Raman, Drug Safety Physician'));
+    expect(json).toContain('Submit (Review and sign, coming soon)');
+    expect(json).not.toContain('"component":"Button"');
+  });
+
   it('says what is waiting, and what can be done on an urgent object', () => {
     const json = JSON.stringify(buildTodoView(items, 'Chloé Martin, Drug Safety Physician'));
-    expect(json).toContain('Waiting for you: Send for review');
-    expect(json).toContain('You can: Quarantine batch');
+    expect(json).toContain('"label":"Waiting for you:"');
+    expect(json).toContain('{"component":"Button","props":{"label":"Send for review","variant":"primary","size":"sm"},"action":{"method":"urn:m","target":"urn:x"}}');
+    expect(json).toContain('"label":"You can:"');
+    expect(json).toContain('"label":"Quarantine batch","variant":"secondary"');
     expect(json).toContain('"label":"Urgent","status":"danger"');
   });
 });

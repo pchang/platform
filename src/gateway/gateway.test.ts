@@ -105,7 +105,7 @@ describe('J1 through the gateway: from trial adverse event to expedited report',
     ]);
     const submitted = await gateway.commit(dev, submission, ls('Submit'), { approver: person('dev') });
     expect(gateway.read(dev, caseId).state.Workflow).toBe('reported');
-    expect(submitted.changes).toContainEqual({ subject: reported.created[0], property: ls('safetyCaseWorkflow'), oldValue: lst('SafetyCaseWorkflow-assessed'), newValue: lst('SafetyCaseWorkflow-reported') });
+    expect(submitted.changes).toContainEqual(expect.objectContaining({ subject: reported.created[0], property: ls('safetyCaseWorkflow'), oldValue: lst('SafetyCaseWorkflow-assessed'), newValue: lst('SafetyCaseWorkflow-reported') }));
 
     // Every step is in the history, with who did it and in which role.
     expect(gateway.commits().map((c) => [c.method.split('#')[1], c.person.split('/').pop()])).toEqual([

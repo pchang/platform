@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.2",
+  "version": "0.4",
   "patterns": [
     {
       "id": "card-view",
@@ -25,6 +25,81 @@
         }
       ],
       "responsive": "One card per row on phones. More per row as width allows, through a Gallery."
+    },
+    {
+      "id": "confirm",
+      "purpose": "Runs a method with no inputs after the person confirms it (archetype Confirm).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Confirm"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A small modal on wide screens; on phones, the full width less the standard margin."
+    },
+    {
+      "id": "fill-in",
+      "purpose": "Collects a method's inputs in a short form, previews the change, then runs it (archetype Fill in).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Fill in"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
+    },
+    {
+      "id": "compare-and-decide",
+      "purpose": "Shows the object and another of the same type side by side, differences marked, then previews and runs the method (archetype Compare and decide).",
+      "template": "page",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Compare and decide"
+      ],
+      "slots": [
+        {
+          "name": "main",
+          "accepts": [
+            "Stack"
+          ]
+        }
+      ],
+      "responsive": "The two cards sit side by side from md up and stack on phones."
     }
   ]
 }

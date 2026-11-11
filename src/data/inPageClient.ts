@@ -1,8 +1,8 @@
 import * as oxigraph from 'oxigraph';
 import wasmUrl from 'oxigraph/web_bg.wasm?url';
-import { Gateway } from '../gateway/gateway';
+import { Gateway, GatewayError } from '../gateway/gateway';
 import { loadGraph } from '../ontology/ontology';
-import type { GatewayClient } from './client';
+import { RefusedError, type GatewayClient } from './client';
 
 /**
  * The gateway running inside the page, for previews (platform spec section 3.4, Previews): the same
@@ -28,6 +28,16 @@ async function loadOxigraph() {
   }
 }
 
+/** The gateway's refusals, as the client's RefusedError, so both clients fail the same way. */
+async function refused<T>(run: () => T | Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof GatewayError) throw new RefusedError(error.reasons);
+    throw error;
+  }
+}
+
 export async function inPageClient(): Promise<GatewayClient> {
   await loadOxigraph();
 
@@ -38,5 +48,9 @@ export async function inPageClient(): Promise<GatewayClient> {
     navigation: async (p) => gateway.navigation(p),
     todo: (p) => gateway.todo(p),
     find: async (p, type) => gateway.find(p, type),
+    read: (p, object) => refused(() => gateway.read(p, object)),
+    compose: async (p, object, method) => refused(() => gateway.compose(p, object, method)),
+    preview: (p, object, method, inputs) => refused(() => gateway.preview(p, object, method, inputs)),
+    commit: (p, object, method, inputs) => refused(() => gateway.commit(p, object, method, inputs)),
   };
 }
