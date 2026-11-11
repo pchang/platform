@@ -72,7 +72,7 @@ describe('reads', () => {
 
 describe('J1 through the gateway: from trial adverse event to expedited report', () => {
   it('runs end to end, with the unblinding edge case and separation of duties', async () => {
-    const gateway = withSeed([], { now: fixedClock });
+    const gateway = withSeed([], { now: fixedClock, developmentSignatures: true });
 
     // Clinical Data Manager: report the serious event to safety.
     const reported = await gateway.commit(ben, 'AE-003', ls('ReportToSafety'));
@@ -103,7 +103,8 @@ describe('J1 through the gateway: from trial adverse event to expedited report',
     expect(await rejected(gateway.commit(chloe, submission, ls('Submit'), { approver: person('chloe') }))).toEqual([
       'Approver must be someone else (rule 5: separation of duties)',
     ]);
-    const submitted = await gateway.commit(dev, submission, ls('Submit'), { approver: person('dev') });
+    const submitted = await gateway.commit(dev, submission, ls('Submit'), { approver: person('dev') }, { typedName: 'Dev Raman' });
+    expect(submitted.signature).toMatchObject({ signerName: 'Dev Raman', development: true, meaning: 'Approval: I approve this report for submission to the regulatory authority.' });
     expect(gateway.read(dev, caseId).state.Workflow).toBe('reported');
     expect(submitted.changes).toContainEqual(expect.objectContaining({ subject: reported.created[0], property: ls('safetyCaseWorkflow'), oldValue: lst('SafetyCaseWorkflow-assessed'), newValue: lst('SafetyCaseWorkflow-reported') }));
 

@@ -15,7 +15,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
- *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... } }
+ *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." } }
  *   GET  /api/commits                        the history of commits
  *   GET  /api/dev/people                     the seed graph's people and roles (development mode only)
  *   POST /mcp                                the same requests over the Model Context Protocol, for agents
@@ -92,8 +92,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));
       }
       case 'POST objects/:/methods/:': {
-        const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
-        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs));
+        const { inputs = {}, signature } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string } };
+        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature));
       }
       case 'GET commits':
         return send(res, 200, gateway.commits());

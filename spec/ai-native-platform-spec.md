@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.15. November 11, 2026. Author: Paul Chang.
+Version 0.16. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -154,6 +154,12 @@ Effects described in words are recorded with the commit as pending work, so noth
 - Commits run one at a time, on a working copy of the graph. Readers never see a commit that has not finished, and two commits never interleave.
 
 A database server can later hold the current state for larger data or several gateways. The journal stays as the audit record.
+
+**Electronic signatures.** A method that requires a signature commits only with one, and the signature is part of the commit.
+
+- The signer is the principal: a person, never an agent. Any person input of a signed method is the principal; nobody signs for someone else.
+- The signature records the signer's name, the date and time of signing, and the meaning of the signature, such as approval or authorship. The meaning comes from the method in the ontology. All three are bound to the commit's provenance record, so they cannot be separated from what was signed.
+- Signing authenticates the person at the moment of signing, through the identity provider. Until one is connected, development mode accepts the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Outside development mode, the gateway refuses to sign.
 
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
 
@@ -329,7 +335,7 @@ To resolve in future versions of this spec.
 - How is the generated UI tested for consistency and accessibility at scale?
 - Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
 - Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
-- Which identity provider authenticates people and agents?
+- Which identity provider authenticates people and agents, and how does it authenticate a person at the moment of signing?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
@@ -358,3 +364,4 @@ To resolve in future versions of this spec.
 | 0.13 | 2026-11-11 | Added interaction archetypes (section 5.4): predictable, repeatable patterns on the A2UI declarative model; the seven-step sequence for running a method; eight archetypes derived by ordered rules; acting on many objects as a mode; AI fills patterns but never chooses them. Two open questions. |
 | 0.14 | 2026-11-11 | The gateway answers Compose a method and Preview a method (section 3.4). Input choices and defaults come from the ontology (section 5.4). |
 | 0.15 | 2026-11-11 | Previews and commits name the described effects they record as pending work. |
+| 0.16 | 2026-11-11 | Added electronic signatures to the gateway contract (section 3.4): the principal signs, never an agent; name, time and meaning bound to the commit; development signatures by typed name, clearly not valid, until an identity provider exists. |

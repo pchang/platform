@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.4",
+  "version": "0.5",
   "patterns": [
     {
       "id": "card-view",
@@ -100,6 +100,27 @@
         }
       ],
       "responsive": "The two cards sit side by side from md up and stack on phones."
+    },
+    {
+      "id": "review-and-sign",
+      "purpose": "Reviews a method's change, then signs it with the signature's meaning (archetype Review and sign).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Review and sign"
+      ],
+      "slots": [
+        {
+          "name": "steps",
+          "accepts": [
+            "WizardStep"
+          ]
+        }
+      ],
+      "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin, with the steps behind a toggle."
     }
   ]
 }

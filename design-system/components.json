@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.3",
+  "version": "0.4",
   "components": [
     {
       "id": "Button",
@@ -1118,7 +1118,7 @@
       },
       "purpose": "A dialog over the page for one focused interaction, such as running a method.",
       "useWhen": [
-        "Running a Confirm or Fill in method (design system 5.1)"
+        "Running a Confirm, Fill in or Review and sign method (design system 5.1)"
       ],
       "avoidWhen": [
         "Content people need to compare with the page behind it"
@@ -1148,7 +1148,8 @@
         "accepts": [
           "ModalHeader",
           "ModalBody",
-          "ModalFooter"
+          "ModalFooter",
+          "Wizard"
         ],
         "minItems": 1
       },
@@ -2270,6 +2271,17 @@
           "isInline": {
             "type": "boolean",
             "description": "Inside a form or page section"
+          },
+          "component": {
+            "enum": [
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6",
+              "p"
+            ],
+            "description": "The title's element: a heading at the level that fits the page outline, or p where no heading fits"
           }
         },
         "required": [
@@ -2285,7 +2297,8 @@
       "responsive": "Full width of its container; wraps.",
       "accessibility": [
         "Variant is shown by an icon as well as color (rule 4)",
-        "Announced to screen readers"
+        "Announced to screen readers",
+        "Its title is a heading at the right level for where it appears, or a paragraph above the page's main heading"
       ],
       "examples": [
         {
@@ -2316,6 +2329,393 @@
               "props": {
                 "label": "An open quality event is raised on this batch"
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Wizard",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Wizard"
+      },
+      "purpose": "Takes the person through an interaction in steps, with Back, Next and Cancel.",
+      "useWhen": [
+        "Review and sign",
+        "Step by step"
+      ],
+      "avoidWhen": [
+        "Interactions that fit on one screen"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "navAriaLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Names the list of steps"
+          }
+        },
+        "required": [
+          "navAriaLabel"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "WizardHeader",
+          "WizardStep"
+        ],
+        "minItems": 2
+      },
+      "responsive": "The list of steps sits beside the content from md up and collapses into a toggle on phones.",
+      "accessibility": [
+        "The current step is announced",
+        "Focus moves to the step's content on Next and Back",
+        "On phones, the step toggle is named by its visible text: the renderer removes PatternFly 6.7's fixed name for it, which does not match what it shows"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Submit SUB-1"
+          },
+          "children": [
+            {
+              "component": "Wizard",
+              "props": {
+                "navAriaLabel": "Submit SUB-1 steps"
+              },
+              "children": [
+                {
+                  "component": "WizardHeader",
+                  "props": {
+                    "title": "Submit SUB-1",
+                    "description": "Submission",
+                    "closeButtonAriaLabel": "Close"
+                  }
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Review",
+                    "id": "review",
+                    "footer": {
+                      "isNextDisabled": false
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "Status: in review → submitted"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Sign",
+                    "id": "sign",
+                    "footer": {
+                      "nextButtonText": "Submit",
+                      "isNextDisabled": true
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Form",
+                      "children": [
+                        {
+                          "component": "FormGroup",
+                          "props": {
+                            "label": "Type your full name to sign",
+                            "isRequired": true
+                          },
+                          "children": [
+                            {
+                              "component": "TextInput",
+                              "props": {
+                                "aria-label": "Type your full name to sign",
+                                "isRequired": true
+                              },
+                              "field": "signatureName"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WizardHeader",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "WizardHeader"
+      },
+      "purpose": "The title of a Wizard, with its close button.",
+      "useWhen": [
+        "Every Wizard"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The method and the object"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The object's type"
+          },
+          "closeButtonAriaLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Names the close button"
+          }
+        },
+        "required": [
+          "title",
+          "closeButtonAriaLabel"
+        ]
+      },
+      "children": null,
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "The close button cancels and changes nothing"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Submit SUB-1"
+          },
+          "children": [
+            {
+              "component": "Wizard",
+              "props": {
+                "navAriaLabel": "Submit SUB-1 steps"
+              },
+              "children": [
+                {
+                  "component": "WizardHeader",
+                  "props": {
+                    "title": "Submit SUB-1",
+                    "description": "Submission",
+                    "closeButtonAriaLabel": "Close"
+                  }
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Review",
+                    "id": "review",
+                    "footer": {
+                      "isNextDisabled": false
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "Status: in review → submitted"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Sign",
+                    "id": "sign",
+                    "footer": {
+                      "nextButtonText": "Submit",
+                      "isNextDisabled": true
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Form",
+                      "children": [
+                        {
+                          "component": "FormGroup",
+                          "props": {
+                            "label": "Type your full name to sign",
+                            "isRequired": true
+                          },
+                          "children": [
+                            {
+                              "component": "TextInput",
+                              "props": {
+                                "aria-label": "Type your full name to sign",
+                                "isRequired": true
+                              },
+                              "field": "signatureName"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WizardStep",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "WizardStep"
+      },
+      "purpose": "One step of a Wizard.",
+      "useWhen": [
+        "Each step of a Wizard"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The step's name in the list of steps"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A stable id for the step"
+          },
+          "footer": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The step's footer: the Next button's text and whether it is disabled",
+            "properties": {
+              "nextButtonText": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Names the Next button, such as the method on the last step"
+              },
+              "isNextDisabled": {
+                "type": "boolean",
+                "description": "Next is disabled until the step is complete"
+              }
+            }
+          }
+        },
+        "required": [
+          "name",
+          "id"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ]
+      },
+      "responsive": "Full width of the Wizard's content area.",
+      "accessibility": [
+        "The step's name says what it is for"
+      ],
+      "examples": [
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "medium",
+            "aria-label": "Submit SUB-1"
+          },
+          "children": [
+            {
+              "component": "Wizard",
+              "props": {
+                "navAriaLabel": "Submit SUB-1 steps"
+              },
+              "children": [
+                {
+                  "component": "WizardHeader",
+                  "props": {
+                    "title": "Submit SUB-1",
+                    "description": "Submission",
+                    "closeButtonAriaLabel": "Close"
+                  }
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Review",
+                    "id": "review",
+                    "footer": {
+                      "isNextDisabled": false
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "Status: in review → submitted"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "component": "WizardStep",
+                  "props": {
+                    "name": "Sign",
+                    "id": "sign",
+                    "footer": {
+                      "nextButtonText": "Submit",
+                      "isNextDisabled": true
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "Form",
+                      "children": [
+                        {
+                          "component": "FormGroup",
+                          "props": {
+                            "label": "Type your full name to sign",
+                            "isRequired": true
+                          },
+                          "children": [
+                            {
+                              "component": "TextInput",
+                              "props": {
+                                "aria-label": "Type your full name to sign",
+                                "isRequired": true
+                              },
+                              "field": "signatureName"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }

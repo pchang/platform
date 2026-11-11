@@ -42,7 +42,8 @@ export async function inPageClient(): Promise<GatewayClient> {
   await loadOxigraph();
 
   const files = Object.keys(ontology).sort((a, b) => (a.endsWith('/platform.ttl') ? -1 : b.endsWith('/platform.ttl') ? 1 : a.localeCompare(b)));
-  const gateway = new Gateway(loadGraph([...files.map((f) => ontology[f]), ...Object.values(seed)]));
+  // Previews are development: signatures are by typed name, recorded as development signatures (platform spec 3.4).
+  const gateway = new Gateway(loadGraph([...files.map((f) => ontology[f]), ...Object.values(seed)]), { developmentSignatures: true });
   return {
     people: async () => gateway.people(),
     navigation: async (p) => gateway.navigation(p),
@@ -51,6 +52,6 @@ export async function inPageClient(): Promise<GatewayClient> {
     read: (p, object) => refused(() => gateway.read(p, object)),
     compose: async (p, object, method) => refused(() => gateway.compose(p, object, method)),
     preview: (p, object, method, inputs) => refused(() => gateway.preview(p, object, method, inputs)),
-    commit: (p, object, method, inputs) => refused(() => gateway.commit(p, object, method, inputs)),
+    commit: (p, object, method, inputs, signature) => refused(() => gateway.commit(p, object, method, inputs, signature)),
   };
 }
