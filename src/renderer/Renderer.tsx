@@ -1,4 +1,4 @@
-import { createContext, useContext, useId, useMemo, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useRef, type ReactNode, type Ref } from 'react';
 import { componentsById, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { icons } from './icons';
@@ -20,6 +20,24 @@ export interface RenderHost {
   onField?: (field: string, value: string) => void;
   /** Called when the person presses a button with an intent, or closes a Modal (cancel). */
   onIntent?: (intent: 'submit' | 'cancel') => void;
+}
+
+/**
+ * PatternFly 6.7's Wizard never passes a name to its phone step toggle, so the toggle is always called
+ * "Wizard toggle" while it shows the step, such as "2 Sign". That fails WCAG 2.5.3, label in name. Removing
+ * the fixed name lets the visible text name the toggle. React does not put it back, because it believes the
+ * attribute is unchanged.
+ */
+function WizardToggleName({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector('.pf-v6-c-wizard__toggle')?.removeAttribute('aria-label');
+  });
+  return (
+    <div ref={ref} style={{ display: 'contents' }}>
+      {children}
+    </div>
+  );
 }
 
 /** A FormGroup's id, so the control inside it is labeled by the group's label. */
@@ -66,9 +84,30 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     props.isOpen = true;
     props.onClose = () => host.onIntent?.('cancel');
   }
+  // A Wizard's last Next submits; its Cancel and its header's close button cancel.
+  if (entry.id === 'Wizard') {
+    props.onSave = () => host.onIntent?.('submit');
+    props.onClose = () => host.onIntent?.('cancel');
+  }
+  if (entry.id === 'WizardHeader') props.onClose = () => host.onIntent?.('cancel');
 
   let content: ReactNode = undefined;
-  if (node.children?.length) {
+  // PatternFly takes a Wizard's header as a prop, not a child, and accepts only WizardStep elements as
+  // children: so the steps are made here directly, and only their contents go through Node.
+  if (entry.id === 'Wizard') {
+    const header = node.children?.find((c) => c.component === 'WizardHeader');
+    if (header) props.header = <Node node={header} host={host} />;
+    const Step = library.WizardStep;
+    content = (node.children ?? [])
+      .filter((c) => c.component === 'WizardStep')
+      .map((step, i) => (
+        <Step key={i} {...(step.props ?? {})}>
+          {(step.children ?? []).map((child, j) => (
+            <Node key={j} node={child} host={host} />
+          ))}
+        </Step>
+      ));
+  } else if (node.children?.length) {
     content = SINGLE_CHILD.has(entry.id)
       ? <Node node={node.children[0]} host={host} />
       : node.children.map((child, i) => <Node key={i} node={child} host={host} />);
@@ -92,7 +131,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   }
 
   // Void elements, such as inputs and dividers, must get no children at all.
-  const element = content === undefined ? <Component {...props} /> : <Component {...props}>{content}</Component>;
+  let element = content === undefined ? <Component {...props} /> : <Component {...props}>{content}</Component>;
+  if (entry.id === 'Wizard') element = <WizardToggleName>{element}</WizardToggleName>;
   return entry.id === 'FormGroup' && props.fieldId ? <FieldIdContext.Provider value={generatedId}>{element}</FieldIdContext.Provider> : element;
 }
 

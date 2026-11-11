@@ -103,6 +103,10 @@ p:Archetype a rdfs:Class ;
   rdfs:label "interaction archetype" ;
   rdfs:comment "How a person runs a method: one of a closed set, each with one pattern in the design system (platform spec 5.4)." .
 
+p:Signature a rdfs:Class ;
+  rdfs:label "signature" ;
+  rdfs:comment "An electronic signature bound to a commit: who signed, when, and what the signature means (platform spec 3.4)." .
+
 p:Person a rdfs:Class ;
   rdfs:label "person" ;
   rdfs:comment "Someone who runs methods, signs, reviews or approves. Identities come from the platform's identity provider." .
@@ -471,6 +475,48 @@ p:order a rdf:Property ;
   rdfs:label "order" ;
   rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme. Keeps forms and choices in the same order every time." ;
   rdfs:range xsd:integer .
+
+p:signatureMeaning a rdf:Property ;
+  rdfs:label "signature meaning" ;
+  rdfs:comment "What signing this method means, such as approval or authorship. Shown to the signer and recorded with the signature." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:string .
+
+p:signature a rdf:Property ;
+  rdfs:label "signature" ;
+  rdfs:comment "The signature a commit carries." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Signature .
+
+p:signedBy a rdf:Property ;
+  rdfs:label "signed by" ;
+  rdfs:comment "The person who signed." ;
+  rdfs:domain p:Signature ;
+  rdfs:range p:Person .
+
+p:signedAt a rdf:Property ;
+  rdfs:label "signed at" ;
+  rdfs:comment "When the person signed." ;
+  rdfs:domain p:Signature ;
+  rdfs:range xsd:dateTime .
+
+p:meaning a rdf:Property ;
+  rdfs:label "meaning" ;
+  rdfs:comment "What the signature means, as shown to the signer." ;
+  rdfs:domain p:Signature ;
+  rdfs:range xsd:string .
+
+p:isDevelopmentSignature a rdf:Property ;
+  rdfs:label "is development signature" ;
+  rdfs:comment "True for a signature given by typing a name in development mode. Not a valid electronic signature." ;
+  rdfs:domain p:Signature ;
+  rdfs:range xsd:boolean .
+
+p:isAgent a rdf:Property ;
+  rdfs:label "is agent" ;
+  rdfs:comment "True when the principal is a software agent, not a person. Agents never sign." ;
+  rdfs:domain p:Person ;
+  rdfs:range xsd:boolean .
 
 p:mayRun a rdf:Property ;
   rdfs:label "may run" ;

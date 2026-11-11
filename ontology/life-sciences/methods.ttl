@@ -114,6 +114,7 @@ ls:SignExperiment a p:Method ;
   p:precondition lsh:SignExperiment-pre ;
   p:effect ls:SignExperiment-effect1 ;
   p:requiresSignature true ;
+  p:signatureMeaning "Authorship: I performed this experiment, and its record is complete and accurate." ;
   p:governedBy ls:DataIntegrity .
 
 ls:InvalidateResult-reason a p:Input ;
@@ -506,6 +507,7 @@ ls:Submit a p:Method ;
   p:effect ls:Submit-effect1 ;
   p:effect ls:Submit-effect2 ;
   p:requiresSignature true ;
+  p:signatureMeaning "Approval: I approve this report for submission to the regulatory authority." ;
   p:governedBy ls:SeparationOfDuties .
 
 ls:RunSignalDetection-effect1 a p:DescribedEffect ;

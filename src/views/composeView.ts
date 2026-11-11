@@ -8,7 +8,10 @@ import type { ComposedInput } from '../gateway/gateway';
  */
 
 /** The archetypes built so far. Tasks of other archetypes are shown as text until their pattern exists. */
-export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide']);
+export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign']);
+
+/** The field the signer types their name into (design system spec 5.1, Review and sign). Not a method input. */
+export const SIGNATURE_FIELD = 'signatureName';
 
 /** Archetypes whose pattern takes the place of the view, rather than opening over it (design system spec 5.1). */
 export const PAGE_ARCHETYPES = new Set(['Compare and decide']);
@@ -80,7 +83,7 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
   if (state.status === 'refused') {
     return [
       heading,
-      { component: 'Alert', props: { variant: 'danger', title: `${composition.label} cannot run`, isInline: true }, children: state.reasons.map((r) => text(r)) },
+      { component: 'Alert', props: { variant: 'danger', title: `${composition.label} cannot run`, isInline: true, component: 'h3' }, children: state.reasons.map((r) => text(r)) },
     ];
   }
   const lines = changeLines(composition, state.preview);
@@ -223,6 +226,92 @@ export function buildCompareView(
   };
 }
 
+const normalName = (n: string) => n.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** Whether the typed name matches the signer's. The gateway checks again on commit. */
+export function nameMatches(composition: MethodComposition, typed: string | undefined): boolean {
+  return Boolean(composition.signature && typed && normalName(typed) === normalName(composition.signature.signerName));
+}
+
+/**
+ * Review and sign (design system spec 5.1): a Wizard in a modal. Review shows the inputs and the preview;
+ * Sign shows who signs, what the signature means and when it is recorded, then takes the typed name.
+ */
+export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false): ViewSpec {
+  const title = `${composition.label} ${composition.object.identifier}`;
+  const signature = composition.signature!;
+  const review: ViewNode[][] = [];
+  if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+  review.push(previewSection(composition, state));
+  const sign: ViewNode[][] = [
+    [
+      {
+        component: 'DescriptionList',
+        props: { isCompact: true },
+        children: [
+          ['Signer', signature.signerName],
+          ['Meaning of this signature', signature.meaning],
+          ['Date and time', 'Recorded when you sign'],
+        ].map(([term, value]) => ({
+          component: 'DescriptionListGroup',
+          children: [
+            { component: 'DescriptionListTerm', props: { label: term } },
+            { component: 'DescriptionListDescription', children: [text(value)] },
+          ],
+        })),
+      },
+    ],
+  ];
+  if (signature.development) {
+    sign.push([
+      {
+        component: 'Alert',
+        props: { variant: 'warning', title: 'Development signature', isInline: true, component: 'h3' },
+        children: [text('This is not a valid electronic signature. Signing for real needs the identity provider, which is not connected yet.')],
+      },
+    ]);
+  }
+  sign.push([
+    {
+      component: 'Form',
+      children: [
+        {
+          component: 'FormGroup',
+          props: { label: 'Type your full name to sign', isRequired: true },
+          children: [{ component: 'TextInput', props: { 'aria-label': 'Type your full name to sign', isRequired: true }, field: SIGNATURE_FIELD }],
+        },
+      ],
+    },
+  ]);
+  return {
+    pattern: 'review-and-sign',
+    because: `${composition.label} is a Review and sign method (platform spec 5.4)`,
+    root: {
+      component: 'Modal',
+      props: { variant: 'medium', 'aria-label': title },
+      children: [
+        {
+          component: 'Wizard',
+          props: { navAriaLabel: `${title} steps` },
+          children: [
+            { component: 'WizardHeader', props: { title, description: composition.object.typeLabel, closeButtonAriaLabel: 'Close' } },
+            { component: 'WizardStep', props: { name: 'Review', id: 'review', footer: { isNextDisabled: state.status !== 'ready' } }, children: [stack(review)] },
+            {
+              component: 'WizardStep',
+              props: {
+                name: 'Sign',
+                id: 'sign',
+                footer: { nextButtonText: composition.label, isNextDisabled: state.status !== 'ready' || !nameMatches(composition, values[SIGNATURE_FIELD]) || submitting },
+              },
+              children: [stack(sign)],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
 /** When a method cannot even be composed, such as when the role may not run it: the reasons, in a modal, with Cancel. */
 export function buildRefusedView(reasons: string[]): ViewSpec {
   return {
@@ -233,7 +322,7 @@ export function buildRefusedView(reasons: string[]): ViewSpec {
       props: { variant: 'small', 'aria-label': 'This cannot run' },
       children: [
         { component: 'ModalHeader', props: { title: 'This cannot run' } },
-        { component: 'ModalBody', children: [{ component: 'Alert', props: { variant: 'danger', title: 'The gateway refused it', isInline: true }, children: reasons.map((r) => text(r)) }] },
+        { component: 'ModalBody', children: [{ component: 'Alert', props: { variant: 'danger', title: 'The gateway refused it', isInline: true, component: 'h2' }, children: reasons.map((r) => text(r)) }] },
         { component: 'ModalFooter', children: [{ component: 'Button', props: { label: 'Close', variant: 'primary' }, intent: 'cancel' }] },
       ],
     },
@@ -243,9 +332,13 @@ export function buildRefusedView(reasons: string[]): ViewSpec {
 /** The success message after a commit (design system spec 5.1, step 6). */
 export function successNotice(composition: MethodComposition, result: CommitResult): ViewNode {
   const lines = changeLines(composition, result);
+  if (result.signature) {
+    lines.push({ term: 'Signed by', value: `${result.signature.signerName}${result.signature.development ? ' (development signature, not valid)' : ''}` });
+  }
   return {
     component: 'Alert',
-    props: { variant: 'success', title: `${composition.label} done on ${composition.object.identifier}`, isInline: true },
+    // Above the page's main heading, so its title is a paragraph, not a heading.
+    props: { variant: 'success', title: `${composition.label} done on ${composition.object.identifier}`, isInline: true, component: 'p' },
     children: lines.map((l) => text(`${l.term}: ${l.value}`)),
   };
 }

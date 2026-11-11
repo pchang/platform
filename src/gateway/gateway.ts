@@ -75,12 +75,28 @@ export interface ComposedInput {
   default?: string;
 }
 
+/** What a signed method asks the signer to agree to (spec 3.4, Electronic signatures). */
+export interface SignatureRequest {
+  signer: string;
+  signerName: string;
+  meaning: string;
+  /** True while signing is by typed name in development mode: not a valid electronic signature. */
+  development: boolean;
+}
+
+/** A signature given at commit: in development mode, the signer's full name, typed. */
+export interface SignatureGiven {
+  typedName: string;
+}
+
 export interface MethodComposition {
   method: string;
   label: string;
   archetype: Archetype;
   object: ObjectSummary;
   inputs: ComposedInput[];
+  /** Present when the method requires a signature. */
+  signature?: SignatureRequest;
 }
 
 export interface CommitResult {
@@ -91,6 +107,8 @@ export interface CommitResult {
   pending: string[];
   /** What each pending effect will do, in words, in the same order. */
   pendingDescriptions: string[];
+  /** The signature bound to the commit, when the method requires one. */
+  signature?: { signerName: string; signedAt: string; meaning: string; development: boolean };
 }
 
 type Term = oxigraph.NamedNode | oxigraph.Literal;
@@ -127,6 +145,8 @@ export interface JournalWriter {
 export interface GatewayOptions {
   dataNamespace?: string;
   now?: () => Date;
+  /** Accept signatures by typed name (development only, never a valid electronic signature). Off by default. */
+  developmentSignatures?: boolean;
   /** Where commits and recorded reads are written before the gateway answers. Without one, state is in memory only. */
   journal?: JournalWriter;
 }
@@ -385,8 +405,8 @@ export class Gateway {
   // ---------------------------------------------------------------- commits
 
   /** Commits run one at a time: each waits for the one before it to finish. */
-  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<CommitResult> {
-    const run = this.queue.then(() => this.runCommit(principal, idOrIri, method, inputs));
+  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven): Promise<CommitResult> {
+    const run = this.queue.then(() => this.runCommit(principal, idOrIri, method, inputs, signature));
     this.queue = run.catch(() => undefined);
     return run;
   }
@@ -405,7 +425,7 @@ export class Gateway {
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
 
     // 2. Every input is present, of the right kind, and meets its constraints.
-    const resolvedInputs = await this.checkInputs(object, method, inputs);
+    const resolvedInputs = await this.checkInputs(principal, object, method, inputs);
 
     // 3. The object meets every precondition.
     const preconditions = this.q(`SELECT ?pre WHERE { <${method}> p:precondition ?pre }`).map((r) => r.pre);
@@ -441,12 +461,13 @@ export class Gateway {
     return { changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
   }
 
-  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven): Promise<CommitResult> {
     const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs);
+    const signature = this.checkSignature(principal, method, given);
 
     // 6. Record the commit: journal first, flushed to disk, then the live graph.
     const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
-    const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at);
+    const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at, signature);
     const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
     const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
     this.options.journal?.append('commit', at, removed, added);
@@ -456,7 +477,34 @@ export class Gateway {
     this.graph.dataset = work.dataset;
     this.commitCount++;
 
-    return { commit, changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
+    return {
+      commit,
+      changes: changes.map((c) => this.changeView(c, work)),
+      created,
+      pending,
+      pendingDescriptions: this.describe_(pending),
+      ...(signature ? { signature: { signerName: signature.signerName, signedAt: at.toISOString(), meaning: signature.meaning, development: signature.development } } : {}),
+    };
+  }
+
+  /** What signing a method means, and who would sign: undefined when the method needs no signature. */
+  private signatureRequest(principal: Principal, method: string): SignatureRequest | undefined {
+    const meaning = this.q(`SELECT ?m WHERE { <${method}> p:requiresSignature true ; p:signatureMeaning ?m }`)[0]?.m;
+    if (!meaning) return undefined;
+    const signerName = this.q(`SELECT ?n WHERE { <${principal.person}> rdfs:label ?n }`)[0]?.n ?? principal.person;
+    return { signer: principal.person, signerName, meaning, development: Boolean(this.options.developmentSignatures) };
+  }
+
+  /** Electronic signatures (spec 3.4): the principal signs, never an agent, and only as development mode allows. */
+  private checkSignature(principal: Principal, method: string, given?: SignatureGiven): SignatureRequest | undefined {
+    const request = this.signatureRequest(principal, method);
+    if (!request) return undefined;
+    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) throw new GatewayError(403, ['Only a person can sign. Agents never sign.']);
+    if (!this.options.developmentSignatures) throw new GatewayError(403, ['Signing needs an identity provider, and none is connected yet.']);
+    if (!given) throw new GatewayError(400, ['This method needs your signature.']);
+    const normal = (n: string) => n.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (normal(given.typedName) !== normal(request.signerName)) throw new GatewayError(400, ['The typed name does not match your name.']);
+    return request;
   }
 
   private describe_(effects: string[]): string[] {
@@ -493,6 +541,7 @@ export class Gateway {
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
 
     const validator = validatorFor(this.graph);
+    const signature = this.signatureRequest(principal, method);
     const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
       const base = { name: input.name, label: input.label };
       if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
@@ -502,6 +551,10 @@ export class Gateway {
         const choices = this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${input.valuesFrom}> ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`)
           .filter((c) => !narrowed.length || narrowed.includes(c.value));
         return { ...base, kind: 'choice', choices: asChoices(choices) };
+      }
+      if (input.isActor && signature) {
+        // A signed method's person input is the signer: the principal, and nobody else (spec 3.4).
+        return { ...base, kind: 'person', choices: [{ value: principal.person, label: signature.signerName }], default: principal.person };
       }
       if (input.isActor) {
         // People whose roles may run this method, or everyone when no role may yet. The principal by default.
@@ -519,11 +572,12 @@ export class Gateway {
       for (const c of candidates) if (!(await conformanceProblems(this.graph, c.value, shapes, validator)).length) qualifying.push(c);
       return { ...base, kind: 'object', choices: asChoices(qualifying) };
     }));
-    return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs };
+    return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs, ...(signature ? { signature } : {}) };
   }
 
-  private async checkInputs(object: string, method: string, given: Record<string, string>): Promise<Map<string, Term>> {
+  private async checkInputs(principal: Principal, object: string, method: string, given: Record<string, string>): Promise<Map<string, Term>> {
     const inputs = this.inputs(method);
+    const signed = ask(this.graph.store, `ASK { <${method}> p:requiresSignature true }`);
     const problems: string[] = [];
     const resolved = new Map<string, Term>();
     for (const name of Object.keys(given)) {
@@ -545,6 +599,7 @@ export class Gateway {
         if (input.valuesFrom && !ask(this.graph.store, `ASK { <${iri}> skos:inScheme <${input.valuesFrom}> }`)) problems.push(`${input.label} is not an allowed value`);
         if (input.objectOf && !ask(this.graph.store, `ASK { <${iri}> a <${input.objectOf}> }`)) problems.push(`${input.label} is not the right kind of object`);
         if (input.isActor && !ask(this.graph.store, `ASK { <${iri}> a p:Person }`)) problems.push(`${input.label} is not a known person`);
+        else if (input.isActor && signed && iri !== principal.person) problems.push(`${input.label} must be you: nobody signs for someone else`);
         if (input.choicesAlong && !ask(this.graph.store, `ASK { <${object}> <${input.choicesAlong}> <${iri}> }`)) problems.push(`${input.label} is not one of the allowed choices`);
       }
       for (const { shape } of this.q(`SELECT ?shape WHERE { <${input.input}> p:inputShape ?shape }`)) {
@@ -637,7 +692,7 @@ export class Gateway {
   }
 
   /** The commit's provenance record, as statements in its own named graph. */
-  private record(id: string, principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date): oxigraph.Quad[] {
+  private record(id: string, principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date, signature?: SignatureRequest): oxigraph.Quad[] {
     const g = namedNode(id);
     const quads: oxigraph.Quad[] = [];
     const add = (s: string, p: string, o: Term) => quads.push(quad(namedNode(s), namedNode(p), o, g));
@@ -666,6 +721,16 @@ export class Gateway {
     });
     for (const o of created) add(id, `${NS.prov}generated`, namedNode(o));
     for (const e of pending) add(id, `${NS.p}pendingEffect`, namedNode(e));
+    if (signature) {
+      // Bound to the commit's own record, so the signature cannot be separated from what was signed.
+      const sig = `${id}/signature`;
+      add(id, `${NS.p}signature`, namedNode(sig));
+      add(sig, RDF_TYPE, namedNode(`${NS.p}Signature`));
+      add(sig, `${NS.p}signedBy`, namedNode(signature.signer));
+      add(sig, `${NS.p}signedAt`, literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)));
+      add(sig, `${NS.p}meaning`, literal(signature.meaning));
+      if (signature.development) add(sig, `${NS.p}isDevelopmentSignature`, literal('true', namedNode(`${NS.xsd}boolean`)));
+    }
     return quads;
   }
 

@@ -33,7 +33,7 @@ export interface GatewayClient {
   /** Rejects with RefusedError when the method would fail. */
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
-  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<CommitResult>;
+  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }): Promise<CommitResult>;
 }
 
 let client: Promise<GatewayClient> | undefined;

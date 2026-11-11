@@ -41,9 +41,9 @@ describe('ViewRenderer', () => {
 
   it('draws nothing for an invalid view and reports why', () => {
     const onInvalid = vi.fn();
-    const { container } = render(<ViewRenderer view={view({ component: 'Wizard' })} host={{ onInvalid }} />);
+    const { container } = render(<ViewRenderer view={view({ component: 'Spreadsheet' })} host={{ onInvalid }} />);
     expect(container).toBeEmptyDOMElement();
-    expect(onInvalid).toHaveBeenCalledWith(['view.root unknown component "Wizard"']);
+    expect(onInvalid).toHaveBeenCalledWith(['view.root unknown component "Spreadsheet"']);
   });
 
   it('runs an action through the host handler', async () => {

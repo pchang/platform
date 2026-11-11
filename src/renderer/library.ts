@@ -43,6 +43,9 @@ import {
   TextInput,
   Title,
   Tooltip,
+  Wizard,
+  WizardHeader,
+  WizardStep,
 } from '@patternfly/react-core';
 import type { ComponentType } from 'react';
 
@@ -95,4 +98,7 @@ export const library = {
   TextInput,
   Title,
   Tooltip,
+  Wizard,
+  WizardHeader,
+  WizardStep,
 } as unknown as Record<string, ComponentType<Record<string, unknown>>>;

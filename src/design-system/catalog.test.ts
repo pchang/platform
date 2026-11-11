@@ -119,8 +119,8 @@ describe('validateView', () => {
   });
 
   it('rejects a component not in the catalog', () => {
-    const result = validateView({ ...view, root: { component: 'Wizard' } });
-    expect(result.errors).toEqual(['view.root unknown component "Wizard"']);
+    const result = validateView({ ...view, root: { component: 'Spreadsheet' } });
+    expect(result.errors).toEqual(['view.root unknown component "Spreadsheet"']);
   });
 
   it('rejects props outside the schema', () => {

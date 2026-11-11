@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { MethodComposition } from '../data/client';
-import { buildCompareView, buildComposeView, buildRefusedView, changeLines, successNotice } from './composeView';
+import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, changeLines, nameMatches, successNotice } from './composeView';
 
 const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', state: {} };
 const triage: MethodComposition = {
@@ -97,5 +97,43 @@ describe('Compare and decide (design system spec 5.1)', () => {
 
   it('shows pending work as recorded for later', () => {
     expect(changeLines(flag, { ...preview, pendingDescriptions: ['Moves this case into the target.'] })).toContainEqual({ term: 'Recorded for later', value: 'Moves this case into the target.' });
+  });
+});
+
+describe('Review and sign (design system spec 5.1)', () => {
+  const submit: MethodComposition = {
+    method: 'urn:Submit',
+    label: 'Submit',
+    archetype: { archetype: 'urn:Sign', label: 'Review and sign' },
+    object: { ...object, identifier: 'SUB-1', typeLabel: 'Submission' },
+    inputs: [{ name: 'approver', label: 'Approver', kind: 'person', choices: [{ value: 'urn:dev', label: 'Dev Raman' }], default: 'urn:dev' }],
+    signature: { signer: 'urn:dev', signerName: 'Dev Raman', meaning: 'Approval: I approve this report.', development: true },
+  };
+  const finalStep = (v: ReturnType<typeof buildSignView>) => (v.root.children![0].children!.find((c) => c.props?.id === 'sign')!.props!.footer as { isNextDisabled: boolean });
+
+  it.each([
+    ['before the preview', buildSignView(submit, { status: 'incomplete' }, {})],
+    ['ready to sign', buildSignView(submit, { status: 'ready', preview }, { signatureName: 'Dev Raman' })],
+    ['refused', buildSignView(submit, { status: 'refused', reasons: ['Approver must be someone else (rule 5: separation of duties)'] }, {})],
+  ])('%s is a valid view spec', (_name, view) => {
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('enables signing only when the preview is ready and the typed name matches', () => {
+    expect(finalStep(buildSignView(submit, { status: 'ready', preview }, {})).isNextDisabled).toBe(true);
+    expect(finalStep(buildSignView(submit, { status: 'ready', preview }, { signatureName: 'Chloé Martin' })).isNextDisabled).toBe(true);
+    expect(finalStep(buildSignView(submit, { status: 'ready', preview }, { signatureName: ' dev  RAMAN ' })).isNextDisabled).toBe(false);
+    expect(finalStep(buildSignView(submit, { status: 'refused', reasons: ['x'] }, { signatureName: 'Dev Raman' })).isNextDisabled).toBe(true);
+    expect(nameMatches(submit, 'Dev Raman')).toBe(true);
+  });
+
+  it('warns that a development signature is not a valid electronic signature', () => {
+    expect(JSON.stringify(buildSignView(submit, { status: 'ready', preview }, {}))).toContain('This is not a valid electronic signature.');
+    expect(JSON.stringify(buildSignView({ ...submit, signature: { ...submit.signature!, development: false } }, { status: 'ready', preview }, {}))).not.toContain('Development signature');
+  });
+
+  it('says who signed after the commit', () => {
+    const json = JSON.stringify(successNotice(submit, { commit: 'urn:c', ...preview, signature: { signerName: 'Dev Raman', signedAt: 'x', meaning: 'm', development: true } }));
+    expect(json).toContain('Signed by: Dev Raman (development signature, not valid)');
   });
 });

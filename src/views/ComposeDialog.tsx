@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefusedError, type CommitResult, type MethodComposition, type ObjectView } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildCompareView, buildComposeView, buildRefusedView, PAGE_ARCHETYPES, type PreviewState } from './composeView';
+import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, PAGE_ARCHETYPES, SIGNATURE_FIELD, type PreviewState } from './composeView';
 
 /**
  * Runs one method on one object through its archetype's pattern (platform spec 5.4, steps 3 to 6):
@@ -72,8 +72,14 @@ export function ComposeDialog({
     };
   }, [client, principal, object, method]);
 
+  // The method's inputs: everything but the typed signature, which is not an input and never previewed.
+  const inputs = useMemo(() => {
+    const { [SIGNATURE_FIELD]: _typed, ...rest } = values;
+    return rest;
+  }, [values]);
+  const inputsKey = JSON.stringify(inputs);
   // Preview as soon as every input has a value; again whenever a value changes.
-  const complete = useMemo(() => Boolean(composition?.inputs.every((i) => values[i.name]?.trim())), [composition, values]);
+  const complete = useMemo(() => Boolean(composition?.inputs.every((i) => inputs[i.name]?.trim())), [composition, inputs]);
   useEffect(() => {
     if (!composition) return;
     if (!complete) {
@@ -83,7 +89,7 @@ export function ComposeDialog({
     let cancelled = false;
     setState({ status: 'checking' });
     const timer = setTimeout(() => {
-      client.preview(principal, object, method, values).then(
+      client.preview(principal, object, method, JSON.parse(inputsKey)).then(
         (preview) => !cancelled && setState({ status: 'ready', preview }),
         (e: unknown) => !cancelled && setState({ status: 'refused', reasons: e instanceof RefusedError ? e.reasons : [String(e)] }),
       );
@@ -92,14 +98,18 @@ export function ComposeDialog({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [client, principal, object, method, composition, complete, values]);
+  }, [client, principal, object, method, composition, complete, inputsKey]);
 
   // The method cannot be composed for this person, such as when their role cannot run it: say why.
   if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: onCancel }} />;
   if (!composition) return null;
 
   if (isPage && !self) return null;
-  const view = isPage ? buildCompareView(composition, state, self!, other, submitting) : buildComposeView(composition, state, submitting);
+  const view = isPage
+    ? buildCompareView(composition, state, self!, other, submitting)
+    : composition.signature
+      ? buildSignView(composition, state, values, submitting)
+      : buildComposeView(composition, state, submitting);
   return (
     <ViewRenderer
       view={view}
@@ -110,7 +120,8 @@ export function ComposeDialog({
           if (intent === 'cancel') return onCancel();
           if (state.status !== 'ready' || submitting) return;
           setSubmitting(true);
-          client.commit(principal, object, method, values).then(
+          const signature = composition.signature ? { typedName: values[SIGNATURE_FIELD] ?? '' } : undefined;
+          client.commit(principal, object, method, inputs, signature).then(
             (result) => onDone(composition, result),
             (e: unknown) => {
               setSubmitting(false);

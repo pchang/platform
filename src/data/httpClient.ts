@@ -24,6 +24,6 @@ export function httpClient(base = '/api'): GatewayClient {
     read: (p, object) => request(`/objects/${encodeURIComponent(object)}`, p),
     compose: (p, object, method) => request(methodPath(object, method), p),
     preview: (p, object, method, inputs) => request(`${methodPath(object, method)}/preview`, p, { inputs }),
-    commit: (p, object, method, inputs) => request(methodPath(object, method), p, { inputs }),
+    commit: (p, object, method, inputs, signature) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}) }),
   };
 }

@@ -33,7 +33,8 @@ d:person-elena a p:Person ;
 
 d:agent-northbridge a p:Person ;
   rdfs:label "Northbridge CRO agent" ;
-  p:actsAs ls:ExternalCROAgent .
+  p:actsAs ls:ExternalCROAgent ;
+  p:isAgent true .
 
 # Scientific Innovation: 5 compounds, including 1 candidate and 2 analogs
 

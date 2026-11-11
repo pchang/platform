@@ -21,9 +21,9 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
   });
 
   it('shows tasks whose pattern is not built yet as text, not as buttons', () => {
-    const sign = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Submit', archetype: { archetype: 'urn:a', label: 'Review and sign' } }] }];
+    const sign = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Run simulation', archetype: { archetype: 'urn:a', label: 'Start and track' } }] }];
     const json = JSON.stringify(buildTodoView(sign, 'Dev Raman, Drug Safety Physician'));
-    expect(json).toContain('Submit (Review and sign, coming soon)');
+    expect(json).toContain('Run simulation (Start and track, coming soon)');
     expect(json).not.toContain('"component":"Button"');
   });
 

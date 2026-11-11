@@ -11,7 +11,7 @@ const port = Number(process.env.LSH_GATEWAY_PORT ?? 8787);
 const journal = process.env.LSH_GATEWAY_JOURNAL ?? 'var/journal.jsonl';
 const developmentMode = process.env.LSH_GATEWAY_DEV === '1';
 
-const gateway = openGateway(journal);
+const gateway = openGateway(journal, { developmentSignatures: developmentMode });
 const server = createGatewayServer(gateway, { developmentMode });
 server.listen(port, () => {
   console.log(`LS&H gateway on http://localhost:${port} (HTTP at /api, MCP at /mcp)`);
