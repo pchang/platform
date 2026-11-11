@@ -1,4 +1,4 @@
-import type { NavigationDomain, ObjectSummary, Principal, ToDoItem } from '../gateway/gateway';
+import type { CommitResult, MethodComposition, NavigationDomain, ObjectSummary, Principal, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -6,7 +6,14 @@ import type { NavigationDomain, ObjectSummary, Principal, ToDoItem } from '../ga
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { NavigationDomain, ObjectSummary, Principal, ToDoItem };
+export type { CommitResult, MethodComposition, NavigationDomain, ObjectSummary, Principal, ToDoItem };
+
+/** A refusal from the gateway, with its reasons for the person. */
+export class RefusedError extends Error {
+  constructor(readonly reasons: string[]) {
+    super(reasons.join('; '));
+  }
+}
 
 export interface Person {
   person: string;
@@ -20,6 +27,11 @@ export interface GatewayClient {
   navigation(principal: Principal): Promise<NavigationDomain[]>;
   todo(principal: Principal): Promise<ToDoItem[]>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
+  compose(principal: Principal, object: string, method: string): Promise<MethodComposition>;
+  /** Rejects with RefusedError when the method would fail. */
+  preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
+  /** Rejects with RefusedError when the gateway refuses the commit. */
+  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<CommitResult>;
 }
 
 let client: Promise<GatewayClient> | undefined;

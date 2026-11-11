@@ -27,9 +27,12 @@ describe('ViewRenderer', () => {
 
   describe.each(catalog.components.map((c) => [c.id, c] as const))('%s', (_id, entry) => {
     it('renders every example without errors or warnings', () => {
+      const overlay = (n: ViewNode): boolean => Boolean(componentsById.get(n.component)?.overlay) || (n.children ?? []).some(overlay);
       for (const example of entry.examples) {
         const { container, unmount } = render(<ViewRenderer view={view(example)} />);
-        expect(container).not.toBeEmptyDOMElement();
+        // Overlays draw into the page body, outside the container.
+        if (overlay(example)) expect(screen.getByRole('dialog')).toBeInTheDocument();
+        else expect(container).not.toBeEmptyDOMElement();
         unmount();
       }
       expect(consoleError).not.toHaveBeenCalled();
@@ -70,6 +73,56 @@ describe('ViewRenderer', () => {
   it('exposes named icons as images', () => {
     render(<ViewRenderer view={view({ component: 'Icon', props: { name: 'bell', 'aria-label': 'Alerts' } })} />);
     expect(screen.getByRole('img', { name: 'Alerts' })).toBeInTheDocument();
+  });
+
+  it('binds fields to the host’s values and reports changes', async () => {
+    const values: Record<string, string> = { reason: 'Deviation', seriousness: 'urn:serious' };
+    const changes: [string, string][] = [];
+    const intents: string[] = [];
+    render(
+      <ViewRenderer
+        view={view({
+          component: 'Form',
+          children: [
+            { component: 'FormGroup', props: { label: 'Reason' }, children: [{ component: 'TextArea', props: { 'aria-label': 'Reason' }, field: 'reason' }] },
+            {
+              component: 'FormGroup',
+              props: { label: 'Seriousness', role: 'radiogroup' },
+              children: [
+                { component: 'Radio', props: { label: 'non-serious', name: 's', value: 'urn:non' }, field: 'seriousness' },
+                { component: 'Radio', props: { label: 'serious', name: 's', value: 'urn:serious' }, field: 'seriousness' },
+              ],
+            },
+          ],
+        })}
+        host={{ values, onField: (f, v) => changes.push([f, v]), onIntent: (i) => intents.push(i) }}
+      />,
+    );
+    expect(screen.getByLabelText('Reason')).toHaveValue('Deviation');
+    expect(screen.getByLabelText('serious')).toBeChecked();
+    await userEvent.click(screen.getByLabelText('non-serious'));
+    await userEvent.type(screen.getByLabelText('Reason'), '!');
+    expect(changes).toEqual([['seriousness', 'urn:non'], ['reason', 'Deviation!']]);
+  });
+
+  it('gives buttons their intent, and cancels a Modal on Escape', async () => {
+    const intents: string[] = [];
+    render(
+      <ViewRenderer
+        view={view({
+          component: 'Modal',
+          props: { 'aria-label': 'Close case SC-001', variant: 'small' },
+          children: [
+            { component: 'ModalHeader', props: { title: 'Close case SC-001' } },
+            { component: 'ModalFooter', children: [{ component: 'Button', props: { label: 'Close case' }, intent: 'submit' }] },
+          ],
+        })}
+        host={{ onIntent: (i) => intents.push(i) }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Close case' }));
+    await userEvent.keyboard('{Escape}');
+    expect(intents).toEqual(['submit', 'cancel']);
   });
 
   it('hides decorative icons from screen readers', () => {

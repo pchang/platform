@@ -21,6 +21,7 @@ export interface CatalogComponent {
   responsive: string;
   accessibility: string[];
   examples: ViewNode[];
+  overlay?: boolean;
 }
 
 export interface ViewNode {
@@ -29,6 +30,8 @@ export interface ViewNode {
   bind?: string;
   action?: { method: string; target: string };
   because?: string;
+  field?: string;
+  intent?: 'submit' | 'cancel';
   children?: ViewNode[];
 }
 

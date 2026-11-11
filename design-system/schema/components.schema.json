@@ -166,6 +166,10 @@
           "items": {
             "$ref": "view.schema.json#/$defs/node"
           }
+        },
+        "overlay": {
+          "type": "boolean",
+          "description": "Opens over the page. The catalog preview describes it instead of opening it."
         }
       }
     }

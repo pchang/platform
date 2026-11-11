@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.2",
+  "version": "0.3",
   "patterns": [
     {
       "id": "card-view",
@@ -25,6 +25,60 @@
         }
       ],
       "responsive": "One card per row on phones. More per row as width allows, through a Gallery."
+    },
+    {
+      "id": "confirm",
+      "purpose": "Runs a method with no inputs after the person confirms it (archetype Confirm).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Confirm"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A small modal on wide screens; on phones, the full width less the standard margin."
+    },
+    {
+      "id": "fill-in",
+      "purpose": "Collects a method's inputs in a short form, previews the change, then runs it (archetype Fill in).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Fill in"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
     }
   ]
 }

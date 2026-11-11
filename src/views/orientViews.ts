@@ -1,5 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { ObjectSummary, ToDoItem } from '../data/client';
+import { BUILT_ARCHETYPES } from './composeView';
 
 /**
  * To do and object lists as view specs (design system spec 4.3), composed from what the gateway returns.
@@ -45,7 +46,7 @@ function header(title: string, summary: string): ViewNode[] {
   return [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)];
 }
 
-export function buildTodoView(items: ToDoItem[], who: string): ViewSpec {
+export function buildTodoView(items: ToDoItem[], who: string, notice?: ViewNode): ViewSpec {
   const cards = items.map((item) => {
     const status: ViewNode[] = [];
     if (item.deadline) status.push({ component: 'Label', props: { label: `Due ${formatDate(item.deadline)}`, status: 'warning' } });
@@ -53,11 +54,23 @@ export function buildTodoView(items: ToDoItem[], who: string): ViewSpec {
     const body: ViewNode[][] = [];
     if (status.length) body.push([flexOf(status)]);
     body.push([flexOf(stateLabels(item.object))]);
-    body.push([
-      item.tasks.length
-        ? text(`Waiting for you: ${item.tasks.map((t) => t.label).join(', ')}`)
-        : text(`You can: ${item.actions.map((a) => a.label).join(', ')}`),
-    ]);
+    // Each task is a button named for its method when its archetype's pattern is built; otherwise text.
+    const waiting = item.tasks.length ? item.tasks : item.actions;
+    const built = waiting.filter((t) => BUILT_ARCHETYPES.has(t.archetype.label));
+    const notYet = waiting.filter((t) => !BUILT_ARCHETYPES.has(t.archetype.label));
+    body.push([text(item.tasks.length ? 'Waiting for you:' : 'You can:', 'small')]);
+    if (built.length) {
+      body.push([
+        flexOf(
+          built.map((t, i) => ({
+            component: 'Button',
+            props: { label: t.label, variant: i === 0 && item.tasks.length ? 'primary' : 'secondary', size: 'sm' },
+            action: { method: t.method, target: item.object.iri },
+          })),
+        ),
+      ]);
+    }
+    if (notYet.length) body.push([text(`${notYet.map((t) => `${t.label} (${t.archetype.label}, coming soon)`).join(', ')}`, 'small')]);
     return card(item.object, body);
   });
   const summary = items.length
@@ -66,7 +79,7 @@ export function buildTodoView(items: ToDoItem[], who: string): ViewSpec {
   return {
     pattern: 'card-view',
     because: `To do for ${who}: objects with a task they can run now, or urgent objects they can act on`,
-    root: stack([header('To do', summary), ...(cards.length ? [[gallery(cards)]] : [])]),
+    root: stack([...(notice ? [[notice]] : []), header('To do', summary), ...(cards.length ? [[gallery(cards)]] : [])]),
   };
 }
 
