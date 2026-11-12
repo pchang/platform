@@ -59,6 +59,8 @@ test('the dock is kept on this device across a reload, without opening anything 
   await card(page, 'SC-004').getByRole('button', { name: 'Triage' }).click();
   const triage = page.getByRole('dialog', { name: 'Triage SC-004' });
   await triage.getByRole('radiogroup', { name: 'Seriousness' }).getByLabel('non-serious').check();
+  // Kept on the device as soon as it is given.
+  await page.waitForFunction(() => Object.keys(localStorage).some((k) => k.startsWith('lsh.processes.') && localStorage.getItem(k)!.includes('nonSerious')));
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('dialog')).toHaveCount(0);

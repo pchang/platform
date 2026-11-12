@@ -14,7 +14,7 @@ async function actAs(page: Page, name: string) {
 async function todoCards(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 30_000 });
-  return page.getByRole('main').getByRole('heading', { level: 2 }).allTextContents();
+  return page.getByRole('main').locator('.pf-v6-l-gallery').getByRole('heading', { level: 2 }).allTextContents();
 }
 
 test('opens on To do for the Drug Safety Physician, nearest deadline first', async ({ page }) => {
