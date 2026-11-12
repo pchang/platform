@@ -1,8 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RefusedError, type CommitResult, type MethodComposition, type ObjectView, type RunView } from '../data/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ViewNode } from '../design-system/catalog';
+import { RefusedError, type CommitResult, type DraftView, type MethodComposition, type ObjectView, type RunView } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, buildStartView, PAGE_ARCHETYPES, SIGNATURE_FIELD, type PreviewState } from './composeView';
+import {
+  buildCompareView,
+  buildComposeView,
+  buildDraftView,
+  buildRefusedView,
+  buildSignView,
+  buildStartView,
+  discardedNotice,
+  DRAFT_FIELD,
+  PAGE_ARCHETYPES,
+  SIGNATURE_FIELD,
+  type DraftState,
+  type PreviewState,
+} from './composeView';
+
+const reasonsOf = (e: unknown) => (e instanceof RefusedError ? e.reasons : [String(e)]);
 
 /** How often an open Start and track modal asks the gateway how its run is doing. */
 const RUN_POLL_MS = 400;
@@ -12,6 +28,7 @@ const RUN_POLL_MS = 400;
  * collect the inputs, preview what will change, commit, and report the outcome to the caller.
  * Confirm and Fill in open as a modal; Compare and decide is a page that takes the caller's place.
  * Start and track stays open after the commit to follow the run until the person closes it.
+ * Review a draft is a page that asks for the draft at once, then lets the person decide on it.
  */
 export function ComposeDialog({
   object,
@@ -22,7 +39,8 @@ export function ComposeDialog({
   object: string;
   method: string;
   onDone: (composition: MethodComposition, result: CommitResult) => void;
-  onCancel: () => void;
+  /** Closes without a commit; with a notice when something was still recorded, such as a discarded draft. */
+  onCancel: (notice?: ViewNode) => void;
 }) {
   const { client, principal } = usePrincipal();
   const [composition, setComposition] = useState<MethodComposition>();
@@ -38,20 +56,22 @@ export function ComposeDialog({
   const [self, setSelf] = useState<ObjectView>();
   const [other, setOther] = useState<ObjectView>();
   const isPage = Boolean(composition && PAGE_ARCHETYPES.has(composition.archetype.label));
+  const isDraft = composition?.archetype.label === 'Review a draft';
+  const isCompare = isPage && !isDraft;
   const picked = composition?.inputs.find((i) => i.kind === 'object');
   const pickedValue = picked ? values[picked.name] : undefined;
 
   useEffect(() => {
-    if (!isPage) return;
+    if (!isCompare) return;
     let cancelled = false;
     client.read(principal, object).then((v) => !cancelled && setSelf(v));
     return () => {
       cancelled = true;
     };
-  }, [client, principal, object, isPage]);
+  }, [client, principal, object, isCompare]);
 
   useEffect(() => {
-    if (!isPage || !pickedValue) {
+    if (!isCompare || !pickedValue) {
       setOther(undefined);
       return;
     }
@@ -63,7 +83,7 @@ export function ComposeDialog({
     return () => {
       cancelled = true;
     };
-  }, [client, principal, isPage, pickedValue]);
+  }, [client, principal, isCompare, pickedValue]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +109,8 @@ export function ComposeDialog({
   // Preview as soon as every input has a value; again whenever a value changes.
   const complete = useMemo(() => Boolean(composition?.inputs.every((i) => inputs[i.name]?.trim())), [composition, inputs]);
   useEffect(() => {
-    if (!composition) return;
+    // A draft's commit needs the draft, so Review a draft previews nothing until the person accepts.
+    if (!composition || composition.archetype.label === 'Review a draft') return;
     if (!complete) {
       setState({ status: 'incomplete' });
       return;
@@ -123,9 +144,10 @@ export function ComposeDialog({
   }, [client, principal, runId, runEnded]);
 
   // The method cannot be composed for this person, such as when their role cannot run it: say why.
-  if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: onCancel }} />;
+  if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: () => onCancel() }} />;
   if (!composition) return null;
 
+  if (isDraft) return <DraftPage composition={composition} onDone={onDone} onCancel={onCancel} />;
   if (isPage && !self) return null;
   const isStart = composition.archetype.label === 'Start and track';
   const view = isPage
@@ -144,6 +166,7 @@ export function ComposeDialog({
         onIntent: (intent) => {
           // Closing a started run's modal leaves the run going, and reports it as last seen.
           if (intent === 'cancel') return started ? onDone(composition, { ...started, run }) : onCancel();
+          if (intent !== 'submit') return;
           if (state.status !== 'ready' || submitting) return;
           setSubmitting(true);
           const signature = composition.signature ? { typedName: values[SIGNATURE_FIELD] ?? '' } : undefined;
@@ -158,6 +181,74 @@ export function ComposeDialog({
               setState({ status: 'refused', reasons: e instanceof RefusedError ? e.reasons : [String(e)] });
             },
           );
+        },
+      }}
+    />
+  );
+}
+
+/**
+ * Review a draft (design system spec 5.1): asks the gateway for the draft as soon as it opens, shows it marked as
+ * generated, and lets the person accept it as written or edited, discard it, or go back without deciding.
+ */
+function DraftPage({
+  composition,
+  onDone,
+  onCancel,
+}: {
+  composition: MethodComposition;
+  onDone: (composition: MethodComposition, result: CommitResult) => void;
+  onCancel: (notice?: ViewNode) => void;
+}) {
+  const { client, principal } = usePrincipal();
+  const [state, setState] = useState<DraftState>({ status: 'drafting' });
+  const [editing, setEditing] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [problems, setProblems] = useState<string[]>();
+  // One request per page: each draft is a paid call to the model and is recorded, so a remount must not ask again.
+  const request = useRef<Promise<DraftView>>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    request.current ??= client.draft(principal, composition.object.iri, composition.method);
+    request.current.then(
+      (draft) => !cancelled && setState({ status: 'ready', draft }),
+      (e: unknown) => !cancelled && setState({ status: 'refused', reasons: reasonsOf(e) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, composition]);
+
+  const view = buildDraftView(composition, state, { editing, editedText: values[DRAFT_FIELD], submitting, problems });
+  return (
+    <ViewRenderer
+      view={view}
+      host={{
+        values,
+        onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),
+        onIntent: (intent) => {
+          if (intent === 'cancel') return onCancel();
+          if (state.status !== 'ready' || submitting) return;
+          const { draft } = state;
+          if (intent === 'edit') {
+            setEditing(true);
+            setValues({ [DRAFT_FIELD]: draft.text });
+            return;
+          }
+          setSubmitting(true);
+          setProblems(undefined);
+          const failed = (e: unknown) => {
+            setSubmitting(false);
+            setProblems(reasonsOf(e));
+          };
+          if (intent === 'discard') {
+            client.discardDraft(principal, draft.draft).then((d) => onCancel(discardedNotice(d)), failed);
+            return;
+          }
+          const text = editing ? (values[DRAFT_FIELD] ?? '') : draft.text;
+          client.commit(principal, composition.object.iri, composition.method, {}, undefined, { draft: draft.draft, text }).then((result) => onDone(composition, result), failed);
         },
       }}
     />

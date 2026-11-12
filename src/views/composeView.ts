@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { CommitResult, MethodComposition, ObjectView, RunView } from '../data/client';
+import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 
 /**
@@ -8,13 +8,16 @@ import type { ComposedInput } from '../gateway/gateway';
  */
 
 /** The archetypes built so far. Tasks of other archetypes are shown as text until their pattern exists. */
-export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track']);
+export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track', 'Review a draft']);
 
 /** The field the signer types their name into (design system spec 5.1, Review and sign). Not a method input. */
 export const SIGNATURE_FIELD = 'signatureName';
 
 /** Archetypes whose pattern takes the place of the view, rather than opening over it (design system spec 5.1). */
-export const PAGE_ARCHETYPES = new Set(['Compare and decide']);
+export const PAGE_ARCHETYPES = new Set(['Compare and decide', 'Review a draft']);
+
+/** The field that holds a draft's text while the person edits it (design system spec 5.1, Review a draft). Not a method input. */
+export const DRAFT_FIELD = 'draftText';
 
 export type PreviewState =
   | { status: 'incomplete' }
@@ -214,6 +217,108 @@ export function runNotice(run: RunView): ViewNode {
       component: 'p',
     },
     children: [text(ended ? (run.message ?? '') : 'It runs in the background. Notifications will tell you when it ends.')],
+  };
+}
+
+export type DraftState =
+  | { status: 'drafting' }
+  | { status: 'ready'; draft: DraftView }
+  | { status: 'refused'; reasons: string[] };
+
+const formatTime = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/**
+ * Review a draft (design system spec 5.1): the generated draft, marked as such until a person decides, with the model
+ * that wrote it and what it was given; then Accept, Edit, Discard or Back. Takes the place of the view it was opened from.
+ */
+export function buildDraftView(
+  composition: MethodComposition,
+  state: DraftState,
+  options: { editing?: boolean; editedText?: string; submitting?: boolean; problems?: string[] } = {},
+): ViewSpec {
+  const title = `${composition.label} ${composition.object.identifier}`;
+  const back: ViewNode = { component: 'Button', props: { label: 'Back', variant: 'link' }, intent: 'cancel' };
+  const items: ViewNode[][] = [[{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')]];
+
+  if (state.status === 'drafting') {
+    items.push([
+      { component: 'Spinner', props: { size: 'lg', 'aria-valuetext': 'The connected model is writing the draft' } },
+      text('The connected model is writing the draft. This can take a minute.'),
+    ]);
+    items.push([back]);
+  } else if (state.status === 'refused') {
+    items.push([
+      { component: 'Alert', props: { variant: 'danger', title: `${composition.label} cannot be drafted`, isInline: true, component: 'h2' }, children: state.reasons.map((r) => text(r)) },
+    ]);
+    items.push([back]);
+  } else {
+    const { draft } = state;
+    const { editing = false, submitting = false } = options;
+    if (options.problems?.length) {
+      items.push([{ component: 'Alert', props: { variant: 'danger', title: 'The gateway refused it', isInline: true, component: 'h2' }, children: options.problems.map((r) => text(r)) }]);
+    }
+    items.push([
+      // Generated content is marked as such until a person accepts it (rule 5).
+      { component: 'Label', props: { label: 'Generated draft, not reviewed', status: 'warning' } },
+      { component: 'Title', props: { label: 'Draft', headingLevel: 'h2', size: 'lg' } },
+      editing
+        ? {
+            component: 'Form',
+            children: [
+              {
+                component: 'FormGroup',
+                props: { label: 'Edit the draft', isRequired: true },
+                children: [{ component: 'TextArea', props: { 'aria-label': 'Edit the draft', isRequired: true, autoResize: true }, field: DRAFT_FIELD }],
+              },
+            ],
+          }
+        : stack(draft.text.split(/\n\s*\n/).map((paragraph) => [text(paragraph.trim(), 'p')])),
+    ]);
+    items.push([
+      {
+        component: 'DescriptionList',
+        props: { isCompact: true },
+        children: [
+          ['Written by', draft.model],
+          ['Written', formatTime(draft.generatedAt)],
+          ['Drawn from', draft.given.map((g) => g.identifier).join(', ')],
+          ['Asked for by', draft.requestedByName],
+        ].map(([term, value]) => ({
+          component: 'DescriptionListGroup',
+          children: [
+            { component: 'DescriptionListTerm', props: { label: term } },
+            { component: 'DescriptionListDescription', children: [text(value)] },
+          ],
+        })),
+      },
+    ]);
+    const emptyEdit = editing && !options.editedText?.trim();
+    items.push([
+      {
+        component: 'Flex',
+        props: { gap: { default: 'gapMd' }, flexWrap: { default: 'wrap' } },
+        children: [
+          { component: 'Button', props: { label: editing ? 'Accept edited draft' : 'Accept', variant: 'primary', isDisabled: submitting || emptyEdit }, intent: 'submit' },
+          ...(editing ? [] : [{ component: 'Button', props: { label: 'Edit', variant: 'secondary', isDisabled: submitting }, intent: 'edit' } as ViewNode]),
+          { component: 'Button', props: { label: 'Discard', variant: 'tertiary', isDisabled: submitting }, intent: 'discard' },
+          back,
+        ],
+      },
+    ]);
+  }
+  return {
+    pattern: 'review-a-draft',
+    because: `${composition.label} produces a draft: a Review a draft method (platform spec 5.4)`,
+    root: stack(items),
+  };
+}
+
+/** After a draft is discarded (design system spec 5.1, Review a draft, step 5). */
+export function discardedNotice(draft: DraftView): ViewNode {
+  return {
+    component: 'Alert',
+    props: { variant: 'info', title: `${draft.methodLabel} draft discarded for ${draft.objectIdentifier}`, isInline: true, component: 'p' },
+    children: [text('Nothing on the object changed. The discarded draft stays in the record.')],
   };
 }
 
@@ -419,7 +524,11 @@ export function buildRefusedView(reasons: string[]): ViewSpec {
 /** The success message after a commit (design system spec 5.1, step 6). */
 export function successNotice(composition: MethodComposition, result: CommitResult): ViewNode {
   if (result.run) return runNotice(result.run);
-  const lines = changeLines(composition, result);
+  // Long text, such as an accepted narrative, is shortened here: the object holds it whole.
+  const lines = changeLines(composition, result).map((l) => (l.value.length > 160 ? { ...l, value: `${l.value.slice(0, 157).trimEnd()}…` } : l));
+  if (result.fromDraft) {
+    lines.push({ term: 'From a generated draft', value: `written by ${result.fromDraft.model}, ${result.fromDraft.edited ? 'edited before it was accepted' : 'accepted as written'}` });
+  }
   if (result.signature) {
     lines.push({ term: 'Signed by', value: `${result.signature.signerName}${result.signature.development ? ' (development signature, not valid)' : ''}` });
   }

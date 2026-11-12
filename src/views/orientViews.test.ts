@@ -21,9 +21,10 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
   });
 
   it('shows tasks whose pattern is not built yet as text, not as buttons', () => {
-    const draft = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Generate narrative', archetype: { archetype: 'urn:a', label: 'Review a draft' } }] }];
-    const json = JSON.stringify(buildTodoView(draft, 'Dev Raman, Drug Safety Physician'));
-    expect(json).toContain('Generate narrative (Review a draft, coming soon)');
+    // No method in the life sciences domain uses Choose an object yet, so its pattern is not built.
+    const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
+    const json = JSON.stringify(buildTodoView(choose, 'Dev Raman, Drug Safety Physician'));
+    expect(json).toContain('Link a record (Choose an object, coming soon)');
     expect(json).not.toContain('"component":"Button"');
   });
 

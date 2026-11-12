@@ -24,7 +24,12 @@ function useCompose(archetypeOf: (object: string, method: string) => string | un
     <ComposeDialog
       object={composing.object}
       method={composing.method}
-      onCancel={() => setComposing(undefined)}
+      onCancel={(cancelNotice) => {
+        setComposing(undefined);
+        if (!cancelNotice) return;
+        setNotice(cancelNotice);
+        setDone((n) => n + 1);
+      }}
       onDone={(composition, result) => {
         setComposing(undefined);
         setNotice(successNotice(composition, result));

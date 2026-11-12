@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.5",
+  "version": "0.6",
   "components": [
     {
       "id": "Button",
@@ -1835,6 +1835,10 @@
           "isRequired": {
             "type": "boolean",
             "description": "Must be filled"
+          },
+          "autoResize": {
+            "type": "boolean",
+            "description": "Grows with its text, so long text such as a narrative can be read and edited whole"
           }
         },
         "required": [

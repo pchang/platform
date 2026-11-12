@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useId, useMemo, useRef, type ReactNode, type Ref } from 'react';
-import { componentsById, type ViewNode, type ViewSpec } from '../design-system/catalog';
+import { componentsById, type Intent, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { icons } from './icons';
 import { library } from './library';
@@ -19,7 +19,7 @@ export interface RenderHost {
   /** Called when the person changes a field. */
   onField?: (field: string, value: string) => void;
   /** Called when the person presses a button with an intent, or closes a Modal (cancel). */
-  onIntent?: (intent: 'submit' | 'cancel') => void;
+  onIntent?: (intent: Intent) => void;
 }
 
 /**

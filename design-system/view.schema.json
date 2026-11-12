@@ -84,9 +84,11 @@
         "intent": {
           "enum": [
             "submit",
-            "cancel"
+            "cancel",
+            "edit",
+            "discard"
           ],
-          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything."
+          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, and discard records a draft as discarded."
         }
       }
     }

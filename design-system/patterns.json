@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.6",
+  "version": "0.7",
   "patterns": [
     {
       "id": "card-view",
@@ -148,6 +148,33 @@
         }
       ],
       "responsive": "A small modal on wide screens; on phones, the full width less the standard margin. The progress bar takes the modal's width."
+    },
+    {
+      "id": "review-a-draft",
+      "purpose": "Shows text a connected model drafted, marked as generated, for a person to accept, edit or discard (archetype Review a draft).",
+      "template": "page",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Review a draft"
+      ],
+      "slots": [
+        {
+          "name": "draft",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "actions",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "Takes the place of the view at every width. The draft's text wraps; on phones the actions wrap onto as many rows as they need."
     }
   ]
 }
