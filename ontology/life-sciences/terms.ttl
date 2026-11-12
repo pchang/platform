@@ -822,3 +822,49 @@ lst:MedicalInquiryStatus-closed a skos:Concept ;
   skos:inScheme lst:MedicalInquiryStatus ;
   skos:prefLabel "closed" ;
   p:order 3 .
+
+lst:Reaction a skos:ConceptScheme ;
+  skos:prefLabel "Reaction" ;
+  skos:definition "Adverse reactions, coded. They stand in for MedDRA preferred terms until MedDRA is licensed." .
+
+lst:Reaction-drugInducedLiverInjury a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "drug-induced liver injury" ;
+  p:order 1 ;
+  skos:closeMatch ncit:C84427 .
+
+lst:Reaction-skinRash a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "skin rash" ;
+  p:order 2 ;
+  skos:closeMatch ncit:C39594 .
+
+lst:Reaction-nausea a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "nausea" ;
+  p:order 3 ;
+  skos:closeMatch ncit:C3258 .
+
+lst:Reaction-headache a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "headache" ;
+  p:order 4 ;
+  skos:closeMatch ncit:C34661 .
+
+lst:Reaction-fatigue a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "fatigue" ;
+  p:order 5 ;
+  skos:closeMatch ncit:C3036 .
+
+lst:Reaction-dizziness a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "dizziness" ;
+  p:order 6 ;
+  skos:closeMatch ncit:C37943 .
+
+lst:Reaction-diarrhea a skos:Concept ;
+  skos:inScheme lst:Reaction ;
+  skos:prefLabel "diarrhea" ;
+  p:order 7 ;
+  skos:closeMatch ncit:C2987 .

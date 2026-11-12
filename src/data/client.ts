@@ -1,4 +1,5 @@
-import type { CommitResult, MethodComposition, NavigationDomain, ObjectSummary, ObjectView, Principal, ToDoItem } from '../gateway/gateway';
+import type { MethodOption } from '../ontology/methods';
+import type { CommitResult, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RunView, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -6,7 +7,7 @@ import type { CommitResult, MethodComposition, NavigationDomain, ObjectSummary, 
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { CommitResult, MethodComposition, NavigationDomain, ObjectSummary, ObjectView, Principal, ToDoItem };
+export type { CommitResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -29,11 +30,20 @@ export interface GatewayClient {
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Rejects with RefusedError when the principal may not read the object. */
   read(principal: Principal, object: string): Promise<ObjectView>;
+  /** The methods on an object, each available or blocked with its reasons. */
+  methods(principal: Principal, object: string): Promise<MethodOption[]>;
   compose(principal: Principal, object: string, method: string): Promise<MethodComposition>;
   /** Rejects with RefusedError when the method would fail. */
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
   commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }): Promise<CommitResult>;
+  /** Background runs on objects the principal may read, newest first. */
+  runs(principal: Principal, filter?: { object?: string; active?: boolean }): Promise<RunView[]>;
+  run(principal: Principal, run: string): Promise<RunView>;
+  /** The principal's notifications, newest first. */
+  notifications(principal: Principal): Promise<NotificationView[]>;
+  /** Marks the given notifications read, or all of them. */
+  markRead(principal: Principal, notifications?: string[]): Promise<void>;
 }
 
 let client: Promise<GatewayClient> | undefined;

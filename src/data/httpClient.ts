@@ -25,5 +25,15 @@ export function httpClient(base = '/api'): GatewayClient {
     compose: (p, object, method) => request(methodPath(object, method), p),
     preview: (p, object, method, inputs) => request(`${methodPath(object, method)}/preview`, p, { inputs }),
     commit: (p, object, method, inputs, signature) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}) }),
+    methods: (p, object) => request(`/objects/${encodeURIComponent(object)}/methods`, p),
+    runs: (p, filter = {}) => {
+      const query = new URLSearchParams({ ...(filter.object ? { object: filter.object } : {}), ...(filter.active ? { active: 'true' } : {}) }).toString();
+      return request(`/runs${query ? `?${query}` : ''}`, p);
+    },
+    run: (p, run) => request(`/runs/${encodeURIComponent(run)}`, p),
+    notifications: (p) => request('/notifications', p),
+    markRead: async (p, notifications) => {
+      await request('/notifications/read', p, notifications ? { notifications } : {});
+    },
   };
 }

@@ -504,6 +504,11 @@ ls:duplicateOf a p:Relationship, owl:ObjectProperty ;
   rdfs:label "duplicate of" ;
   rdfs:comment "A safety case duplicates another." .
 
+ls:reaction a owl:ObjectProperty ;
+  rdfs:label "reaction" ;
+  rdfs:comment "An adverse reaction, coded. A case may have several; a signal is for one." ;
+  p:valuesFrom lst:Reaction .
+
 ls:receivedOn a owl:DatatypeProperty ;
   rdfs:label "received on" ;
   rdfs:comment "The date the safety case was received." .
@@ -952,6 +957,11 @@ lsh:SafetyCase-duplicateOf a sh:PropertyShape ;
   sh:class ls:SafetyCase ;
   sh:name "duplicate of" .
 
+lsh:SafetyCase-reaction a sh:PropertyShape ;
+  sh:path ls:reaction ;
+  sh:in ( lst:Reaction-drugInducedLiverInjury lst:Reaction-skinRash lst:Reaction-nausea lst:Reaction-headache lst:Reaction-fatigue lst:Reaction-dizziness lst:Reaction-diarrhea ) ;
+  sh:name "reaction" .
+
 lsh:SafetyCase-receivedOn a sh:PropertyShape ;
   sh:path ls:receivedOn ;
   sh:datatype xsd:date ;
@@ -960,7 +970,7 @@ lsh:SafetyCase-receivedOn a sh:PropertyShape ;
 
 lsh:SafetyCase a sh:NodeShape ;
   sh:targetClass ls:SafetyCase ;
-  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-receivedOn .
+  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn .
 
 lsh:Product-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1003,9 +1013,15 @@ lsh:Signal-aggregates a sh:PropertyShape ;
   sh:class ls:SafetyCase ;
   sh:name "aggregates" .
 
+lsh:Signal-reaction a sh:PropertyShape ;
+  sh:path ls:reaction ;
+  sh:in ( lst:Reaction-drugInducedLiverInjury lst:Reaction-skinRash lst:Reaction-nausea lst:Reaction-headache lst:Reaction-fatigue lst:Reaction-dizziness lst:Reaction-diarrhea ) ;
+  sh:maxCount 1 ;
+  sh:name "reaction" .
+
 lsh:Signal a sh:NodeShape ;
   sh:targetClass ls:Signal ;
-  sh:property lsh:Signal-identifier, lsh:Signal-status, lsh:Signal-concerns, lsh:Signal-aggregates .
+  sh:property lsh:Signal-identifier, lsh:Signal-status, lsh:Signal-concerns, lsh:Signal-aggregates, lsh:Signal-reaction .
 
 lsh:Submission-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;

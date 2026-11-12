@@ -5,7 +5,7 @@ import { GatewayError, type Gateway, type Principal } from './gateway';
 
 /**
  * The gateway over the Model Context Protocol, for agents (platform spec section 3.4, Transport).
- * One server per principal. The tools are the gateway's five requests, so an agent works under
+ * One server per principal. The tools are the gateway's requests, so an agent works under
  * exactly the same permissions, rules and audit trail as a person.
  */
 
@@ -116,6 +116,40 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ id, method, inputs = {} }) => result(() => gateway.commit(principal, id, expand(method, NS.ls), inputs)),
+  );
+
+  server.registerTool(
+    'track_runs',
+    {
+      title: 'Track runs',
+      description:
+        'Background runs, such as signal detection, newest first: each run\'s status (queued, running, succeeded or failed), progress while it runs, ' +
+        'and what it found or why it failed once it ends. Optionally only one object\'s runs, by identifier, or only runs that have not ended.',
+      inputSchema: { id: z.string().optional(), active: z.boolean().optional() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id, active }) => result(() => gateway.runs(principal, { object: id, active })),
+  );
+
+  server.registerTool(
+    'list_notifications',
+    {
+      title: 'Notifications',
+      description: 'Your notifications, newest first, such as a background run you started ending, with which are unread.',
+      annotations: { readOnlyHint: true },
+    },
+    () => result(() => gateway.notifications(principal)),
+  );
+
+  server.registerTool(
+    'mark_notifications_read',
+    {
+      title: 'Mark notifications read',
+      description: 'Marks your notifications read: the ones given by their IRIs, or all of them. Returns how many changed.',
+      inputSchema: { notifications: z.array(z.string()).optional() },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    },
+    ({ notifications }) => result(() => ({ marked: gateway.markRead(principal, notifications) })),
   );
 
   return server;

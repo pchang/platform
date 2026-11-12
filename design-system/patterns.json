@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.5",
+  "version": "0.6",
   "patterns": [
     {
       "id": "card-view",
@@ -121,6 +121,33 @@
         }
       ],
       "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin, with the steps behind a toggle."
+    },
+    {
+      "id": "start-and-track",
+      "purpose": "Starts a method that runs in the background, then follows its progress until it ends (archetype Start and track).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Start and track"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A small modal on wide screens; on phones, the full width less the standard margin. The progress bar takes the modal's width."
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.10. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.16.
+Version 0.11. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.17.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -61,7 +61,7 @@ Covers a molecule from design to manufactured batch.
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
-| Run simulation | Compound | Model type | Compound is designed or later | Creates a Simulation in queued |
+| Run simulation | Compound | Model type | Compound is designed or later | Creates a Simulation in queued; the model then runs in the background. Refused until a model is connected (section 12) |
 | Generate analogs | Compound | Target property | Compound has at least one accepted Simulation | Creates new Compounds in designed, linked by derived from |
 | Register | Compound | None | Compound is synthesized, unregistered | Registration: registered |
 | Promote to candidate | Compound | Rationale | Stage is tested, has valid Assay Results | Stage: candidate |
@@ -120,9 +120,9 @@ Covers patient safety and regulatory obligations, during trials and after launch
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Safety Case | One report of an adverse reaction in one patient. Has a date of receipt | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
+| Safety Case | One report of an adverse reaction in one patient. Has a date of receipt and one or more coded reactions | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
 | Product | A marketed or investigational product | Status: investigational, approved, withdrawn. |
-| Signal | A possible new risk detected across many cases | Status: detected, under evaluation, confirmed, refuted. |
+| Signal | A possible new risk detected across many cases: one reaction, for one product | Status: detected, under evaluation, confirmed, refuted. |
 | Submission | A regulatory filing to an authority. Records who prepared it and its due date | Status: draft, in review, submitted, acknowledged. Deadline: on track, due soon, overdue. |
 | Quality Event | A deviation, complaint or audit finding | Status: open, investigating, CAPA assigned, closed. Severity: minor, major, critical. |
 | CAPA | A corrective and preventive action | Status: planned, in progress, effective, ineffective. |
@@ -151,7 +151,7 @@ Covers patient safety and regulatory obligations, during trials and after launch
 | Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
 | Send for review | Submission | Reviewer | Status is draft | Status: in review |
 | Submit | Submission | Approver | Status is in review | Status: submitted. Each Safety Case it reports moves to Workflow: reported |
-| Run signal detection | Product | None | Product has Safety Cases | Creates a Signal in detected for each product and event pair whose disproportionality exceeds the threshold in business context. Also runs on the schedule set there |
+| Run signal detection | Product | None | Product has Safety Cases | Runs in the background: a disproportionality analysis of the product's cases by reaction (rule 7). Creates a Signal in detected, concerning the product, for the reaction and aggregating its cases, for each reaction that meets rule 7 and has no Signal on the product yet |
 | Evaluate signal | Signal | None | Status is detected | Status: under evaluation |
 | Confirm signal | Signal | Rationale | Under evaluation | Status: confirmed. Suggests follow-up in other domains |
 | Refute signal | Signal | Rationale | Under evaluation | Status: refuted |
@@ -270,6 +270,12 @@ Rules the Guard agent enforces. They are data in the business context, not code.
 4. **Data integrity.** Signed experiments and verified data records cannot be edited. They can only be corrected by a new linked record.
 5. **Separation of duties.** The person who prepares a Submission cannot approve it.
 6. **Human review.** Generated narratives and generated analogs are drafts until a human accepts them.
+7. **Signal detection.** For a product and a reaction, count the cases: those of the product with the reaction (a), the product's other cases (b), other products' cases with the reaction (c), and other products' other cases (d). A case flagged as a duplicate of another is not counted. The pair is a signal when all three hold (the criteria of Evans, Waller and Davis, 2001):
+   - at least 3 cases, a ≥ 3;
+   - a proportional reporting ratio of at least 2, where PRR = (a / (a + b)) / (c / (c + d)); when no other product's case has the reaction, the ratio is unbounded and meets this;
+   - a chi-squared statistic with Yates' correction of at least 4, where χ² = N (|ad − bc| − N/2)² / ((a + b)(c + d)(a + c)(b + d)) and N = a + b + c + d.
+
+   The three thresholds are parameters of the rule. With no other product's cases to compare with, the analysis cannot run, and the run fails with that reason.
 
 ---
 
@@ -301,6 +307,7 @@ The domain is written in the platform's ontology format (platform spec section 3
 | `roles.ttl` | The personas in section 6, with the methods they may run and what they may not read |
 
 - **Namespace.** `https://w3id.org/lsh-platform/life-sciences#`, with concepts under `…/life-sciences/term#` and shapes under `…/life-sciences/shape#` (platform spec section 3.1). Example and seed data use `https://example.org/`, which is reserved for examples, so it can never be mistaken for real records.
+- **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
 - **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4 must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
 
@@ -366,7 +373,8 @@ Small and fictional. Used for development and automated testing, and enough to r
 - 1 formulation of the candidate, 1 validated process and 3 batches. One batch has high deviation risk.
 - 1 blinded Phase II study at 3 sites with 12 patients, 2 arms and about 40 data records, 4 open queries.
 - 3 adverse events, 1 of them serious and unexpected.
-- 6 safety cases, including 1 duplicate pair, linked to 1 investigational product.
+- 6 safety cases, including 1 duplicate pair, linked to 1 investigational product, each coded with its reactions.
+- 1 approved product, the comparator for signal detection, with 20 closed historical cases. All are post-market reports, so they originate from neither a trial nor an inquiry in the seed.
 - 1 detected signal aggregating 3 cases.
 - 1 open quality event and 1 submission in draft.
 - Four people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
@@ -382,6 +390,7 @@ The seed graph is `data/life-sciences/seed.ttl`, under `https://example.org/lsh-
 | J2 | The detected signal on the investigational product, aggregating three cases |
 | J3 | The batch with high deviation risk, complete, pending quality, with the open quality event raised on it |
 | Duplicate edge case | Two cases for the same event, one from the trial and one from a medical inquiry |
+| Signal detection | Run signal detection on the investigational product finds one new signal, for skin rash, in 4 cases. Drug-induced liver injury already has SIG-1, so it is not detected again |
 
 Patients, visits, data records, adverse events, safety cases and medical inquiries hold personal health data. The ontology marks them, and the gateway records every read of them.
 
@@ -391,11 +400,14 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
 - Should post-market cases (after approval) be in scope, or only trial cases?
-- Which models back Run simulation and Generate analogs, and how are they validated for their intended use?
+- Which models back Run simulation and Generate analogs, and how are they validated for their intended use? Until one is connected, the gateway refuses Run simulation.
+- Should signal detection move from PRR to a Bayesian method, such as the empirical Bayes geometric mean or the information component, once the case volume supports it?
+- When a later run finds new cases for a reaction that already has a Signal, should it add them to that Signal?
+- On what schedule does signal detection run, and who is notified of a scheduled run's outcome?
 - Which systems of record does each domain integrate first?
 - Who runs Sign experiment, Invalidate result, Consent, Randomize and Start CAPA? No persona in section 6 does yet.
 - How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
-- Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, drafting a narrative, detecting signals and suggesting follow-up. The ontology describes them in words, and the gateway will implement them. How should they be declared?
+- Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, drafting a narrative, running a simulation model and suggesting follow-up. Detecting signals is now declared, as a disproportionality analysis (platform spec section 3.4). The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
 ---
 
@@ -413,3 +425,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.8 | 2026-11-09 | Works mainly in sets each role's work domains. Added To do settings: on-demand methods, urgent values and deadlines. Prepare expedited report requires that no submission reports the case yet. |
 | 0.9 | 2026-11-11 | Added each method's interaction archetype (section 6). Run simulation and Run signal detection run in the background. |
 | 0.10 | 2026-11-11 | The meaning of each signed method's signature. |
+| 0.11 | 2026-11-11 | Cases and signals carry coded reactions. Added rule 7, signal detection by disproportionality with Evans criteria; Run signal detection runs it in the background. Run simulation is refused until a model is connected. The seed adds an approved comparator product with 20 historical cases. Four open questions. |

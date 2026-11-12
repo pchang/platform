@@ -1,4 +1,5 @@
 import * as oxigraph from 'oxigraph';
+import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
@@ -109,6 +110,46 @@ export interface CommitResult {
   pendingDescriptions: string[];
   /** The signature bound to the commit, when the method requires one. */
   signature?: { signerName: string; signedAt: string; meaning: string; development: boolean };
+  /** What the method's background run will do, in words. Empty unless the method runs in the background. */
+  background: string[];
+  /** The background run the commit started, for a method that runs in the background. */
+  run?: RunView;
+}
+
+export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+
+/** A background run (spec 3.4, Background runs), as the principal may see it. */
+export interface RunView {
+  run: string;
+  method: string;
+  methodLabel: string;
+  object: string;
+  objectIdentifier: string;
+  status: RunStatus;
+  /** How much is done, from 0 to 1, while it runs. Reported, not kept. */
+  progress?: number;
+  startedBy: string;
+  startedByName: string;
+  startedAt: string;
+  endedAt?: string;
+  /** What the run found, or why it failed. */
+  message?: string;
+  /** The objects the run created. */
+  created: { iri: string; identifier: string }[];
+}
+
+/** A notification, as its recipient sees it. */
+export interface NotificationView {
+  notification: string;
+  title: string;
+  message: string;
+  /** How the run it is about ended. */
+  status: 'succeeded' | 'failed';
+  run: string;
+  object: string;
+  objectIdentifier: string;
+  at: string;
+  read: boolean;
 }
 
 type Term = oxigraph.NamedNode | oxigraph.Literal;
@@ -139,8 +180,17 @@ const RDF_TYPE = `${NS.rdf}type`;
 
 /** The part of the journal the gateway writes to (see journal.ts, server only). */
 export interface JournalWriter {
-  append(kind: 'commit' | 'read', at: Date, removed: oxigraph.Quad[], added: oxigraph.Quad[]): unknown;
+  append(kind: JournalKind, at: Date, removed: oxigraph.Quad[], added: oxigraph.Quad[]): unknown;
 }
+
+/** What a journal entry records: a commit, a recorded read, a run's change of status, or notifications read. */
+export type JournalKind = 'commit' | 'read' | 'run' | 'notification';
+
+const RUN_STATUS = (status: RunStatus) => namedNode(`${NS.p}RunStatus-${status}`);
+const WORKER = `${NS.p}BackgroundWorker`;
+const xsdDateTime = (at: Date) => literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`));
+/** Lets readers in while a worker runs, between steps of its work. */
+const yieldToReaders = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 export interface GatewayOptions {
   dataNamespace?: string;
@@ -154,7 +204,11 @@ export interface GatewayOptions {
 export class Gateway {
   private commitCount = 0;
   private readCount = 0;
-  /** Commits run one at a time, in the order they arrive. */
+  private runCount = 0;
+  private notificationCount = 0;
+  /** Each running run's progress, from 0 to 1. Reported while it runs, not kept (spec 3.4). */
+  private readonly progress = new Map<string, number>();
+  /** Commits and background work run one at a time, in the order they arrive. */
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(
@@ -163,6 +217,28 @@ export class Gateway {
   ) {
     this.commitCount = Number(this.q(`SELECT (COUNT(?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit } }`)[0].n);
     this.readCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?g { ?r a p:Read } }`)[0].n);
+    this.runCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?r { ?r a p:Run } }`)[0].n);
+    this.notificationCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Notification } }`)[0].n);
+    // A run that had not ended when the gateway stopped starts again (spec 3.4, Background runs).
+    for (const { run } of this.q(`SELECT ?run WHERE { GRAPH ?run { ?run a p:Run ; p:runStatus ?s ; prov:startedAtTime ?at FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running)) } } ORDER BY ?at STRLEN(STR(?run)) ?run`)) {
+      void this.enqueue(() => this.work(run));
+    }
+  }
+
+  /** Runs a task after every commit and run before it. */
+  private enqueue<T>(task: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(task);
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
+
+  /** Resolves once every commit and background run queued so far, and any they queue in turn, has finished. */
+  async idle(): Promise<void> {
+    let current: Promise<unknown>;
+    do {
+      current = this.queue;
+      await current;
+    } while (current !== this.queue);
   }
 
   private get dataNamespace() {
@@ -350,12 +426,15 @@ export class Gateway {
         entry.objects.push({ iri: r.o, identifier: r.id ?? r.o });
       }
     }
-    const properties = Object.fromEntries(
-      this.q(`SELECT ?prop ?label ?value WHERE { <${object}> ?prop ?value . ?prop rdfs:label ?label .
-          FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) }`)
-        .filter((r) => !hidden.has(r.prop))
-        .map((r) => [r.label, r.value]),
-    );
+    // Coded values show their labels; a property with several values shows them all, in order.
+    const properties: Record<string, string> = {};
+    for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value . ?prop rdfs:label ?label .
+          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value p:order ?order }
+          FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
+      if (hidden.has(r.prop)) continue;
+      const value = r.valueLabel ?? r.value;
+      properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
+    }
     if (ask(this.graph.store, `ASK { <${summary.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
     return { ...summary, links, properties };
   }
@@ -406,9 +485,7 @@ export class Gateway {
 
   /** Commits run one at a time: each waits for the one before it to finish. */
   commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven): Promise<CommitResult> {
-    const run = this.queue.then(() => this.runCommit(principal, idOrIri, method, inputs, signature));
-    this.queue = run.catch(() => undefined);
-    return run;
+    return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature));
   }
 
   /**
@@ -420,6 +497,10 @@ export class Gateway {
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
     if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
+
+    // A background method no worker can do is refused before anything else (spec 3.4, Background runs).
+    const noWorker = backgroundBlocks(this.graph.store, method);
+    if (noWorker.length) throw new GatewayError(400, noWorker);
 
     // 1. The role may run the method.
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
@@ -458,7 +539,13 @@ export class Gateway {
   /** Preview a method (spec 3.4): what a commit would change, without saving anything. */
   async preview(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
     const { changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
-    return { changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending) };
+    return {
+      changes: changes.map((c) => this.changeView(c, work)),
+      created,
+      pending,
+      pendingDescriptions: this.describe_(pending),
+      background: analysisDescriptions(this.graph.store, method),
+    };
   }
 
   private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven): Promise<CommitResult> {
@@ -470,12 +557,19 @@ export class Gateway {
     const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at, signature);
     const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
     const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
+    // A background method's commit also starts its run, in the same entry (spec 3.4, Background runs).
+    const run = analysisOf(this.graph.store, method) ? `${this.dataNamespace}run/${this.runCount + 1}` : undefined;
+    if (run) added.push(...this.runRecord(run, principal, object, method, commit, at));
     this.options.journal?.append('commit', at, removed, added);
     for (const q of removed) this.graph.store.delete(q);
     for (const q of added) this.graph.store.add(q);
     // The working copy's default graph is now exactly the live one, so its validated dataset is reused.
     this.graph.dataset = work.dataset;
     this.commitCount++;
+    if (run) {
+      this.runCount++;
+      void this.enqueue(() => this.work(run));
+    }
 
     return {
       commit,
@@ -484,6 +578,8 @@ export class Gateway {
       pending,
       pendingDescriptions: this.describe_(pending),
       ...(signature ? { signature: { signerName: signature.signerName, signedAt: at.toISOString(), meaning: signature.meaning, development: signature.development } } : {}),
+      background: analysisDescriptions(this.graph.store, method),
+      ...(run ? { run: this.runView(run) } : {}),
     };
   }
 
@@ -692,7 +788,7 @@ export class Gateway {
   }
 
   /** The commit's provenance record, as statements in its own named graph. */
-  private record(id: string, principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date, signature?: SignatureRequest): oxigraph.Quad[] {
+  private record(id: string, principal: Principal, object: string, method: string, inputs: Map<string, Term>, changes: Change[], created: string[], pending: string[], at: Date, signature?: SignatureRequest, onBehalfOf?: string): oxigraph.Quad[] {
     const g = namedNode(id);
     const quads: oxigraph.Quad[] = [];
     const add = (s: string, p: string, o: Term) => quads.push(quad(namedNode(s), namedNode(p), o, g));
@@ -701,6 +797,7 @@ export class Gateway {
     add(id, `${NS.p}target`, namedNode(object));
     add(id, `${NS.prov}wasAssociatedWith`, namedNode(principal.person));
     add(id, `${NS.p}actedAs`, namedNode(principal.role));
+    if (onBehalfOf) add(id, `${NS.p}onBehalfOf`, namedNode(onBehalfOf));
     add(id, `${NS.prov}startedAtTime`, literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)));
     let i = 0;
     for (const [input, value] of inputs) {
@@ -732,6 +829,227 @@ export class Gateway {
       if (signature.development) add(sig, `${NS.p}isDevelopmentSignature`, literal('true', namedNode(`${NS.xsd}boolean`)));
     }
     return quads;
+  }
+
+  // ---------------------------------------------------------------- background runs (spec 3.4)
+
+  /** The run's own record, in its own named graph: queued, started by this commit. */
+  private runRecord(run: string, principal: Principal, object: string, method: string, commit: string, at: Date): oxigraph.Quad[] {
+    const g = namedNode(run);
+    const add = (p: string, o: Term) => quad(g, namedNode(p), o, g);
+    return [
+      add(RDF_TYPE, namedNode(`${NS.p}Run`)),
+      add(`${NS.p}method`, namedNode(method)),
+      add(`${NS.p}target`, namedNode(object)),
+      add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
+      add(`${NS.p}actedAs`, namedNode(principal.role)),
+      add(`${NS.p}startCommit`, namedNode(commit)),
+      add(`${NS.prov}startedAtTime`, xsdDateTime(at)),
+      add(`${NS.p}runStatus`, RUN_STATUS('queued')),
+    ];
+  }
+
+  private runStatus(run: string): RunStatus | undefined {
+    const status = this.q(`SELECT ?s WHERE { GRAPH <${run}> { <${run}> p:runStatus ?s } }`)[0]?.s;
+    return status?.slice(`${NS.p}RunStatus-`.length) as RunStatus | undefined;
+  }
+
+  /** Changes a run's status: journal first, then the live graph. */
+  private setRunStatus(run: string, from: RunStatus, to: RunStatus, extra: oxigraph.Quad[] = [], removedExtra: oxigraph.Quad[] = [], kind: JournalKind = 'run', at = this.now()) {
+    const g = namedNode(run);
+    const removed = [quad(g, namedNode(`${NS.p}runStatus`), RUN_STATUS(from), g), ...removedExtra];
+    const added = [quad(g, namedNode(`${NS.p}runStatus`), RUN_STATUS(to), g), ...extra];
+    this.options.journal?.append(kind, at, removed, added);
+    for (const q of removed) this.graph.store.delete(q);
+    for (const q of added) this.graph.store.add(q);
+  }
+
+  /** The worker: does a run's analysis and ends the run with its result or the reason it failed. */
+  private async work(run: string): Promise<void> {
+    const r = this.q(`SELECT ?method ?target ?person ?role WHERE { GRAPH <${run}> { <${run}> p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role } }`)[0];
+    const status = this.runStatus(run);
+    if (!r || (status !== 'queued' && status !== 'running')) return;
+    if (status === 'queued') this.setRunStatus(run, 'queued', 'running');
+    this.progress.set(run, 0);
+    const starter: Principal = { person: r.person, role: r.role };
+    try {
+      const outcome = await this.analyse(run, starter, r.method, r.target);
+      this.endRun(run, starter, r.method, r.target, 'succeeded', outcome.message, outcome);
+    } catch (error) {
+      if (!(error instanceof GatewayError)) console.error(error);
+      const reason = error instanceof GatewayError ? error.reasons.join(' ') : 'The worker failed. Nothing was changed.';
+      this.endRun(run, starter, r.method, r.target, 'failed', reason);
+    } finally {
+      this.progress.delete(run);
+    }
+  }
+
+  /**
+   * A disproportionality analysis (spec 3.4, Background runs): applied to a working copy, validated against every shape,
+   * and returned for the run's end to commit. Throws with the reasons when it cannot run or its result breaks a shape.
+   */
+  private async analyse(run: string, starter: Principal, method: string, object: string) {
+    const analysis = analysisOf(this.graph.store, method);
+    if (!analysis) throw new GatewayError(400, backgroundBlocks(this.graph.store, method));
+    const plan = planDisproportionality(this.graph.store, analysis.effect, object);
+    if (plan.cannotRun) throw new GatewayError(400, [plan.cannotRun]);
+
+    const e = this.q(`SELECT ?outcomeAs ?aggregatesBy ?typeLabel ?plural ?countsPlural WHERE { <${analysis.effect}> p:recordsOutcomeAs ?outcomeAs ; p:aggregatesBy ?aggregatesBy ;
+        p:createsType ?type ; p:counts ?counts . ?type rdfs:label ?typeLabel ; p:pluralLabel ?plural . ?counts p:pluralLabel ?countsPlural }`)[0];
+    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const at = this.now();
+    const changes: Change[] = [];
+    const created: string[] = [];
+    const found: string[] = [];
+    const again: string[] = [];
+    const stats = (f: (typeof plan.findings)[number]) =>
+      `PRR ${Number.isFinite(f.prr) ? f.prr.toFixed(1) : 'unbounded'}, chi-squared ${f.chiSquare.toFixed(1)}`;
+    for (const [i, f] of plan.findings.entries()) {
+      this.progress.set(run, i / plan.findings.length);
+      await yieldToReaders();
+      if (!f.meets) continue;
+      if (f.existing) {
+        again.push(`${f.outcomeLabel[0].toUpperCase()}${f.outcomeLabel.slice(1)} meets the thresholds and already has ${f.existing}.`);
+        continue;
+      }
+      const iri = this.applyCreation(work, object, analysis.effect, new Map(), starter, at, changes);
+      this.set(work, iri, e.outcomeAs, namedNode(f.outcome), changes, false);
+      for (const x of f.objects) this.set(work, iri, e.aggregatesBy, namedNode(x), changes, false);
+      created.push(iri);
+      const identifier = this.q(`SELECT ?id WHERE { <${iri}> ls:identifier ?id }`, work)[0].id;
+      found.push(`${identifier} for ${f.outcomeLabel}, in ${f.a} ${e.countsPlural.toLowerCase()} (${stats(f)})`);
+    }
+    this.progress.set(run, 1);
+
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work);
+    if (problems.length) throw new GatewayError(400, problems);
+
+    const what = e.plural.toLowerCase();
+    const message = [
+      found.length ? `Found ${found.length} new ${found.length === 1 ? e.typeLabel.toLowerCase() : what}: ${found.join('; ')}.` : `No new ${what}.`,
+      ...again,
+    ].join(' ');
+    return { message, changes, created, work, at };
+  }
+
+  /** Ends a run: its result commit, if any, its status, and the starter's notification, in one journal entry. */
+  private endRun(run: string, starter: Principal, method: string, object: string, status: 'succeeded' | 'failed', message: string,
+    outcome?: { changes: Change[]; created: string[]; work: Graph; at: Date }) {
+    const at = outcome?.at ?? this.now();
+    const g = namedNode(run);
+    const removed: oxigraph.Quad[] = [];
+    const added: oxigraph.Quad[] = [
+      quad(g, namedNode(`${NS.prov}endedAtTime`), xsdDateTime(at), g),
+      quad(g, namedNode(`${NS.p}message`), literal(message), g),
+    ];
+    let commit: string | undefined;
+    if (outcome?.changes.length) {
+      commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
+      const worker: Principal = { person: WORKER, role: starter.role };
+      removed.push(...outcome.changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph())));
+      added.push(
+        ...outcome.changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())),
+        ...this.record(commit, worker, object, method, new Map(), outcome.changes, outcome.created, [], at, undefined, starter.person),
+        quad(g, namedNode(`${NS.p}resultCommit`), namedNode(commit), g),
+      );
+    }
+    // The starter is told how it ended (spec 3.4). Only they see it.
+    const notification = `${this.dataNamespace}notification/${this.notificationCount + 1}`;
+    const n = namedNode(notification);
+    const methodLabel = this.q(`SELECT ?l WHERE { <${method}> rdfs:label ?l }`)[0].l;
+    const add = (p: string, o: Term) => added.push(quad(n, namedNode(p), o, n));
+    add(RDF_TYPE, namedNode(`${NS.p}Notification`));
+    add(`${NS.p}recipient`, namedNode(starter.person));
+    add(`${NS.p}about`, g);
+    add(`${NS.p}target`, namedNode(object));
+    add(`${NS.p}title`, literal(`${methodLabel} ${status === 'succeeded' ? 'finished' : 'failed'}`));
+    add(`${NS.p}message`, literal(message));
+    add(`${NS.prov}generatedAtTime`, xsdDateTime(at));
+
+    this.setRunStatus(run, this.runStatus(run)!, status, added, removed, commit ? 'commit' : 'run', at);
+    if (commit) {
+      this.graph.dataset = outcome!.work.dataset;
+      this.commitCount++;
+    }
+    this.notificationCount++;
+  }
+
+  private runView(run: string): RunView {
+    const r = this.q(`SELECT ?method ?methodLabel ?target ?person ?name ?status ?startedAt ?endedAt ?message ?result WHERE {
+        GRAPH <${run}> { <${run}> p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:runStatus ?status ; prov:startedAtTime ?startedAt .
+          OPTIONAL { <${run}> prov:endedAtTime ?endedAt } OPTIONAL { <${run}> p:message ?message } OPTIONAL { <${run}> p:resultCommit ?result } }
+        ?method rdfs:label ?methodLabel . OPTIONAL { ?person rdfs:label ?name } }`)[0];
+    if (!r) throw new GatewayError(404, [`No run ${run}`]);
+    const status = r.status.slice(`${NS.p}RunStatus-`.length) as RunStatus;
+    const created = r.result
+      ? this.q(`SELECT ?iri ?identifier WHERE { GRAPH <${r.result}> { <${r.result}> prov:generated ?iri } ?iri ls:identifier ?identifier } ORDER BY ?identifier`).map((c) => ({ iri: c.iri, identifier: c.identifier }))
+      : [];
+    const progress = this.progress.get(run);
+    return {
+      run,
+      method: r.method,
+      methodLabel: r.methodLabel,
+      object: r.target,
+      objectIdentifier: this.q(`SELECT ?id WHERE { <${r.target}> ls:identifier ?id }`)[0]?.id ?? r.target,
+      status,
+      ...(status === 'running' && progress !== undefined ? { progress } : {}),
+      startedBy: r.person,
+      startedByName: r.name ?? r.person,
+      startedAt: r.startedAt,
+      ...(r.endedAt ? { endedAt: r.endedAt } : {}),
+      ...(r.message ? { message: r.message } : {}),
+      created,
+    };
+  }
+
+  /** Track runs (spec 3.4): the runs on objects the principal may read, newest first. Optionally one object's, or only those not ended. */
+  runs(principal: Principal, filter: { object?: string; active?: boolean } = {}): RunView[] {
+    this.authorize(principal);
+    const object = filter.object ? this.resolve(filter.object) : undefined;
+    const rows = this.q(`SELECT ?run ?target WHERE { GRAPH ?run { ?run a p:Run ; p:target ?target ; prov:startedAtTime ?at ; p:runStatus ?s } ${object ? `FILTER(?target = <${object}>)` : ''}
+        ${filter.active ? 'FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running))' : ''} } ORDER BY DESC(?at) DESC(STRLEN(STR(?run))) DESC(?run)`);
+    const hidden = this.unreadable(principal.role);
+    return rows.filter((r) => !hidden.has(this.typeOf(r.target).type)).map((r) => this.runView(r.run));
+  }
+
+  /** One run, when the principal may read its object. */
+  run(principal: Principal, run: string): RunView {
+    this.authorize(principal);
+    const view = this.runView(run.includes('://') ? run : `${this.dataNamespace}run/${run}`);
+    if (!this.canRead(principal, this.typeOf(view.object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
+    return view;
+  }
+
+  /** Notifications (spec 3.4): the principal's own, newest first. */
+  notifications(principal: Principal): NotificationView[] {
+    this.authorize(principal);
+    return this.q(`SELECT ?n ?title ?message ?run ?status ?target ?id ?at ?readAt WHERE { GRAPH ?n { ?n a p:Notification ; p:recipient <${principal.person}> ; p:title ?title ;
+        p:message ?message ; p:about ?run ; p:target ?target ; prov:generatedAtTime ?at OPTIONAL { ?n p:readAt ?readAt } }
+        GRAPH ?run { ?run p:runStatus ?status } OPTIONAL { ?target ls:identifier ?id } } ORDER BY DESC(?at) DESC(STRLEN(STR(?n))) DESC(?n)`).map((r) => ({
+      notification: r.n,
+      title: r.title,
+      message: r.message,
+      status: r.status === `${NS.p}RunStatus-failed` ? 'failed' : 'succeeded',
+      run: r.run,
+      object: r.target,
+      objectIdentifier: r.id ?? r.target,
+      at: r.at,
+      read: Boolean(r.readAt),
+    }));
+  }
+
+  /** Marks the principal's unread notifications read: the ones given, or all. Returns how many changed. */
+  markRead(principal: Principal, notifications?: string[]): number {
+    this.authorize(principal);
+    const unread = this.notifications(principal).filter((n) => !n.read && (!notifications || notifications.includes(n.notification)));
+    if (notifications?.some((id) => !this.notifications(principal).some((n) => n.notification === id))) throw new GatewayError(404, ['No such notification for you']);
+    if (!unread.length) return 0;
+    const at = this.now();
+    const added = unread.map((n) => quad(namedNode(n.notification), namedNode(`${NS.p}readAt`), xsdDateTime(at), namedNode(n.notification)));
+    this.options.journal?.append('notification', at, [], added);
+    for (const q of added) this.graph.store.add(q);
+    return unread.length;
   }
 
   /** Every commit, oldest first. */

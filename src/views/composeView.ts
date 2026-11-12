@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { CommitResult, MethodComposition, ObjectView } from '../data/client';
+import type { CommitResult, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 
 /**
@@ -8,7 +8,7 @@ import type { ComposedInput } from '../gateway/gateway';
  */
 
 /** The archetypes built so far. Tasks of other archetypes are shown as text until their pattern exists. */
-export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign']);
+export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track']);
 
 /** The field the signer types their name into (design system spec 5.1, Review and sign). Not a method input. */
 export const SIGNATURE_FIELD = 'signatureName';
@@ -67,6 +67,7 @@ export function changeLines(composition: MethodComposition, preview: Omit<Commit
     lines.push({ term, value: c.oldLabel && c.newLabel ? `${c.oldLabel} → ${c.newLabel}` : c.newLabel ? `set to ${c.newLabel}` : `${c.oldLabel} removed` });
   }
   for (const description of preview.pendingDescriptions) lines.push({ term: 'Recorded for later', value: description });
+  for (const description of preview.background ?? []) lines.push({ term: 'In the background', value: description });
   for (const iri of preview.created) {
     const own = preview.changes.filter((c) => c.subject === iri);
     const identifier = own[0]?.subjectLabel ?? iri;
@@ -127,6 +128,92 @@ export function buildComposeView(composition: MethodComposition, state: PreviewS
         },
       ],
     },
+  };
+}
+
+const RUN_STATUS_WORDS: Record<RunView['status'], string> = { queued: 'waiting to start', running: 'running', succeeded: 'finished', failed: 'failed' };
+
+/** The run's status for a person, such as "Run signal detection on P-101: running". */
+export function runTitle(run: RunView): string {
+  return `${run.methodLabel} on ${run.objectIdentifier}: ${RUN_STATUS_WORDS[run.status]}`;
+}
+
+/** The run as a Progress bar, then its outcome once it ends (design system spec 5.1, Start and track, steps 4 and 5). */
+function runSection(run: RunView): ViewNode[] {
+  const ended = run.status === 'succeeded' || run.status === 'failed';
+  const percent = ended ? 100 : Math.round((run.progress ?? 0) * 100);
+  const nodes: ViewNode[] = [
+    { component: 'Title', props: { label: 'Progress', headingLevel: 'h2', size: 'md' } },
+    {
+      component: 'Progress',
+      props: {
+        value: percent,
+        title: runTitle(run),
+        measureLocation: ended ? 'none' : 'top',
+        valueText: ended ? RUN_STATUS_WORDS[run.status] : `${percent} percent done`,
+        ...(ended ? { variant: run.status === 'succeeded' ? 'success' : 'danger' } : {}),
+      },
+    },
+  ];
+  if (!ended) {
+    nodes.push(text('You can close this and keep working. Notifications will tell you when it ends.', 'small'));
+  } else {
+    nodes.push({
+      component: 'Alert',
+      props: { variant: run.status === 'succeeded' ? 'success' : 'danger', title: run.status === 'succeeded' ? `${run.methodLabel} finished` : `${run.methodLabel} failed`, isInline: true, component: 'h3' },
+      children: [text(run.message ?? '')],
+    });
+  }
+  return nodes;
+}
+
+/**
+ * Start and track (design system spec 5.1): a small modal that starts a background run, then follows it.
+ * Before the start: any inputs and the preview, with what the run will do. After: the run's progress and outcome.
+ */
+export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false): ViewSpec {
+  const title = `${composition.label} ${composition.object.identifier}`;
+  const body: ViewNode[][] = [];
+  if (run) body.push(runSection(run));
+  else {
+    if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+    body.push(previewSection(composition, state));
+  }
+  // Closing never stops the run. While it runs, the button says the person can go on; once it ends, that they are done.
+  const ended = run?.status === 'succeeded' || run?.status === 'failed';
+  const footer: ViewNode[] = run
+    ? [{ component: 'Button', props: { label: ended ? 'Done' : 'Keep working', variant: 'primary' }, intent: 'cancel' }]
+    : [
+        { component: 'Button', props: { label: composition.label, variant: 'primary', isDisabled: state.status !== 'ready' || submitting }, intent: 'submit' },
+        { component: 'Button', props: { label: 'Cancel', variant: 'link' }, intent: 'cancel' },
+      ];
+  return {
+    pattern: 'start-and-track',
+    because: `${composition.label} runs in the background: a Start and track method (platform spec 5.4)`,
+    root: {
+      component: 'Modal',
+      props: { variant: 'small', 'aria-label': title },
+      children: [
+        { component: 'ModalHeader', props: { title, description: composition.object.typeLabel } },
+        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalFooter', children: footer },
+      ],
+    },
+  };
+}
+
+/** The message after a run's modal closes: that it started, or how it ended (design system spec 5.1, Start and track, step 6). */
+export function runNotice(run: RunView): ViewNode {
+  const ended = run.status === 'succeeded' || run.status === 'failed';
+  return {
+    component: 'Alert',
+    props: {
+      variant: !ended ? 'info' : run.status === 'succeeded' ? 'success' : 'danger',
+      title: ended ? `${run.methodLabel} ${RUN_STATUS_WORDS[run.status]} on ${run.objectIdentifier}` : `${run.methodLabel} started on ${run.objectIdentifier}`,
+      isInline: true,
+      component: 'p',
+    },
+    children: [text(ended ? (run.message ?? '') : 'It runs in the background. Notifications will tell you when it ends.')],
   };
 }
 
@@ -331,6 +418,7 @@ export function buildRefusedView(reasons: string[]): ViewSpec {
 
 /** The success message after a commit (design system spec 5.1, step 6). */
 export function successNotice(composition: MethodComposition, result: CommitResult): ViewNode {
+  if (result.run) return runNotice(result.run);
   const lines = changeLines(composition, result);
   if (result.signature) {
     lines.push({ term: 'Signed by', value: `${result.signature.signerName}${result.signature.development ? ' (development signature, not valid)' : ''}` });

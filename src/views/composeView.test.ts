@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { MethodComposition } from '../data/client';
-import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, changeLines, nameMatches, successNotice } from './composeView';
+import type { RunView } from '../data/client';
+import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, buildStartView, changeLines, nameMatches, runNotice, successNotice } from './composeView';
 
 const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', state: {} };
 const triage: MethodComposition = {
@@ -25,6 +26,7 @@ const preview = {
   created: ['urn:new'],
   pending: [],
   pendingDescriptions: [],
+  background: [],
 };
 
 describe('Confirm and Fill in views (design system spec 5.1)', () => {
@@ -135,5 +137,49 @@ describe('Review and sign (design system spec 5.1)', () => {
   it('says who signed after the commit', () => {
     const json = JSON.stringify(successNotice(submit, { commit: 'urn:c', ...preview, signature: { signerName: 'Dev Raman', signedAt: 'x', meaning: 'm', development: true } }));
     expect(json).toContain('Signed by: Dev Raman (development signature, not valid)');
+  });
+});
+
+describe('Start and track (design system spec 5.1)', () => {
+  const product = { ...object, iri: 'urn:p', identifier: 'P-101', typeLabel: 'Product' };
+  const detect: MethodComposition = { method: 'urn:detect', label: 'Run signal detection', archetype: { archetype: 'urn:StartAndTrack', label: 'Start and track' }, object: product, inputs: [] };
+  const background = { changes: [], created: [], pending: [], pendingDescriptions: [], background: ['Looks for reactions reported disproportionately often.'] };
+  const run: RunView = {
+    run: 'urn:run/1', method: 'urn:detect', methodLabel: 'Run signal detection', object: 'urn:p', objectIdentifier: 'P-101', status: 'running', progress: 0.4,
+    startedBy: 'urn:c', startedByName: 'Chloé Martin', startedAt: '2026-11-11T10:00:00Z', created: [],
+  };
+  const ended: RunView = { ...run, status: 'succeeded', progress: undefined, message: 'Found 1 new signal: Signal-2 for skin rash.', created: [{ iri: 'urn:s2', identifier: 'Signal-2' }] };
+
+  it.each([
+    ['before the start', buildStartView(detect, { status: 'ready', preview: background })],
+    ['refused', buildStartView(detect, { status: 'refused', reasons: ['No worker can do this method’s background work yet.'] })],
+    ['running', buildStartView(detect, { status: 'ready', preview: background }, run)],
+    ['finished', buildStartView(detect, { status: 'ready', preview: background }, ended)],
+    ['failed', buildStartView(detect, { status: 'ready', preview: background }, { ...ended, status: 'failed', message: 'No other product has safety cases to compare with.' })],
+  ])('%s is a valid view spec', (_name, view) => {
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('says what will run in the background, and starts with a button named for the method', () => {
+    const json = JSON.stringify(buildStartView(detect, { status: 'ready', preview: background }));
+    expect(json).toContain('"label":"In the background"');
+    expect(json).toContain('{"component":"Button","props":{"label":"Run signal detection","variant":"primary","isDisabled":false},"intent":"submit"}');
+  });
+
+  it('follows the run with a progress bar, then shows how it ended', () => {
+    const running = JSON.stringify(buildStartView(detect, { status: 'ready', preview: background }, run));
+    expect(running).toContain('"component":"Progress","props":{"value":40,"title":"Run signal detection on P-101: running","measureLocation":"top","valueText":"40 percent done"}');
+    expect(running).toContain('Notifications will tell you when it ends.');
+    expect(running).toContain('{"component":"Button","props":{"label":"Keep working","variant":"primary"},"intent":"cancel"}');
+    const done = JSON.stringify(buildStartView(detect, { status: 'ready', preview: background }, ended));
+    expect(done).toContain('"variant":"success"');
+    expect(done).toContain('Found 1 new signal: Signal-2 for skin rash.');
+    expect(done).toContain('{"component":"Button","props":{"label":"Done","variant":"primary"},"intent":"cancel"}');
+  });
+
+  it('reports a run that started, or how it ended, when the modal closes', () => {
+    expect(runNotice(run).props).toMatchObject({ variant: 'info', title: 'Run signal detection started on P-101' });
+    expect(runNotice(ended).props).toMatchObject({ variant: 'success', title: 'Run signal detection finished on P-101' });
+    expect(successNotice(detect, { commit: 'urn:c1', ...background, run: ended }).props).toMatchObject({ title: 'Run signal detection finished on P-101' });
   });
 });

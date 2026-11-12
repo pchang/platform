@@ -155,7 +155,7 @@ describe('commits', () => {
     // A stricter rule for this test only: every new safety case must name a batch. Report to safety
     // does not set one, so the commit breaks the shape after its effects are applied (step 5).
     const scoped = withSeed([`@prefix sh: <http://www.w3.org/ns/shacl#> . @prefix ls: <${NS.ls}> .
-      <urn:test:shape> a sh:NodeShape ; sh:targetNode <${NS.d}SafetyCase-7> ; sh:property <urn:test:p> .
+      <urn:test:shape> a sh:NodeShape ; sh:targetNode <${NS.d}SafetyCase-27> ; sh:property <urn:test:p> .
       <urn:test:p> sh:path ls:mayInvolve ; sh:minCount 1 ; sh:message "Every case must name a batch" .`]);
     // The shape targets only the case this commit creates, so the seed itself conforms.
     const before = scoped.find(chloe, ls('SafetyCase')).length;
@@ -166,7 +166,7 @@ describe('commits', () => {
     expect(scoped.commits()).toEqual([]);
 
     // Control: without the stricter rule, the same commit succeeds and creates exactly that case.
-    expect((await withSeed().commit(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-7`]);
+    expect((await withSeed().commit(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-27`]);
   });
 
   it('record described effects as pending work', async () => {

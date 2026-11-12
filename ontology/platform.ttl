@@ -111,6 +111,25 @@ p:Person a rdfs:Class ;
   rdfs:label "person" ;
   rdfs:comment "Someone who runs methods, signs, reviews or approves. Identities come from the platform's identity provider." .
 
+p:Analysis a rdfs:Class ;
+  rdfs:label "analysis" ;
+  rdfs:comment "Background work the platform computes, declared with its parameters. The platform implements each kind of analysis once, for every domain (platform spec 3.4, Background runs)." ;
+  rdfs:subClassOf p:Effect .
+
+p:DisproportionalityAnalysis a rdfs:Class ;
+  rdfs:label "disproportionality analysis" ;
+  rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
+  rdfs:subClassOf p:Analysis .
+
+p:Run a rdfs:Class ;
+  rdfs:label "run" ;
+  rdfs:comment "A background run of a method: started by a commit and finished by a worker, which commits the result on behalf of the person who started it. A PROV-O activity." ;
+  rdfs:subClassOf prov:Activity .
+
+p:Notification a rdfs:Class ;
+  rdfs:label "notification" ;
+  rdfs:comment "Something the platform tells one person, such as that a run they started has ended. Only its recipient sees it." .
+
 p:inDomain a rdf:Property ;
   rdfs:label "in domain" ;
   rdfs:comment "The domain an object type belongs to." ;
@@ -237,8 +256,8 @@ p:whenValue a rdf:Property ;
 
 p:createsType a rdf:Property ;
   rdfs:label "creates type" ;
-  rdfs:comment "The object type a creation makes." ;
-  rdfs:domain p:Creation ;
+  rdfs:comment "The object type a creation or an analysis makes." ;
+  rdfs:domain p:Effect ;
   rdfs:range p:ObjectType .
 
 p:linkedBy a rdf:Property ;
@@ -250,7 +269,7 @@ p:linkedBy a rdf:Property ;
 p:initialState a rdf:Property ;
   rdfs:label "initial state" ;
   rdfs:comment "A state value the new object starts in." ;
-  rdfs:domain p:Creation ;
+  rdfs:domain p:Effect ;
   rdfs:range skos:Concept .
 
 p:initialFromInput a rdf:Property ;
@@ -291,8 +310,8 @@ p:toInput a rdf:Property ;
 
 p:description a rdf:Property ;
   rdfs:label "description" ;
-  rdfs:comment "What a described effect does, until it is declarative." ;
-  rdfs:domain p:DescribedEffect ;
+  rdfs:comment "What an effect does, in words: for a described effect, until it is declarative; for an analysis, what the person is told it will do." ;
+  rdfs:domain p:Effect ;
   rdfs:range xsd:string .
 
 p:producesDraft a rdf:Property ;
@@ -524,6 +543,113 @@ p:mayRun a rdf:Property ;
   rdfs:domain p:Role ;
   rdfs:range p:Method .
 
+p:counts a rdf:Property ;
+  rdfs:label "counts" ;
+  rdfs:comment "The object type an analysis counts." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range p:ObjectType .
+
+p:exposure a rdf:Property ;
+  rdfs:label "exposure" ;
+  rdfs:comment "The relationship from a counted object to its exposure. The method's target is the exposure analysed; every other exposure is the comparison." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range rdf:Property .
+
+p:outcome a rdf:Property ;
+  rdfs:label "outcome" ;
+  rdfs:comment "The property from a counted object to its outcomes, whose values come from a concept scheme." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range rdf:Property .
+
+p:excludes a rdf:Property ;
+  rdfs:label "excludes" ;
+  rdfs:comment "Counted objects with a value for this property are left out, such as duplicates of another object." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range rdf:Property .
+
+p:recordsOutcomeAs a rdf:Property ;
+  rdfs:label "records outcome as" ;
+  rdfs:comment "The property on each created object that records the outcome it was created for." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range rdf:Property .
+
+p:aggregatesBy a rdf:Property ;
+  rdfs:label "aggregates by" ;
+  rdfs:comment "The relationship from each created object to the counted objects behind it." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range rdf:Property .
+
+p:minimumCount a rdf:Property ;
+  rdfs:label "minimum count" ;
+  rdfs:comment "The parameter giving the fewest counted objects with the outcome for the target." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range p:Parameter .
+
+p:minimumRatio a rdf:Property ;
+  rdfs:label "minimum ratio" ;
+  rdfs:comment "The parameter giving the lowest proportional reporting ratio." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range p:Parameter .
+
+p:minimumChiSquare a rdf:Property ;
+  rdfs:label "minimum chi-square" ;
+  rdfs:comment "The parameter giving the lowest chi-squared statistic, with Yates' correction." ;
+  rdfs:domain p:Analysis ;
+  rdfs:range p:Parameter .
+
+p:runStatus a rdf:Property ;
+  rdfs:label "run status" ;
+  rdfs:comment "Where a run is: queued, running, succeeded or failed." ;
+  rdfs:domain p:Run ;
+  rdfs:range skos:Concept .
+
+p:startCommit a rdf:Property ;
+  rdfs:label "start commit" ;
+  rdfs:comment "The commit that started the run." ;
+  rdfs:domain p:Run ;
+  rdfs:range p:Commit .
+
+p:resultCommit a rdf:Property ;
+  rdfs:label "result commit" ;
+  rdfs:comment "The commit holding the run's result." ;
+  rdfs:domain p:Run ;
+  rdfs:range p:Commit .
+
+p:message a rdf:Property ;
+  rdfs:label "message" ;
+  rdfs:comment "What a run found or why it failed, or what a notification says, in words." ;
+  rdfs:range xsd:string .
+
+p:recipient a rdf:Property ;
+  rdfs:label "recipient" ;
+  rdfs:comment "The person a notification is for." ;
+  rdfs:domain p:Notification ;
+  rdfs:range p:Person .
+
+p:about a rdf:Property ;
+  rdfs:label "about" ;
+  rdfs:comment "The run or other activity a notification is about." ;
+  rdfs:domain p:Notification ;
+  rdfs:range prov:Activity .
+
+p:title a rdf:Property ;
+  rdfs:label "title" ;
+  rdfs:comment "A notification's title." ;
+  rdfs:domain p:Notification ;
+  rdfs:range xsd:string .
+
+p:readAt a rdf:Property ;
+  rdfs:label "read at" ;
+  rdfs:comment "When the recipient read the notification. Absent while unread." ;
+  rdfs:domain p:Notification ;
+  rdfs:range xsd:dateTime .
+
+p:onBehalfOf a rdf:Property ;
+  rdfs:label "on behalf of" ;
+  rdfs:comment "The person an agent acted for in this activity, such as the person who started a background run." ;
+  rdfs:domain prov:Activity ;
+  rdfs:range p:Person .
+
 p:mayNotRead a rdf:Property ;
   rdfs:label "may not read" ;
   rdfs:comment "An object type or property the role may never read." ;
@@ -533,6 +659,38 @@ p:parameterValue a rdf:Property ;
   rdfs:label "parameter value" ;
   rdfs:comment "The value of a parameter." ;
   rdfs:domain p:Parameter .
+
+p:BackgroundWorker a prov:SoftwareAgent ;
+  rdfs:label "Background worker" ;
+  rdfs:comment "The platform agent that does the work of background runs. It acts through the gateway on behalf of the person who started each run, and never signs." .
+
+p:RunStatus a skos:ConceptScheme ;
+  skos:prefLabel "Run status" ;
+  skos:definition "Where a background run is." .
+
+p:RunStatus-queued a skos:Concept ;
+  skos:inScheme p:RunStatus ;
+  skos:prefLabel "queued" ;
+  skos:definition "Started, waiting for a worker." ;
+  p:order 1 .
+
+p:RunStatus-running a skos:Concept ;
+  skos:inScheme p:RunStatus ;
+  skos:prefLabel "running" ;
+  skos:definition "A worker is doing the work." ;
+  p:order 2 .
+
+p:RunStatus-succeeded a skos:Concept ;
+  skos:inScheme p:RunStatus ;
+  skos:prefLabel "succeeded" ;
+  skos:definition "Ended, with its result committed." ;
+  p:order 3 .
+
+p:RunStatus-failed a skos:Concept ;
+  skos:inScheme p:RunStatus ;
+  skos:prefLabel "failed" ;
+  skos:definition "Ended without a result. The message says why." ;
+  p:order 4 .
 
 p:ReviewAndSign a p:Archetype ;
   rdfs:label "Review and sign" ;

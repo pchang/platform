@@ -60,6 +60,21 @@ ls:HumanReview a p:BusinessRule ;
   p:ruleNumber 6 ;
   rdfs:comment "Generated narratives, generated analogs and flagged duplicates are drafts until a human accepts them. Methods that produce drafts say so with p:producesDraft." .
 
+ls:SignalDetection a p:BusinessRule ;
+  rdfs:label "Signal detection" ;
+  p:ruleNumber 7 ;
+  rdfs:comment "A product and reaction pair is a signal when its cases meet all three thresholds (Evans, Waller and Davis, 2001): at least the minimum cases, a proportional reporting ratio of at least the minimum, and a chi-squared statistic with Yates' correction of at least the minimum. Duplicates are not counted." ;
+  p:parameter ls:SignalDetection-minimumCases, ls:SignalDetection-minimumPRR, ls:SignalDetection-minimumChiSquare .
+ls:SignalDetection-minimumCases a p:Parameter ;
+  rdfs:label "Minimum cases" ;
+  p:parameterValue 3 .
+ls:SignalDetection-minimumPRR a p:Parameter ;
+  rdfs:label "Minimum proportional reporting ratio" ;
+  p:parameterValue 2 .
+ls:SignalDetection-minimumChiSquare a p:Parameter ;
+  rdfs:label "Minimum chi-squared statistic" ;
+  p:parameterValue 4 .
+
 # Shapes the rules use
 
 lsh:ArmHidden a sh:NodeShape ;

@@ -16,6 +16,10 @@ import { createMcpServer } from './mcp';
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." } }
+ *   GET  /api/runs?object=P-101&active=true  track background runs, optionally on one object, or only those not ended
+ *   GET  /api/runs/:run                      one run, such as /api/runs/1
+ *   GET  /api/notifications                  the principal's notifications, newest first
+ *   POST /api/notifications/read             mark notifications read; body { "notifications": [...] }, or {} for all
  *   GET  /api/commits                        the history of commits
  *   GET  /api/dev/people                     the seed graph's people and roles (development mode only)
  *   POST /mcp                                the same requests over the Model Context Protocol, for agents
@@ -94,6 +98,17 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
       case 'POST objects/:/methods/:': {
         const { inputs = {}, signature } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string } };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature));
+      }
+      case 'GET runs':
+        return send(res, 200, gateway.runs(principal, { object: url.searchParams.get('object') ?? undefined, active: url.searchParams.get('active') === 'true' }));
+      case 'GET runs/:':
+        return send(res, 200, gateway.run(principal, parts[2]));
+      case 'GET notifications':
+        return send(res, 200, gateway.notifications(principal));
+      case 'POST notifications/:': {
+        if (parts[2] !== 'read') throw new GatewayError(404, ['Not found']);
+        const { notifications } = (await body(req)) as { notifications?: string[] };
+        return send(res, 200, { marked: gateway.markRead(principal, notifications) });
       }
       case 'GET commits':
         return send(res, 200, gateway.commits());

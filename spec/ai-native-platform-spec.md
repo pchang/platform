@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.16. November 11, 2026. Author: Paul Chang.
+Version 0.17. November 11, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -57,6 +57,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Method | A resource in the platform vocabulary, with its inputs, precondition and effects |
 | Precondition | A SHACL shape the object must conform to. Its messages explain a block |
 | Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
+| Analysis | Background work the platform computes, such as a disproportionality analysis, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
@@ -117,7 +118,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers nine kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers eleven kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -130,6 +131,8 @@ Every request carries a **principal**: the person or agent making it and the rol
 | To do | The objects with work waiting for the principal, in order (section 5.1) |
 | Compose a method | What the method needs from the principal: each input with its kind, its choices and its default, and the method's archetype (section 5.4) |
 | Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change, every object that would be created and every described effect that would be recorded as pending work, or the reasons it would fail |
+| Track runs | The background runs on objects the principal may read: each run's status and progress, and its outcome once it ends |
+| Notifications | The principal's notifications, newest first, with which are unread; and marking them read |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -160,6 +163,15 @@ A database server can later hold the current state for larger data or several ga
 - The signer is the principal: a person, never an agent. Any person input of a signed method is the principal; nobody signs for someone else.
 - The signature records the signer's name, the date and time of signing, and the meaning of the signature, such as approval or authorship. The meaning comes from the method in the ontology. All three are bound to the commit's provenance record, so they cannot be separated from what was signed.
 - Signing authenticates the person at the moment of signing, through the identity provider. Until one is connected, development mode accepts the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Outside development mode, the gateway refuses to sign.
+
+**Background runs.** A method that runs in the background, such as a computation over many objects, is started by a commit and finished by a worker.
+
+- **Starting** is an ordinary commit, steps 1 to 6, so it is checked, previewed and recorded like any other. The commit also creates a **run**: a PROV-O activity recording the method, the object, who started it, in which role, and when.
+- **Workers.** The work itself is an **analysis** the method declares in the ontology, with its parameters (section 3.1). The platform implements each kind of analysis once, for every domain. A method whose background work no worker can do yet, such as a model nobody has connected, is refused before step 1 with that reason. The platform never pretends to run it.
+- **Status.** A run is queued, then running, then succeeded or failed. Its progress, as a fraction, is reported while it runs and not kept. Status changes are written to the journal.
+- **Results.** A worker reads and writes the graph only through the gateway, as the platform's background worker, acting on behalf of the person who started the run. Its result is a commit like any other: validated against every shape, recorded with PROV-O provenance, and refused whole if any shape fails, which fails the run with the reasons. The result and the run's end are written in one journal entry, so a result is never applied twice.
+- **Restarts.** A run that had not ended when the gateway stopped starts again when the gateway restarts.
+- **Notifications.** When a run ends, the person who started it is notified: what ran, on which object, and what it found or why it failed. A notification belongs to its recipient; nobody else sees it. Notifications and their read state are kept in the graph and the journal.
 
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
 
@@ -336,6 +348,8 @@ To resolve in future versions of this spec.
 - Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
 - Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
 - Which identity provider authenticates people and agents, and how does it authenticate a person at the moment of signing?
+- How are background runs scheduled, as well as started by a person, and who is notified of a scheduled run's outcome?
+- Should workers run outside the gateway process, so long computations never delay commits?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
@@ -365,3 +379,4 @@ To resolve in future versions of this spec.
 | 0.14 | 2026-11-11 | The gateway answers Compose a method and Preview a method (section 3.4). Input choices and defaults come from the ontology (section 5.4). |
 | 0.15 | 2026-11-11 | Previews and commits name the described effects they record as pending work. |
 | 0.16 | 2026-11-11 | Added electronic signatures to the gateway contract (section 3.4): the principal signs, never an agent; name, time and meaning bound to the commit; development signatures by typed name, clearly not valid, until an identity provider exists. |
+| 0.17 | 2026-11-11 | Added background runs to the gateway contract (section 3.4): started by a commit, finished by a platform worker acting through the gateway, results committed and journaled once, restarted after a restart, and the starter notified. Analyses join the ontology's expressions (section 3.1). The gateway answers Track runs and Notifications. Two open questions. |

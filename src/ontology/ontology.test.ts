@@ -122,8 +122,8 @@ describe('methods', () => {
 });
 
 describe('rules and roles', () => {
-  it('number the six business rules of domain spec section 7', () => {
-    expect(q(`SELECT ?n WHERE { ?r a p:BusinessRule ; p:ruleNumber ?n } ORDER BY ?n`).map((r) => r.n)).toEqual(['1', '2', '3', '4', '5', '6']);
+  it('number the seven business rules of domain spec section 7', () => {
+    expect(q(`SELECT ?n WHERE { ?r a p:BusinessRule ; p:ruleNumber ?n } ORDER BY ?n`).map((r) => r.n)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
     expect(q(`SELECT ?m WHERE { ?m p:governedBy ?r FILTER NOT EXISTS { ?r a p:BusinessRule } }`)).toEqual([]);
   });
 
@@ -132,8 +132,8 @@ describe('rules and roles', () => {
   });
 
   it('use only NCIt codes checked against the NCI Thesaurus service', () => {
-    // Verified on 2026-11-08. Add a code here only after checking its name and definition at the source.
-    const verified = ['C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70885', 'C85838', 'C191214', 'C221818'];
+    // Verified on 2026-11-08, and the reactions on 2026-11-11. Add a code here only after checking its name and definition at the source.
+    const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70885', 'C85838', 'C191214', 'C221818'];
     const used = q(`SELECT DISTINCT ?code WHERE { ?s ?match ?code FILTER(STRSTARTS(STR(?code), "http://purl.obolibrary.org/obo/NCIT_")) }`)
       .map((r) => r.code.replace('http://purl.obolibrary.org/obo/NCIT_', ''));
     expect(used.length).toBeGreaterThan(10);

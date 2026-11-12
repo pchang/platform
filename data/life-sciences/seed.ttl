@@ -675,7 +675,7 @@ d:AE-003 a ls:AdverseEvent ;
   ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
   ls:adverseEventReporting lst:AdverseEventReporting-notReported .
 
-# Safety and Regulatory: 1 investigational product, 4 medical inquiries, 6 safety cases
+# Safety and Regulatory: 1 investigational product, 4 medical inquiries, 6 safety cases, each coded with its reactions
 
 d:P-101 a ls:Product ;
   ls:identifier "P-101" ;
@@ -708,7 +708,8 @@ d:SC-001 a ls:SafetyCase ;
   ls:safetyCaseCausality lst:SafetyCaseCausality-unrelated ;
   ls:receivedOn "2026-10-20"^^xsd:date ;
   ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
-  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected .
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-drugInducedLiverInjury .
 
 d:SC-002 a ls:SafetyCase ;
   ls:identifier "SC-002" ;
@@ -718,7 +719,8 @@ d:SC-002 a ls:SafetyCase ;
   ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
   ls:receivedOn "2026-10-28"^^xsd:date ;
   ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
-  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected .
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-skinRash, lst:Reaction-nausea .
 
 d:SC-003 a ls:SafetyCase ;
   ls:identifier "SC-003" ;
@@ -729,7 +731,8 @@ d:SC-003 a ls:SafetyCase ;
   ls:receivedOn "2026-11-02"^^xsd:date ;
   ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-serious ;
   ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-unexpected ;
-  ls:mayInvolve d:B-002 .
+  ls:mayInvolve d:B-002 ;
+  ls:reaction lst:Reaction-drugInducedLiverInjury .
 
 d:SC-004 a ls:SafetyCase ;
   ls:identifier "SC-004" ;
@@ -737,7 +740,8 @@ d:SC-004 a ls:SafetyCase ;
   ls:concerns d:P-101 ;
   ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
   ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
-  ls:receivedOn "2026-11-05"^^xsd:date .
+  ls:receivedOn "2026-11-05"^^xsd:date ;
+  ls:reaction lst:Reaction-drugInducedLiverInjury, lst:Reaction-skinRash .
 
 d:SC-005 a ls:SafetyCase ;
   ls:identifier "SC-005" ;
@@ -745,7 +749,8 @@ d:SC-005 a ls:SafetyCase ;
   ls:concerns d:P-101 ;
   ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
   ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
-  ls:receivedOn "2026-11-06"^^xsd:date .
+  ls:receivedOn "2026-11-06"^^xsd:date ;
+  ls:reaction lst:Reaction-skinRash, lst:Reaction-nausea .
 
 d:SC-006 a ls:SafetyCase ;
   ls:identifier "SC-006" ;
@@ -753,13 +758,222 @@ d:SC-006 a ls:SafetyCase ;
   ls:concerns d:P-101 ;
   ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-received ;
   ls:safetyCaseCausality lst:SafetyCaseCausality-unassessed ;
-  ls:receivedOn "2026-11-07"^^xsd:date .
+  ls:receivedOn "2026-11-07"^^xsd:date ;
+  ls:reaction lst:Reaction-skinRash, lst:Reaction-headache .
 
-# J2 starts with the detected signal.
+# The comparator for signal detection (rule 7): an approved product with 20 closed, historical post-market cases.
+# Run signal detection on P-101 then finds skin rash (4 cases, PRR 13.3, chi-squared 7.7). Drug-induced liver injury already has SIG-1.
+
+d:P-102 a ls:Product ;
+  ls:identifier "P-102" ;
+  ls:productStatus lst:ProductStatus-approved .
+
+d:SC-101 a ls:SafetyCase ;
+  ls:identifier "SC-101" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-01-06"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea .
+
+d:SC-102 a ls:SafetyCase ;
+  ls:identifier "SC-102" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-01-23"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea, lst:Reaction-headache .
+
+d:SC-103 a ls:SafetyCase ;
+  ls:identifier "SC-103" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-02-09"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-headache .
+
+d:SC-104 a ls:SafetyCase ;
+  ls:identifier "SC-104" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-02-26"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-fatigue .
+
+d:SC-105 a ls:SafetyCase ;
+  ls:identifier "SC-105" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-03-15"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea, lst:Reaction-dizziness .
+
+d:SC-106 a ls:SafetyCase ;
+  ls:identifier "SC-106" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-04-01"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-headache .
+
+d:SC-107 a ls:SafetyCase ;
+  ls:identifier "SC-107" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-04-18"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-diarrhea .
+
+d:SC-108 a ls:SafetyCase ;
+  ls:identifier "SC-108" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-05-05"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-fatigue, lst:Reaction-headache .
+
+d:SC-109 a ls:SafetyCase ;
+  ls:identifier "SC-109" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-05-22"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea .
+
+d:SC-110 a ls:SafetyCase ;
+  ls:identifier "SC-110" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-06-08"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-dizziness .
+
+d:SC-111 a ls:SafetyCase ;
+  ls:identifier "SC-111" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-06-25"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-skinRash .
+
+d:SC-112 a ls:SafetyCase ;
+  ls:identifier "SC-112" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-07-12"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-headache .
+
+d:SC-113 a ls:SafetyCase ;
+  ls:identifier "SC-113" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-07-29"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-diarrhea .
+
+d:SC-114 a ls:SafetyCase ;
+  ls:identifier "SC-114" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-08-15"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-fatigue .
+
+d:SC-115 a ls:SafetyCase ;
+  ls:identifier "SC-115" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-09-01"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea .
+
+d:SC-116 a ls:SafetyCase ;
+  ls:identifier "SC-116" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-09-18"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-drugInducedLiverInjury .
+
+d:SC-117 a ls:SafetyCase ;
+  ls:identifier "SC-117" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-10-05"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-headache, lst:Reaction-dizziness .
+
+d:SC-118 a ls:SafetyCase ;
+  ls:identifier "SC-118" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-10-22"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-diarrhea .
+
+d:SC-119 a ls:SafetyCase ;
+  ls:identifier "SC-119" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-11-08"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-fatigue .
+
+d:SC-120 a ls:SafetyCase ;
+  ls:identifier "SC-120" ;
+  ls:concerns d:P-102 ;
+  ls:safetyCaseWorkflow lst:SafetyCaseWorkflow-closed ;
+  ls:safetyCaseCausality lst:SafetyCaseCausality-possible ;
+  ls:receivedOn "2025-11-25"^^xsd:date ;
+  ls:safetyCaseSeriousness lst:SafetyCaseSeriousness-nonSerious ;
+  ls:safetyCaseExpectedness lst:SafetyCaseExpectedness-expected ;
+  ls:reaction lst:Reaction-nausea .
+
+# J2 starts with the detected signal, for drug-induced liver injury.
 
 d:SIG-1 a ls:Signal ;
   ls:identifier "SIG-1" ;
   ls:concerns d:P-101 ;
+  ls:reaction lst:Reaction-drugInducedLiverInjury ;
   ls:aggregates d:SC-001, d:SC-003, d:SC-004 ;
   ls:signalStatus lst:SignalStatus-detected .
 

@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefusedError, type CommitResult, type MethodComposition, type ObjectView } from '../data/client';
+import { RefusedError, type CommitResult, type MethodComposition, type ObjectView, type RunView } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, PAGE_ARCHETYPES, SIGNATURE_FIELD, type PreviewState } from './composeView';
+import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, buildStartView, PAGE_ARCHETYPES, SIGNATURE_FIELD, type PreviewState } from './composeView';
+
+/** How often an open Start and track modal asks the gateway how its run is doing. */
+const RUN_POLL_MS = 400;
 
 /**
  * Runs one method on one object through its archetype's pattern (platform spec 5.4, steps 3 to 6):
  * collect the inputs, preview what will change, commit, and report the outcome to the caller.
  * Confirm and Fill in open as a modal; Compare and decide is a page that takes the caller's place.
+ * Start and track stays open after the commit to follow the run until the person closes it.
  */
 export function ComposeDialog({
   object,
@@ -26,6 +30,10 @@ export function ComposeDialog({
   const [state, setState] = useState<PreviewState>({ status: 'incomplete' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string[]>();
+  // Start and track: the commit that started the run, and the run as last seen.
+  const [started, setStarted] = useState<CommitResult>();
+  const [run, setRun] = useState<RunView>();
+  const runEnded = run?.status === 'succeeded' || run?.status === 'failed';
   // Compare and decide: the object and the one chosen, as the gateway lets this person read them.
   const [self, setSelf] = useState<ObjectView>();
   const [other, setOther] = useState<ObjectView>();
@@ -100,14 +108,31 @@ export function ComposeDialog({
     };
   }, [client, principal, object, method, composition, complete, inputsKey]);
 
+  // Follow the run until it ends (design system spec 5.1, Start and track, steps 4 and 5).
+  const runId = run?.run;
+  useEffect(() => {
+    if (!runId || runEnded) return;
+    let cancelled = false;
+    const timer = setInterval(() => {
+      client.run(principal, runId).then((r) => !cancelled && setRun(r), () => undefined);
+    }, RUN_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [client, principal, runId, runEnded]);
+
   // The method cannot be composed for this person, such as when their role cannot run it: say why.
   if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: onCancel }} />;
   if (!composition) return null;
 
   if (isPage && !self) return null;
+  const isStart = composition.archetype.label === 'Start and track';
   const view = isPage
     ? buildCompareView(composition, state, self!, other, submitting)
-    : composition.signature
+    : isStart
+      ? buildStartView(composition, state, run, submitting)
+      : composition.signature
       ? buildSignView(composition, state, values, submitting)
       : buildComposeView(composition, state, submitting);
   return (
@@ -117,12 +142,17 @@ export function ComposeDialog({
         values,
         onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),
         onIntent: (intent) => {
-          if (intent === 'cancel') return onCancel();
+          // Closing a started run's modal leaves the run going, and reports it as last seen.
+          if (intent === 'cancel') return started ? onDone(composition, { ...started, run }) : onCancel();
           if (state.status !== 'ready' || submitting) return;
           setSubmitting(true);
           const signature = composition.signature ? { typedName: values[SIGNATURE_FIELD] ?? '' } : undefined;
           client.commit(principal, object, method, inputs, signature).then(
-            (result) => onDone(composition, result),
+            (result) => {
+              if (!result.run) return onDone(composition, result);
+              setStarted(result);
+              setRun(result.run);
+            },
             (e: unknown) => {
               setSubmitting(false);
               setState({ status: 'refused', reasons: e instanceof RefusedError ? e.reasons : [String(e)] });

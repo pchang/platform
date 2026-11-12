@@ -53,6 +53,26 @@ describe('HTTP transport', () => {
     expect(open.body.map((o: { identifier: string }) => o.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
   });
 
+  it('tracks a background run and its notification', async () => {
+    const chloe: [string, string] = ['person-chloe', 'DrugSafetyPhysician'];
+    const api = await start();
+    const started = await api('/objects/P-101/methods/RunSignalDetection', chloe, { method: 'POST', body: '{}' });
+    expect(started.status).toBe(201);
+    let run = started.body.run;
+    for (let i = 0; i < 200 && run.status !== 'succeeded'; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      run = (await api(`/runs/${run.run.split('/').pop()}`, chloe)).body;
+    }
+    expect(run.created).toEqual([{ iri: 'https://example.org/lsh-data/Signal-2', identifier: 'Signal-2' }]);
+    expect((await api('/runs?object=P-101', chloe)).body).toHaveLength(1);
+    expect((await api('/runs?active=true', chloe)).body).toEqual([]);
+    const notices = (await api('/notifications', chloe)).body;
+    expect(notices.map((n: { read: boolean }) => n.read)).toEqual([false]);
+    expect((await api('/notifications/read', chloe, { method: 'POST', body: '{}' })).body).toEqual({ marked: 1 });
+    expect((await api('/notifications', ['person-dev', 'DrugSafetyPhysician'])).body).toEqual([]);
+    expect((await api('/notifications/unread', chloe, { method: 'POST', body: '{}' })).status).toBe(404);
+  });
+
   it('answers 403 and 404 with reasons', async () => {
     const api = await start();
     expect((await api('/objects/PT-03', ['person-ada', 'ComputationalChemist'])).status).toBe(403);
