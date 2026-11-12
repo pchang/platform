@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.11. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.17.
+Version 0.12. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.18.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -62,7 +62,7 @@ Covers a molecule from design to manufactured batch.
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
 | Run simulation | Compound | Model type | Compound is designed or later | Creates a Simulation in queued; the model then runs in the background. Refused until a model is connected (section 12) |
-| Generate analogs | Compound | Target property | Compound has at least one accepted Simulation | Creates new Compounds in designed, linked by derived from |
+| Generate analogs | Compound | Target property | Compound has at least one accepted Simulation | Creates new Compounds in designed, linked by derived from. Refused until a generative chemistry model is connected (section 12) |
 | Register | Compound | None | Compound is synthesized, unregistered | Registration: registered |
 | Promote to candidate | Compound | Rationale | Stage is tested, has valid Assay Results | Stage: candidate |
 | Sign experiment | Experiment | Signer | Record is complete | Sign-off: signed |
@@ -120,7 +120,7 @@ Covers patient safety and regulatory obligations, during trials and after launch
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Safety Case | One report of an adverse reaction in one patient. Has a date of receipt and one or more coded reactions | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
+| Safety Case | One report of an adverse reaction in one patient. Has a date of receipt, one or more coded reactions, and a narrative once one is accepted | Workflow: received, triaged, assessed, reported, closed. Seriousness: non-serious, serious. Expectedness: expected, unexpected. Causality: unassessed, unrelated, possible, probable. |
 | Product | A marketed or investigational product | Status: investigational, approved, withdrawn. |
 | Signal | A possible new risk detected across many cases: one reaction, for one product | Status: detected, under evaluation, confirmed, refuted. |
 | Submission | A regulatory filing to an authority. Records who prepared it and its due date | Status: draft, in review, submitted, acknowledged. Deadline: on track, due soon, overdue. |
@@ -145,7 +145,7 @@ Covers patient safety and regulatory obligations, during trials and after launch
 | Triage | Safety Case | Seriousness, expectedness | Workflow is received | Workflow: triaged. Sets seriousness and expectedness |
 | Flag duplicate | Safety Case | Candidate case | Neither case is closed | Links the two by duplicate of. A suggestion until a human confirms (rule 6) |
 | Assess | Safety Case | Causality | Workflow is triaged | Workflow: assessed |
-| Generate narrative | Safety Case | None | Workflow is triaged or later | Drafts the case narrative for human review |
+| Generate narrative | Safety Case | None | Workflow is triaged or later | A connected model drafts the case narrative from the case, the event or inquiry it originates from, its product and any batch it may involve, as far as the person may read them. Accepting the draft, as written or edited, sets the case's narrative (rule 6) |
 | Merge duplicate | Safety Case | Target case | Cases are linked by duplicate of | Merges into target. Source workflow: closed |
 | Prepare expedited report | Safety Case | None | Assessed, serious, unexpected, possible or probable, and no submission reports it yet | Creates a Submission in draft, prepared by the person, due 15 days after the case was received (rule 1) |
 | Close case | Safety Case | None | Workflow is reported, or assessed and no expedited report is required | Workflow: closed |
@@ -307,6 +307,7 @@ The domain is written in the platform's ontology format (platform spec section 3
 | `roles.ttl` | The personas in section 6, with the methods they may run and what they may not read |
 
 - **Namespace.** `https://w3id.org/lsh-platform/life-sciences#`, with concepts under `…/life-sciences/term#` and shapes under `…/life-sciences/shape#` (platform spec section 3.1). Example and seed data use `https://example.org/`, which is reserved for examples, so it can never be mistaken for real records.
+- **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
 - **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4 must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
@@ -400,14 +401,14 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
 - Should post-market cases (after approval) be in scope, or only trial cases?
-- Which models back Run simulation and Generate analogs, and how are they validated for their intended use? Until one is connected, the gateway refuses Run simulation.
+- Which models back Run simulation and Generate analogs, and how are they validated for their intended use? Until one is connected, the gateway refuses both. Generate narrative is drafted by Claude Opus 5.5 where a deployment connects it.
 - Should signal detection move from PRR to a Bayesian method, such as the empirical Bayes geometric mean or the information component, once the case volume supports it?
 - When a later run finds new cases for a reaction that already has a Signal, should it add them to that Signal?
 - On what schedule does signal detection run, and who is notified of a scheduled run's outcome?
 - Which systems of record does each domain integrate first?
 - Who runs Sign experiment, Invalidate result, Consent, Randomize and Start CAPA? No persona in section 6 does yet.
 - How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
-- Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, drafting a narrative, running a simulation model and suggesting follow-up. Detecting signals is now declared, as a disproportionality analysis (platform spec section 3.4). The ontology describes them in words, and the gateway will implement them. How should they be declared?
+- Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, running a simulation model, generating analogs and suggesting follow-up. Drafting a narrative is now declared, as a drafting effect, and detecting signals as a disproportionality analysis (platform spec section 3.4). The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
 ---
 
@@ -426,3 +427,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.9 | 2026-11-11 | Added each method's interaction archetype (section 6). Run simulation and Run signal detection run in the background. |
 | 0.10 | 2026-11-11 | The meaning of each signed method's signature. |
 | 0.11 | 2026-11-11 | Cases and signals carry coded reactions. Added rule 7, signal detection by disproportionality with Evans criteria; Run signal detection runs it in the background. Run simulation is refused until a model is connected. The seed adds an approved comparator product with 20 historical cases. Four open questions. |
+| 0.12 | 2026-11-12 | Generate narrative is declared as a drafting effect with its instructions; accepting the draft sets the case's narrative. Generate analogs is refused until a generative chemistry model is connected. |

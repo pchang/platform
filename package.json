@@ -13,6 +13,7 @@
     "gateway": "LSH_GATEWAY_DEV=1 tsx src/gateway/main.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@patternfly/react-core": "6.7.0",
     "@patternfly/react-icons": "6.7.0",

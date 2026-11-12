@@ -24,7 +24,9 @@ export function httpClient(base = '/api'): GatewayClient {
     read: (p, object) => request(`/objects/${encodeURIComponent(object)}`, p),
     compose: (p, object, method) => request(methodPath(object, method), p),
     preview: (p, object, method, inputs) => request(`${methodPath(object, method)}/preview`, p, { inputs }),
-    commit: (p, object, method, inputs, signature) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}) }),
+    commit: (p, object, method, inputs, signature, draft) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}), ...(draft ? { draft } : {}) }),
+    draft: (p, object, method) => request(`${methodPath(object, method)}/draft`, p, {}),
+    discardDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}/discard`, p, {}),
     methods: (p, object) => request(`/objects/${encodeURIComponent(object)}/methods`, p),
     runs: (p, filter = {}) => {
       const query = new URLSearchParams({ ...(filter.object ? { object: filter.object } : {}), ...(filter.active ? { active: 'true' } : {}) }).toString();

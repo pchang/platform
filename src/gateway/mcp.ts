@@ -119,6 +119,19 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'draft_method',
+    {
+      title: 'Draft a method',
+      description:
+        'For a method that produces a draft, such as "GenerateNarrative" on "SC-003": the connected model writes the draft from what you may read. ' +
+        'The draft is recorded and changes nothing. Only a person accepts or discards it, so an agent cannot commit it.',
+      inputSchema: { id: z.string(), method: z.string() },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    ({ id, method }) => result(() => gateway.draft(principal, id, expand(method, NS.ls))),
+  );
+
+  server.registerTool(
     'track_runs',
     {
       title: 'Track runs',

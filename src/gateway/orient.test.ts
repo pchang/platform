@@ -45,7 +45,7 @@ describe('To do (spec 5.1)', () => {
   it('puts the submission due first for the Drug Safety Physician, then the serious case, then the rest', async () => {
     expect(await list(physician)).toEqual([
       ['SUB-1', 'Send for review'],
-      ['SC-003', 'urgent: Flag duplicate, Generate narrative'],
+      ['SC-003', 'urgent: Flag duplicate'],
       ['SC-001', 'Close case'],
       ['SC-002', 'Assess'],
       ['SC-004', 'Triage'],

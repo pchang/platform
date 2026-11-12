@@ -513,6 +513,10 @@ ls:receivedOn a owl:DatatypeProperty ;
   rdfs:label "received on" ;
   rdfs:comment "The date the safety case was received." .
 
+ls:narrative a owl:DatatypeProperty ;
+  rdfs:label "narrative" ;
+  rdfs:comment "The case narrative, as a person accepted it." .
+
 ls:dueOn a owl:DatatypeProperty ;
   rdfs:label "due on" ;
   rdfs:comment "The date the submission is due." ;
@@ -968,9 +972,15 @@ lsh:SafetyCase-receivedOn a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "received on" .
 
+lsh:SafetyCase-narrative a sh:PropertyShape ;
+  sh:path ls:narrative ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "narrative" .
+
 lsh:SafetyCase a sh:NodeShape ;
   sh:targetClass ls:SafetyCase ;
-  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn .
+  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn, lsh:SafetyCase-narrative .
 
 lsh:Product-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;

@@ -69,6 +69,7 @@ ls:GenerateAnalogs a p:Method ;
   p:effect ls:GenerateAnalogs-effect2 ;
   p:onDemand true ;
   p:producesDraft true ;
+  p:needsModel true ;
   p:governedBy ls:HumanReview .
 
 ls:Register-effect1 a p:StateChange ;
@@ -402,8 +403,12 @@ ls:Assess a p:Method ;
   p:effect ls:Assess-effect1 ;
   p:effect ls:Assess-effect2 .
 
-ls:GenerateNarrative-effect1 a p:DescribedEffect ;
-  p:description "Drafts the case narrative from the case and its linked records. A draft until a person accepts it." .
+ls:GenerateNarrative-effect1 a p:Drafting ;
+  p:draftsProperty ls:narrative ;
+  p:instructions "Write the case narrative for this individual case safety report, as the case narrative of an ICH E2B(R3) report. Use only the facts in the records you are given. Do not add facts, diagnoses, dates, doses, outcomes or causes that the records do not state. Where something a case narrative normally includes is not in the records, say plainly that it is not recorded. Refer to the person as the patient, never as a subject, and use the identifiers given, never a name. Do not give an opinion on causality beyond what the records state. Write plain, past-tense clinical prose in one to three short paragraphs, with no headings, lists or markdown." ;
+  p:drawsOn ls:originatesFrom ;
+  p:drawsOn ls:concerns ;
+  p:drawsOn ls:mayInvolve .
 
 ls:GenerateNarrative a p:Method ;
   rdfs:label "Generate narrative" ;

@@ -173,7 +173,6 @@ describe('commits', () => {
     const gateway = withSeed();
     const result = await gateway.commit(chloe, 'SIG-1', ls('EvaluateSignal'));
     expect(result.pending).toEqual([]);
-    await gateway.commit(chloe, 'SC-001', ls('GenerateNarrative'));
     const confirm = await gateway.commit(chloe, 'SIG-1', ls('ConfirmSignal'), { rationale: 'Three related cases' });
     expect(confirm.pending).toEqual([ls('ConfirmSignal-effect2')]);
   });

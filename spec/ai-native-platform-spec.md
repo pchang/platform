@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.17. November 11, 2026. Author: Paul Chang.
+Version 0.18. November 12, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -57,6 +57,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Method | A resource in the platform vocabulary, with its inputs, precondition and effects |
 | Precondition | A SHACL shape the object must conform to. Its messages explain a block |
 | Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
+| Drafting | A value a connected model drafts and a person accepts, declared with the property it fills, the model's instructions and the linked objects it may draw on (section 3.4, Generated drafts) |
 | Analysis | Background work the platform computes, such as a disproportionality analysis, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
@@ -118,7 +119,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers eleven kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers twelve kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -133,6 +134,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change, every object that would be created and every described effect that would be recorded as pending work, or the reasons it would fail |
 | Track runs | The background runs on objects the principal may read: each run's status and progress, and its outcome once it ends |
 | Notifications | The principal's notifications, newest first, with which are unread; and marking them read |
+| Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -172,6 +174,14 @@ A database server can later hold the current state for larger data or several ga
 - **Results.** A worker reads and writes the graph only through the gateway, as the platform's background worker, acting on behalf of the person who started the run. Its result is a commit like any other: validated against every shape, recorded with PROV-O provenance, and refused whole if any shape fails, which fails the run with the reasons. The result and the run's end are written in one journal entry, so a result is never applied twice.
 - **Restarts.** A run that had not ended when the gateway stopped starts again when the gateway restarts.
 - **Notifications.** When a run ends, the person who started it is notified: what ran, on which object, and what it found or why it failed. A notification belongs to its recipient; nobody else sees it. Notifications and their read state are kept in the graph and the journal.
+
+**Generated drafts.** A method that produces a draft, such as a case narrative, declares a **drafting** effect: the property the accepted text fills, the instructions for the model, and the linked objects the model may draw on. The instructions are part of the ontology, so they are versioned and reviewed with it.
+
+- **Connected models.** The gateway drafts only with a model the deployment connects, through a credential held by the deployment, never by the page or the code. Without one, a drafting method is refused with that reason. A method marked as needing a model that declares no drafting effect the platform can run is refused too. The platform never writes a stand-in draft.
+- **What the model sees.** Only what the principal may read of the object and its declared links, read through the gateway as the principal. Hidden properties stay hidden, unreadable types are left out, and reads of personal data are recorded in the audit trail as the principal's. Records reach the model as data, apart from its instructions, and nothing in a record is followed as an instruction.
+- **The draft is recorded before it is shown.** The record holds the method, the object, who asked and in which role, the model that wrote it as the provider reports it, SHA-256 fingerprints of the instructions and of the records given, the objects given, the time and the text. A draft changes nothing on the object.
+- **A person decides.** Accepting commits the method with the draft's text or the person's edit of it. The commit records which draft it came from and whether it was edited, and the person who accepted it is accountable for the text. Discarding records that the draft was discarded. A draft is decided once. Agents may ask for drafts; only a person accepts or discards one.
+- **Failures.** When the model declines or cannot be reached, the reasons are returned and nothing is recorded.
 
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
 
@@ -350,6 +360,9 @@ To resolve in future versions of this spec.
 - Which identity provider authenticates people and agents, and how does it authenticate a person at the moment of signing?
 - How are background runs scheduled, as well as started by a person, and who is notified of a scheduled run's outcome?
 - Should workers run outside the gateway process, so long computations never delay commits?
+- How is a drafting model validated for its intended use, and how are its instructions changed under change control?
+- Where may a drafting model process records: which providers, regions and retention terms satisfy each domain's privacy obligations?
+- Should a draft expire, or be refused on acceptance, when its object has changed since it was written?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
@@ -380,3 +393,4 @@ To resolve in future versions of this spec.
 | 0.15 | 2026-11-11 | Previews and commits name the described effects they record as pending work. |
 | 0.16 | 2026-11-11 | Added electronic signatures to the gateway contract (section 3.4): the principal signs, never an agent; name, time and meaning bound to the commit; development signatures by typed name, clearly not valid, until an identity provider exists. |
 | 0.17 | 2026-11-11 | Added background runs to the gateway contract (section 3.4): started by a commit, finished by a platform worker acting through the gateway, results committed and journaled once, restarted after a restart, and the starter notified. Analyses join the ontology's expressions (section 3.1). The gateway answers Track runs and Notifications. Two open questions. |
+| 0.18 | 2026-11-12 | Added generated drafts to the gateway contract (section 3.4): drafting effects declared in the ontology, connected models only and never a stand-in, the model sees only what the principal may read, every draft recorded with its model and fingerprints, and a person accepts, edits or discards it. Drafting joins the ontology's expressions (section 3.1). The gateway answers Drafts. Three open questions. |

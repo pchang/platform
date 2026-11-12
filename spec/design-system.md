@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.12. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.17, sections 3.6, 5.1, 5.4 and 7.
+Version 0.13. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.18, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -201,6 +201,14 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 4. The final button is named for the method and stays disabled until the typed name matches. Back returns to Review. Cancel closes without changing anything.
 5. After the commit, To do returns with the success Alert, which says the change was signed and by whom.
 
+**Review a draft, step by step:**
+
+1. The method's button on a card opens the pattern in place of the view, titled with the method and the object.
+2. The gateway is asked for a draft at once. While the model writes, a spinner says it is drafting and with which model.
+3. The draft appears under a label saying it is a generated draft, not yet reviewed (rule 5), with the model that wrote it, when, and the objects it was given. If no model is connected, or the model declines, the reasons appear instead.
+4. **Accept** (primary) commits the method with the draft's text. **Edit** makes the text editable; Accept then commits the edited text, and the outcome says it was edited. **Discard** records the draft as discarded. **Back** returns without deciding, and the draft is never used.
+5. After Accept or Discard, the view returns with an Alert: what changed, who accepted it and that it came from a generated draft, or that the draft was discarded.
+
 **Start and track, step by step:**
 
 1. The method's button on a card opens a small modal, titled with the method and the object.
@@ -245,7 +253,7 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 - `action` names an ontology method. The gateway checks it again on commit.
 - `because` records why a node is there. It powers "why am I seeing this" (platform spec 5.4).
 - `field` binds a form control to one input of the method being composed, by the input's name. The renderer keeps the value; the view spec never holds it.
-- `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything.
+- `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything, `edit` makes generated text editable, and `discard` records a draft as discarded.
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
@@ -305,3 +313,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.10 | 2026-11-11 | Compare and decide specified step by step. Previews show pending work as later work. |
 | 0.11 | 2026-11-11 | Review and sign specified step by step: a Wizard with Review and Sign steps. |
 | 0.12 | 2026-11-11 | Start and track specified step by step: a modal to start, then the run's progress and outcome. Notifications opens a notification drawer with an unread count. Object list cards offer the methods the person can run now and show runs in progress. Closed the question of what notifications open. |
+| 0.13 | 2026-11-12 | Review a draft specified step by step: a page that asks for the draft at once, shows it marked as generated with its model and sources, then Accept, Edit, Discard or Back. The view spec gains the `edit` and `discard` intents. |
