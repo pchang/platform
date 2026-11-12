@@ -558,6 +558,11 @@ lst:AdverseEventReporting-reportedToSafety a skos:Concept ;
   skos:prefLabel "reported to safety" ;
   p:order 2 .
 
+lst:AdverseEventReporting-reconciled a skos:Concept ;
+  skos:inScheme lst:AdverseEventReporting ;
+  skos:prefLabel "reconciled" ;
+  p:order 3 .
+
 lst:SafetyCaseWorkflow a skos:ConceptScheme ;
   skos:prefLabel "Safety Case workflow" ;
   skos:definition "The values of the workflow dimension of a safety case." .

@@ -617,6 +617,13 @@ export class Gateway {
       }
     }
 
+    // Inputs recorded as properties: on the objects the method created, or else on the object itself.
+    for (const { input, property } of this.q(`SELECT ?input ?property WHERE { <${method}> p:input ?input . ?input p:recordedAs ?property }`)) {
+      const value = resolvedInputs.get(input);
+      if (!value) continue;
+      for (const target of created.length ? created : [object]) this.set(work, target, property, value, changes);
+    }
+
     // 5. Validate the changed copy against every shape. Any violation discards it.
     work.dataset = defaultGraphDataset(work.store);
     const problems = await validateData(work);

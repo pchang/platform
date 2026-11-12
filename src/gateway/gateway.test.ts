@@ -66,7 +66,7 @@ describe('reads', () => {
 
   it('finds objects by type and state', () => {
     const open = withSeed().find(ben, ls('DataQuery'), { [ls('dataQueryStatus')]: lst('DataQueryStatus-open') });
-    expect(open.map((q) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
+    expect(open.map((q) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03']);
   });
 });
 

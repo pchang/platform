@@ -125,6 +125,12 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect([0, 1, 2, 3, 4, 7].map(stageColor)).toEqual([1, 2, 3, 4, 5, 5].map((n) => `var(--pf-t--chart--color--blue--${n}00)`));
   });
 
+  it('labels a deadline already past as overdue, a danger, and one to come as due, a warning', () => {
+    const json = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today }));
+    expect(json).toContain('{"component":"Label","props":{"label":"Overdue since Nov 10, 2026","status":"danger"}}');
+    expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
+  });
+
   it('has no summary when nothing is waiting', () => {
     expect(JSON.stringify(buildTodoView([], 'Ben Okafor'))).not.toContain('At a glance');
   });

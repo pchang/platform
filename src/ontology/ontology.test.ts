@@ -192,8 +192,8 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(35);
-    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(35);
+    expect(count).toBe(43);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(43);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {

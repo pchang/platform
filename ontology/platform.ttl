@@ -660,6 +660,12 @@ p:needsModel a rdf:Property ;
   rdfs:domain p:Method ;
   rdfs:range xsd:boolean .
 
+p:recordedAs a rdf:Property ;
+  rdfs:label "recorded as" ;
+  rdfs:comment "When a creation runs, the input's value is recorded on the new object with this property; for a state change, on the object itself." ;
+  rdfs:domain p:Input ;
+  rdfs:range rdf:Property .
+
 p:draftsProperty a rdf:Property ;
   rdfs:label "drafts property" ;
   rdfs:comment "The property the accepted text of a drafting effect fills." ;

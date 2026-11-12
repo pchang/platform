@@ -31,7 +31,7 @@ test('gives each person the navigation and To do of their own work', async ({ pa
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
 
   await actAs(page, 'Ben Okafor');
-  expect(await todoCards(page)).toEqual(['AE-003']);
+  expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'Q-04', 'Q-05', 'Q-06']);
   await expect(nav.getByText('Clinical Development')).toBeVisible();
   await expect(nav.getByText('Safety and Regulatory')).toHaveCount(0);
   await expect(nav.getByText('Scientific Innovation')).toHaveCount(0);
@@ -40,6 +40,33 @@ test('gives each person the navigation and To do of their own work', async ({ pa
   expect(await todoCards(page)).toEqual(['B-002', 'QE-1']);
   await expect(nav.getByText('Scientific Innovation')).toBeVisible();
   await expect(nav.getByText('Clinical Development')).toHaveCount(0);
+});
+
+test('gives the Clinical Research Coordinator visits by date and the Clinical Research Associate records to verify', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await todoCards(page);
+
+  await actAs(page, 'Sam Whitfield');
+  const visits = await todoCards(page);
+  expect(visits.slice(0, 3)).toEqual(['V-01-3', 'V-02-3', 'V-03-3']);
+  expect(visits.slice(-5)).toEqual(['PT-11', 'PT-12', 'Q-01', 'Q-02', 'Q-03']);
+  await expect(page.getByText('Overdue since Nov 3, 2026')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Visits by stage' })).toBeVisible();
+
+  // Completing a visit takes it off the list.
+  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: 'V-01-3', exact: true }) });
+  await card.getByRole('button', { name: 'Complete visit' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Complete visit V-01-3' });
+  await expect(dialog.getByText('scheduled → completed')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Complete visit' }).click();
+  await expect(page.getByText('Complete visit done on V-01-3')).toBeVisible();
+  expect(await todoCards(page)).not.toContain('V-01-3');
+
+  await actAs(page, 'Priya Natarajan');
+  const records = await todoCards(page);
+  expect(records.slice(0, 2)).toEqual(['AE-005', 'AE-004']);
+  expect(records.filter((id) => id.startsWith('DR-'))).toHaveLength(8);
 });
 
 test('opens a list of objects from the navigation', async ({ page }) => {

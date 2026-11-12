@@ -35,7 +35,7 @@ describe('interaction archetypes (platform spec 5.4)', () => {
 
   it('give every method exactly the archetype the domain spec lists', () => {
     const listed = table(read('domain-life-sciences.md'), '### Interaction archetypes');
-    expect(listed).toHaveLength(35);
+    expect(listed).toHaveLength(43);
     for (const [method, on, archetype] of listed) {
       const iri = select(graph.store, `SELECT ?m WHERE { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo/rdfs:label "${on}" }`)[0]?.m;
       expect(iri, method).toBeDefined();

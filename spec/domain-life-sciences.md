@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.12. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.18.
+Version 0.13. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.19.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -83,10 +83,10 @@ Covers a clinical trial from design to locked data.
 | Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
 | Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: unassigned, assigned. Arm visibility: hidden, revealed. The assigned arm itself is hidden while the study is blinded (rule 2). |
-| Visit | A scheduled encounter with a patient | Status: scheduled, completed, missed. |
-| Data Record | A captured data point (lab value, vital sign, diary entry, device reading) | Entry: entered, verified. Source: site, patient, device, health record. |
+| Visit | A scheduled encounter with a patient. Has the date it is scheduled for, a deadline, and why it was missed if it was | Status: scheduled, completed, missed. |
+| Data Record | A captured data point (lab value, vital sign, diary entry, device reading), with its value | Entry: entered, verified. Source: site, patient, device, health record. |
 | Data Query | A question raised about a Data Record | Status: open, answered, closed. |
-| Adverse Event | Something harmful that happened to a patient during the study | Entry: entered, verified. Seriousness: non-serious, serious. Outcome: ongoing, resolved. Reporting: not reported, reported to safety. |
+| Adverse Event | Something harmful that happened to a patient during the study, with the site's verbatim term | Entry: entered, verified. Seriousness: non-serious, serious. Outcome: ongoing, resolved. Reporting: not reported, reported to safety, reconciled. |
 
 ### 3.2 Relationships
 
@@ -103,10 +103,18 @@ Covers a clinical trial from design to locked data.
 |---|---|---|---|---|
 | Consent | Patient | eConsent record | Enrollment is screened | Enrollment: consented |
 | Randomize | Patient | None | Enrollment is consented, study is enrolling | Enrollment: randomized. Arm: assigned |
+| Complete visit | Visit | None | Status is scheduled | Status: completed |
+| Record missed visit | Visit | Reason | Status is scheduled | Status: missed. Records the reason |
+| Record data | Visit | Value, source | Status is completed | Creates a Data Record in entered, captured at the visit, with the value |
+| Record adverse event | Patient | What happened, seriousness | Enrollment is randomized or later | Creates an Adverse Event in entered, ongoing, not reported, with the site's words as its verbatim term |
+| Verify data record | Data Record | None | Entry is entered, and every query on it is closed | Entry: verified (source data verification; rule 4 then applies) |
+| Verify adverse event | Adverse Event | None | Entry is entered | Entry: verified (source data verification) |
 | Raise query | Data Record | Question | Entry is entered | Creates a Data Query in open |
 | Answer query | Data Query | Answer | Status is open | Status: answered |
 | Close query | Data Query | None | Status is answered | Status: closed |
+| Re-query | Data Query | Why the answer does not resolve it | Status is answered | Status: open |
 | Report to safety | Adverse Event | None | Not reported | Creates a Safety Case (cross-domain). Reporting: reported to safety |
+| Reconcile adverse event | Adverse Event | None | Reported to safety, and a Safety Case originates from it | Reporting: reconciled. The person confirms the event and its case agree: seriousness, dates and outcome (SAE reconciliation) |
 | Unblind patient | Patient | Justification | Study is blinded, arm is hidden, and rule 2 allows it | Arm visibility: revealed, for this patient only. Logged with its justification |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
 
@@ -189,7 +197,9 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
 | Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See patient-level clinical data |
-| Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise and close queries, report adverse events to safety, lock studies | See unblinded arms. Change safety assessments |
+| Clinical Research Coordinator | Clinical Development | Run the study well at their site | Consent and randomize patients, complete visits or record them as missed, record data and adverse events, answer queries | Verify data. Close queries. See unblinded arms |
+| Clinical Research Associate | Clinical Development | Make sure site data match their sources | Verify data records and adverse events against source documents, raise queries | Enter or change site data. Answer queries. See unblinded arms |
+| Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise, close and re-query queries, report adverse events to safety and reconcile them with their safety cases, lock studies | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
 
@@ -203,9 +213,9 @@ The same object must look different to each persona. A Batch is a production rec
 
 These make To do work for this domain (platform spec section 5.1).
 
-- **On-demand methods**, which a person chooses to run rather than work waiting: Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
+- **On-demand methods**, which a person chooses to run rather than work waiting: Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
 - **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
-- **Deadlines:** a submission's due date.
+- **Deadlines:** a submission's due date, and the date a visit is scheduled for.
 
 ### Interaction archetypes
 
@@ -222,6 +232,10 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Generate analogs | Compound | Review a draft |
 | Generate narrative | Safety Case | Review a draft |
 | Answer query | Data Query | Fill in |
+| Re-query | Data Query | Fill in |
+| Record adverse event | Patient | Fill in |
+| Record data | Visit | Fill in |
+| Record missed visit | Visit | Fill in |
 | Assess | Safety Case | Fill in |
 | Assign CAPA | Quality Event | Fill in |
 | Confirm signal | Signal | Fill in |
@@ -241,6 +255,10 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Close case | Safety Case | Confirm |
 | Close quality event | Quality Event | Confirm |
 | Close query | Data Query | Confirm |
+| Complete visit | Visit | Confirm |
+| Reconcile adverse event | Adverse Event | Confirm |
+| Verify adverse event | Adverse Event | Confirm |
+| Verify data record | Data Record | Confirm |
 | Evaluate signal | Signal | Confirm |
 | Lock study | Study | Confirm |
 | Prepare expedited report | Safety Case | Confirm |
@@ -372,13 +390,15 @@ Small and fictional. Used for development and automated testing, and enough to r
 
 - One research program with 5 compounds, including 1 candidate and 2 analogs.
 - 1 formulation of the candidate, 1 validated process and 3 batches. One batch has high deviation risk.
-- 1 blinded Phase II study at 3 sites with 12 patients, 2 arms and about 40 data records, 4 open queries.
-- 3 adverse events, 1 of them serious and unexpected.
+- 1 blinded Phase II study, enrolling, at 3 sites with 12 patients and 2 arms: 10 randomized, 1 consented, 1 screened.
+- 30 visits: 2 completed for each randomized patient, and a third scheduled around November 12, 2026, two of them overdue.
+- 40 data records: 14 entered and awaiting source data verification, the rest verified. 8 queries: 3 open, 3 answered, 2 closed.
+- 5 adverse events: 2 reported to safety and awaiting reconciliation, 1 serious and not yet reported (J1), and 2 new from the site awaiting verification, one of them serious.
 - 6 safety cases, including 1 duplicate pair, linked to 1 investigational product, each coded with its reactions.
 - 1 approved product, the comparator for signal detection, with 20 closed historical cases. All are post-market reports, so they originate from neither a trial nor an inquiry in the seed.
 - 1 detected signal aggregating 3 cases.
 - 1 open quality event and 1 submission in draft.
-- Four people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
+- Six people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
 - One external agent, a contract research organization's, for the External agent journey.
 
 All names, compounds, sites and people are invented.
@@ -406,7 +426,9 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 - When a later run finds new cases for a reaction that already has a Signal, should it add them to that Signal?
 - On what schedule does signal detection run, and who is notified of a scheduled run's outcome?
 - Which systems of record does each domain integrate first?
-- Who runs Sign experiment, Invalidate result, Consent, Randomize and Start CAPA? No persona in section 6 does yet.
+- Who runs Sign experiment, Invalidate result and Start CAPA? No persona in section 6 does yet.
+- How are a Clinical Research Coordinator and a Clinical Research Associate limited to their own sites? Like the external agent, this needs scoped permissions (platform spec section 3.3).
+- Should a visit's window, rather than a single date, set its deadline, as protocols define visit windows?
 - How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
 - Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, running a simulation model, generating analogs and suggesting follow-up. Drafting a narrative is now declared, as a drafting effect, and detecting signals as a disproportionality analysis (platform spec section 3.4). The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
@@ -428,3 +450,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.10 | 2026-11-11 | The meaning of each signed method's signature. |
 | 0.11 | 2026-11-11 | Cases and signals carry coded reactions. Added rule 7, signal detection by disproportionality with Evans criteria; Run signal detection runs it in the background. Run simulation is refused until a model is connected. The seed adds an approved comparator product with 20 historical cases. Four open questions. |
 | 0.12 | 2026-11-12 | Generate narrative is declared as a drafting effect with its instructions; accepting the draft sets the case's narrative. Generate analogs is refused until a generative chemistry model is connected. |
+| 0.13 | 2026-11-12 | Added the Clinical Research Coordinator and Clinical Research Associate personas. New clinical methods: Complete visit, Record missed visit, Record data, Record adverse event, Verify data record, Verify adverse event, Re-query and Reconcile adverse event. Visits are scheduled with deadlines; adverse events carry verbatim terms and can be reconciled. The seed fleshes out clinical work for each clinical role. Two open questions. |

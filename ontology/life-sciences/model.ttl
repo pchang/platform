@@ -562,6 +562,23 @@ ls:dueOn a owl:DatatypeProperty ;
   rdfs:comment "The date the submission is due." ;
   p:isDeadline true .
 
+ls:scheduledOn a owl:DatatypeProperty ;
+  rdfs:label "scheduled on" ;
+  rdfs:comment "The date the visit is scheduled for. A deadline until the visit is completed or missed." ;
+  p:isDeadline true .
+
+ls:recordedValue a owl:DatatypeProperty ;
+  rdfs:label "value" ;
+  rdfs:comment "The value captured, as recorded at the site." .
+
+ls:verbatimTerm a owl:DatatypeProperty ;
+  rdfs:label "verbatim term" ;
+  rdfs:comment "The event as the site reported it, in its own words, before coding." .
+
+ls:missedReason a owl:DatatypeProperty ;
+  rdfs:label "reason missed" ;
+  rdfs:comment "Why the visit did not take place." .
+
 ls:preparedBy a owl:ObjectProperty ;
   rdfs:label "prepared by" ;
   rdfs:comment "The person who prepared the submission." .
@@ -864,9 +881,21 @@ lsh:Visit-visitFor a sh:PropertyShape ;
   sh:class ls:Patient ;
   sh:name "for" .
 
+lsh:Visit-scheduledOn a sh:PropertyShape ;
+  sh:path ls:scheduledOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "scheduled on" .
+
+lsh:Visit-missedReason a sh:PropertyShape ;
+  sh:path ls:missedReason ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "reason missed" .
+
 lsh:Visit a sh:NodeShape ;
   sh:targetClass ls:Visit ;
-  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor .
+  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-scheduledOn, lsh:Visit-missedReason .
 
 lsh:DataRecord-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -890,9 +919,15 @@ lsh:DataRecord-capturedAt a sh:PropertyShape ;
   sh:class ls:Visit ;
   sh:name "captured at" .
 
+lsh:DataRecord-recordedValue a sh:PropertyShape ;
+  sh:path ls:recordedValue ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "value" .
+
 lsh:DataRecord a sh:NodeShape ;
   sh:targetClass ls:DataRecord ;
-  sh:property lsh:DataRecord-identifier, lsh:DataRecord-entry, lsh:DataRecord-source, lsh:DataRecord-capturedAt .
+  sh:property lsh:DataRecord-identifier, lsh:DataRecord-entry, lsh:DataRecord-source, lsh:DataRecord-capturedAt, lsh:DataRecord-recordedValue .
 
 lsh:DataQuery-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -939,7 +974,7 @@ lsh:AdverseEvent-outcome a sh:PropertyShape ;
 
 lsh:AdverseEvent-reporting a sh:PropertyShape ;
   sh:path ls:adverseEventReporting ;
-  sh:in ( lst:AdverseEventReporting-notReported lst:AdverseEventReporting-reportedToSafety ) ;
+  sh:in ( lst:AdverseEventReporting-notReported lst:AdverseEventReporting-reportedToSafety lst:AdverseEventReporting-reconciled ) ;
   sh:maxCount 1 ;
   sh:name "Reporting" .
 
@@ -948,9 +983,15 @@ lsh:AdverseEvent-experiencedBy a sh:PropertyShape ;
   sh:class ls:Patient ;
   sh:name "experienced by" .
 
+lsh:AdverseEvent-verbatimTerm a sh:PropertyShape ;
+  sh:path ls:verbatimTerm ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "verbatim term" .
+
 lsh:AdverseEvent a sh:NodeShape ;
   sh:targetClass ls:AdverseEvent ;
-  sh:property lsh:AdverseEvent-identifier, lsh:AdverseEvent-entry, lsh:AdverseEvent-seriousness, lsh:AdverseEvent-outcome, lsh:AdverseEvent-reporting, lsh:AdverseEvent-experiencedBy .
+  sh:property lsh:AdverseEvent-identifier, lsh:AdverseEvent-entry, lsh:AdverseEvent-seriousness, lsh:AdverseEvent-outcome, lsh:AdverseEvent-reporting, lsh:AdverseEvent-experiencedBy, lsh:AdverseEvent-verbatimTerm .
 
 lsh:SafetyCase-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;

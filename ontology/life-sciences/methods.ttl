@@ -223,6 +223,120 @@ ls:Randomize a p:Method ;
   p:effect ls:Randomize-effect3 ;
   p:governedBy ls:Blinding .
 
+ls:CompleteVisit-effect1 a p:StateChange ;
+  p:dimension ls:visitStatus ;
+  p:value lst:VisitStatus-completed .
+
+ls:CompleteVisit a p:Method ;
+  rdfs:label "Complete visit" ;
+  rdfs:comment "Records that a scheduled visit took place." ;
+  p:appliesTo ls:Visit ;
+  p:precondition lsh:CompleteVisit-pre ;
+  p:effect ls:CompleteVisit-effect1 .
+
+ls:RecordMissedVisit-reason a p:Input ;
+  p:inputName "reason" ;
+  rdfs:label "Reason" ;
+  p:order 1 ;
+  p:datatype xsd:string ;
+  p:recordedAs ls:missedReason .
+
+ls:RecordMissedVisit-effect1 a p:StateChange ;
+  p:dimension ls:visitStatus ;
+  p:value lst:VisitStatus-missed .
+
+ls:RecordMissedVisit a p:Method ;
+  rdfs:label "Record missed visit" ;
+  rdfs:comment "Records that a scheduled visit did not take place, and why." ;
+  p:appliesTo ls:Visit ;
+  p:input ls:RecordMissedVisit-reason ;
+  p:precondition lsh:RecordMissedVisit-pre ;
+  p:effect ls:RecordMissedVisit-effect1 .
+
+ls:RecordData-value a p:Input ;
+  p:inputName "value" ;
+  rdfs:label "Value" ;
+  p:order 1 ;
+  p:datatype xsd:string ;
+  p:recordedAs ls:recordedValue .
+
+ls:RecordData-source a p:Input ;
+  p:inputName "source" ;
+  rdfs:label "Source" ;
+  p:order 2 ;
+  p:valuesFrom lst:DataRecordSource .
+
+ls:RecordData-effect1 a p:Creation ;
+  p:createsType ls:DataRecord ;
+  p:linkedBy ls:capturedAt ;
+  p:initialState lst:DataRecordEntry-entered ;
+  p:initialFromInput ls:RecordData-source .
+
+ls:RecordData a p:Method ;
+  rdfs:label "Record data" ;
+  rdfs:comment "Captures a data point at a completed visit." ;
+  p:appliesTo ls:Visit ;
+  p:input ls:RecordData-value ;
+  p:input ls:RecordData-source ;
+  p:precondition lsh:RecordData-pre ;
+  p:effect ls:RecordData-effect1 ;
+  p:onDemand true .
+
+ls:RecordAdverseEvent-verbatimTerm a p:Input ;
+  p:inputName "verbatimTerm" ;
+  rdfs:label "What happened" ;
+  p:order 1 ;
+  p:datatype xsd:string ;
+  p:recordedAs ls:verbatimTerm .
+
+ls:RecordAdverseEvent-seriousness a p:Input ;
+  p:inputName "seriousness" ;
+  rdfs:label "Seriousness" ;
+  p:order 2 ;
+  p:valuesFrom lst:AdverseEventSeriousness .
+
+ls:RecordAdverseEvent-effect1 a p:Creation ;
+  p:createsType ls:AdverseEvent ;
+  p:linkedBy ls:experiencedBy ;
+  p:initialState lst:AdverseEventEntry-entered ;
+  p:initialState lst:AdverseEventOutcome-ongoing ;
+  p:initialState lst:AdverseEventReporting-notReported ;
+  p:initialFromInput ls:RecordAdverseEvent-seriousness .
+
+ls:RecordAdverseEvent a p:Method ;
+  rdfs:label "Record adverse event" ;
+  rdfs:comment "Records something harmful that happened to a patient in the study." ;
+  p:appliesTo ls:Patient ;
+  p:input ls:RecordAdverseEvent-verbatimTerm ;
+  p:input ls:RecordAdverseEvent-seriousness ;
+  p:precondition lsh:RecordAdverseEvent-pre ;
+  p:effect ls:RecordAdverseEvent-effect1 ;
+  p:onDemand true .
+
+ls:VerifyDataRecord-effect1 a p:StateChange ;
+  p:dimension ls:dataRecordEntry ;
+  p:value lst:DataRecordEntry-verified .
+
+ls:VerifyDataRecord a p:Method ;
+  rdfs:label "Verify data record" ;
+  rdfs:comment "Confirms a data record against its source document (source data verification)." ;
+  p:appliesTo ls:DataRecord ;
+  p:precondition lsh:VerifyDataRecord-pre, lsh:VerifyDataRecord-pre-noOpenQuery ;
+  p:effect ls:VerifyDataRecord-effect1 ;
+  p:governedBy ls:DataIntegrity .
+
+ls:VerifyAdverseEvent-effect1 a p:StateChange ;
+  p:dimension ls:adverseEventEntry ;
+  p:value lst:AdverseEventEntry-verified .
+
+ls:VerifyAdverseEvent a p:Method ;
+  rdfs:label "Verify adverse event" ;
+  rdfs:comment "Confirms an adverse event against its source documents (source data verification)." ;
+  p:appliesTo ls:AdverseEvent ;
+  p:precondition lsh:VerifyAdverseEvent-pre ;
+  p:effect ls:VerifyAdverseEvent-effect1 ;
+  p:governedBy ls:DataIntegrity .
+
 ls:RaiseQuery-question a p:Input ;
   p:inputName "question" ;
   rdfs:label "Question" ;
@@ -271,6 +385,35 @@ ls:CloseQuery a p:Method ;
   p:appliesTo ls:DataQuery ;
   p:precondition lsh:CloseQuery-pre ;
   p:effect ls:CloseQuery-effect1 .
+
+ls:Requery-reason a p:Input ;
+  p:inputName "reason" ;
+  rdfs:label "Why the answer does not resolve it" ;
+  p:order 1 ;
+  p:datatype xsd:string .
+
+ls:Requery-effect1 a p:StateChange ;
+  p:dimension ls:dataQueryStatus ;
+  p:value lst:DataQueryStatus-open .
+
+ls:Requery a p:Method ;
+  rdfs:label "Re-query" ;
+  rdfs:comment "Reopens an answered query whose answer does not resolve it, saying why." ;
+  p:appliesTo ls:DataQuery ;
+  p:input ls:Requery-reason ;
+  p:precondition lsh:Requery-pre ;
+  p:effect ls:Requery-effect1 .
+
+ls:ReconcileAdverseEvent-effect1 a p:StateChange ;
+  p:dimension ls:adverseEventReporting ;
+  p:value lst:AdverseEventReporting-reconciled .
+
+ls:ReconcileAdverseEvent a p:Method ;
+  rdfs:label "Reconcile adverse event" ;
+  rdfs:comment "Confirms that a reported event and its safety case agree: seriousness, dates and outcome (SAE reconciliation)." ;
+  p:appliesTo ls:AdverseEvent ;
+  p:precondition lsh:ReconcileAdverseEvent-pre, lsh:ReconcileAdverseEvent-pre-hasCase ;
+  p:effect ls:ReconcileAdverseEvent-effect1 .
 
 ls:ReportToSafety-effect1 a p:Creation ;
   p:createsType ls:SafetyCase ;
@@ -890,6 +1033,77 @@ lsh:Randomize-pre a sh:NodeShape ;
   rdfs:label "Precondition of Randomize" ;
   sh:property lsh:Randomize-pre-enrollment .
 
+lsh:CompleteVisit-pre-status a sh:PropertyShape ;
+  sh:path ls:visitStatus ;
+  sh:hasValue lst:VisitStatus-scheduled ;
+  sh:minCount 1 ;
+  sh:message "The visit is not scheduled" .
+
+lsh:CompleteVisit-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Complete visit" ;
+  sh:property lsh:CompleteVisit-pre-status .
+
+lsh:RecordMissedVisit-pre-status a sh:PropertyShape ;
+  sh:path ls:visitStatus ;
+  sh:hasValue lst:VisitStatus-scheduled ;
+  sh:minCount 1 ;
+  sh:message "The visit is not scheduled" .
+
+lsh:RecordMissedVisit-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Record missed visit" ;
+  sh:property lsh:RecordMissedVisit-pre-status .
+
+lsh:RecordData-pre-status a sh:PropertyShape ;
+  sh:path ls:visitStatus ;
+  sh:hasValue lst:VisitStatus-completed ;
+  sh:minCount 1 ;
+  sh:message "The visit has not taken place" .
+
+lsh:RecordData-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Record data" ;
+  sh:property lsh:RecordData-pre-status .
+
+lsh:RecordAdverseEvent-pre-enrollment a sh:PropertyShape ;
+  sh:path ls:patientEnrollment ;
+  sh:in ( lst:PatientEnrollment-randomized lst:PatientEnrollment-completed lst:PatientEnrollment-withdrawn ) ;
+  sh:minCount 1 ;
+  sh:message "The patient has not been randomized" .
+
+lsh:RecordAdverseEvent-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Record adverse event" ;
+  sh:property lsh:RecordAdverseEvent-pre-enrollment .
+
+lsh:VerifyDataRecord-pre-entry a sh:PropertyShape ;
+  sh:path ls:dataRecordEntry ;
+  sh:hasValue lst:DataRecordEntry-entered ;
+  sh:minCount 1 ;
+  sh:message "The record is already verified" .
+
+lsh:VerifyDataRecord-pre-noOpenQuery a sh:NodeShape ;
+  rdfs:label "The record has a query that is not closed" ;
+  sh:sparql lsh:VerifyDataRecord-pre-noOpenQuery-query .
+lsh:VerifyDataRecord-pre-noOpenQuery-query a sh:SPARQLConstraint ;
+  sh:message "The record has a query that is not closed" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      ?q ls:raisedOn $this ; ls:dataQueryStatus ?s . FILTER(?s != lst:DataQueryStatus-closed)
+    }""" .
+
+lsh:VerifyDataRecord-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Verify data record" ;
+  sh:property lsh:VerifyDataRecord-pre-entry .
+
+lsh:VerifyAdverseEvent-pre-entry a sh:PropertyShape ;
+  sh:path ls:adverseEventEntry ;
+  sh:hasValue lst:AdverseEventEntry-entered ;
+  sh:minCount 1 ;
+  sh:message "The event is already verified" .
+
+lsh:VerifyAdverseEvent-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Verify adverse event" ;
+  sh:property lsh:VerifyAdverseEvent-pre-entry .
+
 lsh:RaiseQuery-pre-entry a sh:PropertyShape ;
   sh:path ls:dataRecordEntry ;
   sh:hasValue lst:DataRecordEntry-entered ;
@@ -919,6 +1133,37 @@ lsh:CloseQuery-pre-status a sh:PropertyShape ;
 lsh:CloseQuery-pre a sh:NodeShape ;
   rdfs:label "Precondition of Close query" ;
   sh:property lsh:CloseQuery-pre-status .
+
+lsh:Requery-pre-status a sh:PropertyShape ;
+  sh:path ls:dataQueryStatus ;
+  sh:hasValue lst:DataQueryStatus-answered ;
+  sh:minCount 1 ;
+  sh:message "The query has not been answered" .
+
+lsh:Requery-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Re-query" ;
+  sh:property lsh:Requery-pre-status .
+
+lsh:ReconcileAdverseEvent-pre-reporting a sh:PropertyShape ;
+  sh:path ls:adverseEventReporting ;
+  sh:hasValue lst:AdverseEventReporting-reportedToSafety ;
+  sh:minCount 1 ;
+  sh:message "The event has not been reported to safety, or is already reconciled" .
+
+lsh:ReconcileAdverseEvent-pre-hasCase a sh:NodeShape ;
+  rdfs:label "No safety case originates from this event" ;
+  sh:sparql lsh:ReconcileAdverseEvent-pre-hasCase-query .
+lsh:ReconcileAdverseEvent-pre-hasCase-query a sh:SPARQLConstraint ;
+  sh:message "No safety case originates from this event" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { ?case ls:originatesFrom $this ; a ls:SafetyCase }
+    }""" .
+
+lsh:ReconcileAdverseEvent-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Reconcile adverse event" ;
+  sh:property lsh:ReconcileAdverseEvent-pre-reporting .
 
 lsh:ReportToSafety-pre-reporting a sh:PropertyShape ;
   sh:path ls:adverseEventReporting ;

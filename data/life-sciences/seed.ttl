@@ -31,6 +31,14 @@ d:person-elena a p:Person ;
   rdfs:label "Elena Kovacs" ;
   p:actsAs ls:QualityLead .
 
+d:person-priya a p:Person ;
+  rdfs:label "Priya Natarajan" ;
+  p:actsAs ls:ClinicalResearchAssociate .
+
+d:person-sam a p:Person ;
+  rdfs:label "Sam Whitfield" ;
+  p:actsAs ls:ClinicalResearchCoordinator .
+
 d:agent-northbridge a p:Person ;
   rdfs:label "Northbridge CRO agent" ;
   p:actsAs ls:ExternalCROAgent ;
@@ -277,347 +285,469 @@ d:PT-12 a ls:Patient ;
   ls:patientEnrollment lst:PatientEnrollment-screened ;
   ls:patientArm lst:PatientArm-unassigned .
 
-# 20 visits and 40 data records. Queries: 4 open, 2 closed.
+# 30 visits: 2 completed per randomized patient, and a third scheduled around 2026-11-12, some overdue.
+# 40 data records from the completed visits: 14 entered and awaiting source data verification, the rest verified.
+# Queries: 3 open (the site answers), 3 answered (data management closes or re-queries), 2 closed.
 
 d:V-01-1 a ls:Visit ;
   ls:identifier "V-01-1" ;
   ls:visitFor d:PT-01 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-09-08"^^xsd:date .
 
 d:DR-001 a ls:DataRecord ;
   ls:identifier "DR-001" ;
   ls:capturedAt d:V-01-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Heart rate 72 bpm" .
 
 d:DR-002 a ls:DataRecord ;
   ls:identifier "DR-002" ;
   ls:capturedAt d:V-01-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "ALT 34 U/L" .
 
 d:V-01-2 a ls:Visit ;
   ls:identifier "V-01-2" ;
   ls:visitFor d:PT-01 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-06"^^xsd:date .
 
 d:DR-003 a ls:DataRecord ;
   ls:identifier "DR-003" ;
   ls:capturedAt d:V-01-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Body weight 71.2 kg" .
 
 d:DR-004 a ls:DataRecord ;
   ls:identifier "DR-004" ;
   ls:capturedAt d:V-01-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Diary: no pain reported" .
 
 d:V-02-1 a ls:Visit ;
   ls:identifier "V-02-1" ;
   ls:visitFor d:PT-02 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-09-15"^^xsd:date .
 
 d:DR-005 a ls:DataRecord ;
   ls:identifier "DR-005" ;
   ls:capturedAt d:V-02-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Step count 6,410" .
 
 d:DR-006 a ls:DataRecord ;
   ls:identifier "DR-006" ;
   ls:capturedAt d:V-02-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "Temperature 36.8 °C" .
 
 d:V-02-2 a ls:Visit ;
   ls:identifier "V-02-2" ;
   ls:visitFor d:PT-02 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-13"^^xsd:date .
 
 d:DR-007 a ls:DataRecord ;
   ls:identifier "DR-007" ;
   ls:capturedAt d:V-02-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Haemoglobin 13.9 g/dL" .
 
 d:DR-008 a ls:DataRecord ;
   ls:identifier "DR-008" ;
   ls:capturedAt d:V-02-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Systolic blood pressure 128 mmHg" .
 
 d:V-03-1 a ls:Visit ;
   ls:identifier "V-03-1" ;
   ls:visitFor d:PT-03 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-09-22"^^xsd:date .
 
 d:DR-009 a ls:DataRecord ;
   ls:identifier "DR-009" ;
   ls:capturedAt d:V-03-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Heart rate 72 bpm" .
 
 d:DR-010 a ls:DataRecord ;
   ls:identifier "DR-010" ;
   ls:capturedAt d:V-03-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "ALT 34 U/L" .
 
 d:V-03-2 a ls:Visit ;
   ls:identifier "V-03-2" ;
   ls:visitFor d:PT-03 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-20"^^xsd:date .
 
 d:DR-011 a ls:DataRecord ;
   ls:identifier "DR-011" ;
   ls:capturedAt d:V-03-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Body weight 71.2 kg" .
 
 d:DR-012 a ls:DataRecord ;
   ls:identifier "DR-012" ;
   ls:capturedAt d:V-03-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Diary: no pain reported" .
 
 d:V-04-1 a ls:Visit ;
   ls:identifier "V-04-1" ;
   ls:visitFor d:PT-04 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-09-29"^^xsd:date .
 
 d:DR-013 a ls:DataRecord ;
   ls:identifier "DR-013" ;
   ls:capturedAt d:V-04-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Step count 6,410" .
 
 d:DR-014 a ls:DataRecord ;
   ls:identifier "DR-014" ;
   ls:capturedAt d:V-04-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "Temperature 36.8 °C" .
 
 d:V-04-2 a ls:Visit ;
   ls:identifier "V-04-2" ;
   ls:visitFor d:PT-04 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-27"^^xsd:date .
 
 d:DR-015 a ls:DataRecord ;
   ls:identifier "DR-015" ;
   ls:capturedAt d:V-04-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Haemoglobin 13.9 g/dL" .
 
 d:DR-016 a ls:DataRecord ;
   ls:identifier "DR-016" ;
   ls:capturedAt d:V-04-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Systolic blood pressure 128 mmHg" .
 
 d:V-05-1 a ls:Visit ;
   ls:identifier "V-05-1" ;
   ls:visitFor d:PT-05 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-06"^^xsd:date .
 
 d:DR-017 a ls:DataRecord ;
   ls:identifier "DR-017" ;
   ls:capturedAt d:V-05-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Heart rate 72 bpm" .
 
 d:DR-018 a ls:DataRecord ;
   ls:identifier "DR-018" ;
   ls:capturedAt d:V-05-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "ALT 34 U/L" .
 
 d:V-05-2 a ls:Visit ;
   ls:identifier "V-05-2" ;
   ls:visitFor d:PT-05 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-03"^^xsd:date .
 
 d:DR-019 a ls:DataRecord ;
   ls:identifier "DR-019" ;
   ls:capturedAt d:V-05-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Body weight 71.2 kg" .
 
 d:DR-020 a ls:DataRecord ;
   ls:identifier "DR-020" ;
   ls:capturedAt d:V-05-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Diary: no pain reported" .
 
 d:V-06-1 a ls:Visit ;
   ls:identifier "V-06-1" ;
   ls:visitFor d:PT-06 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-13"^^xsd:date .
 
 d:DR-021 a ls:DataRecord ;
   ls:identifier "DR-021" ;
   ls:capturedAt d:V-06-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Step count 6,410" .
 
 d:DR-022 a ls:DataRecord ;
   ls:identifier "DR-022" ;
   ls:capturedAt d:V-06-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "Temperature 36.8 °C" .
 
 d:V-06-2 a ls:Visit ;
   ls:identifier "V-06-2" ;
   ls:visitFor d:PT-06 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-10"^^xsd:date .
 
 d:DR-023 a ls:DataRecord ;
   ls:identifier "DR-023" ;
   ls:capturedAt d:V-06-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Haemoglobin 13.9 g/dL" .
 
 d:DR-024 a ls:DataRecord ;
   ls:identifier "DR-024" ;
   ls:capturedAt d:V-06-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Systolic blood pressure 128 mmHg" .
 
 d:V-07-1 a ls:Visit ;
   ls:identifier "V-07-1" ;
   ls:visitFor d:PT-07 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-20"^^xsd:date .
 
 d:DR-025 a ls:DataRecord ;
   ls:identifier "DR-025" ;
   ls:capturedAt d:V-07-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Heart rate 72 bpm" .
 
 d:DR-026 a ls:DataRecord ;
   ls:identifier "DR-026" ;
   ls:capturedAt d:V-07-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "ALT 34 U/L" .
 
 d:V-07-2 a ls:Visit ;
   ls:identifier "V-07-2" ;
   ls:visitFor d:PT-07 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-17"^^xsd:date .
 
 d:DR-027 a ls:DataRecord ;
   ls:identifier "DR-027" ;
   ls:capturedAt d:V-07-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Body weight 71.2 kg" .
 
 d:DR-028 a ls:DataRecord ;
   ls:identifier "DR-028" ;
   ls:capturedAt d:V-07-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Diary: no pain reported" .
 
 d:V-08-1 a ls:Visit ;
   ls:identifier "V-08-1" ;
   ls:visitFor d:PT-08 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-10-27"^^xsd:date .
 
 d:DR-029 a ls:DataRecord ;
   ls:identifier "DR-029" ;
   ls:capturedAt d:V-08-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Step count 6,410" .
 
 d:DR-030 a ls:DataRecord ;
   ls:identifier "DR-030" ;
   ls:capturedAt d:V-08-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "Temperature 36.8 °C" .
 
 d:V-08-2 a ls:Visit ;
   ls:identifier "V-08-2" ;
   ls:visitFor d:PT-08 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-24"^^xsd:date .
 
 d:DR-031 a ls:DataRecord ;
   ls:identifier "DR-031" ;
   ls:capturedAt d:V-08-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Haemoglobin 13.9 g/dL" .
 
 d:DR-032 a ls:DataRecord ;
   ls:identifier "DR-032" ;
   ls:capturedAt d:V-08-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Systolic blood pressure 128 mmHg" .
 
 d:V-09-1 a ls:Visit ;
   ls:identifier "V-09-1" ;
   ls:visitFor d:PT-09 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-03"^^xsd:date .
 
 d:DR-033 a ls:DataRecord ;
   ls:identifier "DR-033" ;
   ls:capturedAt d:V-09-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Heart rate 72 bpm" .
 
 d:DR-034 a ls:DataRecord ;
   ls:identifier "DR-034" ;
   ls:capturedAt d:V-09-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "ALT 34 U/L" .
 
 d:V-09-2 a ls:Visit ;
   ls:identifier "V-09-2" ;
   ls:visitFor d:PT-09 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-12-01"^^xsd:date .
 
 d:DR-035 a ls:DataRecord ;
   ls:identifier "DR-035" ;
   ls:capturedAt d:V-09-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Body weight 71.2 kg" .
 
 d:DR-036 a ls:DataRecord ;
   ls:identifier "DR-036" ;
   ls:capturedAt d:V-09-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Diary: no pain reported" .
 
 d:V-10-1 a ls:Visit ;
   ls:identifier "V-10-1" ;
   ls:visitFor d:PT-10 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-11-10"^^xsd:date .
 
 d:DR-037 a ls:DataRecord ;
   ls:identifier "DR-037" ;
   ls:capturedAt d:V-10-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-patient .
+  ls:dataRecordSource lst:DataRecordSource-patient ;
+  ls:recordedValue "Step count 6,410" .
 
 d:DR-038 a ls:DataRecord ;
   ls:identifier "DR-038" ;
   ls:capturedAt d:V-10-1 ;
   ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-device .
+  ls:dataRecordSource lst:DataRecordSource-device ;
+  ls:recordedValue "Temperature 36.8 °C" .
 
 d:V-10-2 a ls:Visit ;
   ls:identifier "V-10-2" ;
   ls:visitFor d:PT-10 ;
-  ls:visitStatus lst:VisitStatus-completed .
+  ls:visitStatus lst:VisitStatus-completed ;
+  ls:scheduledOn "2026-12-08"^^xsd:date .
 
 d:DR-039 a ls:DataRecord ;
   ls:identifier "DR-039" ;
   ls:capturedAt d:V-10-2 ;
-  ls:dataRecordEntry lst:DataRecordEntry-verified ;
-  ls:dataRecordSource lst:DataRecordSource-healthRecord .
+  ls:dataRecordEntry lst:DataRecordEntry-entered ;
+  ls:dataRecordSource lst:DataRecordSource-healthRecord ;
+  ls:recordedValue "Haemoglobin 13.9 g/dL" .
 
 d:DR-040 a ls:DataRecord ;
   ls:identifier "DR-040" ;
   ls:capturedAt d:V-10-2 ;
   ls:dataRecordEntry lst:DataRecordEntry-entered ;
-  ls:dataRecordSource lst:DataRecordSource-site .
+  ls:dataRecordSource lst:DataRecordSource-site ;
+  ls:recordedValue "Systolic blood pressure 128 mmHg" .
+
+d:V-01-3 a ls:Visit ;
+  ls:identifier "V-01-3" ;
+  ls:visitFor d:PT-01 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-03"^^xsd:date .
+
+d:V-02-3 a ls:Visit ;
+  ls:identifier "V-02-3" ;
+  ls:visitFor d:PT-02 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-09"^^xsd:date .
+
+d:V-03-3 a ls:Visit ;
+  ls:identifier "V-03-3" ;
+  ls:visitFor d:PT-03 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-12"^^xsd:date .
+
+d:V-04-3 a ls:Visit ;
+  ls:identifier "V-04-3" ;
+  ls:visitFor d:PT-04 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-13"^^xsd:date .
+
+d:V-05-3 a ls:Visit ;
+  ls:identifier "V-05-3" ;
+  ls:visitFor d:PT-05 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-14"^^xsd:date .
+
+d:V-06-3 a ls:Visit ;
+  ls:identifier "V-06-3" ;
+  ls:visitFor d:PT-06 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-16"^^xsd:date .
+
+d:V-07-3 a ls:Visit ;
+  ls:identifier "V-07-3" ;
+  ls:visitFor d:PT-07 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-18"^^xsd:date .
+
+d:V-08-3 a ls:Visit ;
+  ls:identifier "V-08-3" ;
+  ls:visitFor d:PT-08 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-21"^^xsd:date .
+
+d:V-09-3 a ls:Visit ;
+  ls:identifier "V-09-3" ;
+  ls:visitFor d:PT-09 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-11-25"^^xsd:date .
+
+d:V-10-3 a ls:Visit ;
+  ls:identifier "V-10-3" ;
+  ls:visitFor d:PT-10 ;
+  ls:visitStatus lst:VisitStatus-scheduled ;
+  ls:scheduledOn "2026-12-02"^^xsd:date .
 
 d:Q-01 a ls:DataQuery ;
   ls:identifier "Q-01" ;
@@ -637,19 +767,30 @@ d:Q-03 a ls:DataQuery ;
 d:Q-04 a ls:DataQuery ;
   ls:identifier "Q-04" ;
   ls:raisedOn d:DR-020 ;
-  ls:dataQueryStatus lst:DataQueryStatus-open .
+  ls:dataQueryStatus lst:DataQueryStatus-answered .
 
 d:Q-05 a ls:DataQuery ;
   ls:identifier "Q-05" ;
   ls:raisedOn d:DR-025 ;
-  ls:dataQueryStatus lst:DataQueryStatus-closed .
+  ls:dataQueryStatus lst:DataQueryStatus-answered .
 
 d:Q-06 a ls:DataQuery ;
   ls:identifier "Q-06" ;
+  ls:raisedOn d:DR-027 ;
+  ls:dataQueryStatus lst:DataQueryStatus-answered .
+
+d:Q-07 a ls:DataQuery ;
+  ls:identifier "Q-07" ;
+  ls:raisedOn d:DR-028 ;
+  ls:dataQueryStatus lst:DataQueryStatus-closed .
+
+d:Q-08 a ls:DataQuery ;
+  ls:identifier "Q-08" ;
   ls:raisedOn d:DR-030 ;
   ls:dataQueryStatus lst:DataQueryStatus-closed .
 
-# 3 adverse events. AE-003 starts J1: serious, verified, not yet reported to safety.
+# 5 adverse events. AE-001 and AE-002 are reported and await reconciliation with their safety cases.
+# AE-003 starts J1: serious, verified, not yet reported to safety. AE-004 and AE-005 are new from the site, not yet verified.
 
 d:AE-001 a ls:AdverseEvent ;
   ls:identifier "AE-001" ;
@@ -657,7 +798,8 @@ d:AE-001 a ls:AdverseEvent ;
   ls:adverseEventEntry lst:AdverseEventEntry-verified ;
   ls:adverseEventSeriousness lst:AdverseEventSeriousness-nonSerious ;
   ls:adverseEventOutcome lst:AdverseEventOutcome-resolved ;
-  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety .
+  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety ;
+  ls:verbatimTerm "Raised liver enzymes at routine labs, no symptoms" .
 
 d:AE-002 a ls:AdverseEvent ;
   ls:identifier "AE-002" ;
@@ -665,7 +807,8 @@ d:AE-002 a ls:AdverseEvent ;
   ls:adverseEventEntry lst:AdverseEventEntry-verified ;
   ls:adverseEventSeriousness lst:AdverseEventSeriousness-nonSerious ;
   ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
-  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety .
+  ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety ;
+  ls:verbatimTerm "Itchy rash on both forearms and nausea after dosing" .
 
 d:AE-003 a ls:AdverseEvent ;
   ls:identifier "AE-003" ;
@@ -673,7 +816,26 @@ d:AE-003 a ls:AdverseEvent ;
   ls:adverseEventEntry lst:AdverseEventEntry-verified ;
   ls:adverseEventSeriousness lst:AdverseEventSeriousness-serious ;
   ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
-  ls:adverseEventReporting lst:AdverseEventReporting-notReported .
+  ls:adverseEventReporting lst:AdverseEventReporting-notReported ;
+  ls:verbatimTerm "Jaundice and raised liver enzymes; admitted to hospital" .
+
+d:AE-004 a ls:AdverseEvent ;
+  ls:identifier "AE-004" ;
+  ls:experiencedBy d:PT-07 ;
+  ls:adverseEventEntry lst:AdverseEventEntry-entered ;
+  ls:adverseEventSeriousness lst:AdverseEventSeriousness-nonSerious ;
+  ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
+  ls:adverseEventReporting lst:AdverseEventReporting-notReported ;
+  ls:verbatimTerm "Headache on the evening of dosing" .
+
+d:AE-005 a ls:AdverseEvent ;
+  ls:identifier "AE-005" ;
+  ls:experiencedBy d:PT-09 ;
+  ls:adverseEventEntry lst:AdverseEventEntry-entered ;
+  ls:adverseEventSeriousness lst:AdverseEventSeriousness-serious ;
+  ls:adverseEventOutcome lst:AdverseEventOutcome-ongoing ;
+  ls:adverseEventReporting lst:AdverseEventReporting-notReported ;
+  ls:verbatimTerm "Fever and cough; admitted to hospital with pneumonia" .
 
 # Safety and Regulatory: 1 investigational product, 4 medical inquiries, 6 safety cases, each coded with its reactions
 

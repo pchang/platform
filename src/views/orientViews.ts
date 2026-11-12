@@ -219,7 +219,11 @@ export function buildTodoView(
   const items = allItems.filter((i) => matchesFilter(i, filter, today));
   const cards = items.map((item) => {
     const status: ViewNode[] = [];
-    if (item.deadline) status.push({ component: 'Label', props: { label: `Due ${formatDate(item.deadline)}`, status: 'warning' } });
+    // A deadline already past says so, as a danger, not a warning.
+    if (item.deadline) {
+      const overdue = daysUntil(item.deadline, today) < 0;
+      status.push({ component: 'Label', props: { label: `${overdue ? 'Overdue since' : 'Due'} ${formatDate(item.deadline)}`, status: overdue ? 'danger' : 'warning' } });
+    }
     if (item.urgency >= 3) status.push({ component: 'Label', props: { label: 'Urgent', status: 'danger' } });
     status.push(...runLabels(item.object, runs));
     const body: ViewNode[][] = [];
