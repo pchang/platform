@@ -5,6 +5,9 @@ import { AppMasthead } from './chrome/AppMasthead';
 import { AppSidebar } from './chrome/AppSidebar';
 import { NotificationsDrawer } from './chrome/NotificationsDrawer';
 import { NotificationsProvider, useNotifications } from './notifications/NotificationsProvider';
+import { ProcessDock } from './chrome/ProcessDock';
+import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
+import { ProcessProvider } from './processes/ProcessProvider';
 import { useRoute } from './routing';
 import { TodoView, TypeView } from './views/OrientViews';
 
@@ -15,7 +18,9 @@ const isWide = () => window.innerWidth >= 1200;
 export function App() {
   return (
     <NotificationsProvider>
-      <AppPage />
+      <ProcessProvider>
+        <AppPage />
+      </ProcessProvider>
     </NotificationsProvider>
   );
 }
@@ -26,6 +31,8 @@ function AppPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(wide);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const { unread } = useNotifications();
+  // A page pattern, such as Compare and decide, takes the view's place while it is in front (design system spec 5.1).
+  const frontIsPage = useFrontIsPage();
 
   return (
     <Page
@@ -49,11 +56,13 @@ function AppPage() {
       mainTabIndex={0}
       isContentFilled
     >
-      <PageSection isFilled aria-label={route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : 'Objects'}>
-        {route.name === 'catalog' && <CatalogPreview />}
-        {route.name === 'todo' && <TodoView />}
-        {route.name === 'type' && <TypeView key={route.type} type={route.type} />}
+      <PageSection isFilled aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : 'Objects'}>
+        {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
+        {!frontIsPage && route.name === 'todo' && <TodoView />}
+        {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
+        <ProcessHost />
       </PageSection>
+      <ProcessDock />
     </Page>
   );
 }

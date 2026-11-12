@@ -17,6 +17,7 @@ import { createMcpServer } from './mcp';
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." }, "draft": { "draft": "...", "text": "..." } }
  *   POST /api/objects/:id/methods/:method/draft     a connected model drafts the method; recorded, changes nothing
+ *   GET  /api/drafts/:draft                  read a draft back, such as /api/drafts/1
  *   POST /api/drafts/:draft/discard          discard a draft, such as /api/drafts/1/discard
  *   GET  /api/runs?object=P-101&active=true  track background runs, optionally on one object, or only those not ended
  *   GET  /api/runs/:run                      one run, such as /api/runs/1
@@ -103,6 +104,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
       }
+      case 'GET drafts/:':
+        return send(res, 200, gateway.getDraft(principal, parts[2]));
       case 'POST drafts/:/discard':
         return send(res, 200, await gateway.discardDraft(principal, parts[2]));
       case 'GET runs':

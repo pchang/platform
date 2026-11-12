@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ViewNode } from '../design-system/catalog';
 import { RefusedError, type CommitResult, type DraftView, type MethodComposition, type ObjectView, type RunView } from '../data/client';
+import type { ProcessRecord, ProcessSnapshot } from '../processes/processes';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import {
@@ -13,6 +14,7 @@ import {
   discardedNotice,
   DRAFT_FIELD,
   PAGE_ARCHETYPES,
+  processProgress,
   SIGNATURE_FIELD,
   type DraftState,
   type PreviewState,
@@ -35,12 +37,21 @@ export function ComposeDialog({
   method,
   onDone,
   onCancel,
+  process,
+  onChange,
+  onMinimize,
 }: {
   object: string;
   method: string;
   onDone: (composition: MethodComposition, result: CommitResult) => void;
   /** Closes without a commit; with a notice when something was still recorded, such as a discarded draft. */
   onCancel: (notice?: ViewNode) => void;
+  /** What was given before the process was set aside, to carry on from (platform spec 5.4, Several at once). */
+  process?: ProcessRecord;
+  /** Reports what has been given and how far along it is, so it can be kept while set aside. */
+  onChange?: (snapshot: Partial<ProcessSnapshot>) => void;
+  /** Sets the process aside in the dock. */
+  onMinimize?: () => void;
 }) {
   const { client, principal } = usePrincipal();
   const [composition, setComposition] = useState<MethodComposition>();
@@ -91,7 +102,8 @@ export function ComposeDialog({
       (c) => {
         if (cancelled) return;
         setComposition(c);
-        setValues(Object.fromEntries(c.inputs.filter((i) => i.default).map((i) => [i.name, i.default!])));
+        // Defaults first, then whatever the person gave before setting the process aside.
+        setValues({ ...Object.fromEntries(c.inputs.filter((i) => i.default).map((i) => [i.name, i.default!])), ...(process?.values ?? {}) });
       },
       (e: unknown) => !cancelled && setError(e instanceof RefusedError ? e.reasons : [String(e)]),
     );
@@ -129,6 +141,28 @@ export function ComposeDialog({
     };
   }, [client, principal, object, method, composition, complete, inputsKey]);
 
+  // A restored Start and track process picks up its run where it is now.
+  useEffect(() => {
+    if (!process?.run) return;
+    let cancelled = false;
+    client.run(principal, process.run).then((r) => {
+      if (cancelled) return;
+      setRun(r);
+      setStarted({ commit: '', changes: [], created: [], pending: [], pendingDescriptions: [], background: [], run: r });
+    }, () => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, principal]);
+
+  // Keep what has been given, and how far along it is, for the dock.
+  useEffect(() => {
+    if (!composition || composition.archetype.label === 'Review a draft') return;
+    onChange?.({ values, run: run?.run, progress: processProgress(composition, state, values, { run }) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composition, values, state, run]);
+
   // Follow the run until it ends (design system spec 5.1, Start and track, steps 4 and 5).
   const runId = run?.run;
   useEffect(() => {
@@ -147,16 +181,16 @@ export function ComposeDialog({
   if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: () => onCancel() }} />;
   if (!composition) return null;
 
-  if (isDraft) return <DraftPage composition={composition} onDone={onDone} onCancel={onCancel} />;
+  if (isDraft) return <DraftPage composition={composition} onDone={onDone} onCancel={onCancel} process={process} onChange={onChange} onMinimize={onMinimize} />;
   if (isPage && !self) return null;
   const isStart = composition.archetype.label === 'Start and track';
   const view = isPage
-    ? buildCompareView(composition, state, self!, other, submitting)
+    ? buildCompareView(composition, state, self!, other, submitting, Boolean(onMinimize))
     : isStart
-      ? buildStartView(composition, state, run, submitting)
+      ? buildStartView(composition, state, run, submitting, Boolean(onMinimize))
       : composition.signature
-      ? buildSignView(composition, state, values, submitting)
-      : buildComposeView(composition, state, submitting);
+      ? buildSignView(composition, state, values, submitting, Boolean(onMinimize))
+      : buildComposeView(composition, state, submitting, Boolean(onMinimize));
   return (
     <ViewRenderer
       view={view}
@@ -164,6 +198,7 @@ export function ComposeDialog({
         values,
         onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),
         onIntent: (intent) => {
+          if (intent === 'minimize') return onMinimize?.();
           // Closing a started run's modal leaves the run going, and reports it as last seen.
           if (intent === 'cancel') return started ? onDone(composition, { ...started, run }) : onCancel();
           if (intent !== 'submit') return;
@@ -195,15 +230,21 @@ function DraftPage({
   composition,
   onDone,
   onCancel,
+  process,
+  onChange,
+  onMinimize,
 }: {
   composition: MethodComposition;
   onDone: (composition: MethodComposition, result: CommitResult) => void;
   onCancel: (notice?: ViewNode) => void;
+  process?: ProcessRecord;
+  onChange?: (snapshot: Partial<ProcessSnapshot>) => void;
+  onMinimize?: () => void;
 }) {
   const { client, principal } = usePrincipal();
   const [state, setState] = useState<DraftState>({ status: 'drafting' });
-  const [editing, setEditing] = useState(false);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState(Boolean(process?.editing));
+  const [values, setValues] = useState<Record<string, string>>(process?.values ?? {});
   const [submitting, setSubmitting] = useState(false);
   const [problems, setProblems] = useState<string[]>();
   // One request per page: each draft is a paid call to the model and is recorded, so a remount must not ask again.
@@ -211,7 +252,8 @@ function DraftPage({
 
   useEffect(() => {
     let cancelled = false;
-    request.current ??= client.draft(principal, composition.object.iri, composition.method);
+    // A restored process reads back the draft it already has: asking again would write, and pay for, another.
+    request.current ??= process?.draft ? client.getDraft(principal, process.draft) : client.draft(principal, composition.object.iri, composition.method);
     request.current.then(
       (draft) => !cancelled && setState({ status: 'ready', draft }),
       (e: unknown) => !cancelled && setState({ status: 'refused', reasons: reasonsOf(e) }),
@@ -221,7 +263,17 @@ function DraftPage({
     };
   }, [client, principal, composition]);
 
-  const view = buildDraftView(composition, state, { editing, editedText: values[DRAFT_FIELD], submitting, problems });
+  useEffect(() => {
+    onChange?.({
+      values,
+      editing,
+      ...(state.status === 'ready' ? { draft: state.draft.draft } : {}),
+      progress: processProgress(composition, { status: 'incomplete' }, values, { draft: state, editing }),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, editing, values]);
+
+  const view = buildDraftView(composition, state, { editing, editedText: values[DRAFT_FIELD], submitting, problems, minimizable: Boolean(onMinimize) });
   return (
     <ViewRenderer
       view={view}
@@ -230,11 +282,12 @@ function DraftPage({
         onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),
         onIntent: (intent) => {
           if (intent === 'cancel') return onCancel();
+          if (intent === 'minimize') return onMinimize?.();
           if (state.status !== 'ready' || submitting) return;
           const { draft } = state;
           if (intent === 'edit') {
             setEditing(true);
-            setValues({ [DRAFT_FIELD]: draft.text });
+            setValues((v) => (v[DRAFT_FIELD] !== undefined ? v : { [DRAFT_FIELD]: draft.text }));
             return;
           }
           setSubmitting(true);

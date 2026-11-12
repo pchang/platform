@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
+import type { Progress } from '../processes/processes';
 
 /**
  * The Confirm and Fill in patterns (design system spec 5.1), as view specs. The pattern is fixed by the
@@ -107,10 +108,10 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
   ];
 }
 
-export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false): ViewSpec {
+export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false): ViewSpec {
   const isConfirm = composition.archetype.label === 'Confirm';
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = [];
+  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   body.push(previewSection(composition, state));
   return {
@@ -174,9 +175,9 @@ function runSection(run: RunView): ViewNode[] {
  * Start and track (design system spec 5.1): a small modal that starts a background run, then follows it.
  * Before the start: any inputs and the preview, with what the run will do. After: the run's progress and outcome.
  */
-export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false): ViewSpec {
+export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = [];
+  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (run) body.push(runSection(run));
   else {
     if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
@@ -234,11 +235,11 @@ const formatTime = (iso: string) => new Date(iso).toLocaleString(undefined, { da
 export function buildDraftView(
   composition: MethodComposition,
   state: DraftState,
-  options: { editing?: boolean; editedText?: string; submitting?: boolean; problems?: string[] } = {},
+  options: { editing?: boolean; editedText?: string; submitting?: boolean; problems?: string[]; minimizable?: boolean } = {},
 ): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const back: ViewNode = { component: 'Button', props: { label: 'Back', variant: 'link' }, intent: 'cancel' };
-  const items: ViewNode[][] = [[{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')]];
+  const items: ViewNode[][] = [...(options.minimizable ? [[minimizeButton]] : []), [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')]];
 
   if (state.status === 'drafting') {
     items.push([
@@ -387,10 +388,12 @@ export function buildCompareView(
   self: ObjectView,
   other: ObjectView | undefined,
   submitting = false,
+  minimizable = false,
 ): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const pick = composition.inputs.find((i) => i.kind === 'object');
   const items: ViewNode[][] = [
+    ...(minimizable ? [[minimizeButton]] : []),
     [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')],
     [{ component: 'Form', children: composition.inputs.map(fieldFor) }],
   ];
@@ -429,13 +432,14 @@ export function nameMatches(composition: MethodComposition, typed: string | unde
  * Review and sign (design system spec 5.1): a Wizard in a modal. Review shows the inputs and the preview;
  * Sign shows who signs, what the signature means and when it is recorded, then takes the typed name.
  */
-export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false): ViewSpec {
+export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const signature = composition.signature!;
-  const review: ViewNode[][] = [];
+  const review: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   review.push(previewSection(composition, state));
   const sign: ViewNode[][] = [
+    ...(minimizable ? [[minimizeButton]] : []),
     [
       {
         component: 'DescriptionList',
@@ -539,3 +543,44 @@ export function successNotice(composition: MethodComposition, result: CommitResu
     children: lines.map((l) => text(`${l.term}: ${l.value}`)),
   };
 }
+
+// ---------------------------------------------------------------- progress in the dock (design system spec 5.1)
+
+/** How far along a process is, in its archetype's terms, for the dock. The same measure for every method of an archetype. */
+export function processProgress(
+  composition: MethodComposition,
+  state: PreviewState,
+  values: Record<string, string>,
+  extra: { run?: RunView; draft?: DraftState; editing?: boolean } = {},
+): Progress {
+  const archetype = composition.archetype.label;
+  if (archetype === 'Review a draft') {
+    const draft = extra.draft;
+    if (!draft || draft.status === 'drafting') return { fraction: null, words: 'Drafting' };
+    if (draft.status === 'refused') return { fraction: 0, words: 'Cannot be drafted', status: 'danger' };
+    return { fraction: 1, words: extra.editing ? 'Editing' : 'Draft ready' };
+  }
+  if (archetype === 'Start and track' && extra.run) {
+    const run = extra.run;
+    if (run.status === 'succeeded') return { fraction: 1, words: 'Finished', status: 'success' };
+    if (run.status === 'failed') return { fraction: 1, words: 'Failed', status: 'danger' };
+    if (run.status === 'queued') return { fraction: 0, words: 'Waiting to start' };
+    const percent = Math.round((run.progress ?? 0) * 100);
+    return { fraction: run.progress ?? 0, words: `Running, ${percent}%` };
+  }
+  if (state.status === 'refused') return { fraction: 0, words: 'Cannot run', status: 'danger' };
+  const ready = state.status === 'ready';
+  const readyWords: Record<string, string> = { Confirm: 'Ready to confirm', 'Review and sign': 'Ready to sign', 'Start and track': 'Ready to start' };
+  if (ready) return { fraction: 1, words: readyWords[archetype] ?? 'Ready to commit' };
+  const needed = composition.inputs.length;
+  if (!needed) return { fraction: 0, words: 'Checking' };
+  const given = composition.inputs.filter((i) => values[i.name]?.trim()).length;
+  return { fraction: given / (needed + 1), words: `${given} of ${needed} ${needed === 1 ? 'field' : 'fields'}` };
+}
+
+/** The Minimize button every pattern carries at the top of the process (design system spec 5.1). */
+export const minimizeButton: ViewNode = {
+  component: 'Flex',
+  props: { justifyContent: { default: 'justifyContentFlexEnd' } },
+  children: [{ component: 'Button', props: { label: 'Minimize', variant: 'link' }, intent: 'minimize' }],
+};

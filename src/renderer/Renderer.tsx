@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useMemo, useRef, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { componentsById, type Intent, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { icons } from './icons';
@@ -53,12 +53,101 @@ const VALUE_FIELDS = new Set(['TextInput', 'TextArea', 'FormSelect']);
 /** Components that take exactly one child element, not a list (PatternFly attaches to it). */
 const SINGLE_CHILD = new Set(['Tooltip']);
 
+/** Builds a chart's subtree directly: PatternFly charts read their children's props, so nothing may wrap them. */
+function chartElement(node: ViewNode, key?: number): ReactNode {
+  const Component = library[componentsById.get(node.component)!.import.export];
+  return (
+    <Component key={key} {...(node.props ?? {})}>
+      {node.children?.map((child, i) => chartElement(child, i))}
+    </Component>
+  );
+}
+
+/** Width a chart is drawn at before its container is measured, such as in tests without layout. */
+const UNMEASURED_CHART_WIDTH = 400;
+
+/** A chart drawn at its container's width, re-measured as the container changes, so its text is never scaled. */
+function ChartFrame({ node }: { node: ViewNode }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = frame.current;
+    if (!element) return;
+    const measure = () => setWidth(Math.floor(element.getBoundingClientRect().width));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  // A wrapping legend needs more height than the chart was given: PatternFly reports how much.
+  const [legendExtra, setLegendExtra] = useState(0);
+  const props = { ...(node.props ?? {}) } as Record<string, unknown>;
+  if (props.legendAllowWrap) {
+    props.legendAllowWrap = (extra: number) => setLegendExtra((current) => (current === extra ? current : extra));
+    // The legend sits in the bottom padding, so the padding grows with it and the plot keeps its size.
+    props.height = ((props.height as number | undefined) ?? 0) + legendExtra;
+    const padding = (props.padding ?? {}) as Record<string, number>;
+    props.padding = { ...padding, bottom: (padding.bottom ?? 0) + legendExtra };
+  }
+  const Chart = library.Chart;
+  return (
+    <div ref={frame}>
+      <Chart {...props} width={width || UNMEASURED_CHART_WIDTH}>
+        {node.children?.map((child, i) => chartElement(child, i))}
+      </Chart>
+    </div>
+  );
+}
+
+/**
+ * A selectable Card bound to a field (design system spec 5.2): a radio button named by the card's title, in a CardHeader,
+ * that sets the field to the card's value.
+ */
+function SelectableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const id = useId();
+  const field = node.field!;
+  const { value, ...props } = (node.props ?? {}) as Record<string, unknown>;
+  const checked = host.values?.[field] === value;
+  const title = node.children?.find((c) => c.component === 'CardTitle');
+  const rest = (node.children ?? []).filter((c) => c !== title);
+  const { Card, CardHeader, CardTitle } = library;
+  const titleProps = { ...((title?.props ?? {}) as Record<string, unknown>) };
+  const titleLabel = titleProps.label as ReactNode;
+  delete titleProps.label;
+  return (
+    <Card {...props} id={id} isSelectable isSelected={checked}>
+      <CardHeader
+        selectableActions={{
+          selectableActionId: `${id}-input`,
+          selectableActionAriaLabelledby: `${id}-title`,
+          name: field,
+          variant: 'single',
+          isChecked: checked,
+          onChange: () => host.onField?.(field, value as string),
+        }}
+      >
+        {title && (
+          <CardTitle {...titleProps} id={`${id}-title`}>
+            {titleLabel}
+          </CardTitle>
+        )}
+      </CardHeader>
+      {rest.map((child, i) => (
+        <Node key={i} node={child} host={host} />
+      ))}
+    </Card>
+  );
+}
+
 // `ref` is passed through so components like Tooltip can attach to the element a node draws.
 function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref<unknown> }) {
   const generatedId = useId();
   const groupId = useContext(FieldIdContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
+  if (entry.id === 'Chart') return <ChartFrame node={node} />;
+  if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
   if (NEEDS_ID.has(entry.id)) props.id = entry.id !== 'Radio' && groupId ? groupId : generatedId;

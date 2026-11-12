@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.6",
+  "version": "0.7",
   "components": [
     {
       "id": "Button",
@@ -941,11 +941,21 @@
               "secondary"
             ],
             "description": "Surface style"
+          },
+          "isSelectable": {
+            "type": "boolean",
+            "description": "Chosen like a radio button, with a field and a value"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value a selectable card sets its field to when chosen"
           }
         }
       },
       "children": {
         "accepts": [
+          "CardHeader",
           "CardTitle",
           "CardBody"
         ],
@@ -953,7 +963,8 @@
       },
       "responsive": "Full width on phones. In a Gallery or Grid, cards sit side by side as space allows.",
       "accessibility": [
-        "Give it a CardTitle so the card has a heading"
+        "Give it a CardTitle so the card has a heading",
+        "A selectable card is a radio button named by its title; the renderer connects them"
       ],
       "examples": [
         {
@@ -973,6 +984,95 @@
                   "component": "Content",
                   "props": {
                     "label": "Deviation risk is high."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "component": "Card",
+          "props": {
+            "isSelectable": true,
+            "value": "urgent"
+          },
+          "field": "filter",
+          "children": [
+            {
+              "component": "CardTitle",
+              "props": {
+                "label": "Urgent",
+                "component": "h3"
+              }
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Title",
+                  "props": {
+                    "label": "2",
+                    "headingLevel": "h4",
+                    "size": "2xl"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CardHeader",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "CardHeader"
+      },
+      "purpose": "The top of a card: its title, and for a selectable card, the radio button that chooses it.",
+      "useWhen": [
+        "A selectable card: the renderer puts its title in a header with the radio button"
+      ],
+      "avoidWhen": [
+        "Plain cards: use CardTitle alone"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "CardTitle"
+        ]
+      },
+      "responsive": "Full width of its card.",
+      "accessibility": [
+        "Holds the card's title, which names the radio button of a selectable card"
+      ],
+      "examples": [
+        {
+          "component": "Card",
+          "children": [
+            {
+              "component": "CardHeader",
+              "children": [
+                {
+                  "component": "CardTitle",
+                  "props": {
+                    "label": "Due within 7 days",
+                    "component": "h3"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "1"
                   }
                 }
               ]
@@ -3724,6 +3824,578 @@
                   "component": "Content",
                   "props": {
                     "label": "Deviation risk is high."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Chart",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-charts/victory",
+        "export": "Chart"
+      },
+      "purpose": "A PatternFly chart. The renderer sizes it to its container's width, so it is drawn at true size at every width.",
+      "useWhen": [
+        "Summaries whose shape matters, such as work by lifecycle stage, with the figures also given as text"
+      ],
+      "avoidWhen": [
+        "A single number: use a stat tile",
+        "Where a table of figures says it better"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ariaTitle",
+          "ariaDesc"
+        ],
+        "properties": {
+          "ariaTitle": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The chart's accessible name"
+          },
+          "ariaDesc": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the chart shows, in words, with its figures"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 600,
+            "description": "Height in pixels"
+          },
+          "horizontal": {
+            "type": "boolean",
+            "description": "Bars run left to right"
+          },
+          "showAxis": {
+            "type": "boolean",
+            "description": "Draw the axes"
+          },
+          "padding": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "top": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bottom": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "left": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "right": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "domain": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "description": "The value range, so several charts share one scale"
+          },
+          "legendData": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "symbol": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "fill": {
+                      "type": "string",
+                      "pattern": "^var\\(--pf-t--chart--color--blue--[1-5]00\\)$"
+                    },
+                    "type": {
+                      "enum": [
+                        "square",
+                        "circle"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Legend entries, each a name and the swatch of its color, in mark order"
+          },
+          "legendPosition": {
+            "enum": [
+              "bottom",
+              "bottom-left",
+              "right"
+            ],
+            "description": "Where the legend sits"
+          },
+          "legendAllowWrap": {
+            "type": "boolean",
+            "description": "Legend entries wrap onto more rows; the renderer grows the chart's height to fit them"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ChartStack",
+          "ChartBar"
+        ]
+      },
+      "responsive": "As wide as its container at every width, re-measured when the container changes; text is never scaled down.",
+      "accessibility": [
+        "An SVG with a title and description",
+        "Never the only way to read a value: the figures are also given as text beside it (rule 4)"
+      ],
+      "examples": [
+        {
+          "component": "Chart",
+          "props": {
+            "ariaTitle": "Safety cases by stage",
+            "ariaDesc": "6 safety cases: 3 received, 1 triaged, 2 assessed",
+            "height": 40,
+            "horizontal": true,
+            "showAxis": false,
+            "padding": {
+              "top": 0,
+              "bottom": 32,
+              "left": 0,
+              "right": 0
+            },
+            "domain": {
+              "y": [
+                0,
+                6
+              ]
+            },
+            "legendData": [
+              {
+                "name": "received 3",
+                "symbol": {
+                  "fill": "var(--pf-t--chart--color--blue--100)",
+                  "type": "square"
+                }
+              },
+              {
+                "name": "triaged 1",
+                "symbol": {
+                  "fill": "var(--pf-t--chart--color--blue--200)",
+                  "type": "square"
+                }
+              },
+              {
+                "name": "assessed 2",
+                "symbol": {
+                  "fill": "var(--pf-t--chart--color--blue--300)",
+                  "type": "square"
+                }
+              }
+            ],
+            "legendPosition": "bottom-left",
+            "legendAllowWrap": true
+          },
+          "children": [
+            {
+              "component": "ChartStack",
+              "children": [
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 3,
+                        "name": "received"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--100)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 1,
+                        "name": "triaged"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--200)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 2,
+                        "name": "assessed"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--300)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ChartStack",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-charts/victory",
+        "export": "ChartStack"
+      },
+      "purpose": "Stacks bars end to end, such as the parts of one whole.",
+      "useWhen": [
+        "A segmented bar: one whole split into parts"
+      ],
+      "avoidWhen": [
+        "Comparing parts with each other: use bars on one baseline"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "ChartBar"
+        ],
+        "minItems": 1
+      },
+      "responsive": "As its chart.",
+      "accessibility": [
+        "Its parts are described by the chart's description"
+      ],
+      "examples": [
+        {
+          "component": "Chart",
+          "props": {
+            "ariaTitle": "Safety cases by stage",
+            "ariaDesc": "6 safety cases: 3 received, 1 triaged, 2 assessed",
+            "height": 8,
+            "horizontal": true,
+            "showAxis": false,
+            "padding": {
+              "top": 0,
+              "bottom": 0,
+              "left": 0,
+              "right": 0
+            },
+            "domain": {
+              "y": [
+                0,
+                6
+              ]
+            }
+          },
+          "children": [
+            {
+              "component": "ChartStack",
+              "children": [
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 3,
+                        "name": "received"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--100)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 1,
+                        "name": "triaged"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--200)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 2,
+                        "name": "assessed"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--300)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ChartBar",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-charts/victory",
+        "export": "ChartBar"
+      },
+      "purpose": "Bars from data, in a chart.",
+      "useWhen": [
+        "A part of a segmented bar, or bars on one baseline"
+      ],
+      "avoidWhen": [
+        "Outside a Chart"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "type": "string"
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "barWidth": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 24,
+            "description": "Thickness, at most 24px"
+          },
+          "cornerRadius": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "top": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bottom": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "description": "Rounding of the data end (top) and the baseline end (bottom)"
+          },
+          "style": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "fill"
+                ],
+                "properties": {
+                  "fill": {
+                    "type": "string",
+                    "pattern": "^var\\(--pf-t--chart--color--blue--[1-5]00\\)$",
+                    "description": "A chart color token, as var(--pf-t--chart--color--blue--100) to 500"
+                  },
+                  "stroke": {
+                    "const": "var(--pf-t--global--background--color--primary--default)",
+                    "description": "The card surface, so a 2px stroke reads as a gap between segments"
+                  },
+                  "strokeWidth": {
+                    "const": 2
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "children": null,
+      "responsive": "As its chart.",
+      "accessibility": [
+        "Colors come only from chart tokens, and identity is never color alone"
+      ],
+      "examples": [
+        {
+          "component": "Chart",
+          "props": {
+            "ariaTitle": "Safety cases by stage",
+            "ariaDesc": "6 safety cases: 3 received, 1 triaged, 2 assessed",
+            "height": 8,
+            "horizontal": true,
+            "showAxis": false,
+            "padding": {
+              "top": 0,
+              "bottom": 0,
+              "left": 0,
+              "right": 0
+            },
+            "domain": {
+              "y": [
+                0,
+                6
+              ]
+            }
+          },
+          "children": [
+            {
+              "component": "ChartStack",
+              "children": [
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 3,
+                        "name": "received"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--100)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 1,
+                        "name": "triaged"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--200)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
+                  }
+                },
+                {
+                  "component": "ChartBar",
+                  "props": {
+                    "data": [
+                      {
+                        "x": "Safety cases",
+                        "y": 2,
+                        "name": "assessed"
+                      }
+                    ],
+                    "barWidth": 8,
+                    "style": {
+                      "data": {
+                        "fill": "var(--pf-t--chart--color--blue--300)",
+                        "stroke": "var(--pf-t--global--background--color--primary--default)",
+                        "strokeWidth": 2
+                      }
+                    }
                   }
                 }
               ]

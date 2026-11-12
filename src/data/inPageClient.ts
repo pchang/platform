@@ -56,6 +56,7 @@ export async function inPageClient(): Promise<GatewayClient> {
     // No model is ever connected in a preview: a key cannot live in a page. The gateway says so.
     draft: (p, object, method) => refused(() => gateway.draft(p, object, method)),
     discardDraft: (p, draft) => refused(() => gateway.discardDraft(p, draft)),
+    getDraft: (p, draft) => refused(() => gateway.getDraft(p, draft)),
     methods: (p, object) => refused(() => gateway.methods(p, object)),
     runs: (p, filter) => refused(() => gateway.runs(p, filter)),
     run: (p, run) => refused(() => gateway.run(p, run)),

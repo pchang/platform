@@ -11,7 +11,7 @@ import { ComposeDialog } from './ComposeDialog';
 // Review a draft (design system spec 5.1), driven through the real dialog and renderer. The client is a stand-in for
 // the gateway, so the page can be tested without a model; the gateway's own drafting is tested in drafting.test.ts.
 
-const object = { iri: 'urn:SC-003', identifier: 'SC-003', type: 'urn:SafetyCase', typeLabel: 'Safety Case', state: {} };
+const object = { iri: 'urn:SC-003', identifier: 'SC-003', type: 'urn:SafetyCase', typeLabel: 'Safety Case', pluralLabel: 'Safety Cases', state: {} };
 const composition: MethodComposition = { method: 'urn:GenerateNarrative', label: 'Generate narrative', archetype: { archetype: 'urn:ReviewADraft', label: 'Review a draft' }, object, inputs: [] };
 const draft: DraftView = {
   draft: 'urn:draft/1',

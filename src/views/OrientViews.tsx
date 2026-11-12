@@ -1,45 +1,31 @@
 import { useEffect, useState } from 'react';
-import type { ViewNode } from '../design-system/catalog';
 import type { MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
+import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { ComposeDialog } from './ComposeDialog';
-import { PAGE_ARCHETYPES, successNotice } from './composeView';
-import { buildTodoView, buildTypeView, loadingView } from './orientViews';
+import { buildTodoView, buildTypeView, loadingView, TODO_FILTER_FIELD, type TodoFilter } from './orientViews';
+
+/** A method to run from a card: its label and archetype, as the view knows them. */
+type Runnable = { method: string; label: string; archetype: { label: string } };
 
 /**
- * Running a method from a card (platform spec 5.4): the method's pattern, then the outcome as a notice, and the
- * view loads again. Shared by To do and object lists, so a method runs the same way from either.
+ * Running a method from a card opens it as a process (platform spec 5.4): the process in front, if any, is set aside,
+ * and the outcome comes back to whichever view is showing. Shared by To do and object lists.
  */
-function useCompose(archetypeOf: (object: string, method: string) => string | undefined) {
-  const { principal } = usePrincipal();
-  const { refresh: refreshNotifications } = useNotifications();
-  const [composing, setComposing] = useState<{ object: string; method: string; isPage: boolean }>();
-  const [notice, setNotice] = useState<ViewNode>();
-  const [done, setDone] = useState(0);
-  useEffect(() => setNotice(undefined), [principal]);
-
-  const dialog = composing && (
-    <ComposeDialog
-      object={composing.object}
-      method={composing.method}
-      onCancel={(cancelNotice) => {
-        setComposing(undefined);
-        if (!cancelNotice) return;
-        setNotice(cancelNotice);
-        setDone((n) => n + 1);
-      }}
-      onDone={(composition, result) => {
-        setComposing(undefined);
-        setNotice(successNotice(composition, result));
-        setDone((n) => n + 1);
-        if (result.run) refreshNotifications();
-      }}
-    />
-  );
-  const open = (object: string, method: string) => setComposing({ object, method, isPage: PAGE_ARCHETYPES.has(archetypeOf(object, method) ?? '') });
-  return { dialog, isPage: Boolean(composing?.isPage), notice, done, open };
+function useOpenMethod(find: (object: string, method: string) => { object: ObjectSummary; method: Runnable } | undefined) {
+  const { open } = useProcesses();
+  return (object: string, method: string) => {
+    const found = find(object, method);
+    if (!found) return;
+    open({
+      object,
+      objectIdentifier: found.object.identifier,
+      method,
+      label: found.method.label,
+      archetype: found.method.archetype.label,
+    });
+  };
 }
 
 /** Runs that have not ended, so cards can show them (design system spec 4.3). Asked again while any is running. */
@@ -73,11 +59,16 @@ export function TodoView() {
   const { client, principal, name, roleLabel } = usePrincipal();
   const { changes } = useNotifications();
   const [items, setItems] = useState<ToDoItem[]>();
-  const compose = useCompose((object, method) => {
+  // The count tiles narrow the cards (design system spec 4.3). A new person starts with every item.
+  const [filter, setFilter] = useState<TodoFilter>('all');
+  useEffect(() => setFilter('all'), [principal]);
+  const processes = useProcesses();
+  const openMethod = useOpenMethod((object, method) => {
     const item = items?.find((i) => i.object.iri === object);
-    return [...(item?.tasks ?? []), ...(item?.actions ?? [])].find((t) => t.method === method)?.archetype.label;
+    const task = [...(item?.tasks ?? []), ...(item?.actions ?? [])].find((t) => t.method === method);
+    return item && task && { object: item.object, method: task };
   });
-  const runs = useActiveRuns([compose.done, changes]);
+  const runs = useActiveRuns([processes.changes, changes]);
   useEffect(() => {
     let cancelled = false;
     setItems(undefined);
@@ -85,16 +76,18 @@ export function TodoView() {
     return () => {
       cancelled = true;
     };
-  }, [client, principal, compose.done, changes]);
+  }, [client, principal, processes.changes, changes]);
 
-  // A page pattern, such as Compare and decide, takes To do's place until it is done or cancelled.
-  if (compose.isPage) return compose.dialog;
-  const view = items ? buildTodoView(items, `${name}, ${roleLabel}`, compose.notice, runs) : loadingView;
+  const view = items ? buildTodoView(items, `${name}, ${roleLabel}`, processes.notice, runs, { filter }) : loadingView;
   return (
-    <>
-      <ViewRenderer view={view} host={{ onAction: (action) => compose.open(action.target, action.method) }} />
-      {compose.dialog}
-    </>
+    <ViewRenderer
+      view={view}
+      host={{
+        values: { [TODO_FILTER_FIELD]: filter },
+        onField: (field, value) => field === TODO_FILTER_FIELD && setFilter(value as TodoFilter),
+        onAction: (action) => openMethod(action.target, action.method),
+      }}
+    />
   );
 }
 
@@ -103,8 +96,13 @@ export function TypeView({ type }: { type: string }) {
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
   const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
-  const compose = useCompose((object, method) => loaded?.methods.get(object)?.find((m) => m.method === method)?.archetype.label);
-  const runs = useActiveRuns([type, compose.done, changes]);
+  const processes = useProcesses();
+  const openMethod = useOpenMethod((object, method) => {
+    const summary = loaded?.objects.find((o) => o.iri === object);
+    const option = loaded?.methods.get(object)?.find((m) => m.method === method);
+    return summary && option && { object: summary, method: option };
+  });
+  const runs = useActiveRuns([type, processes.changes, changes]);
   useEffect(() => {
     let cancelled = false;
     setLoaded(undefined);
@@ -118,14 +116,8 @@ export function TypeView({ type }: { type: string }) {
     return () => {
       cancelled = true;
     };
-  }, [client, principal, type, compose.done, changes]);
+  }, [client, principal, type, processes.changes, changes]);
 
-  if (compose.isPage) return compose.dialog;
-  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: compose.notice }) : loadingView;
-  return (
-    <>
-      <ViewRenderer view={view} host={{ onAction: (action) => compose.open(action.target, action.method) }} />
-      {compose.dialog}
-    </>
-  );
+  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
+  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method) }} />;
 }

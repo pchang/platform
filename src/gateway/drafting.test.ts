@@ -170,6 +170,13 @@ describe('deciding on a draft', () => {
     expect((await rejected(gateway.discardDraft(chloe, draft.draft))).reasons).toEqual(['This draft was already accepted']);
   });
 
+  it('reads a draft back for roles that may run its method', async () => {
+    const gateway = withSeed([], { drafter: new RecordingDrafter() });
+    const draft = await gateway.draft(chloe, 'SC-003', NARRATIVE);
+    expect(gateway.getDraft(dev, '1')).toEqual(draft);
+    expect(() => gateway.getDraft(ben, draft.draft)).toThrow(GatewayError);
+  });
+
   it('discarding records it and changes nothing else', async () => {
     const gateway = withSeed([], { drafter: new RecordingDrafter() });
     const draft = await gateway.draft(chloe, 'SC-003', NARRATIVE);

@@ -502,7 +502,7 @@ p:ruleOrder a rdf:Property ;
 
 p:order a rdf:Property ;
   rdfs:label "order" ;
-  rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme. Keeps forms and choices in the same order every time." ;
+  rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme, a state dimension among its type's. The first state dimension is the type's lifecycle. Keeps forms, choices and summaries in the same order every time." ;
   rdfs:range xsd:integer .
 
 p:signatureMeaning a rdf:Property ;

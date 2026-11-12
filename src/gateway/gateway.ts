@@ -32,7 +32,11 @@ export interface ObjectSummary {
   identifier: string;
   type: string;
   typeLabel: string;
+  /** The type's plural label, for summaries and lists. */
+  pluralLabel: string;
   state: Record<string, string>;
+  /** Where the object is in its type's lifecycle: the type's first state dimension (spec 5.1). */
+  lifecycle?: { dimension: string; stage: string; position: number; stages: string[] };
 }
 
 export interface ObjectView extends ObjectSummary {
@@ -434,7 +438,19 @@ export class Gateway {
     const state = Object.fromEntries(
       this.q(`SELECT ?dim ?value WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?dim . <${object}> ?d ?v . ?v skos:prefLabel ?value }`).map((r) => [r.dim, r.value]),
     );
-    return { iri: object, identifier, type, typeLabel, state };
+    const pluralLabel = this.q(`SELECT ?l WHERE { <${type}> p:pluralLabel ?l }`)[0]?.l ?? typeLabel;
+    return { iri: object, identifier, type, typeLabel, pluralLabel, state, ...this.lifecycleOf(object, type) };
+  }
+
+  /** The object's stage in its type's first state dimension, with every stage in order. */
+  private lifecycleOf(object: string, type: string): { lifecycle?: ObjectSummary['lifecycle'] } {
+    const dim = this.q(`SELECT ?d ?label ?scheme WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?label ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
+    if (!dim) return {};
+    const stages = this.q(`SELECT ?v ?label WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o } ORDER BY ?o`);
+    const value = this.q(`SELECT ?v WHERE { <${object}> <${dim.d}> ?v }`)[0]?.v;
+    const position = stages.findIndex((s) => s.v === value);
+    if (position < 0) return {};
+    return { lifecycle: { dimension: dim.label, stage: stages[position].label, position, stages: stages.map((s) => s.label) } };
   }
 
   read(principal: Principal, idOrIri: string): ObjectView {
@@ -795,6 +811,15 @@ export class Gateway {
         quad(g, namedNode(`${NS.p}decidedAt`), xsdDateTime(at), g),
       ],
     };
+  }
+
+  /** Reads a draft back, such as when a person returns to a process they set aside. Only for roles that may run its method. */
+  getDraft(principal: Principal, draft: string): DraftView {
+    this.authorize(principal);
+    const view = this.draftView(draft.includes('://') ? draft : `${this.dataNamespace}draft/${draft}`);
+    if (!this.canRead(principal, this.typeOf(view.object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${view.method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    return view;
   }
 
   /** Discards a draft: recorded, and nothing else changes. */

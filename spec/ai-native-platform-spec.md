@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.18. November 12, 2026. Author: Paul Chang.
+Version 0.19. November 12, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -241,6 +241,8 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 - An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
 - The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines.
 - Each card shows the object, its state, its deadline and the tasks waiting.
+- **A summary leads the list**, so the person sees the shape of their work before its parts. It is computed from the same items, never designed per role: how many items are waiting, urgent, due within 7 days and overdue, and the waiting work by object type, split by lifecycle stage. Choosing a count narrows the list to those items.
+- **Lifecycle stage.** Each object type's state dimensions are ordered in the ontology; the first is its lifecycle, such as a case's workflow or a submission's status, and its values are ordered too. The summary uses that order, so stages read earliest to latest in every domain.
 
 ### 5.2 AI Search
 - Accepts natural language and structured queries.
@@ -292,6 +294,7 @@ Every method has exactly one **interaction archetype**, derived from what the on
 - Every archetype ends the same way: a preview of each value that will change and each object that will be created, the commit, and the outcome. A blocked commit shows the gateway's reasons.
 - **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
 - Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
+- **Several at once.** A person can set a method they are running aside and come back to it: the process is minimized, keeping everything given so far, and another can be started. One process is in front at a time; restoring one sets the one in front aside. Each set-aside process shows how far along it is, in terms of its archetype, so the measure is the same for every method of that archetype. Nothing is committed until the person finishes the process.
 - **Choices come from the ontology.** A value from a concept scheme offers the scheme's values, narrowed by the input's shape. A person offers the people who may act. An object offers the objects that qualify. A person input defaults to the principal.
 
 ### 5.5 Interoperability
@@ -394,3 +397,4 @@ To resolve in future versions of this spec.
 | 0.16 | 2026-11-11 | Added electronic signatures to the gateway contract (section 3.4): the principal signs, never an agent; name, time and meaning bound to the commit; development signatures by typed name, clearly not valid, until an identity provider exists. |
 | 0.17 | 2026-11-11 | Added background runs to the gateway contract (section 3.4): started by a commit, finished by a platform worker acting through the gateway, results committed and journaled once, restarted after a restart, and the starter notified. Analyses join the ontology's expressions (section 3.1). The gateway answers Track runs and Notifications. Two open questions. |
 | 0.18 | 2026-11-12 | Added generated drafts to the gateway contract (section 3.4): drafting effects declared in the ontology, connected models only and never a stand-in, the model sees only what the principal may read, every draft recorded with its model and fingerprints, and a person accepts, edits or discards it. Drafting joins the ontology's expressions (section 3.1). The gateway answers Drafts. Three open questions. |
+| 0.19 | 2026-11-12 | To do leads with a summary computed from its items: counts that narrow the list, and work by type and lifecycle stage (section 5.1). State dimensions and their values are ordered, the first being the lifecycle. Several processes at once: set aside, keep what was given, restore one at a time, with progress by archetype (section 5.4). |

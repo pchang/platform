@@ -26,6 +26,7 @@ export function httpClient(base = '/api'): GatewayClient {
     preview: (p, object, method, inputs) => request(`${methodPath(object, method)}/preview`, p, { inputs }),
     commit: (p, object, method, inputs, signature, draft) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}), ...(draft ? { draft } : {}) }),
     draft: (p, object, method) => request(`${methodPath(object, method)}/draft`, p, {}),
+    getDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}`, p),
     discardDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}/discard`, p, {}),
     methods: (p, object) => request(`/objects/${encodeURIComponent(object)}/methods`, p),
     runs: (p, filter = {}) => {

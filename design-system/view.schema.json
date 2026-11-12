@@ -86,9 +86,10 @@
             "submit",
             "cancel",
             "edit",
-            "discard"
+            "discard",
+            "minimize"
           ],
-          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, and discard records a draft as discarded."
+          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, discard records a draft as discarded, and minimize sets the process aside in the dock."
         }
       }
     }

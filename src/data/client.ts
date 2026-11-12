@@ -40,6 +40,8 @@ export interface GatewayClient {
   /** A connected model drafts the method. Rejects with RefusedError when no model is connected or it declines. */
   draft(principal: Principal, object: string, method: string): Promise<DraftView>;
   discardDraft(principal: Principal, draft: string): Promise<DraftView>;
+  /** Reads a draft back, such as when a set-aside process is restored. */
+  getDraft(principal: Principal, draft: string): Promise<DraftView>;
   /** Background runs on objects the principal may read, newest first. */
   runs(principal: Principal, filter?: { object?: string; active?: boolean }): Promise<RunView[]>;
   run(principal: Principal, run: string): Promise<RunView>;
