@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { cardFor } from './cards';
 
 // Review a draft in a preview (platform spec 3.4, Generated drafts): a page never holds a model's credential, so no model
 // is connected and Generate narrative is not offered. The page itself is tested in src/views/ReviewDraft.test.tsx, and

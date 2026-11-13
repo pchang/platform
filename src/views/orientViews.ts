@@ -290,6 +290,7 @@ function understood(result: SearchResult): ViewNode[] {
     ...i.states.map((s) => label(`${s.dimensionLabel}: ${s.label}`)),
     ...i.identifiers.map((o) => label(i.types.length ? `Linked to ${o.identifier}` : `Identifier: ${o.identifier}`)),
     ...(i.words.length ? [label(`Words: ${i.words.join(' ')}`)] : []),
+    ...(i.mine ? [label('Yours')] : []),
   ];
 }
 
@@ -317,7 +318,7 @@ export function buildSearchView(result: SearchResult, options: { methods?: Map<s
     root: stack([
       ...(options.notice ? [[options.notice]] : []),
       header('Search', `${count} for “${result.query}”${shown}.`),
-      ...(chips.length ? [[text('Understood as:', 'small'), flexOf(chips)]] : []),
+      [text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
       ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
       ...(cards.length ? [[gallery(cards)]] : []),
     ]),

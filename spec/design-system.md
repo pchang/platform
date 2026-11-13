@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.17. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.21, sections 3.6, 5.1, 5.4 and 7.
+Version 0.18. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -101,7 +101,8 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 - As the person types, the best five matches appear under the field, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
 - Choosing a match, or pressing Enter, opens the search page; a match opens it at that object.
-- The search page (`#/search/…`) shows how the query was understood, as labels such as "Type: Safety Case" and "Seriousness: serious", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
+- The best matches under the field come from the ontology reading, so they appear as fast as the person types. The search page asks the connected model, if there is one, and says while it is understanding the query.
+- The search page (`#/search/…`) shows who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
@@ -347,3 +348,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.15 | 2026-11-12 | A deadline already past is labeled Overdue since, as a danger, not Due, as a warning. |
 | 0.16 | 2026-11-13 | Added the search field to the sidebar and the search page (4.1). |
 | 0.17 | 2026-11-13 | Cards lead with the identifier and type in small text, then the object's title as their heading. Minimize is a minus icon left of the close button, or right of a page pattern's title. |
+| 0.18 | 2026-11-13 | Search page says who understood the query, the model or the ontology, and shows Yours for the person's own objects. Suggestions under the field come from the ontology reading. |

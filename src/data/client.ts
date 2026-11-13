@@ -29,7 +29,8 @@ export interface GatewayClient {
   todo(principal: Principal): Promise<ToDoItem[]>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
-  search(principal: Principal, query: string): Promise<SearchResult>;
+  /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
+  search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;
   /** Rejects with RefusedError when the principal may not read the object. */
   read(principal: Principal, object: string): Promise<ObjectView>;
   /** The methods on an object, each available or blocked with its reasons. */

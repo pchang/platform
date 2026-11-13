@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.21. November 13, 2026. Author: Paul Chang.
+Version 0.22. November 13, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -257,10 +257,16 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 - **Identifiers.** A word that is an object's identifier, such as SC-003, finds that object first. With an object type in the query, it finds the objects of that type linked to it, either way, such as "cases for P-101".
 - **Object types.** A type's name, singular or plural, or the last word of it, such as "cases" for Safety Cases, narrows the search to that type. A word that fits several types, such as "event", keeps all of them.
 - **States.** A value of a type's state dimension, such as "serious" or "open", narrows to objects in that state. The longest value that fits is taken, so "non-serious" is never read as "serious".
+- **"My" and "mine"** narrow to the principal's own objects: those with work waiting for them on To do, and those that name them in a person property, such as a submission they prepared.
 - **Any other words** must each appear in what the principal may read of the object: its identifier, its state, its properties and the identifiers it links to.
 - The answer says how the query was understood, as the types, states, links and words it used, so the person can see why each object matched and correct the query. Results come best first: an identifier match, then objects that meet what was understood, then text matches.
 - **Permissions as in a read.** Search never matches what the principal may not read, such as a hidden property or an unreadable type. A result whose personal data matched the query is a read of that data, and is recorded in the audit trail as one.
-- Interpreting freer language with a connected model, under the same rules, comes later.
+**Understanding with a connected model.** Where the deployment connects a model, the gateway asks it to understand the query, so a person can ask in their own words, such as "list all of my queries" or "anything serious from the Lakeside site":
+
+- The model turns the query into a **search plan** of the same parts: types, states, identifiers, words and whether the person means their own objects. It is given only the vocabulary the principal may read (type names, state values and relationship names), the identifiers the principal may read that the query mentions, and the principal's name and role. **It is never given a record.**
+- The gateway checks every part of the plan against that vocabulary, drops whatever is not in it, and runs the plan exactly as it runs one read from the ontology: the same permissions, ranking and audit.
+- Without a connected model, or when the model fails or declines, the gateway reads the query against the ontology instead. The answer always says which it was, and for a model, which model.
+- Suggestions while the person types come from the ontology reading alone, so the model is asked once per search, not once per keystroke.
 
 ### 5.3 Method Engine
 - Offers only methods valid for the object's current state and the person's context.
@@ -378,6 +384,7 @@ To resolve in future versions of this spec.
 - How is a drafting model validated for its intended use, and how are its instructions changed under change control?
 - Where may a drafting model process records: which providers, regions and retention terms satisfy each domain's privacy obligations?
 - Should a draft expire, or be refused on acceptance, when its object has changed since it was written?
+- Which model should understand search, given that a person waits for it: the platform's default model, or a faster one?
 - How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
@@ -413,3 +420,4 @@ To resolve in future versions of this spec.
 | 0.19 | 2026-11-12 | To do leads with a summary computed from its items: counts that narrow the list, and work by type and lifecycle stage (section 5.1). State dimensions and their values are ordered, the first being the lifecycle. Several processes at once: set aside, keep what was given, restore one at a time, with progress by archetype (section 5.4). |
 | 0.20 | 2026-11-13 | The gateway answers Search (section 3.4). Section 5.2 says how a query is understood against the ontology (identifiers, types, states, links and words), that the understanding is shown, and that search keeps read permissions and audits matches in personal data. One open question. |
 | 0.21 | 2026-11-13 | Added titles to the ontology's expressions (section 3.1): templates per type, the first complete one used, never using hidden values. |
+| 0.22 | 2026-11-13 | Search understood by a connected model (section 5.2): the model turns a query into a search plan from the vocabulary the principal may read, never a record; the gateway checks and runs the plan, and falls back to the ontology reading. "My" and "mine" mean the principal's own objects. One open question. |

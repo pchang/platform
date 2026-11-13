@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { cardFor, eyebrow } from './cards';
 
 // Confirm and Fill in, end to end on the in-page gateway (platform spec 5.4, design system spec 5.1).
 test.setTimeout(60_000);

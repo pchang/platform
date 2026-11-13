@@ -31,7 +31,8 @@ export function SearchField({ query: routeQuery, onNavigate, isHidden = false }:
     }
     let cancelled = false;
     const timer = setTimeout(() => {
-      client.search(principal, query).then((r) => !cancelled && setResult(r), () => !cancelled && setResult(undefined));
+      // Suggestions come from the ontology reading: the model is asked once per search, not once per keystroke.
+      client.search(principal, query, { understand: 'ontology' }).then((r) => !cancelled && setResult(r), () => !cancelled && setResult(undefined));
     }, SEARCH_DEBOUNCE_MS);
     return () => {
       cancelled = true;

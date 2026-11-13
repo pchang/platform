@@ -150,9 +150,11 @@ describe('the search page (design system spec 4.1, Search)', () => {
       states: [{ dimension: 'urn:d', dimensionLabel: 'Seriousness', type: 'urn:AE', value: 'urn:v', label: 'serious' }],
       identifiers: [{ iri: 'urn:PT-09', identifier: 'PT-09' }],
       words: ['pneumonia'],
+      mine: false,
     },
     results: [{ object: ae, matched: ['Linked to PT-09', 'Type: Adverse Event', 'Seriousness: serious', 'verbatim term: Fever and cough'] }],
     total: 1,
+    understoodBy: { ontology: true },
   };
   const verify: MethodOption = { method: 'urn:verify', label: 'Verify adverse event', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Confirm' } };
 
@@ -164,6 +166,13 @@ describe('the search page (design system spec 4.1, Search)', () => {
     for (const chip of ['Type: Adverse Event', 'Seriousness: serious', 'Linked to PT-09', 'Words: pneumonia']) expect(json).toContain(`"label":"${chip}","color":"blue"`);
     expect(json).toContain('Matched: Linked to PT-09 · Type: Adverse Event · Seriousness: serious · verbatim term: Fever and cough');
     expect(json).toContain('"label":"Verify adverse event"');
+  });
+
+  it("says who understood the query, the model or the ontology, and marks the person's own objects", () => {
+    expect(JSON.stringify(buildSearchView(result))).toContain('Understood from the ontology');
+    const byModel = JSON.stringify(buildSearchView({ ...result, understoodBy: { model: 'claude-opus-5-5' }, interpretation: { ...result.interpretation, mine: true } }));
+    expect(byModel).toContain('Understood by claude-opus-5-5');
+    expect(byModel).toContain('"label":"Yours","color":"blue"');
   });
 
   it('suggests how to search when nothing matches, and says when only the best are shown', () => {

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { cardFor } from './cards';
 
 // Search in the navigation (platform spec 5.2, design system spec 4.1), on the in-page gateway.
 test.setTimeout(60_000);
@@ -42,6 +42,20 @@ test('words find what the records say, and a match opens at that object, with it
   await expect(results(page)).toHaveText(['AE-005 · Adverse Event']);
   const card = cardFor(page, 'AE-005');
   await expect(card.getByRole('button', { name: 'Report to safety' })).toBeVisible();
+});
+
+test('“list all of my queries” finds the person’s own queries, and says the ontology understood it when no model is connected', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTodo(page);
+  await page.getByRole('button', { name: /^Profile/ }).click();
+  await page.getByRole('option', { name: /^Sam Whitfield/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await field(page).fill('list all of my queries');
+  await field(page).press('Enter');
+  await expect(page.getByText('3 matches for “list all of my queries”.')).toBeVisible();
+  await expect(page.getByText('Understood from the ontology')).toBeVisible();
+  await expect(page.getByText('Yours', { exact: true })).toBeVisible();
+  await expect(results(page)).toHaveText(['Q-01 · Data Query', 'Q-02 · Data Query', 'Q-03 · Data Query']);
 });
 
 test('says so when nothing matches', async ({ page }) => {

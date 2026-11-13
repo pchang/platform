@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { eyebrow } from './cards';
 
 // The To do summary (platform spec 5.1, design system spec 4.3), on the in-page gateway.
 test.setTimeout(60_000);

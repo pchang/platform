@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { cardFor, cardIds } from './cards';
 
 // Orient with the in-page gateway and the seed graph (platform spec 5.1, design system spec 4.1 and 4.3).
 test.setTimeout(60_000);

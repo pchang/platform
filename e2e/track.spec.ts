@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
-import { cardFor, cardIds, eyebrow } from './cards';
+import { cardFor } from './cards';
 
 // Start and track, end to end on the in-page gateway (platform spec 3.4 and 5.4, design system spec 4.1, 4.3 and 5.1).
 test.setTimeout(90_000);

@@ -11,7 +11,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/navigation                     the domains and object types of the principal's work
  *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
- *   GET  /api/search?q=serious+adverse+events  search: how the query was understood, and what it found
+ *   GET  /api/search?q=list+my+queries      search: who understood the query and how, and what it found; &understand=ontology skips the model
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
@@ -90,7 +90,7 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.find(principal, expand(type, NS.ls), state));
       }
       case 'GET search':
-        return send(res, 200, gateway.search(principal, url.searchParams.get('q') ?? ''));
+        return send(res, 200, await gateway.search(principal, url.searchParams.get('q') ?? '', { understand: url.searchParams.get('understand') === 'ontology' ? 'ontology' : 'model' }));
       case 'GET objects/:':
         return send(res, 200, gateway.read(principal, parts[2]));
       case 'GET objects/:/methods':
