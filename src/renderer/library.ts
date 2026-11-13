@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardBody,
+  CardHeader,
   CardTitle,
   Checkbox,
   Content,
@@ -48,6 +49,7 @@ import {
   WizardHeader,
   WizardStep,
 } from '@patternfly/react-core';
+import { Chart, ChartBar, ChartStack } from '@patternfly/react-charts/victory';
 import type { ComponentType } from 'react';
 
 /**
@@ -55,6 +57,9 @@ import type { ComponentType } from 'react';
  * carries only what views can draw. A test keeps this in step with components.json.
  */
 export const library = {
+  Chart,
+  ChartBar,
+  ChartStack,
   Alert,
   Avatar,
   Badge,
@@ -62,6 +67,7 @@ export const library = {
   Button,
   Card,
   CardBody,
+  CardHeader,
   CardTitle,
   Checkbox,
   Content,

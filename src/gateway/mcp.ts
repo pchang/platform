@@ -61,6 +61,20 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'search_objects',
+    {
+      title: 'Search',
+      description:
+        'Finds objects you may read from a short query, read against the ontology: identifiers ("SC-003"), type names ("open queries"), ' +
+        'state values ("serious adverse events"), links ("cases for P-101") and words in their records ("pneumonia"). ' +
+        'Returns how the query was understood and why each object matched, best first.',
+      inputSchema: { query: z.string() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ query }) => result(() => gateway.search(principal, query)),
+  );
+
+  server.registerTool(
     'read_object',
     {
       title: 'Read an object',
@@ -116,6 +130,19 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ id, method, inputs = {} }) => result(() => gateway.commit(principal, id, expand(method, NS.ls), inputs)),
+  );
+
+  server.registerTool(
+    'draft_method',
+    {
+      title: 'Draft a method',
+      description:
+        'For a method that produces a draft, such as "GenerateNarrative" on "SC-003": the connected model writes the draft from what you may read. ' +
+        'The draft is recorded and changes nothing. Only a person accepts or discards it, so an agent cannot commit it.',
+      inputSchema: { id: z.string(), method: z.string() },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    ({ id, method }) => result(() => gateway.draft(principal, id, expand(method, NS.ls))),
   );
 
   server.registerTool(

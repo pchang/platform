@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { CommitResult, MethodComposition, ObjectView, RunView } from '../data/client';
+import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
+import type { Progress } from '../processes/processes';
 
 /**
  * The Confirm and Fill in patterns (design system spec 5.1), as view specs. The pattern is fixed by the
@@ -8,13 +9,16 @@ import type { ComposedInput } from '../gateway/gateway';
  */
 
 /** The archetypes built so far. Tasks of other archetypes are shown as text until their pattern exists. */
-export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track']);
+export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track', 'Review a draft']);
 
 /** The field the signer types their name into (design system spec 5.1, Review and sign). Not a method input. */
 export const SIGNATURE_FIELD = 'signatureName';
 
 /** Archetypes whose pattern takes the place of the view, rather than opening over it (design system spec 5.1). */
-export const PAGE_ARCHETYPES = new Set(['Compare and decide']);
+export const PAGE_ARCHETYPES = new Set(['Compare and decide', 'Review a draft']);
+
+/** The field that holds a draft's text while the person edits it (design system spec 5.1, Review a draft). Not a method input. */
+export const DRAFT_FIELD = 'draftText';
 
 export type PreviewState =
   | { status: 'incomplete' }
@@ -104,10 +108,10 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
   ];
 }
 
-export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false): ViewSpec {
+export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false): ViewSpec {
   const isConfirm = composition.archetype.label === 'Confirm';
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = [];
+  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   body.push(previewSection(composition, state));
   return {
@@ -171,9 +175,9 @@ function runSection(run: RunView): ViewNode[] {
  * Start and track (design system spec 5.1): a small modal that starts a background run, then follows it.
  * Before the start: any inputs and the preview, with what the run will do. After: the run's progress and outcome.
  */
-export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false): ViewSpec {
+export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = [];
+  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (run) body.push(runSection(run));
   else {
     if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
@@ -214,6 +218,108 @@ export function runNotice(run: RunView): ViewNode {
       component: 'p',
     },
     children: [text(ended ? (run.message ?? '') : 'It runs in the background. Notifications will tell you when it ends.')],
+  };
+}
+
+export type DraftState =
+  | { status: 'drafting' }
+  | { status: 'ready'; draft: DraftView }
+  | { status: 'refused'; reasons: string[] };
+
+const formatTime = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/**
+ * Review a draft (design system spec 5.1): the generated draft, marked as such until a person decides, with the model
+ * that wrote it and what it was given; then Accept, Edit, Discard or Back. Takes the place of the view it was opened from.
+ */
+export function buildDraftView(
+  composition: MethodComposition,
+  state: DraftState,
+  options: { editing?: boolean; editedText?: string; submitting?: boolean; problems?: string[]; minimizable?: boolean } = {},
+): ViewSpec {
+  const title = `${composition.label} ${composition.object.identifier}`;
+  const back: ViewNode = { component: 'Button', props: { label: 'Back', variant: 'link' }, intent: 'cancel' };
+  const items: ViewNode[][] = [...(options.minimizable ? [[minimizeButton]] : []), [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')]];
+
+  if (state.status === 'drafting') {
+    items.push([
+      { component: 'Spinner', props: { size: 'lg', 'aria-valuetext': 'The connected model is writing the draft' } },
+      text('The connected model is writing the draft. This can take a minute.'),
+    ]);
+    items.push([back]);
+  } else if (state.status === 'refused') {
+    items.push([
+      { component: 'Alert', props: { variant: 'danger', title: `${composition.label} cannot be drafted`, isInline: true, component: 'h2' }, children: state.reasons.map((r) => text(r)) },
+    ]);
+    items.push([back]);
+  } else {
+    const { draft } = state;
+    const { editing = false, submitting = false } = options;
+    if (options.problems?.length) {
+      items.push([{ component: 'Alert', props: { variant: 'danger', title: 'The gateway refused it', isInline: true, component: 'h2' }, children: options.problems.map((r) => text(r)) }]);
+    }
+    items.push([
+      // Generated content is marked as such until a person accepts it (rule 5).
+      { component: 'Label', props: { label: 'Generated draft, not reviewed', status: 'warning' } },
+      { component: 'Title', props: { label: 'Draft', headingLevel: 'h2', size: 'lg' } },
+      editing
+        ? {
+            component: 'Form',
+            children: [
+              {
+                component: 'FormGroup',
+                props: { label: 'Edit the draft', isRequired: true },
+                children: [{ component: 'TextArea', props: { 'aria-label': 'Edit the draft', isRequired: true, autoResize: true }, field: DRAFT_FIELD }],
+              },
+            ],
+          }
+        : stack(draft.text.split(/\n\s*\n/).map((paragraph) => [text(paragraph.trim(), 'p')])),
+    ]);
+    items.push([
+      {
+        component: 'DescriptionList',
+        props: { isCompact: true },
+        children: [
+          ['Written by', draft.model],
+          ['Written', formatTime(draft.generatedAt)],
+          ['Drawn from', draft.given.map((g) => g.identifier).join(', ')],
+          ['Asked for by', draft.requestedByName],
+        ].map(([term, value]) => ({
+          component: 'DescriptionListGroup',
+          children: [
+            { component: 'DescriptionListTerm', props: { label: term } },
+            { component: 'DescriptionListDescription', children: [text(value)] },
+          ],
+        })),
+      },
+    ]);
+    const emptyEdit = editing && !options.editedText?.trim();
+    items.push([
+      {
+        component: 'Flex',
+        props: { gap: { default: 'gapMd' }, flexWrap: { default: 'wrap' } },
+        children: [
+          { component: 'Button', props: { label: editing ? 'Accept edited draft' : 'Accept', variant: 'primary', isDisabled: submitting || emptyEdit }, intent: 'submit' },
+          ...(editing ? [] : [{ component: 'Button', props: { label: 'Edit', variant: 'secondary', isDisabled: submitting }, intent: 'edit' } as ViewNode]),
+          { component: 'Button', props: { label: 'Discard', variant: 'tertiary', isDisabled: submitting }, intent: 'discard' },
+          back,
+        ],
+      },
+    ]);
+  }
+  return {
+    pattern: 'review-a-draft',
+    because: `${composition.label} produces a draft: a Review a draft method (platform spec 5.4)`,
+    root: stack(items),
+  };
+}
+
+/** After a draft is discarded (design system spec 5.1, Review a draft, step 5). */
+export function discardedNotice(draft: DraftView): ViewNode {
+  return {
+    component: 'Alert',
+    props: { variant: 'info', title: `${draft.methodLabel} draft discarded for ${draft.objectIdentifier}`, isInline: true, component: 'p' },
+    children: [text('Nothing on the object changed. The discarded draft stays in the record.')],
   };
 }
 
@@ -282,10 +388,12 @@ export function buildCompareView(
   self: ObjectView,
   other: ObjectView | undefined,
   submitting = false,
+  minimizable = false,
 ): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const pick = composition.inputs.find((i) => i.kind === 'object');
   const items: ViewNode[][] = [
+    ...(minimizable ? [[minimizeButton]] : []),
     [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')],
     [{ component: 'Form', children: composition.inputs.map(fieldFor) }],
   ];
@@ -324,13 +432,14 @@ export function nameMatches(composition: MethodComposition, typed: string | unde
  * Review and sign (design system spec 5.1): a Wizard in a modal. Review shows the inputs and the preview;
  * Sign shows who signs, what the signature means and when it is recorded, then takes the typed name.
  */
-export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false): ViewSpec {
+export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const signature = composition.signature!;
-  const review: ViewNode[][] = [];
+  const review: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
   if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   review.push(previewSection(composition, state));
   const sign: ViewNode[][] = [
+    ...(minimizable ? [[minimizeButton]] : []),
     [
       {
         component: 'DescriptionList',
@@ -419,7 +528,11 @@ export function buildRefusedView(reasons: string[]): ViewSpec {
 /** The success message after a commit (design system spec 5.1, step 6). */
 export function successNotice(composition: MethodComposition, result: CommitResult): ViewNode {
   if (result.run) return runNotice(result.run);
-  const lines = changeLines(composition, result);
+  // Long text, such as an accepted narrative, is shortened here: the object holds it whole.
+  const lines = changeLines(composition, result).map((l) => (l.value.length > 160 ? { ...l, value: `${l.value.slice(0, 157).trimEnd()}…` } : l));
+  if (result.fromDraft) {
+    lines.push({ term: 'From a generated draft', value: `written by ${result.fromDraft.model}, ${result.fromDraft.edited ? 'edited before it was accepted' : 'accepted as written'}` });
+  }
   if (result.signature) {
     lines.push({ term: 'Signed by', value: `${result.signature.signerName}${result.signature.development ? ' (development signature, not valid)' : ''}` });
   }
@@ -430,3 +543,44 @@ export function successNotice(composition: MethodComposition, result: CommitResu
     children: lines.map((l) => text(`${l.term}: ${l.value}`)),
   };
 }
+
+// ---------------------------------------------------------------- progress in the dock (design system spec 5.1)
+
+/** How far along a process is, in its archetype's terms, for the dock. The same measure for every method of an archetype. */
+export function processProgress(
+  composition: MethodComposition,
+  state: PreviewState,
+  values: Record<string, string>,
+  extra: { run?: RunView; draft?: DraftState; editing?: boolean } = {},
+): Progress {
+  const archetype = composition.archetype.label;
+  if (archetype === 'Review a draft') {
+    const draft = extra.draft;
+    if (!draft || draft.status === 'drafting') return { fraction: null, words: 'Drafting' };
+    if (draft.status === 'refused') return { fraction: 0, words: 'Cannot be drafted', status: 'danger' };
+    return { fraction: 1, words: extra.editing ? 'Editing' : 'Draft ready' };
+  }
+  if (archetype === 'Start and track' && extra.run) {
+    const run = extra.run;
+    if (run.status === 'succeeded') return { fraction: 1, words: 'Finished', status: 'success' };
+    if (run.status === 'failed') return { fraction: 1, words: 'Failed', status: 'danger' };
+    if (run.status === 'queued') return { fraction: 0, words: 'Waiting to start' };
+    const percent = Math.round((run.progress ?? 0) * 100);
+    return { fraction: run.progress ?? 0, words: `Running, ${percent}%` };
+  }
+  if (state.status === 'refused') return { fraction: 0, words: 'Cannot run', status: 'danger' };
+  const ready = state.status === 'ready';
+  const readyWords: Record<string, string> = { Confirm: 'Ready to confirm', 'Review and sign': 'Ready to sign', 'Start and track': 'Ready to start' };
+  if (ready) return { fraction: 1, words: readyWords[archetype] ?? 'Ready to commit' };
+  const needed = composition.inputs.length;
+  if (!needed) return { fraction: 0, words: 'Checking' };
+  const given = composition.inputs.filter((i) => values[i.name]?.trim()).length;
+  return { fraction: given / (needed + 1), words: `${given} of ${needed} ${needed === 1 ? 'field' : 'fields'}` };
+}
+
+/** The Minimize button every pattern carries at the top of the process (design system spec 5.1). */
+export const minimizeButton: ViewNode = {
+  component: 'Flex',
+  props: { justifyContent: { default: 'justifyContentFlexEnd' } },
+  children: [{ component: 'Button', props: { label: 'Minimize', variant: 'link' }, intent: 'minimize' }],
+};

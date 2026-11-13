@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { MethodComposition } from '../data/client';
-import type { RunView } from '../data/client';
-import { buildCompareView, buildComposeView, buildRefusedView, buildSignView, buildStartView, changeLines, nameMatches, runNotice, successNotice } from './composeView';
+import type { DraftView, RunView } from '../data/client';
+import { buildCompareView, buildComposeView, buildDraftView, buildRefusedView, buildSignView, buildStartView, changeLines, discardedNotice, nameMatches, runNotice, successNotice } from './composeView';
 
-const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', state: {} };
+const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', pluralLabel: 'Safety Cases', state: {} };
 const triage: MethodComposition = {
   method: 'urn:Triage',
   label: 'Triage',
@@ -181,5 +181,55 @@ describe('Start and track (design system spec 5.1)', () => {
     expect(runNotice(run).props).toMatchObject({ variant: 'info', title: 'Run signal detection started on P-101' });
     expect(runNotice(ended).props).toMatchObject({ variant: 'success', title: 'Run signal detection finished on P-101' });
     expect(successNotice(detect, { commit: 'urn:c1', ...background, run: ended }).props).toMatchObject({ title: 'Run signal detection finished on P-101' });
+  });
+});
+
+describe('Review a draft (design system spec 5.1)', () => {
+  const narrative: MethodComposition = { method: 'urn:GenerateNarrative', label: 'Generate narrative', archetype: { archetype: 'urn:ReviewADraft', label: 'Review a draft' }, object, inputs: [] };
+  const draft: DraftView = {
+    draft: 'urn:draft/1', method: 'urn:GenerateNarrative', methodLabel: 'Generate narrative', object: object.iri, objectIdentifier: 'SC-004',
+    text: 'First paragraph.\n\nSecond paragraph.', model: 'claude-opus-5-5', generatedAt: '2026-11-12T10:00:00Z', status: 'undecided',
+    given: [{ iri: object.iri, identifier: 'SC-004' }], requestedBy: 'urn:c', requestedByName: 'Chloé Martin',
+  };
+
+  it.each([
+    ['drafting', buildDraftView(narrative, { status: 'drafting' })],
+    ['refused', buildDraftView(narrative, { status: 'refused', reasons: ['No model is connected to draft this.'] })],
+    ['ready', buildDraftView(narrative, { status: 'ready', draft })],
+    ['editing', buildDraftView(narrative, { status: 'ready', draft }, { editing: true, editedText: 'x' })],
+    ['refused on accept', buildDraftView(narrative, { status: 'ready', draft }, { problems: ['This draft was already accepted'] })],
+  ])('%s is a valid view spec', (_name, view) => {
+    expect(validateView(view).errors).toEqual([]);
+    expect(view.pattern).toBe('review-a-draft');
+  });
+
+  it('marks the draft as generated, shows its paragraphs, and offers Accept, Edit, Discard and Back', () => {
+    const json = JSON.stringify(buildDraftView(narrative, { status: 'ready', draft }));
+    expect(json).toContain('{"component":"Label","props":{"label":"Generated draft, not reviewed","status":"warning"}}');
+    expect(json).toContain('"label":"First paragraph."');
+    expect(json).toContain('"label":"Second paragraph."');
+    for (const [label, intent] of [['Accept', 'submit'], ['Edit', 'edit'], ['Discard', 'discard'], ['Back', 'cancel']]) {
+      expect(json).toMatch(new RegExp(`"label":"${label}"[^}]*}[^}]*"intent":"${intent}"|"label":"${label}","variant":"[a-z]+"(,"isDisabled":false)?},"intent":"${intent}"`));
+    }
+  });
+
+  it('while editing, binds the text to a field and cannot accept it empty', () => {
+    const json = JSON.stringify(buildDraftView(narrative, { status: 'ready', draft }, { editing: true, editedText: '  ' }));
+    expect(json).toContain('"field":"draftText"');
+    expect(json).toContain('{"label":"Accept edited draft","variant":"primary","isDisabled":true}');
+    expect(json).not.toContain('"intent":"edit"');
+  });
+
+  it('says where an accepted narrative came from, and shortens long text in the notice', () => {
+    const long = 'A'.repeat(400);
+    const result = {
+      commit: 'urn:c1', created: [], pending: [], pendingDescriptions: [], background: [],
+      changes: [{ subject: object.iri, property: 'urn:narrative', newValue: long, subjectLabel: 'SC-004', propertyLabel: 'narrative', newLabel: long }],
+      fromDraft: { draft: draft.draft, model: 'claude-opus-5-5', edited: true },
+    };
+    const json = JSON.stringify(successNotice(narrative, result));
+    expect(json).toContain('From a generated draft: written by claude-opus-5-5, edited before it was accepted');
+    expect(json).not.toContain(long);
+    expect(discardedNotice(draft).props).toMatchObject({ variant: 'info', title: 'Generate narrative draft discarded for SC-004' });
   });
 });

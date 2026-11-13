@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@patternfly/react-core/dist/styles/base.css';
+// PatternFly's chart tokens, in light and dark mode.
+import '@patternfly/patternfly/patternfly-charts.css';
 import { App } from './App';
 import { applyMode, loadSetting, resolveMode } from './appearance/appearance';
 import { AppearanceProvider } from './appearance/AppearanceProvider';

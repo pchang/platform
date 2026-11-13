@@ -1,5 +1,7 @@
 import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
+import { DraftingError, sha256, type Drafter } from './drafting';
+import { containsWords, interpret, normalize, type Interpretation } from './search';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
@@ -19,7 +21,7 @@ export interface Principal {
 
 export class GatewayError extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404,
+    readonly status: 400 | 401 | 403 | 404 | 502,
     readonly reasons: string[],
   ) {
     super(reasons.join('; '));
@@ -31,7 +33,11 @@ export interface ObjectSummary {
   identifier: string;
   type: string;
   typeLabel: string;
+  /** The type's plural label, for summaries and lists. */
+  pluralLabel: string;
   state: Record<string, string>;
+  /** Where the object is in its type's lifecycle: the type's first state dimension (spec 5.1). */
+  lifecycle?: { dimension: string; stage: string; position: number; stages: string[] };
 }
 
 export interface ObjectView extends ObjectSummary {
@@ -114,6 +120,44 @@ export interface CommitResult {
   background: string[];
   /** The background run the commit started, for a method that runs in the background. */
   run?: RunView;
+  /** The draft the commit accepted, for a method that produces a draft. */
+  fromDraft?: { draft: string; model: string; edited: boolean };
+}
+
+/** A search's answer (spec 5.2): how the query was understood, and the objects it found, best first. */
+export interface SearchResult {
+  query: string;
+  interpretation: Interpretation;
+  results: { object: ObjectSummary; matched: string[] }[];
+  /** How many objects matched, of which results holds the best. */
+  total: number;
+}
+
+export type DraftStatus = 'undecided' | 'accepted' | 'discarded';
+
+/** A generated draft (spec 3.4, Generated drafts), as the person deciding on it sees it. */
+export interface DraftView {
+  draft: string;
+  method: string;
+  methodLabel: string;
+  object: string;
+  objectIdentifier: string;
+  /** The text the model wrote. */
+  text: string;
+  /** The model that wrote it, as the provider reports it. */
+  model: string;
+  generatedAt: string;
+  status: DraftStatus;
+  /** The objects whose records the model was given. */
+  given: { iri: string; identifier: string }[];
+  requestedBy: string;
+  requestedByName: string;
+}
+
+/** Accepting a draft: which one, and the text to commit, as written or edited. */
+export interface DraftGiven {
+  draft: string;
+  text: string;
 }
 
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
@@ -184,7 +228,7 @@ export interface JournalWriter {
 }
 
 /** What a journal entry records: a commit, a recorded read, a run's change of status, or notifications read. */
-export type JournalKind = 'commit' | 'read' | 'run' | 'notification';
+export type JournalKind = 'commit' | 'read' | 'run' | 'notification' | 'draft';
 
 const RUN_STATUS = (status: RunStatus) => namedNode(`${NS.p}RunStatus-${status}`);
 const WORKER = `${NS.p}BackgroundWorker`;
@@ -199,6 +243,8 @@ export interface GatewayOptions {
   developmentSignatures?: boolean;
   /** Where commits and recorded reads are written before the gateway answers. Without one, state is in memory only. */
   journal?: JournalWriter;
+  /** The model connected for drafting (spec 3.4, Generated drafts). Without one, drafting methods are refused. */
+  drafter?: Drafter;
 }
 
 export class Gateway {
@@ -206,6 +252,7 @@ export class Gateway {
   private readCount = 0;
   private runCount = 0;
   private notificationCount = 0;
+  private draftCount = 0;
   /** Each running run's progress, from 0 to 1. Reported while it runs, not kept (spec 3.4). */
   private readonly progress = new Map<string, number>();
   /** Commits and background work run one at a time, in the order they arrive. */
@@ -219,6 +266,7 @@ export class Gateway {
     this.readCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?g { ?r a p:Read } }`)[0].n);
     this.runCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?r { ?r a p:Run } }`)[0].n);
     this.notificationCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Notification } }`)[0].n);
+    this.draftCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Draft } }`)[0].n);
     // A run that had not ended when the gateway stopped starts again (spec 3.4, Background runs).
     for (const { run } of this.q(`SELECT ?run WHERE { GRAPH ?run { ?run a p:Run ; p:runStatus ?s ; prov:startedAtTime ?at FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running)) } } ORDER BY ?at STRLEN(STR(?run)) ?run`)) {
       void this.enqueue(() => this.work(run));
@@ -350,6 +398,7 @@ export class Gateway {
         for (const m of methods.filter((m) => m.type === type)) {
           const isTask = m.onDemand !== 'true';
           if (!isTask && urgency < 3) continue;
+          if (this.unavailable(m.method).length) continue;
           if ((await conformanceProblems(this.graph, o, preconditions.get(m.method)!, validator)).length) continue;
           (isTask ? tasks : actions).push({ method: m.method, label: m.label, archetype: archetypeOf(this.graph.store, m.method) });
         }
@@ -399,12 +448,31 @@ export class Gateway {
     const state = Object.fromEntries(
       this.q(`SELECT ?dim ?value WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?dim . <${object}> ?d ?v . ?v skos:prefLabel ?value }`).map((r) => [r.dim, r.value]),
     );
-    return { iri: object, identifier, type, typeLabel, state };
+    const pluralLabel = this.q(`SELECT ?l WHERE { <${type}> p:pluralLabel ?l }`)[0]?.l ?? typeLabel;
+    return { iri: object, identifier, type, typeLabel, pluralLabel, state, ...this.lifecycleOf(object, type) };
+  }
+
+  /** The object's stage in its type's first state dimension, with every stage in order. */
+  private lifecycleOf(object: string, type: string): { lifecycle?: ObjectSummary['lifecycle'] } {
+    const dim = this.q(`SELECT ?d ?label ?scheme WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?label ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
+    if (!dim) return {};
+    const stages = this.q(`SELECT ?v ?label WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o } ORDER BY ?o`);
+    const value = this.q(`SELECT ?v WHERE { <${object}> <${dim.d}> ?v }`)[0]?.v;
+    const position = stages.findIndex((s) => s.v === value);
+    if (position < 0) return {};
+    return { lifecycle: { dimension: dim.label, stage: stages[position].label, position, stages: stages.map((s) => s.label) } };
   }
 
   read(principal: Principal, idOrIri: string): ObjectView {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
+    const view = this.view(principal, object);
+    if (ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
+    return view;
+  }
+
+  /** An object as the principal may see it, with nothing recorded: reads and searches decide what to audit. */
+  private view(principal: Principal, object: string): ObjectView {
     const summary = this.summary(object);
     if (!this.canRead(principal, summary.type)) throw new GatewayError(403, ['Your role cannot read this object']);
     const hidden = this.unreadable(principal.role);
@@ -435,8 +503,101 @@ export class Gateway {
       const value = r.valueLabel ?? r.value;
       properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
     }
-    if (ask(this.graph.store, `ASK { <${summary.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
     return { ...summary, links, properties };
+  }
+
+  // ---------------------------------------------------------------- search (spec 5.2)
+
+  /**
+   * Search (spec 5.2): the query read against the ontology, then applied to what the principal may read. A result whose
+   * personal data matched the query is a read of it, and is audited as one.
+   */
+  search(principal: Principal, query: string, limit = 50): SearchResult {
+    this.authorize(principal);
+    const hidden = this.unreadable(principal.role);
+    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel } ORDER BY ?label`)
+      .filter((t) => !hidden.has(t.type)) as { type: string; label: string; pluralLabel: string }[];
+    const readable = new Set(types.map((t) => t.type));
+    const states = this.q(`SELECT ?dimension ?dimensionLabel ?type ?value ?label WHERE { ?dimension p:dimensionOf ?type ; rdfs:label ?dimensionLabel ; p:valuesFrom ?scheme .
+        ?value skos:inScheme ?scheme ; skos:prefLabel ?label }`).filter((v) => readable.has(v.type)) as never;
+    const identifiers = new Map(
+      this.q(`SELECT ?o ?id ?type WHERE { ?o ls:identifier ?id ; a ?type . ?type a p:ObjectType }`)
+        .filter((r) => readable.has(r.type))
+        .map((r) => [normalize(r.id), { iri: r.o, identifier: r.id }]),
+    );
+    const interpretation = interpret(query, { types, states, identifier: (w) => identifiers.get(w) });
+    const empty = { query, interpretation, results: [], total: 0 };
+    const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length;
+    if (!understood) return empty;
+
+    // Candidates: the identified objects, the objects of the types linked to them, or every object of the types.
+    const wanted = interpretation.types.length ? interpretation.types.map((t) => t.type) : [...readable];
+    const linked = interpretation.identifiers.length > 0 && interpretation.types.length > 0;
+    let candidates: { iri: string; score: number; matched: string[] }[];
+    if (linked) {
+      candidates = interpretation.identifiers.flatMap((anchor) =>
+        this.q(`SELECT DISTINCT ?o ?type WHERE { { <${anchor.iri}> ?r ?o } UNION { ?o ?r <${anchor.iri}> } ?r a p:Relationship . ?o a ?type . ?type a p:ObjectType }`)
+          .filter((r) => wanted.includes(r.type))
+          .map((r) => ({ iri: r.o, score: 60, matched: [`Linked to ${anchor.identifier}`] })),
+      );
+    } else if (interpretation.identifiers.length) {
+      candidates = interpretation.identifiers.map((i) => ({ iri: i.iri, score: 100, matched: ['Identifier'] }));
+    } else {
+      candidates = wanted.flatMap((type) => this.q(`SELECT ?o WHERE { ?o a <${type}> }`).map((r) => ({ iri: r.o, score: interpretation.words.length ? 20 : 50, matched: [] })));
+    }
+    const seen = new Set<string>();
+    candidates = candidates.filter((c) => !seen.has(c.iri) && seen.add(c.iri));
+
+    // States: within a dimension any of the values understood; across dimensions, all of them.
+    const byDimension = new Map<string, { values: Set<string>; label: string }>();
+    for (const s of interpretation.states) {
+      const entry = byDimension.get(s.dimension) ?? { values: new Set(), label: s.dimensionLabel };
+      entry.values.add(s.value);
+      byDimension.set(s.dimension, entry);
+    }
+    const typeLabel = new Map(interpretation.types.map((t) => [t.type, t.label]));
+    const matches: { iri: string; score: number; matched: string[]; view: ObjectView; personal: boolean }[] = [];
+    for (const c of candidates) {
+      const view = this.view(principal, c.iri);
+      const matched = [...c.matched];
+      if (typeLabel.has(view.type)) matched.push(`Type: ${typeLabel.get(view.type)}`);
+      if (byDimension.size) {
+        const own = this.q(`SELECT ?d ?v WHERE { ?d p:dimensionOf <${view.type}> . <${c.iri}> ?d ?v }`);
+        const relevant = [...byDimension.entries()].filter(([d]) => this.q(`SELECT ?t WHERE { <${d}> p:dimensionOf ?t }`)[0]?.t === view.type);
+        if (!relevant.length || !relevant.every(([d, { values }]) => own.some((o) => o.d === d && values.has(o.v)))) continue;
+        for (const [d, { label }] of relevant) matched.push(`${label}: ${own.filter((o) => o.d === d).map((o) => this.q(`SELECT ?l WHERE { <${o.v}> skos:prefLabel ?l }`)[0].l).join(', ')}`);
+      }
+      // Words: each must appear in what the principal may read; say where, preferring the identifier and state.
+      let personal = false;
+      if (interpretation.words.length) {
+        const fields: [string, string][] = [
+          ['Identifier', view.identifier],
+          ...Object.entries(view.state).map(([k, v]) => [k, v] as [string, string]),
+          ...Object.entries(view.properties).map(([k, v]) => [k, v] as [string, string]),
+          ...view.links.map((l) => [l.label, l.objects.map((o) => o.identifier).join(', ')] as [string, string]),
+        ];
+        const all = fields.map(([, v]) => v).join(' ');
+        if (!containsWords(all, interpretation.words)) continue;
+        const hits = fields.filter(([, v]) => interpretation.words.some((w) => containsWords(v, [w])));
+        for (const [k, v] of hits.slice(0, 2)) matched.push(k === 'Identifier' ? 'Identifier' : `${k}: ${v.length > 80 ? `${v.slice(0, 77).trimEnd()}…` : v}`);
+        personal = hits.some(([k]) => k in view.properties);
+        c.score += hits.some(([k]) => k === 'Identifier') ? 10 : 5;
+      }
+      matches.push({ ...c, matched, view, personal: personal && ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`) });
+    }
+    matches.sort((a, b) => b.score - a.score || a.view.identifier.localeCompare(b.view.identifier, undefined, { numeric: true }));
+    const shown = matches.slice(0, limit);
+    // Matching personal data is reading it (spec 5.2): audited as the principal's read.
+    for (const m of shown) if (m.personal) this.recordRead(principal, m.iri);
+    return {
+      query,
+      interpretation,
+      results: shown.map((m) => ({
+        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
+        matched: m.matched,
+      })),
+      total: matches.length,
+    };
   }
 
   /** A synchronous check of the hiding shapes, which use only core constraints on the object's own values. */
@@ -478,21 +639,52 @@ export class Gateway {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
-    return methodsFor(this.graph, object, principal.role);
+    // Methods the platform cannot run yet, for want of a worker or a connected model, are blocked with that reason.
+    return (await methodsFor(this.graph, object, principal.role)).map((m) => {
+      const missing = this.draftBlocks(m.method, true).filter((b) => !m.blocks.includes(b));
+      return missing.length ? { ...m, available: false, blocks: [...missing, ...m.blocks] } : m;
+    });
+  }
+
+  /** Why the platform cannot run a method at all yet: no worker for its background work, or no model to draft it. */
+  private unavailable(method: string): string[] {
+    return [...backgroundBlocks(this.graph.store, method), ...this.draftBlocks(method, true)];
+  }
+
+  /**
+   * Why a method a model must write cannot run (spec 3.4, Generated drafts): no drafting effect the platform can run,
+   * or, when asked, no model connected. Empty for other methods, such as a person's suggestion awaiting review.
+   */
+  private draftBlocks(method: string, needsModel: boolean): string[] {
+    // A method a model must do, with no drafting effect the platform can run, such as proposing compounds.
+    if (ask(this.graph.store, `ASK { <${method}> p:needsModel true }`) && !this.draftingOf(method)) {
+      const described = this.q(`SELECT ?d WHERE { <${method}> p:effect ?e . ?e a p:DescribedEffect ; p:description ?d }`).map((r) => r.d);
+      return [['No model can draft this yet.', ...described].join(' ')];
+    }
+    if (!this.draftingOf(method)) return [];
+    if (needsModel && !this.options.drafter) return ['No model is connected to draft this. A deployment connects one; previews never do.'];
+    return [];
+  }
+
+  private draftingOf(method: string): { effect: string; property: string; instructions: string; drawsOn: string[] } | undefined {
+    const e = this.q(`SELECT ?e ?property ?instructions WHERE { <${method}> p:effect ?e . ?e a p:Drafting ; p:draftsProperty ?property ; p:instructions ?instructions }`)[0];
+    if (!e) return undefined;
+    const drawsOn = this.q(`SELECT ?r WHERE { <${e.e}> p:drawsOn ?r } ORDER BY ?r`).map((r) => r.r);
+    return { effect: e.e, property: e.property, instructions: e.instructions, drawsOn };
   }
 
   // ---------------------------------------------------------------- commits
 
   /** Commits run one at a time: each waits for the one before it to finish. */
-  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven): Promise<CommitResult> {
-    return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature));
+  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven): Promise<CommitResult> {
+    return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft));
   }
 
   /**
    * Commit steps 1 to 5 (spec 3.4) on a working copy: role, inputs, preconditions, effects and validation.
    * Throws with the reasons at the first failure. Nothing reaches the live graph.
    */
-  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>) {
+  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, draftText?: string) {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
@@ -501,6 +693,9 @@ export class Gateway {
     // A background method no worker can do is refused before anything else (spec 3.4, Background runs).
     const noWorker = backgroundBlocks(this.graph.store, method);
     if (noWorker.length) throw new GatewayError(400, noWorker);
+    // Accepting a draft needs no model: the text is already written. A method that can never be drafted is refused.
+    const noDraft = this.draftBlocks(method, false);
+    if (noDraft.length) throw new GatewayError(400, noDraft);
 
     // 1. The role may run the method.
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
@@ -526,6 +721,17 @@ export class Gateway {
       else if (kind === 'Creation') created.push(this.applyCreation(work, object, effect.e, resolvedInputs, principal, at, changes));
       else if (kind === 'Link') this.applyLink(work, object, effect.e, resolvedInputs, changes);
       else if (kind === 'DescribedEffect') pending.push(effect.e);
+      else if (kind === 'Drafting') {
+        if (draftText === undefined) throw new GatewayError(400, ['This method needs a draft. Ask for one, then accept it.']);
+        this.set(work, object, this.draftingOf(method)!.property, literal(draftText), changes);
+      }
+    }
+
+    // Inputs recorded as properties: on the objects the method created, or else on the object itself.
+    for (const { input, property } of this.q(`SELECT ?input ?property WHERE { <${method}> p:input ?input . ?input p:recordedAs ?property }`)) {
+      const value = resolvedInputs.get(input);
+      if (!value) continue;
+      for (const target of created.length ? created : [object]) this.set(work, target, property, value, changes);
     }
 
     // 5. Validate the changed copy against every shape. Any violation discards it.
@@ -548,8 +754,9 @@ export class Gateway {
     };
   }
 
-  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven): Promise<CommitResult> {
-    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs);
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven): Promise<CommitResult> {
+    const accepted = draftGiven ? this.checkDraft(principal, this.resolve(idOrIri), method, draftGiven) : undefined;
+    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text);
     const signature = this.checkSignature(principal, method, given);
 
     // 6. Record the commit: journal first, flushed to disk, then the live graph.
@@ -560,6 +767,17 @@ export class Gateway {
     // A background method's commit also starts its run, in the same entry (spec 3.4, Background runs).
     const run = analysisOf(this.graph.store, method) ? `${this.dataNamespace}run/${this.runCount + 1}` : undefined;
     if (run) added.push(...this.runRecord(run, principal, object, method, commit, at));
+    // Accepting a draft: the commit names it and says whether it was edited, and the draft is decided, in the same entry.
+    if (accepted) {
+      const g = namedNode(commit);
+      added.push(
+        quad(g, namedNode(`${NS.p}fromDraft`), namedNode(accepted.draft), g),
+        quad(g, namedNode(`${NS.p}editedDraft`), literal(String(accepted.edited), namedNode(`${NS.xsd}boolean`)), g),
+      );
+      const decided = this.decideDraft(accepted.draft, principal, 'accepted', at);
+      removed.push(...decided.removed);
+      added.push(...decided.added);
+    }
     this.options.journal?.append('commit', at, removed, added);
     for (const q of removed) this.graph.store.delete(q);
     for (const q of added) this.graph.store.add(q);
@@ -580,7 +798,161 @@ export class Gateway {
       ...(signature ? { signature: { signerName: signature.signerName, signedAt: at.toISOString(), meaning: signature.meaning, development: signature.development } } : {}),
       background: analysisDescriptions(this.graph.store, method),
       ...(run ? { run: this.runView(run) } : {}),
+      ...(accepted ? { fromDraft: { draft: accepted.draft, model: accepted.model, edited: accepted.edited } } : {}),
     };
+  }
+
+  // ---------------------------------------------------------------- generated drafts (spec 3.4)
+
+  /**
+   * Drafts (spec 3.4, Generated drafts): the connected model writes the method's draft from what the principal may read
+   * of the object and its declared links. The draft is recorded before it is returned, and changes nothing.
+   */
+  async draft(principal: Principal, idOrIri: string, method: string): Promise<DraftView> {
+    this.authorize(principal);
+    const object = this.resolve(idOrIri);
+    const { type } = this.typeOf(object);
+    if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this object']);
+    if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    if (!ask(this.graph.store, `ASK { <${method}> p:producesDraft true }`)) throw new GatewayError(400, ['This method does not produce a draft']);
+    const blocks = this.draftBlocks(method, true);
+    if (blocks.length) throw new GatewayError(400, blocks);
+    const preconditions = this.q(`SELECT ?pre WHERE { <${method}> p:precondition ?pre }`).map((r) => r.pre);
+    const problems = await conformanceProblems(this.graph, object, preconditions);
+    if (problems.length) throw new GatewayError(400, problems);
+
+    // The records, read as the principal: hidden properties stay hidden, and personal-data reads are audited as theirs.
+    const drafting = this.draftingOf(method)!;
+    const objects = [object];
+    for (const rel of drafting.drawsOn) {
+      for (const { o } of this.q(`SELECT DISTINCT ?o WHERE { <${object}> <${rel}> ?o } ORDER BY ?o`)) {
+        const linkedType = this.q(`SELECT ?t WHERE { <${o}> a ?t . ?t a p:ObjectType }`)[0]?.t;
+        if (linkedType && this.canRead(principal, linkedType) && !objects.includes(o)) objects.push(o);
+      }
+    }
+    const records = JSON.stringify(objects.map((o) => this.recordFor(this.read(principal, o))), null, 2);
+    let reply;
+    try {
+      reply = await this.options.drafter!.draft({ instructions: drafting.instructions, records });
+    } catch (error) {
+      if (error instanceof DraftingError) throw new GatewayError(502, error.reasons);
+      throw error;
+    }
+    const text = reply.text.trim();
+    if (!text) throw new GatewayError(502, ['The model returned no text. Nothing was recorded.']);
+    const [instructionsDigest, recordsDigest] = await Promise.all([sha256(drafting.instructions), sha256(records)]);
+
+    // Recorded before it is shown, through the queue like every write.
+    return this.enqueue(async () => {
+      const draft = `${this.dataNamespace}draft/${this.draftCount + 1}`;
+      const at = this.now();
+      const g = namedNode(draft);
+      const add = (p: string, o: Term) => quad(g, namedNode(p), o, g);
+      const quads = [
+        add(RDF_TYPE, namedNode(`${NS.p}Draft`)),
+        add(`${NS.p}method`, namedNode(method)),
+        add(`${NS.p}draftOf`, namedNode(object)),
+        add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
+        add(`${NS.p}actedAs`, namedNode(principal.role)),
+        add(`${NS.p}modelId`, literal(reply.model)),
+        add(`${NS.p}instructionsDigest`, literal(instructionsDigest)),
+        add(`${NS.p}recordsDigest`, literal(recordsDigest)),
+        ...objects.map((o) => add(`${NS.p}given`, namedNode(o))),
+        add(`${NS.prov}generatedAtTime`, xsdDateTime(at)),
+        add(`${NS.p}text`, literal(text)),
+        add(`${NS.p}draftStatus`, namedNode(`${NS.p}DraftStatus-undecided`)),
+      ];
+      this.options.journal?.append('draft', at, [], quads);
+      for (const q of quads) this.graph.store.add(q);
+      this.draftCount++;
+      return this.draftView(draft);
+    });
+  }
+
+  /** An object's record as the model is given it: identifiers and labels, no addresses. */
+  private recordFor(view: ObjectView) {
+    return {
+      identifier: view.identifier,
+      type: view.typeLabel,
+      state: view.state,
+      properties: view.properties,
+      links: view.links.map((l) => ({ relationship: l.label, direction: l.direction === 'out' ? 'to' : 'from', objects: l.objects.map((o) => o.identifier) })),
+    };
+  }
+
+  private draftView(draft: string): DraftView {
+    const r = this.q(`SELECT ?method ?methodLabel ?object ?text ?model ?at ?status ?person ?name WHERE {
+        GRAPH <${draft}> { <${draft}> a p:Draft ; p:method ?method ; p:draftOf ?object ; p:text ?text ; p:modelId ?model ; prov:generatedAtTime ?at ;
+          p:draftStatus ?status ; prov:wasAssociatedWith ?person }
+        ?method rdfs:label ?methodLabel . OPTIONAL { ?person rdfs:label ?name } }`)[0];
+    if (!r) throw new GatewayError(404, [`No draft ${draft}`]);
+    const identifier = (o: string) => this.q(`SELECT ?id WHERE { <${o}> ls:identifier ?id }`)[0]?.id ?? o;
+    const given = this.q(`SELECT ?o WHERE { GRAPH <${draft}> { <${draft}> p:given ?o } }`).map((g) => ({ iri: g.o, identifier: identifier(g.o) }));
+    return {
+      draft,
+      method: r.method,
+      methodLabel: r.methodLabel,
+      object: r.object,
+      objectIdentifier: identifier(r.object),
+      text: r.text,
+      model: r.model,
+      generatedAt: r.at,
+      status: r.status.slice(`${NS.p}DraftStatus-`.length) as DraftStatus,
+      given: given.sort((a, b) => (a.iri === r.object ? -1 : b.iri === r.object ? 1 : a.identifier.localeCompare(b.identifier))),
+      requestedBy: r.person,
+      requestedByName: r.name ?? r.person,
+    };
+  }
+
+  /** Only a person decides on a draft, once, for the object and method it was written for (spec 3.4). */
+  private checkDraft(principal: Principal, object: string, method: string, given: DraftGiven) {
+    this.authorize(principal);
+    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) throw new GatewayError(403, ['Only a person accepts or discards a draft. Agents may only ask for one.']);
+    const view = this.draftView(given.draft);
+    if (view.object !== object || view.method !== method) throw new GatewayError(400, ['This draft was written for another object or method']);
+    if (view.status !== 'undecided') throw new GatewayError(400, [`This draft was already ${view.status}`]);
+    const text = given.text.trim();
+    if (!text) throw new GatewayError(400, ['The text is empty. Discard the draft instead.']);
+    return { draft: given.draft, model: view.model, text, edited: text !== view.text };
+  }
+
+  /** The statements that decide a draft: its status, who decided and when. */
+  private decideDraft(draft: string, principal: Principal, status: 'accepted' | 'discarded', at: Date) {
+    const g = namedNode(draft);
+    return {
+      removed: [quad(g, namedNode(`${NS.p}draftStatus`), namedNode(`${NS.p}DraftStatus-undecided`), g)],
+      added: [
+        quad(g, namedNode(`${NS.p}draftStatus`), namedNode(`${NS.p}DraftStatus-${status}`), g),
+        quad(g, namedNode(`${NS.p}decidedBy`), namedNode(principal.person), g),
+        quad(g, namedNode(`${NS.p}decidedAt`), xsdDateTime(at), g),
+      ],
+    };
+  }
+
+  /** Reads a draft back, such as when a person returns to a process they set aside. Only for roles that may run its method. */
+  getDraft(principal: Principal, draft: string): DraftView {
+    this.authorize(principal);
+    const view = this.draftView(draft.includes('://') ? draft : `${this.dataNamespace}draft/${draft}`);
+    if (!this.canRead(principal, this.typeOf(view.object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${view.method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    return view;
+  }
+
+  /** Discards a draft: recorded, and nothing else changes. */
+  discardDraft(principal: Principal, draft: string): Promise<DraftView> {
+    return this.enqueue(async () => {
+      const iri = draft.includes('://') ? draft : `${this.dataNamespace}draft/${draft}`;
+      const view = this.draftView(iri);
+      if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${view.method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+      this.checkDraft(principal, view.object, view.method, { draft: iri, text: view.text });
+      const at = this.now();
+      const { removed, added } = this.decideDraft(iri, principal, 'discarded', at);
+      this.options.journal?.append('draft', at, removed, added);
+      for (const q of removed) this.graph.store.delete(q);
+      for (const q of added) this.graph.store.add(q);
+      return this.draftView(iri);
+    });
   }
 
   /** What signing a method means, and who would sign: undefined when the method needs no signature. */

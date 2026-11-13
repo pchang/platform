@@ -121,6 +121,22 @@ describe('methods', () => {
   });
 });
 
+describe('lifecycles (platform spec 5.1)', () => {
+  it('order every type’s state dimensions from 1, so each type has one lifecycle', () => {
+    const types = q(`SELECT ?t WHERE { ?t a p:ObjectType }`).map((r) => r.t);
+    for (const t of types) {
+      const orders = q(`SELECT ?o WHERE { ?d p:dimensionOf <${t}> ; p:order ?o } ORDER BY ?o`).map((r) => Number(r.o));
+      expect(orders, t).toEqual(orders.map((_, i) => i + 1));
+    }
+  });
+
+  it('keep each lifecycle to at most five stages, the steps of the chart color ramp', () => {
+    const counts = q(`SELECT ?d (COUNT(?v) AS ?n) WHERE { ?d p:order 1 ; p:valuesFrom ?s . ?v skos:inScheme ?s } GROUP BY ?d`).map((r) => Number(r.n));
+    expect(counts.length).toBeGreaterThan(10);
+    expect(Math.max(...counts)).toBeLessThanOrEqual(5);
+  });
+});
+
 describe('rules and roles', () => {
   it('number the seven business rules of domain spec section 7', () => {
     expect(q(`SELECT ?n WHERE { ?r a p:BusinessRule ; p:ruleNumber ?n } ORDER BY ?n`).map((r) => r.n)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
@@ -176,8 +192,8 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(35);
-    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(35);
+    expect(count).toBe(43);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(43);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {

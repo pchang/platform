@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.12. November 11, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.17, sections 3.6, 5.1, 5.4 and 7.
+Version 0.16. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.20, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -91,11 +91,24 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
 | Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
-| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
+| Sidebar | A search field, then To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 All masthead items stay visible at every width, on one row with the logo. The product name is LS&H.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
+
+**Search.** The search field heads the sidebar, so it is in the same place on every page; on phones it is in the navigation drawer.
+
+- As the person types, the best five matches appear under the field, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
+- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object.
+- The search page (`#/search/…`) shows how the query was understood, as labels such as "Type: Safety Case" and "Seriousness: serious", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
+
+**Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
+
+- Each process is one entry: the method and the object, a small progress bar, and its progress in words, such as "2 of 3 fields", "Ready to sign", "Running, 40%" or "Draft ready". Choosing an entry brings the process back in front; the process in front, if any, goes into the dock. A process in a modal covers the page, dock included, so the person minimizes it before choosing another; a page process leaves the dock in reach.
+- Each entry has a close button, named for the process. Closing ends it without committing anything; a background run keeps running, and an undecided draft stays undecided.
+- The entries sit in one row that scrolls sideways inside the dock when they do not fit, so the page itself never scrolls sideways.
+- The dock is kept on the device for each person, like the appearance setting, until each process is finished or closed, and moves to their user context when identity exists. A typed signature is never kept: signing always starts fresh.
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
@@ -105,10 +118,15 @@ Profile opens a menu showing who the person is and the role they act in. In deve
 
 ### 4.3 To do and object lists
 
-To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card shows the object's identifier and type, its state as labels, its deadline and urgency as status labels, and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
+To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card shows the object's identifier and type, its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
+
+**The To do summary** sits above the cards, under the heading:
+
+- **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
+- **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
 
 ### 4.2 Light and dark mode
 
@@ -201,6 +219,14 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 4. The final button is named for the method and stays disabled until the typed name matches. Back returns to Review. Cancel closes without changing anything.
 5. After the commit, To do returns with the success Alert, which says the change was signed and by whom.
 
+**Review a draft, step by step:**
+
+1. The method's button on a card opens the pattern in place of the view, titled with the method and the object.
+2. The gateway is asked for a draft at once. While the model writes, a spinner says it is drafting and with which model.
+3. The draft appears under a label saying it is a generated draft, not yet reviewed (rule 5), with the model that wrote it, when, and the objects it was given. If no model is connected, or the model declines, the reasons appear instead.
+4. **Accept** (primary) commits the method with the draft's text. **Edit** makes the text editable; Accept then commits the edited text, and the outcome says it was edited. **Discard** records the draft as discarded. **Back** returns without deciding, and the draft is never used.
+5. After Accept or Discard, the view returns with an Alert: what changed, who accepted it and that it came from a generated draft, or that the draft was discarded.
+
 **Start and track, step by step:**
 
 1. The method's button on a card opens a small modal, titled with the method and the object.
@@ -209,6 +235,16 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 4. Once started, the modal shows the run: a Progress bar with its status, and that the person can close the modal and keep working, because Notifications will tell them when it ends. Its button is Keep working while the run goes on, and Done once it ends; neither stops the run.
 5. When the run ends while the modal is open, it shows the outcome: what was found and created, or why it failed.
 6. Closing the modal returns to the list, with an Alert saying the run started or how it ended. The object's card shows the run while it is running.
+
+**Setting a process aside, step by step:** every pattern has a **Minimize** button at the top of the process, in the same place for every archetype. It sends the process to the dock with everything given so far, and returns the person to the view underneath. Starting another process, or restoring one from the dock, minimizes the one in front the same way. Progress in the dock comes from the archetype:
+
+| Archetype | Progress |
+|---|---|
+| Confirm | Ready to confirm, once the preview is ready |
+| Fill in, Compare and decide | Fields given out of fields needed, then Ready to commit |
+| Review and sign | Fields given, then Ready to sign once the preview is ready |
+| Start and track | Not started; then the run's own status and progress |
+| Review a draft | Drafting; Draft ready; Editing |
 
 **Overlays in the catalog preview.** Components that open over the page, such as Modal, are validated like every other entry, but the catalog preview describes them in words instead of opening them. They can be tried from To do.
 | Continue | Cards of suggested next actions | New state, links to other domains |
@@ -245,7 +281,8 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 - `action` names an ontology method. The gateway checks it again on commit.
 - `because` records why a node is there. It powers "why am I seeing this" (platform spec 5.4).
 - `field` binds a form control to one input of the method being composed, by the input's name. The renderer keeps the value; the view spec never holds it.
-- `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything.
+- `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything, `edit` makes generated text editable, `discard` records a draft as discarded, and `minimize` sets the process aside in the dock.
+- A selectable Card with a `field` and a `value` works as one of a set of radio buttons: choosing it sets the field to its value.
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
@@ -305,3 +342,7 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.10 | 2026-11-11 | Compare and decide specified step by step. Previews show pending work as later work. |
 | 0.11 | 2026-11-11 | Review and sign specified step by step: a Wizard with Review and Sign steps. |
 | 0.12 | 2026-11-11 | Start and track specified step by step: a modal to start, then the run's progress and outcome. Notifications opens a notification drawer with an unread count. Object list cards offer the methods the person can run now and show runs in progress. Closed the question of what notifications open. |
+| 0.13 | 2026-11-12 | Review a draft specified step by step: a page that asks for the draft at once, shows it marked as generated with its model and sources, then Accept, Edit, Discard or Back. The view spec gains the `edit` and `discard` intents. |
+| 0.14 | 2026-11-12 | Added the process dock to the chrome (4.1), the To do summary with counts and work by type and stage (4.3), and setting a process aside with progress by archetype (5.1). The view spec gains the `minimize` intent and selectable cards bound to a field. |
+| 0.15 | 2026-11-12 | A deadline already past is labeled Overdue since, as a danger, not Due, as a warning. |
+| 0.16 | 2026-11-13 | Added the search field to the sidebar and the search page (4.1). |

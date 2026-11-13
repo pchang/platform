@@ -11,11 +11,15 @@ import { createMcpServer } from './mcp';
  *   GET  /api/navigation                     the domains and object types of the principal's work
  *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
+ *   GET  /api/search?q=serious+adverse+events  search: how the query was understood, and what it found
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
- *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." } }
+ *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." }, "draft": { "draft": "...", "text": "..." } }
+ *   POST /api/objects/:id/methods/:method/draft     a connected model drafts the method; recorded, changes nothing
+ *   GET  /api/drafts/:draft                  read a draft back, such as /api/drafts/1
+ *   POST /api/drafts/:draft/discard          discard a draft, such as /api/drafts/1/discard
  *   GET  /api/runs?object=P-101&active=true  track background runs, optionally on one object, or only those not ended
  *   GET  /api/runs/:run                      one run, such as /api/runs/1
  *   GET  /api/notifications                  the principal's notifications, newest first
@@ -85,6 +89,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const state = Object.fromEntries([...url.searchParams].filter(([k]) => k !== 'type').map(([k, v]) => [expand(k, NS.ls), expand(v, NS.lst)]));
         return send(res, 200, gateway.find(principal, expand(type, NS.ls), state));
       }
+      case 'GET search':
+        return send(res, 200, gateway.search(principal, url.searchParams.get('q') ?? ''));
       case 'GET objects/:':
         return send(res, 200, gateway.read(principal, parts[2]));
       case 'GET objects/:/methods':
@@ -95,10 +101,16 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
         return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));
       }
+      case 'POST objects/:/methods/:/draft':
+        return send(res, 201, await gateway.draft(principal, parts[2], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:': {
-        const { inputs = {}, signature } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string } };
-        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature));
+        const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
+        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
       }
+      case 'GET drafts/:':
+        return send(res, 200, gateway.getDraft(principal, parts[2]));
+      case 'POST drafts/:/discard':
+        return send(res, 200, await gateway.discardDraft(principal, parts[2]));
       case 'GET runs':
         return send(res, 200, gateway.runs(principal, { object: url.searchParams.get('object') ?? undefined, active: url.searchParams.get('active') === 'true' }));
       case 'GET runs/:':

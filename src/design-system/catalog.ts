@@ -24,6 +24,9 @@ export interface CatalogComponent {
   overlay?: boolean;
 }
 
+/** A button's role in an interaction (design system spec 5.2). */
+export type Intent = 'submit' | 'cancel' | 'edit' | 'discard' | 'minimize';
+
 export interface ViewNode {
   component: string;
   props?: Record<string, unknown>;
@@ -31,7 +34,7 @@ export interface ViewNode {
   action?: { method: string; target: string };
   because?: string;
   field?: string;
-  intent?: 'submit' | 'cancel';
+  intent?: Intent;
   children?: ViewNode[];
 }
 

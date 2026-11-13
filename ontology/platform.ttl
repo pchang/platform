@@ -121,6 +121,16 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
   rdfs:subClassOf p:Analysis .
 
+p:Drafting a rdfs:Class ;
+  rdfs:label "drafting" ;
+  rdfs:comment "An effect whose value a connected model drafts and a person accepts: the property the accepted text fills, the model's instructions, and the linked objects it may draw on (platform spec 3.4, Generated drafts)." ;
+  rdfs:subClassOf p:Effect .
+
+p:Draft a rdfs:Class ;
+  rdfs:label "draft" ;
+  rdfs:comment "Text a connected model wrote for a drafting effect, recorded with who asked, the model, fingerprints of its instructions and records, and whether a person accepted or discarded it. A PROV-O entity." ;
+  rdfs:subClassOf prov:Entity .
+
 p:Run a rdfs:Class ;
   rdfs:label "run" ;
   rdfs:comment "A background run of a method: started by a commit and finished by a worker, which commits the result on behalf of the person who started it. A PROV-O activity." ;
@@ -492,7 +502,7 @@ p:ruleOrder a rdf:Property ;
 
 p:order a rdf:Property ;
   rdfs:label "order" ;
-  rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme. Keeps forms and choices in the same order every time." ;
+  rdfs:comment "Position among its siblings, from 1: an input among its method's inputs, a value within its scheme, a state dimension among its type's. The first state dimension is the type's lifecycle. Keeps forms, choices and summaries in the same order every time." ;
   rdfs:range xsd:integer .
 
 p:signatureMeaning a rdf:Property ;
@@ -644,6 +654,100 @@ p:readAt a rdf:Property ;
   rdfs:domain p:Notification ;
   rdfs:range xsd:dateTime .
 
+p:needsModel a rdf:Property ;
+  rdfs:label "needs model" ;
+  rdfs:comment "True when a model must do the method's work, such as proposing compounds, but the method declares no drafting effect the platform can run. Refused until one is declared and connected." ;
+  rdfs:domain p:Method ;
+  rdfs:range xsd:boolean .
+
+p:recordedAs a rdf:Property ;
+  rdfs:label "recorded as" ;
+  rdfs:comment "When a creation runs, the input's value is recorded on the new object with this property; for a state change, on the object itself." ;
+  rdfs:domain p:Input ;
+  rdfs:range rdf:Property .
+
+p:draftsProperty a rdf:Property ;
+  rdfs:label "drafts property" ;
+  rdfs:comment "The property the accepted text of a drafting effect fills." ;
+  rdfs:domain p:Drafting ;
+  rdfs:range rdf:Property .
+
+p:instructions a rdf:Property ;
+  rdfs:label "instructions" ;
+  rdfs:comment "What the model is asked to write, and how. Versioned with the ontology." ;
+  rdfs:domain p:Drafting ;
+  rdfs:range xsd:string .
+
+p:drawsOn a rdf:Property ;
+  rdfs:label "draws on" ;
+  rdfs:comment "A relationship from the object to linked objects the model may also be given, as far as the principal may read them." ;
+  rdfs:domain p:Drafting ;
+  rdfs:range rdf:Property .
+
+p:draftStatus a rdf:Property ;
+  rdfs:label "draft status" ;
+  rdfs:comment "Whether a draft is undecided, accepted or discarded." ;
+  rdfs:domain p:Draft ;
+  rdfs:range skos:Concept .
+
+p:draftOf a rdf:Property ;
+  rdfs:label "draft of" ;
+  rdfs:comment "The object a draft was written for." ;
+  rdfs:domain p:Draft .
+
+p:text a rdf:Property ;
+  rdfs:label "text" ;
+  rdfs:comment "The text a model wrote." ;
+  rdfs:domain p:Draft ;
+  rdfs:range xsd:string .
+
+p:modelId a rdf:Property ;
+  rdfs:label "model" ;
+  rdfs:comment "The model that wrote the draft, as the provider reports it." ;
+  rdfs:domain p:Draft ;
+  rdfs:range xsd:string .
+
+p:instructionsDigest a rdf:Property ;
+  rdfs:label "instructions digest" ;
+  rdfs:comment "SHA-256 of the instructions the model was given." ;
+  rdfs:domain p:Draft ;
+  rdfs:range xsd:string .
+
+p:recordsDigest a rdf:Property ;
+  rdfs:label "records digest" ;
+  rdfs:comment "SHA-256 of the records the model was given." ;
+  rdfs:domain p:Draft ;
+  rdfs:range xsd:string .
+
+p:given a rdf:Property ;
+  rdfs:label "given" ;
+  rdfs:comment "An object whose record the model was given." ;
+  rdfs:domain p:Draft .
+
+p:decidedBy a rdf:Property ;
+  rdfs:label "decided by" ;
+  rdfs:comment "The person who accepted or discarded the draft." ;
+  rdfs:domain p:Draft ;
+  rdfs:range p:Person .
+
+p:decidedAt a rdf:Property ;
+  rdfs:label "decided at" ;
+  rdfs:comment "When the draft was accepted or discarded." ;
+  rdfs:domain p:Draft ;
+  rdfs:range xsd:dateTime .
+
+p:fromDraft a rdf:Property ;
+  rdfs:label "from draft" ;
+  rdfs:comment "The draft a commit accepted." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Draft .
+
+p:editedDraft a rdf:Property ;
+  rdfs:label "edited draft" ;
+  rdfs:comment "True when the person changed the draft's text before accepting it." ;
+  rdfs:domain p:Commit ;
+  rdfs:range xsd:boolean .
+
 p:onBehalfOf a rdf:Property ;
   rdfs:label "on behalf of" ;
   rdfs:comment "The person an agent acted for in this activity, such as the person who started a background run." ;
@@ -667,6 +771,28 @@ p:BackgroundWorker a prov:SoftwareAgent ;
 p:RunStatus a skos:ConceptScheme ;
   skos:prefLabel "Run status" ;
   skos:definition "Where a background run is." .
+
+p:DraftStatus a skos:ConceptScheme ;
+  skos:prefLabel "Draft status" ;
+  skos:definition "Whether a person has decided on a draft." .
+
+p:DraftStatus-undecided a skos:Concept ;
+  skos:inScheme p:DraftStatus ;
+  skos:prefLabel "undecided" ;
+  skos:definition "Written, not yet accepted or discarded. It changes nothing." ;
+  p:order 1 .
+
+p:DraftStatus-accepted a skos:Concept ;
+  skos:inScheme p:DraftStatus ;
+  skos:prefLabel "accepted" ;
+  skos:definition "A person accepted it, as written or edited." ;
+  p:order 2 .
+
+p:DraftStatus-discarded a skos:Concept ;
+  skos:inScheme p:DraftStatus ;
+  skos:prefLabel "discarded" ;
+  skos:definition "A person discarded it." ;
+  p:order 3 .
 
 p:RunStatus-queued a skos:Concept ;
   skos:inScheme p:RunStatus ;

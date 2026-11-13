@@ -29,7 +29,21 @@ ls:ClinicalDataManager a p:Role ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
   rdfs:comment "Gets clean data to study lock." ;
-  p:mayRun ls:RaiseQuery, ls:CloseQuery, ls:ReportToSafety, ls:LockStudy ;
+  p:mayRun ls:RaiseQuery, ls:CloseQuery, ls:Requery, ls:ReportToSafety, ls:ReconcileAdverseEvent, ls:LockStudy ;
+  p:mayNotRead ls:assignedArm .
+
+ls:ClinicalResearchAssociate a p:Role ;
+  p:worksIn ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Research Associate" ;
+  rdfs:comment "Monitors sites for the sponsor: verifies data against source documents and raises queries." ;
+  p:mayRun ls:VerifyDataRecord, ls:VerifyAdverseEvent, ls:RaiseQuery ;
+  p:mayNotRead ls:assignedArm .
+
+ls:ClinicalResearchCoordinator a p:Role ;
+  p:worksIn ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Research Coordinator" ;
+  rdfs:comment "Runs the study at a site: consents and randomizes patients, holds visits, records data and adverse events, and answers queries." ;
+  p:mayRun ls:Consent, ls:Randomize, ls:CompleteVisit, ls:RecordMissedVisit, ls:RecordData, ls:RecordAdverseEvent, ls:AnswerQuery ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;

@@ -41,13 +41,15 @@ ls:compoundStage a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Stage" ;
   rdfs:comment "The stage of a compound." ;
   p:dimensionOf ls:Compound ;
-  p:valuesFrom lst:CompoundStage .
+  p:valuesFrom lst:CompoundStage ;
+  p:order 1 .
 
 ls:compoundRegistration a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Registration" ;
   rdfs:comment "The registration of a compound." ;
   p:dimensionOf ls:Compound ;
-  p:valuesFrom lst:CompoundRegistration .
+  p:valuesFrom lst:CompoundRegistration ;
+  p:order 2 .
 
 ls:Simulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Simulation" ;
@@ -59,13 +61,15 @@ ls:simulationRun a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Run" ;
   rdfs:comment "The run of a simulation." ;
   p:dimensionOf ls:Simulation ;
-  p:valuesFrom lst:SimulationRun .
+  p:valuesFrom lst:SimulationRun ;
+  p:order 1 .
 
 ls:simulationReview a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Review" ;
   rdfs:comment "The review of a simulation." ;
   p:dimensionOf ls:Simulation ;
-  p:valuesFrom lst:SimulationReview .
+  p:valuesFrom lst:SimulationReview ;
+  p:order 2 .
 
 ls:Experiment a p:ObjectType, rdfs:Class ;
   rdfs:label "Experiment" ;
@@ -78,13 +82,15 @@ ls:experimentRecord a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Record" ;
   rdfs:comment "The record of a experiment." ;
   p:dimensionOf ls:Experiment ;
-  p:valuesFrom lst:ExperimentRecord .
+  p:valuesFrom lst:ExperimentRecord ;
+  p:order 1 .
 
 ls:experimentSignOff a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Sign-off" ;
   rdfs:comment "The sign-off of a experiment." ;
   p:dimensionOf ls:Experiment ;
-  p:valuesFrom lst:ExperimentSignOff .
+  p:valuesFrom lst:ExperimentSignOff ;
+  p:order 2 .
 
 ls:AssayResult a p:ObjectType, rdfs:Class ;
   rdfs:label "Assay Result" ;
@@ -96,7 +102,8 @@ ls:assayResultValidity a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Validity" ;
   rdfs:comment "The validity of a assay result." ;
   p:dimensionOf ls:AssayResult ;
-  p:valuesFrom lst:AssayResultValidity .
+  p:valuesFrom lst:AssayResultValidity ;
+  p:order 1 .
 
 ls:Formulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Formulation" ;
@@ -108,7 +115,8 @@ ls:formulationStage a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Stage" ;
   rdfs:comment "The stage of a formulation." ;
   p:dimensionOf ls:Formulation ;
-  p:valuesFrom lst:FormulationStage .
+  p:valuesFrom lst:FormulationStage ;
+  p:order 1 .
 
 ls:Process a p:ObjectType, rdfs:Class ;
   rdfs:label "Process" ;
@@ -120,7 +128,8 @@ ls:processStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a process." ;
   p:dimensionOf ls:Process ;
-  p:valuesFrom lst:ProcessStatus .
+  p:valuesFrom lst:ProcessStatus ;
+  p:order 1 .
 
 ls:Batch a p:ObjectType, rdfs:Class ;
   rdfs:label "Batch" ;
@@ -133,19 +142,22 @@ ls:batchProduction a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Production" ;
   rdfs:comment "The production of a batch." ;
   p:dimensionOf ls:Batch ;
-  p:valuesFrom lst:BatchProduction .
+  p:valuesFrom lst:BatchProduction ;
+  p:order 1 .
 
 ls:batchQuality a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Quality" ;
   rdfs:comment "The quality of a batch." ;
   p:dimensionOf ls:Batch ;
-  p:valuesFrom lst:BatchQuality .
+  p:valuesFrom lst:BatchQuality ;
+  p:order 2 .
 
 ls:batchDeviationRisk a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Deviation risk" ;
   rdfs:comment "The deviation risk of a batch." ;
   p:dimensionOf ls:Batch ;
-  p:valuesFrom lst:BatchDeviationRisk .
+  p:valuesFrom lst:BatchDeviationRisk ;
+  p:order 3 .
 
 ls:Study a p:ObjectType, rdfs:Class ;
   rdfs:label "Study" ;
@@ -158,19 +170,22 @@ ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Phase" ;
   rdfs:comment "The phase of a study." ;
   p:dimensionOf ls:Study ;
-  p:valuesFrom lst:StudyPhase .
+  p:valuesFrom lst:StudyPhase ;
+  p:order 1 .
 
 ls:studyStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a study." ;
   p:dimensionOf ls:Study ;
-  p:valuesFrom lst:StudyStatus .
+  p:valuesFrom lst:StudyStatus ;
+  p:order 2 .
 
 ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Blinding" ;
   rdfs:comment "The blinding of a study." ;
   p:dimensionOf ls:Study ;
-  p:valuesFrom lst:StudyBlinding .
+  p:valuesFrom lst:StudyBlinding ;
+  p:order 3 .
 
 ls:Site a p:ObjectType, rdfs:Class ;
   rdfs:label "Site" ;
@@ -183,13 +198,15 @@ ls:siteStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a site." ;
   p:dimensionOf ls:Site ;
-  p:valuesFrom lst:SiteStatus .
+  p:valuesFrom lst:SiteStatus ;
+  p:order 1 .
 
 ls:sitePayment a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Payment" ;
   rdfs:comment "The payment of a site." ;
   p:dimensionOf ls:Site ;
-  p:valuesFrom lst:SitePayment .
+  p:valuesFrom lst:SitePayment ;
+  p:order 2 .
 
 ls:Patient a p:ObjectType, rdfs:Class ;
   rdfs:label "Patient" ;
@@ -203,19 +220,22 @@ ls:patientEnrollment a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Enrollment" ;
   rdfs:comment "The enrollment of a patient." ;
   p:dimensionOf ls:Patient ;
-  p:valuesFrom lst:PatientEnrollment .
+  p:valuesFrom lst:PatientEnrollment ;
+  p:order 1 .
 
 ls:patientArm a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Arm" ;
   rdfs:comment "The arm of a patient." ;
   p:dimensionOf ls:Patient ;
-  p:valuesFrom lst:PatientArm .
+  p:valuesFrom lst:PatientArm ;
+  p:order 2 .
 
 ls:patientArmVisibility a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Arm visibility" ;
   rdfs:comment "The arm visibility of a patient." ;
   p:dimensionOf ls:Patient ;
-  p:valuesFrom lst:PatientArmVisibility .
+  p:valuesFrom lst:PatientArmVisibility ;
+  p:order 3 .
 
 ls:Visit a p:ObjectType, rdfs:Class ;
   rdfs:label "Visit" ;
@@ -229,7 +249,8 @@ ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a visit." ;
   p:dimensionOf ls:Visit ;
-  p:valuesFrom lst:VisitStatus .
+  p:valuesFrom lst:VisitStatus ;
+  p:order 1 .
 
 ls:DataRecord a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Record" ;
@@ -242,13 +263,15 @@ ls:dataRecordEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
   rdfs:comment "The entry of a data record." ;
   p:dimensionOf ls:DataRecord ;
-  p:valuesFrom lst:DataRecordEntry .
+  p:valuesFrom lst:DataRecordEntry ;
+  p:order 1 .
 
 ls:dataRecordSource a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Source" ;
   rdfs:comment "The source of a data record." ;
   p:dimensionOf ls:DataRecord ;
-  p:valuesFrom lst:DataRecordSource .
+  p:valuesFrom lst:DataRecordSource ;
+  p:order 2 .
 
 ls:DataQuery a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Query" ;
@@ -260,7 +283,8 @@ ls:dataQueryStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a data query." ;
   p:dimensionOf ls:DataQuery ;
-  p:valuesFrom lst:DataQueryStatus .
+  p:valuesFrom lst:DataQueryStatus ;
+  p:order 1 .
 
 ls:AdverseEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Adverse Event" ;
@@ -274,25 +298,29 @@ ls:adverseEventEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
   rdfs:comment "The entry of a adverse event." ;
   p:dimensionOf ls:AdverseEvent ;
-  p:valuesFrom lst:AdverseEventEntry .
+  p:valuesFrom lst:AdverseEventEntry ;
+  p:order 1 .
 
 ls:adverseEventSeriousness a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Seriousness" ;
   rdfs:comment "The seriousness of a adverse event." ;
   p:dimensionOf ls:AdverseEvent ;
-  p:valuesFrom lst:AdverseEventSeriousness .
+  p:valuesFrom lst:AdverseEventSeriousness ;
+  p:order 2 .
 
 ls:adverseEventOutcome a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Outcome" ;
   rdfs:comment "The outcome of a adverse event." ;
   p:dimensionOf ls:AdverseEvent ;
-  p:valuesFrom lst:AdverseEventOutcome .
+  p:valuesFrom lst:AdverseEventOutcome ;
+  p:order 3 .
 
 ls:adverseEventReporting a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Reporting" ;
   rdfs:comment "The reporting of a adverse event." ;
   p:dimensionOf ls:AdverseEvent ;
-  p:valuesFrom lst:AdverseEventReporting .
+  p:valuesFrom lst:AdverseEventReporting ;
+  p:order 4 .
 
 ls:SafetyCase a p:ObjectType, rdfs:Class ;
   rdfs:label "Safety Case" ;
@@ -305,25 +333,29 @@ ls:safetyCaseWorkflow a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Workflow" ;
   rdfs:comment "The workflow of a safety case." ;
   p:dimensionOf ls:SafetyCase ;
-  p:valuesFrom lst:SafetyCaseWorkflow .
+  p:valuesFrom lst:SafetyCaseWorkflow ;
+  p:order 1 .
 
 ls:safetyCaseSeriousness a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Seriousness" ;
   rdfs:comment "The seriousness of a safety case." ;
   p:dimensionOf ls:SafetyCase ;
-  p:valuesFrom lst:SafetyCaseSeriousness .
+  p:valuesFrom lst:SafetyCaseSeriousness ;
+  p:order 2 .
 
 ls:safetyCaseExpectedness a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Expectedness" ;
   rdfs:comment "The expectedness of a safety case." ;
   p:dimensionOf ls:SafetyCase ;
-  p:valuesFrom lst:SafetyCaseExpectedness .
+  p:valuesFrom lst:SafetyCaseExpectedness ;
+  p:order 3 .
 
 ls:safetyCaseCausality a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Causality" ;
   rdfs:comment "The causality of a safety case." ;
   p:dimensionOf ls:SafetyCase ;
-  p:valuesFrom lst:SafetyCaseCausality .
+  p:valuesFrom lst:SafetyCaseCausality ;
+  p:order 4 .
 
 ls:Product a p:ObjectType, rdfs:Class ;
   rdfs:label "Product" ;
@@ -336,7 +368,8 @@ ls:productStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a product." ;
   p:dimensionOf ls:Product ;
-  p:valuesFrom lst:ProductStatus .
+  p:valuesFrom lst:ProductStatus ;
+  p:order 1 .
 
 ls:Signal a p:ObjectType, rdfs:Class ;
   rdfs:label "Signal" ;
@@ -348,7 +381,8 @@ ls:signalStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a signal." ;
   p:dimensionOf ls:Signal ;
-  p:valuesFrom lst:SignalStatus .
+  p:valuesFrom lst:SignalStatus ;
+  p:order 1 .
 
 ls:Submission a p:ObjectType, rdfs:Class ;
   rdfs:label "Submission" ;
@@ -361,13 +395,15 @@ ls:submissionStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a submission." ;
   p:dimensionOf ls:Submission ;
-  p:valuesFrom lst:SubmissionStatus .
+  p:valuesFrom lst:SubmissionStatus ;
+  p:order 1 .
 
 ls:submissionDeadline a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Deadline" ;
   rdfs:comment "The deadline of a submission." ;
   p:dimensionOf ls:Submission ;
-  p:valuesFrom lst:SubmissionDeadline .
+  p:valuesFrom lst:SubmissionDeadline ;
+  p:order 2 .
 
 ls:QualityEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Quality Event" ;
@@ -379,13 +415,15 @@ ls:qualityEventStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a quality event." ;
   p:dimensionOf ls:QualityEvent ;
-  p:valuesFrom lst:QualityEventStatus .
+  p:valuesFrom lst:QualityEventStatus ;
+  p:order 1 .
 
 ls:qualityEventSeverity a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Severity" ;
   rdfs:comment "The severity of a quality event." ;
   p:dimensionOf ls:QualityEvent ;
-  p:valuesFrom lst:QualityEventSeverity .
+  p:valuesFrom lst:QualityEventSeverity ;
+  p:order 2 .
 
 ls:CAPA a p:ObjectType, rdfs:Class ;
   rdfs:label "CAPA" ;
@@ -397,7 +435,8 @@ ls:capaStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a capa." ;
   p:dimensionOf ls:CAPA ;
-  p:valuesFrom lst:CAPAStatus .
+  p:valuesFrom lst:CAPAStatus ;
+  p:order 1 .
 
 ls:MedicalInquiry a p:ObjectType, rdfs:Class ;
   rdfs:label "Medical Inquiry" ;
@@ -410,7 +449,8 @@ ls:medicalInquiryStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a medical inquiry." ;
   p:dimensionOf ls:MedicalInquiry ;
-  p:valuesFrom lst:MedicalInquiryStatus .
+  p:valuesFrom lst:MedicalInquiryStatus ;
+  p:order 1 .
 
 ls:predicts a p:Relationship, owl:ObjectProperty ;
   rdfs:label "predicts" ;
@@ -513,10 +553,31 @@ ls:receivedOn a owl:DatatypeProperty ;
   rdfs:label "received on" ;
   rdfs:comment "The date the safety case was received." .
 
+ls:narrative a owl:DatatypeProperty ;
+  rdfs:label "narrative" ;
+  rdfs:comment "The case narrative, as a person accepted it." .
+
 ls:dueOn a owl:DatatypeProperty ;
   rdfs:label "due on" ;
   rdfs:comment "The date the submission is due." ;
   p:isDeadline true .
+
+ls:scheduledOn a owl:DatatypeProperty ;
+  rdfs:label "scheduled on" ;
+  rdfs:comment "The date the visit is scheduled for. A deadline until the visit is completed or missed." ;
+  p:isDeadline true .
+
+ls:recordedValue a owl:DatatypeProperty ;
+  rdfs:label "value" ;
+  rdfs:comment "The value captured, as recorded at the site." .
+
+ls:verbatimTerm a owl:DatatypeProperty ;
+  rdfs:label "verbatim term" ;
+  rdfs:comment "The event as the site reported it, in its own words, before coding." .
+
+ls:missedReason a owl:DatatypeProperty ;
+  rdfs:label "reason missed" ;
+  rdfs:comment "Why the visit did not take place." .
 
 ls:preparedBy a owl:ObjectProperty ;
   rdfs:label "prepared by" ;
@@ -820,9 +881,21 @@ lsh:Visit-visitFor a sh:PropertyShape ;
   sh:class ls:Patient ;
   sh:name "for" .
 
+lsh:Visit-scheduledOn a sh:PropertyShape ;
+  sh:path ls:scheduledOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "scheduled on" .
+
+lsh:Visit-missedReason a sh:PropertyShape ;
+  sh:path ls:missedReason ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "reason missed" .
+
 lsh:Visit a sh:NodeShape ;
   sh:targetClass ls:Visit ;
-  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor .
+  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-scheduledOn, lsh:Visit-missedReason .
 
 lsh:DataRecord-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -846,9 +919,15 @@ lsh:DataRecord-capturedAt a sh:PropertyShape ;
   sh:class ls:Visit ;
   sh:name "captured at" .
 
+lsh:DataRecord-recordedValue a sh:PropertyShape ;
+  sh:path ls:recordedValue ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "value" .
+
 lsh:DataRecord a sh:NodeShape ;
   sh:targetClass ls:DataRecord ;
-  sh:property lsh:DataRecord-identifier, lsh:DataRecord-entry, lsh:DataRecord-source, lsh:DataRecord-capturedAt .
+  sh:property lsh:DataRecord-identifier, lsh:DataRecord-entry, lsh:DataRecord-source, lsh:DataRecord-capturedAt, lsh:DataRecord-recordedValue .
 
 lsh:DataQuery-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -895,7 +974,7 @@ lsh:AdverseEvent-outcome a sh:PropertyShape ;
 
 lsh:AdverseEvent-reporting a sh:PropertyShape ;
   sh:path ls:adverseEventReporting ;
-  sh:in ( lst:AdverseEventReporting-notReported lst:AdverseEventReporting-reportedToSafety ) ;
+  sh:in ( lst:AdverseEventReporting-notReported lst:AdverseEventReporting-reportedToSafety lst:AdverseEventReporting-reconciled ) ;
   sh:maxCount 1 ;
   sh:name "Reporting" .
 
@@ -904,9 +983,15 @@ lsh:AdverseEvent-experiencedBy a sh:PropertyShape ;
   sh:class ls:Patient ;
   sh:name "experienced by" .
 
+lsh:AdverseEvent-verbatimTerm a sh:PropertyShape ;
+  sh:path ls:verbatimTerm ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "verbatim term" .
+
 lsh:AdverseEvent a sh:NodeShape ;
   sh:targetClass ls:AdverseEvent ;
-  sh:property lsh:AdverseEvent-identifier, lsh:AdverseEvent-entry, lsh:AdverseEvent-seriousness, lsh:AdverseEvent-outcome, lsh:AdverseEvent-reporting, lsh:AdverseEvent-experiencedBy .
+  sh:property lsh:AdverseEvent-identifier, lsh:AdverseEvent-entry, lsh:AdverseEvent-seriousness, lsh:AdverseEvent-outcome, lsh:AdverseEvent-reporting, lsh:AdverseEvent-experiencedBy, lsh:AdverseEvent-verbatimTerm .
 
 lsh:SafetyCase-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -968,9 +1053,15 @@ lsh:SafetyCase-receivedOn a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "received on" .
 
+lsh:SafetyCase-narrative a sh:PropertyShape ;
+  sh:path ls:narrative ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "narrative" .
+
 lsh:SafetyCase a sh:NodeShape ;
   sh:targetClass ls:SafetyCase ;
-  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn .
+  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn, lsh:SafetyCase-narrative .
 
 lsh:Product-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;

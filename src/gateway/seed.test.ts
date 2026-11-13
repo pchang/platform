@@ -33,8 +33,17 @@ describe('seed graph (domain spec section 11)', () => {
     ['12 patients', `?x a ls:Patient`, 12],
     ['2 arms', `?p ls:assignedArm ?x`, 2],
     ['about 40 data records', `?x a ls:DataRecord`, 40],
-    ['4 open queries', `?x ls:dataQueryStatus lst:DataQueryStatus-open`, 4],
-    ['3 adverse events', `?x a ls:AdverseEvent`, 3],
+    ['14 data records awaiting source data verification', `?x ls:dataRecordEntry lst:DataRecordEntry-entered`, 14],
+    ['30 visits', `?x a ls:Visit`, 30],
+    ['10 scheduled visits, each with a date', `?x ls:visitStatus lst:VisitStatus-scheduled ; ls:scheduledOn ?d`, 10],
+    ['2 overdue visits on November 12, 2026', `?x ls:visitStatus lst:VisitStatus-scheduled ; ls:scheduledOn ?d FILTER(?d < "2026-11-12"^^xsd:date)`, 2],
+    ['1 consented and 1 screened patient', `?x ls:patientEnrollment ?e FILTER(?e IN (lst:PatientEnrollment-consented, lst:PatientEnrollment-screened))`, 2],
+    ['3 open queries', `?x ls:dataQueryStatus lst:DataQueryStatus-open`, 3],
+    ['3 answered queries', `?x ls:dataQueryStatus lst:DataQueryStatus-answered`, 3],
+    ['5 adverse events', `?x a ls:AdverseEvent`, 5],
+    ['2 adverse events awaiting reconciliation', `?x ls:adverseEventReporting lst:AdverseEventReporting-reportedToSafety`, 2],
+    ['2 adverse events awaiting verification', `?x ls:adverseEventEntry lst:AdverseEventEntry-entered`, 2],
+    ['every adverse event in the site’s words', `?x a ls:AdverseEvent FILTER NOT EXISTS { ?x ls:verbatimTerm ?t }`, 0],
     ['6 safety cases on the investigational product', `?x a ls:SafetyCase ; ls:concerns ?p . ?p ls:productStatus lst:ProductStatus-investigational`, 6],
     ['each case coded with its reactions', `?x a ls:SafetyCase FILTER NOT EXISTS { ?x ls:reaction ?r }`, 0],
     ['1 approved comparator product', `?x ls:productStatus lst:ProductStatus-approved`, 1],
@@ -45,7 +54,7 @@ describe('seed graph (domain spec section 11)', () => {
     ['a signal for drug-induced liver injury', `?x a ls:Signal ; ls:reaction lst:Reaction-drugInducedLiverInjury`, 1],
     ['1 open quality event', `?x ls:qualityEventStatus lst:QualityEventStatus-open`, 1],
     ['1 submission in draft', `?x ls:submissionStatus lst:SubmissionStatus-draft`, 1],
-    ['a person for each persona, a second Drug Safety Physician and an external agent', `?x a p:Person`, 6],
+    ['a person for each persona, a second Drug Safety Physician and an external agent', `?x a p:Person`, 8],
   ])('has %s', (_label, pattern, expected) => {
     expect(count(pattern)).toBe(expected);
   });
@@ -54,7 +63,7 @@ describe('seed graph (domain spec section 11)', () => {
     expect(count(`?x a ls:SafetyCase ; ls:concerns d:P-101`)).toBe(6);
   });
 
-  it('has exactly one serious adverse event, not yet reported (J1 starts here)', () => {
-    expect(count(`?x ls:adverseEventSeriousness lst:AdverseEventSeriousness-serious ; ls:adverseEventReporting lst:AdverseEventReporting-notReported`)).toBe(1);
+  it('has exactly one serious adverse event that is verified and not yet reported (J1 starts here)', () => {
+    expect(count(`?x ls:adverseEventSeriousness lst:AdverseEventSeriousness-serious ; ls:adverseEventEntry lst:AdverseEventEntry-verified ; ls:adverseEventReporting lst:AdverseEventReporting-notReported`)).toBe(1);
   });
 });

@@ -33,7 +33,7 @@ describe('MCP transport', () => {
   it('offers the gateway requests as tools', async () => {
     const client = await connect(withSeed());
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'compose_method', 'describe_ontology', 'find_objects', 'list_notifications', 'list_todo', 'mark_notifications_read', 'offer_methods', 'preview_method', 'read_object', 'track_runs']);
+    expect(tools.map((t) => t.name).sort()).toEqual(['commit_method', 'compose_method', 'describe_ontology', 'draft_method', 'find_objects', 'list_notifications', 'list_todo', 'mark_notifications_read', 'offer_methods', 'preview_method', 'read_object', 'search_objects', 'track_runs']);
   });
 
   it('runs the External agent journey: answers and closes open queries, under the same policy and log', async () => {
@@ -41,7 +41,7 @@ describe('MCP transport', () => {
     const client = await connect(gateway);
 
     const open = parse(await client.callTool({ name: 'find_objects', arguments: { type: 'DataQuery', state: { dataQueryStatus: 'DataQueryStatus-open' } } }));
-    expect(open.map((q: { identifier: string }) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
+    expect(open.map((q: { identifier: string }) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03']);
 
     for (const { identifier } of open as { identifier: string }[]) {
       await client.callTool({ name: 'commit_method', arguments: { id: identifier, method: 'AnswerQuery', inputs: { answer: 'Confirmed against the site source record' } } });
@@ -52,7 +52,7 @@ describe('MCP transport', () => {
 
     // The agent's actions are in the same history as people's.
     const history = gateway.commits();
-    expect(history).toHaveLength(8);
+    expect(history).toHaveLength(6);
     expect(new Set(history.map((c) => c.person))).toEqual(new Set([agent.person]));
   });
 

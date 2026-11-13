@@ -1,0 +1,30 @@
+/* The process dock's layout. Tokens only, no raw colors (design system spec, rule 2). */
+.app-process-dock {
+  border-block-start: var(--pf-t--global--border--width--regular) solid var(--pf-t--global--border--color--default);
+  background-color: var(--pf-t--global--background--color--secondary--default);
+  padding-block: var(--pf-t--global--spacer--sm);
+}
+
+.app-process-dock__title {
+  padding-inline: var(--pf-t--global--spacer--md);
+  padding-block-end: var(--pf-t--global--spacer--xs);
+}
+
+/* One row that scrolls sideways inside the dock when it does not fit, so the page never does. */
+.app-process-dock__list {
+  display: flex;
+  gap: var(--pf-t--global--spacer--sm);
+  overflow-x: auto;
+  padding-inline: var(--pf-t--global--spacer--md);
+  padding-block-end: var(--pf-t--global--spacer--xs);
+  margin: 0;
+  list-style: none;
+}
+
+.app-process-dock__item {
+  flex: 0 0 auto;
+}
+
+.app-process-dock__card {
+  inline-size: 16rem;
+}

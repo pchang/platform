@@ -50,7 +50,7 @@ describe('HTTP transport', () => {
   it('finds objects by type and state, with short names', async () => {
     const api = await start();
     const open = await api('/objects?type=DataQuery&dataQueryStatus=DataQueryStatus-open', ['person-ben', 'ClinicalDataManager']);
-    expect(open.body.map((o: { identifier: string }) => o.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
+    expect(open.body.map((o: { identifier: string }) => o.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03']);
   });
 
   it('tracks a background run and its notification', async () => {

@@ -1,0 +1,19 @@
+/* The sidebar's search field and its matches. Tokens only, no raw colors (design system spec, rule 2). */
+.app-search {
+  display: block;
+  padding-inline: var(--pf-t--global--spacer--md);
+  padding-block-end: var(--pf-t--global--spacer--sm);
+}
+
+.app-search__count:empty {
+  display: none;
+}
+
+.app-search__count,
+.app-search__matches {
+  padding-block-start: var(--pf-t--global--spacer--xs);
+}
+
+.app-search__type {
+  display: inline;
+}

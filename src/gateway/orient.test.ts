@@ -12,6 +12,8 @@ const dataManager = as('person-ben', 'ClinicalDataManager');
 const physician = as('person-chloe', 'DrugSafetyPhysician');
 const quality = as('person-elena', 'QualityLead');
 const agent = as('agent-northbridge', 'ExternalCROAgent');
+const monitor = as('person-priya', 'ClinicalResearchAssociate');
+const coordinator = as('person-sam', 'ClinicalResearchCoordinator');
 
 describe('navigation shows each person the object world of their work (spec 5.1)', () => {
   const gateway = withSeed();
@@ -45,7 +47,7 @@ describe('To do (spec 5.1)', () => {
   it('puts the submission due first for the Drug Safety Physician, then the serious case, then the rest', async () => {
     expect(await list(physician)).toEqual([
       ['SUB-1', 'Send for review'],
-      ['SC-003', 'urgent: Flag duplicate, Generate narrative'],
+      ['SC-003', 'urgent: Flag duplicate'],
       ['SC-001', 'Close case'],
       ['SC-002', 'Assess'],
       ['SC-004', 'Triage'],
@@ -63,8 +65,41 @@ describe('To do (spec 5.1)', () => {
     ]);
   });
 
-  it('shows the Clinical Data Manager the serious event to report (J1 starts here)', async () => {
-    expect(await list(dataManager)).toEqual([['AE-003', 'Report to safety']]);
+  it('shows the Clinical Data Manager events to report and reconcile, and answered queries to close (J1 starts here)', async () => {
+    expect(await list(dataManager)).toEqual([
+      ['AE-003', 'Report to safety'],
+      ['AE-005', 'Report to safety'],
+      ['AE-001', 'Reconcile adverse event'],
+      ['AE-002', 'Reconcile adverse event'],
+      ['AE-004', 'Report to safety'],
+      ['Q-04', 'Close query, Re-query'],
+      ['Q-05', 'Close query, Re-query'],
+      ['Q-06', 'Close query, Re-query'],
+    ]);
+  });
+
+  it('shows the Clinical Research Associate what awaits source data verification, the serious event first', async () => {
+    const items = await list(monitor);
+    expect(items.slice(0, 2)).toEqual([['AE-005', 'Verify adverse event'], ['AE-004', 'Verify adverse event']]);
+    // Records with a query still open or answered wait until it is closed.
+    expect(items.slice(2).map(([id]) => id)).toEqual(['DR-028', 'DR-030', 'DR-031', 'DR-032', 'DR-035', 'DR-036', 'DR-039', 'DR-040']);
+    expect(new Set(items.slice(2).map(([, task]) => task))).toEqual(new Set(['Verify data record']));
+  });
+
+  it('shows the Clinical Research Coordinator visits by date, then patients to consent and randomize, then queries to answer', async () => {
+    const todo = await gateway.todo(coordinator);
+    expect(todo.slice(0, 10).map((i) => [i.object.identifier, i.deadline])).toEqual([
+      ['V-01-3', '2026-11-03'], ['V-02-3', '2026-11-09'], ['V-03-3', '2026-11-12'], ['V-04-3', '2026-11-13'], ['V-05-3', '2026-11-14'],
+      ['V-06-3', '2026-11-16'], ['V-07-3', '2026-11-18'], ['V-08-3', '2026-11-21'], ['V-09-3', '2026-11-25'], ['V-10-3', '2026-12-02'],
+    ]);
+    expect(todo[0].tasks.map((t) => [t.label, t.archetype.label])).toEqual([['Complete visit', 'Confirm'], ['Record missed visit', 'Fill in']]);
+    expect((await list(coordinator)).slice(10)).toEqual([
+      ['PT-11', 'Randomize'],
+      ['PT-12', 'Consent'],
+      ['Q-01', 'Answer query'],
+      ['Q-02', 'Answer query'],
+      ['Q-03', 'Answer query'],
+    ]);
   });
 
   it('shows the Computational Chemist compounds ready to register or promote, not every compound', async () => {
@@ -74,8 +109,11 @@ describe('To do (spec 5.1)', () => {
     ]);
   });
 
-  it('shows the CRO agent its open queries', async () => {
-    expect((await list(agent)).map(([id]) => id)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
+  it('shows the CRO agent its queries to answer and close', async () => {
+    expect(await list(agent)).toEqual([
+      ['Q-01', 'Answer query'], ['Q-02', 'Answer query'], ['Q-03', 'Answer query'],
+      ['Q-04', 'Close query'], ['Q-05', 'Close query'], ['Q-06', 'Close query'],
+    ]);
   });
 
   it('drops an object once its work is done', async () => {

@@ -66,7 +66,7 @@ describe('reads', () => {
 
   it('finds objects by type and state', () => {
     const open = withSeed().find(ben, ls('DataQuery'), { [ls('dataQueryStatus')]: lst('DataQueryStatus-open') });
-    expect(open.map((q) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03', 'Q-04']);
+    expect(open.map((q) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03']);
   });
 });
 
@@ -173,7 +173,6 @@ describe('commits', () => {
     const gateway = withSeed();
     const result = await gateway.commit(chloe, 'SIG-1', ls('EvaluateSignal'));
     expect(result.pending).toEqual([]);
-    await gateway.commit(chloe, 'SC-001', ls('GenerateNarrative'));
     const confirm = await gateway.commit(chloe, 'SIG-1', ls('ConfirmSignal'), { rationale: 'Three related cases' });
     expect(confirm.pending).toEqual([ls('ConfirmSignal-effect2')]);
   });

@@ -2,6 +2,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import * as PatternFlyCharts from '@patternfly/react-charts/victory';
 import * as PatternFly from '@patternfly/react-core';
 import { describe, expect, it } from 'vitest';
 import { catalog, componentsById, schemas, type ViewNode } from './catalog';
@@ -31,7 +32,8 @@ describe('catalog files', () => {
 
 describe.each(catalog.components.map((c) => [c.id, c] as const))('component %s', (_id, entry) => {
   it('imports a real PatternFly export', () => {
-    expect(PatternFly).toHaveProperty(entry.import.export);
+    const pkg = entry.import.package === '@patternfly/react-charts/victory' ? PatternFlyCharts : PatternFly;
+    expect(pkg).toHaveProperty(entry.import.export);
   });
 
   it('has a props schema that compiles', () => {
