@@ -19,7 +19,8 @@ test('typing shows the best matches; Enter opens the search page with how the qu
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
   await field(page).fill('cases for P-101');
-  await expect(page.getByRole('search').getByText('6 matches')).toBeVisible();
+  await expect(page.getByRole('search').getByRole('status')).toHaveText('6 matches');
+  await expect(page.getByRole('search').getByText('6 matches', { exact: true }).last()).toBeVisible();
   await expect(page.getByRole('list', { name: 'Best matches' }).getByRole('link')).toHaveText(['SC-001', 'SC-002', 'SC-003', 'SC-004', 'SC-005', 'See all 6']);
 
   await field(page).press('Enter');
@@ -65,14 +66,33 @@ test('says so when nothing matches', async ({ page }) => {
   await expect(page.getByText(/Try fewer words/)).toBeVisible();
 });
 
-test('on a phone, the field is in the navigation drawer, which closes when a search opens', async ({ page }) => {
+test('the field sits in the masthead, left of the icon buttons', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTodo(page);
+  const box = (await field(page).boundingBox())!;
+  const bell = (await page.getByRole('button', { name: 'Notifications', exact: true }).boundingBox())!;
+  const banner = (await page.getByRole('banner').boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(banner.y + banner.height);
+  expect(box.x + box.width).toBeLessThan(bell.x);
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('search')).toHaveCount(0);
+});
+
+test('on a phone, Open search shows the field under the masthead, which closes when a search opens or on Escape', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await openTodo(page);
-  await page.getByRole('button', { name: 'Navigation' }).click();
+  const open = page.getByRole('button', { name: 'Open search' });
+  await open.click();
+  await expect(field(page)).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(field(page)).toHaveCount(0);
+  await expect(open).toBeFocused();
+
+  await open.click();
   await field(page).fill('open queries');
   await field(page).press('Enter');
   await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeHidden();
+  await expect(field(page)).toHaveCount(0);
+  await expect(open).toHaveAttribute('aria-expanded', 'false');
 });
 
 for (const mode of ['light', 'dark'] as const) {
@@ -82,7 +102,7 @@ for (const mode of ['light', 'dark'] as const) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/#/search/' + encodeURIComponent('serious cases'));
       await expect(results(page).first()).toBeVisible({ timeout: 30_000 });
-      if (width < 1200) await page.getByRole('button', { name: 'Navigation' }).click();
+      if (width < 768) await page.getByRole('button', { name: 'Open search' }).click();
       await field(page).fill('rash');
       await expect(page.getByRole('list', { name: 'Best matches' })).toBeVisible();
       await page.addScriptTag({ path: axePath });

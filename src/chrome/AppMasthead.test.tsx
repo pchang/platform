@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { product } from '../config/product';
 import { AppearanceProvider } from '../appearance/AppearanceProvider';
 import { PrincipalProvider } from '../principal/PrincipalProvider';
@@ -12,6 +13,18 @@ vi.mock('../data/client', () => ({
     people: async () => [{ person: 'urn:test:person-chloe', name: 'Chloé Martin', roles: [{ role: 'urn:test:dsp', label: 'Drug Safety Physician' }] }],
   }),
 }));
+
+// jsdom has no media queries: each test says whether the window is md or wider.
+let wide = true;
+beforeEach(() => {
+  wide = true;
+  window.matchMedia = ((query: string) => ({
+    matches: wide,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  })) as unknown as typeof window.matchMedia;
+});
 
 const Masthead = () => (
   <AppearanceProvider>
@@ -33,6 +46,28 @@ describe('AppMasthead', () => {
     for (const name of ['Navigation', 'Notifications', 'Settings', 'Profile: Chloé Martin, Drug Safety Physician']) {
       expect(await screen.findByRole('button', { name })).toBeInTheDocument();
     }
+  });
+
+  it('has the search field left of the icon buttons from md up', async () => {
+    render(<Masthead />);
+    const field = await screen.findByRole('textbox', { name: 'Search objects' });
+    const notifications = screen.getByRole('button', { name: 'Notifications' });
+    expect(field.compareDocumentPosition(notifications) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open search' })).not.toBeInTheDocument();
+  });
+
+  it('below md, opens the search field under the masthead from an Open search button, and closes it on Escape', async () => {
+    wide = false;
+    render(<Masthead />);
+    const button = await screen.findByRole('button', { name: 'Open search' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    await userEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('textbox', { name: 'Search objects' })).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
   });
 
   it('has no detectable accessibility violations', async () => {

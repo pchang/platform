@@ -1,5 +1,5 @@
-import { Content, List, ListItem, SearchInput } from '@patternfly/react-core';
-import { useEffect, useState } from 'react';
+import { Content, List, ListItem, Panel, PanelMain, PanelMainBody, SearchInput } from '@patternfly/react-core';
+import { useEffect, useRef, useState } from 'react';
 import type { SearchResult } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { routeHref } from '../routing';
@@ -11,13 +11,21 @@ const SEARCH_DEBOUNCE_MS = 200;
 const SHOWN = 5;
 
 /**
- * The search field at the head of the sidebar (design system spec 4.1, Search): the best matches under it as the person
- * types, with a count read out as it changes; Enter, or See all, opens the search page.
+ * The search field in the masthead (design system spec 4.1, Search): the best matches in a raised panel under it as the
+ * person types, with a count read out as it changes; Enter, or See all, opens the search page. Escape or a click outside
+ * closes the panel; Escape with no panel open is passed to onEscape, which closes the phone's search row.
  */
-export function SearchField({ query: routeQuery, onNavigate, isHidden = false }: { query?: string; onNavigate: () => void; isHidden?: boolean }) {
+export function SearchField({ query: routeQuery, onNavigate, onEscape, autoFocus = false }: { query?: string; onNavigate: () => void; onEscape?: () => void; autoFocus?: boolean }) {
   const { client, principal } = usePrincipal();
   const [value, setValue] = useState(routeQuery ?? '');
   const [result, setResult] = useState<SearchResult>();
+  const [isPanelOpen, setPanelOpen] = useState(false);
+  const root = useRef<HTMLElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  // The phone's search row opens with focus in the field.
+  useEffect(() => {
+    if (autoFocus) input.current?.focus();
+  }, [autoFocus]);
   // Opening a search page puts its query in the field.
   useEffect(() => {
     if (routeQuery !== undefined) setValue(routeQuery);
@@ -32,7 +40,14 @@ export function SearchField({ query: routeQuery, onNavigate, isHidden = false }:
     let cancelled = false;
     const timer = setTimeout(() => {
       // Suggestions come from the ontology reading: the model is asked once per search, not once per keystroke.
-      client.search(principal, query, { understand: 'ontology' }).then((r) => !cancelled && setResult(r), () => !cancelled && setResult(undefined));
+      client.search(principal, query, { understand: 'ontology' }).then(
+        (r) => {
+          if (cancelled) return;
+          setResult(r);
+          setPanelOpen(true);
+        },
+        () => !cancelled && setResult(undefined),
+      );
     }, SEARCH_DEBOUNCE_MS);
     return () => {
       cancelled = true;
@@ -40,16 +55,39 @@ export function SearchField({ query: routeQuery, onNavigate, isHidden = false }:
     };
   }, [client, principal, query, routeQuery]);
 
+  // A click outside the field and its panel closes the panel.
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    const outside = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setPanelOpen(false);
+    };
+    document.addEventListener('mousedown', outside);
+    return () => document.removeEventListener('mousedown', outside);
+  }, [isPanelOpen]);
+
+  const done = () => {
+    setResult(undefined);
+    setPanelOpen(false);
+    onNavigate();
+  };
   const go = (q: string) => {
     if (!q.trim()) return;
     window.location.hash = routeHref({ name: 'search', query: q.trim() });
-    setResult(undefined);
-    onNavigate();
+    done();
   };
+  const shown = isPanelOpen && result !== undefined;
 
   return (
-    // While the sidebar is a closed drawer it is hidden from assistive technology, so the field must not take focus either.
-    <search className="app-search" inert={isHidden}>
+    <search
+      className="app-search"
+      ref={root}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') return;
+        if (shown) setPanelOpen(false);
+        else onEscape?.();
+      }}
+      onFocus={() => result && setPanelOpen(true)}
+    >
       <SearchInput
         aria-label="Search objects"
         placeholder="Search, such as open queries"
@@ -57,28 +95,41 @@ export function SearchField({ query: routeQuery, onNavigate, isHidden = false }:
         onChange={(_event, v) => setValue(v)}
         onSearch={(_event, v) => go(v)}
         onClear={() => setValue('')}
+        ref={input}
       />
-      <Content component="small" aria-live="polite" className="app-search__count">
+      {/* Read out as it changes, whether or not the panel is open. */}
+      <Content component="small" role="status" className="pf-v6-screen-reader">
         {result ? (result.total ? `${result.total} ${result.total === 1 ? 'match' : 'matches'}` : 'Nothing matches') : ''}
       </Content>
-      {result && result.results.length > 0 && (
-        <List isPlain aria-label="Best matches" className="app-search__matches">
-          {result.results.slice(0, SHOWN).map((r) => (
-            <ListItem key={r.object.iri}>
-              <a href={routeHref({ name: 'search', query: r.object.identifier })} onClick={() => { setResult(undefined); onNavigate(); }}>
-                {r.object.identifier}
-              </a>{' '}
-              <Content component="small" className="app-search__type">
-                {r.object.typeLabel}
+      {shown && (
+        <Panel variant="raised" className="app-search__panel">
+          <PanelMain>
+            <PanelMainBody>
+              <Content component="small" className="app-search__count" aria-hidden="true">
+                {result.total ? `${result.total} ${result.total === 1 ? 'match' : 'matches'}` : 'Nothing matches'}
               </Content>
-            </ListItem>
-          ))}
-          <ListItem>
-            <a href={routeHref({ name: 'search', query })} onClick={() => { setResult(undefined); onNavigate(); }}>
-              See all {result.total}
-            </a>
-          </ListItem>
-        </List>
+              {result.results.length > 0 && (
+                <List isPlain aria-label="Best matches" className="app-search__matches">
+                  {result.results.slice(0, SHOWN).map((r) => (
+                    <ListItem key={r.object.iri}>
+                      <a href={routeHref({ name: 'search', query: r.object.identifier })} onClick={done}>
+                        {r.object.identifier}
+                      </a>{' '}
+                      <Content component="small" className="app-search__type">
+                        {r.object.typeLabel}
+                      </Content>
+                    </ListItem>
+                  ))}
+                  <ListItem>
+                    <a href={routeHref({ name: 'search', query })} onClick={done}>
+                      See all {result.total}
+                    </a>
+                  </ListItem>
+                </List>
+              )}
+            </PanelMainBody>
+          </PanelMain>
+        </Panel>
       )}
     </search>
   );

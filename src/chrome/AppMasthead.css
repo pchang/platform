@@ -3,6 +3,29 @@
 /* The actions keep their width at every width; the product name takes what is left and shrinks to an ellipsis. */
 .app-masthead {
   --pf-v6-c-masthead--m-display-inline--GridTemplateColumns: minmax(0, 1fr) auto;
+  position: relative; /* the phone's search row hangs from it */
+}
+
+/* The search field, immediately left of the icon buttons (design system spec 4.1, Search). */
+.app-masthead__search .app-search {
+  inline-size: 18rem;
+}
+
+@media (min-width: 1200px) {
+  .app-masthead__search .app-search {
+    inline-size: 24rem;
+  }
+}
+
+/* Below md: the field opens in a row across the page under the masthead, over the content. */
+.app-masthead__search-row {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  z-index: var(--pf-t--global--z-index--md);
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+  background-color: var(--pf-t--global--background--color--primary--default);
+  border-block-end: var(--pf-t--global--border--width--regular) solid var(--pf-t--global--border--color--default);
 }
 
 .app-masthead__brand {
