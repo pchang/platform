@@ -3,6 +3,6 @@
  * (design system spec, section 4.1).
  */
 export const product = {
-  name: 'LS&H',
+  name: 'LS&H Ecosystem',
   homeHref: '#/',
 } as const;

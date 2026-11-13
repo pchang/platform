@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.18. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.19. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -93,7 +93,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | A search field, then To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
-All masthead items stay visible at every width, on one row with the logo. The product name is LS&H.
+All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
@@ -106,6 +106,7 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
+- The dock's heading, "Set aside", has the same space above it as below it, so it never touches the dock's edge.
 - Each process is one entry: the method and the object, a small progress bar, and its progress in words, such as "2 of 3 fields", "Ready to sign", "Running, 40%" or "Draft ready". Choosing an entry brings the process back in front; the process in front, if any, goes into the dock. A process in a modal covers the page, dock included, so the person minimizes it before choosing another; a page process leaves the dock in reach.
 - Each entry has a close button, named for the process. Closing ends it without committing anything; a background run keeps running, and an undecided draft stays undecided.
 - The entries sit in one row that scrolls sideways inside the dock when they do not fit, so the page itself never scrolls sideways.
@@ -124,7 +125,7 @@ To do and the list of a type's objects are card views (pattern `card-view`), com
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The To do summary** sits above the cards, under the heading:
+**The To do summary** sits above the cards, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content:
 
 - **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 - **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
@@ -142,6 +143,7 @@ Every component, pattern and view works in both light and dark mode. Dark mode i
 - The day hours are configuration, not code.
 - The setting belongs to the person and will live in their user context (platform spec 3.3). Until identity exists, it is kept on the device.
 - Because colors come only from tokens (rule 2), components need no theme-specific code.
+- The page sets its own base text color, background, font and line height from tokens, on the page itself, not only through PatternFly's low-priority base styles. A page the platform is embedded in, such as a preview host, can then never turn text black on the dark theme or change the chrome's alignment.
 - The accessibility scans in section 4 run in both modes.
 
 ---
@@ -349,3 +351,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.16 | 2026-11-13 | Added the search field to the sidebar and the search page (4.1). |
 | 0.17 | 2026-11-13 | Cards lead with the identifier and type in small text, then the object's title as their heading. Minimize is a minus icon left of the close button, or right of a page pattern's title. |
 | 0.18 | 2026-11-13 | Search page says who understood the query, the model or the ontology, and shows Yours for the person's own objects. Suggestions under the field come from the ontology reading. |
+| 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |

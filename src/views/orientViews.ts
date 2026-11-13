@@ -249,7 +249,8 @@ export function buildTodoView(
     root: stack([
       ...(notice ? [[notice]] : []),
       header('To do', summary),
-      ...(allItems.length ? [[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode, stack(buildSummary(allItems, today).map((n) => [n]))]] : []),
+      // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
+      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
       ...(cards.length ? [[gallery(cards)]] : []),
     ]),
