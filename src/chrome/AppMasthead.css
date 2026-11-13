@@ -1,18 +1,38 @@
 /* Text-based logo. Tokens only, no raw values (design system spec, rule 2). */
+
+/* The actions keep their width at every width; the product name takes what is left and shrinks to an ellipsis. */
+.app-masthead {
+  --pf-v6-c-masthead--m-display-inline--GridTemplateColumns: minmax(0, 1fr) auto;
+}
+
+.app-masthead__brand {
+  flex-shrink: 1;
+  min-width: 0;
+}
 .app-masthead__main {
+  align-items: center; /* the logo on the menu button's center line (design system spec 4.1) */
   min-width: 0; /* lets a long product name shrink instead of pushing the actions off-screen */
 }
 
 .app-masthead__logo {
   /* PatternFly sizes the logo for an image. A text logo is as wide as its text. */
   --pf-v6-c-masthead__logo--Width: auto;
+  /* PatternFly stretches the logo to the menu button's height; its text sits on that button's center line. */
+  display: flex;
+  align-items: center;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   font-family: var(--pf-t--global--font--family--heading);
   font-size: var(--pf-t--global--font--size--heading--h3);
   font-weight: var(--pf-t--global--font--weight--heading--default);
   color: var(--pf-t--global--text--color--regular);
   text-decoration: none;
+  line-height: var(--pf-t--global--font--line-height--heading);
+}
+
+/* A long product name shrinks to an ellipsis instead of pushing the actions off-screen. */
+.app-masthead__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -57,6 +57,6 @@ test('tooltip opens on keyboard focus', async ({ page }) => {
 
 test('the logo returns home from the catalog', async ({ page }) => {
   await page.goto('/#/catalog');
-  await page.getByRole('link', { name: 'LS&H' }).click();
+  await page.getByRole('link', { name: 'LS&H Ecosystem' }).click();
   await expect(page.getByRole('heading', { name: 'Design system catalog' })).toHaveCount(0);
 });

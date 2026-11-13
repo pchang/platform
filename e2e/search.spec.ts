@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { cardFor } from './cards';
 
 // Search in the navigation (platform spec 5.2, design system spec 4.1), on the in-page gateway.
 test.setTimeout(60_000);
@@ -7,7 +8,7 @@ const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
 const field = (page: Page) => page.getByRole('search').getByRole('textbox', { name: 'Search objects' });
-const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery').getByRole('heading', { level: 2 });
+const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card__header').getByText(/ · /);
 
 async function openTodo(page: Page) {
   await page.goto('/');
@@ -26,7 +27,7 @@ test('typing shows the best matches; Enter opens the search page with how the qu
   await expect(page.getByText('6 matches for “cases for P-101”.')).toBeVisible();
   await expect(page.getByText('Type: Safety Case', { exact: true })).toBeVisible();
   await expect(page.getByText('Linked to P-101', { exact: true })).toBeVisible();
-  await expect(results(page)).toHaveText(['SC-001', 'SC-002', 'SC-003', 'SC-004', 'SC-005', 'SC-006']);
+  await expect(results(page)).toHaveText(['SC-001 · Safety Case', 'SC-002 · Safety Case', 'SC-003 · Safety Case', 'SC-004 · Safety Case', 'SC-005 · Safety Case', 'SC-006 · Safety Case']);
   await expect(field(page)).toHaveValue('cases for P-101');
 });
 
@@ -38,9 +39,23 @@ test('words find what the records say, and a match opens at that object, with it
   await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
   await field(page).fill('pneumonia');
   await page.getByRole('list', { name: 'Best matches' }).getByRole('link', { name: 'AE-005' }).click();
-  await expect(results(page)).toHaveText(['AE-005']);
-  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: 'AE-005' }) });
+  await expect(results(page)).toHaveText(['AE-005 · Adverse Event']);
+  const card = cardFor(page, 'AE-005');
   await expect(card.getByRole('button', { name: 'Report to safety' })).toBeVisible();
+});
+
+test('“list all of my queries” finds the person’s own queries, and says the ontology understood it when no model is connected', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTodo(page);
+  await page.getByRole('button', { name: /^Profile/ }).click();
+  await page.getByRole('option', { name: /^Sam Whitfield/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await field(page).fill('list all of my queries');
+  await field(page).press('Enter');
+  await expect(page.getByText('3 matches for “list all of my queries”.')).toBeVisible();
+  await expect(page.getByText('Understood from the ontology')).toBeVisible();
+  await expect(page.getByText('Yours', { exact: true })).toBeVisible();
+  await expect(results(page)).toHaveText(['Q-01 · Data Query', 'Q-02 · Data Query', 'Q-03 · Data Query']);
 });
 
 test('says so when nothing matches', async ({ page }) => {

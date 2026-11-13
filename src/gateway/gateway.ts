@@ -1,8 +1,9 @@
 import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
-import { containsWords, interpret, normalize, type Interpretation } from './search';
+import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
+import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
 
@@ -33,6 +34,8 @@ export interface ObjectSummary {
   identifier: string;
   type: string;
   typeLabel: string;
+  /** What people call the object, from its type's title template (spec 3.1, Title); the type's label when it has none. */
+  title: string;
   /** The type's plural label, for summaries and lists. */
   pluralLabel: string;
   state: Record<string, string>;
@@ -131,6 +134,8 @@ export interface SearchResult {
   results: { object: ObjectSummary; matched: string[] }[];
   /** How many objects matched, of which results holds the best. */
   total: number;
+  /** Who understood the query: the connected model, by its name, or the ontology reading (spec 5.2). */
+  understoodBy: { model: string } | { ontology: true };
 }
 
 export type DraftStatus = 'undecided' | 'accepted' | 'discarded';
@@ -245,6 +250,8 @@ export interface GatewayOptions {
   journal?: JournalWriter;
   /** The model connected for drafting (spec 3.4, Generated drafts). Without one, drafting methods are refused. */
   drafter?: Drafter;
+  /** The model connected to understand search queries (spec 5.2). Without one, queries are read against the ontology. */
+  searchModel?: SearchModel;
 }
 
 export class Gateway {
@@ -449,7 +456,8 @@ export class Gateway {
       this.q(`SELECT ?dim ?value WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?dim . <${object}> ?d ?v . ?v skos:prefLabel ?value }`).map((r) => [r.dim, r.value]),
     );
     const pluralLabel = this.q(`SELECT ?l WHERE { <${type}> p:pluralLabel ?l }`)[0]?.l ?? typeLabel;
-    return { iri: object, identifier, type, typeLabel, pluralLabel, state, ...this.lifecycleOf(object, type) };
+    const title = titleOf(this.graph.store, object) ?? typeLabel;
+    return { iri: object, identifier, type, typeLabel, title, pluralLabel, state, ...this.lifecycleOf(object, type) };
   }
 
   /** The object's stage in its type's first state dimension, with every stage in order. */
@@ -512,7 +520,8 @@ export class Gateway {
    * Search (spec 5.2): the query read against the ontology, then applied to what the principal may read. A result whose
    * personal data matched the query is a read of it, and is audited as one.
    */
-  search(principal: Principal, query: string, limit = 50): SearchResult {
+  async search(principal: Principal, query: string, options: { limit?: number; understand?: 'model' | 'ontology' } = {}): Promise<SearchResult> {
+    const limit = options.limit ?? 50;
     this.authorize(principal);
     const hidden = this.unreadable(principal.role);
     const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel } ORDER BY ?label`)
@@ -525,9 +534,40 @@ export class Gateway {
         .filter((r) => readable.has(r.type))
         .map((r) => [normalize(r.id), { iri: r.o, identifier: r.id }]),
     );
-    const interpretation = interpret(query, { types, states, identifier: (w) => identifiers.get(w) });
-    const empty = { query, interpretation, results: [], total: 0 };
-    const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length;
+    const vocabulary = { types, states, identifier: (w: string) => identifiers.get(w) };
+    // A connected model understands the query, from the vocabulary only; without one, or if it fails, the ontology reading does.
+    let interpretation = interpret(query, vocabulary);
+    let understoodBy: SearchResult['understoodBy'] = { ontology: true };
+    const model = options.understand !== 'ontology' ? this.options.searchModel : undefined;
+    if (model && normalize(query)) {
+      const mentioned = normalize(query)
+        .split(/[^\p{L}\p{N}-]+/u)
+        .map((w) => identifiers.get(w)?.identifier)
+        .filter((id): id is string => Boolean(id));
+      const person = this.q(`SELECT ?name ?role WHERE { <${principal.person}> rdfs:label ?name . <${principal.role}> rdfs:label ?role }`)[0];
+      const relationships = this.q(`SELECT DISTINCT ?l WHERE { ?r a p:Relationship ; rdfs:label ?l } ORDER BY ?l`).map((r) => r.l);
+      try {
+        const plan = await model.plan({
+          query,
+          person: { name: person?.name ?? '', role: person?.role ?? '' },
+          types: types.map((t) => ({ iri: t.type, name: t.label, plural: t.pluralLabel })),
+          states: (states as unknown as { dimension: string; dimensionLabel: string; type: string; value: string; label: string }[]).map((v) => ({
+            iri: v.value,
+            type: v.type,
+            dimension: v.dimensionLabel,
+            value: v.label,
+          })),
+          relationships,
+          identifiers: [...new Set(mentioned)],
+        });
+        interpretation = this.checkPlan(plan, vocabulary);
+        understoodBy = { model: model.model };
+      } catch (error) {
+        console.warn('The search model could not understand the query; reading it against the ontology instead.', error instanceof Error ? error.message : error);
+      }
+    }
+    const empty = { query, interpretation, results: [], total: 0, understoodBy };
+    const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length + (interpretation.mine ? 1 : 0);
     if (!understood) return empty;
 
     // Candidates: the identified objects, the objects of the types linked to them, or every object of the types.
@@ -547,6 +587,16 @@ export class Gateway {
     }
     const seen = new Set<string>();
     candidates = candidates.filter((c) => !seen.has(c.iri) && seen.add(c.iri));
+
+    // Mine: work waiting for the principal on To do, or objects that name them in a person property (spec 5.2).
+    if (interpretation.mine) {
+      const waiting = new Set((await this.todo(principal)).map((i) => i.object.iri));
+      const naming = new Map(
+        this.q(`SELECT ?o ?label WHERE { ?o ?p <${principal.person}> . ?p rdfs:label ?label . ?o a ?t . ?t a p:ObjectType }`).map((r) => [r.o, r.label]),
+      );
+      candidates = candidates.filter((c) => waiting.has(c.iri) || naming.has(c.iri));
+      for (const c of candidates) c.matched.unshift(waiting.has(c.iri) ? 'Yours: waiting for you' : `Yours: ${naming.get(c.iri)} you`);
+    }
 
     // States: within a dimension any of the values understood; across dimensions, all of them.
     const byDimension = new Map<string, { values: Set<string>; label: string }>();
@@ -593,11 +643,28 @@ export class Gateway {
       query,
       interpretation,
       results: shown.map((m) => ({
-        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
+        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, title: m.view.title, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
         matched: m.matched,
       })),
       total: matches.length,
+      understoodBy,
     };
+  }
+
+  /** A model's search plan, kept to the vocabulary the principal may read: anything else is dropped (spec 5.2). */
+  private checkPlan(
+    plan: SearchPlan,
+    vocabulary: { types: { type: string; label: string }[]; states: unknown; identifier: (w: string) => { iri: string; identifier: string } | undefined },
+  ): Interpretation {
+    const states = vocabulary.states as { dimension: string; dimensionLabel: string; type: string; value: string; label: string }[];
+    const types = vocabulary.types.filter((t) => plan.types.includes(t.type)).map((t) => ({ type: t.type, label: t.label }));
+    const chosenStates = states
+      .filter((v) => plan.states.includes(v.value))
+      .filter((v) => !types.length || types.some((t) => t.type === v.type))
+      .map((v) => ({ dimension: v.dimension, dimensionLabel: v.dimensionLabel, type: v.type, value: v.value, label: v.label }));
+    const identifiers = plan.identifiers.map((id) => vocabulary.identifier(normalize(id))).filter((i): i is { iri: string; identifier: string } => Boolean(i));
+    const words = plan.words.map(normalize).filter((w) => w && !w.includes(' ')).slice(0, 8);
+    return { types, states: chosenStates, identifiers, words, mine: Boolean(plan.mine) };
   }
 
   /** A synchronous check of the hiding shapes, which use only core constraints on the object's own values. */

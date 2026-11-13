@@ -14,7 +14,7 @@ const SHOWN = 5;
  * The search field at the head of the sidebar (design system spec 4.1, Search): the best matches under it as the person
  * types, with a count read out as it changes; Enter, or See all, opens the search page.
  */
-export function SearchField({ query: routeQuery, onNavigate }: { query?: string; onNavigate: () => void }) {
+export function SearchField({ query: routeQuery, onNavigate, isHidden = false }: { query?: string; onNavigate: () => void; isHidden?: boolean }) {
   const { client, principal } = usePrincipal();
   const [value, setValue] = useState(routeQuery ?? '');
   const [result, setResult] = useState<SearchResult>();
@@ -31,7 +31,8 @@ export function SearchField({ query: routeQuery, onNavigate }: { query?: string;
     }
     let cancelled = false;
     const timer = setTimeout(() => {
-      client.search(principal, query).then((r) => !cancelled && setResult(r), () => !cancelled && setResult(undefined));
+      // Suggestions come from the ontology reading: the model is asked once per search, not once per keystroke.
+      client.search(principal, query, { understand: 'ontology' }).then((r) => !cancelled && setResult(r), () => !cancelled && setResult(undefined));
     }, SEARCH_DEBOUNCE_MS);
     return () => {
       cancelled = true;
@@ -47,7 +48,8 @@ export function SearchField({ query: routeQuery, onNavigate }: { query?: string;
   };
 
   return (
-    <search className="app-search">
+    // While the sidebar is a closed drawer it is hidden from assistive technology, so the field must not take focus either.
+    <search className="app-search" inert={isHidden}>
       <SearchInput
         aria-label="Search objects"
         placeholder="Search, such as open queries"

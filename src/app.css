@@ -1,0 +1,14 @@
+/*
+ * The page's own base text color, background, font and line height (design system spec 4.2). PatternFly sets these
+ * with :where(body), which has no specificity, so any page the platform is embedded in, such as a preview host, could
+ * turn text black on the dark theme. Tokens only (design system spec, rule 2).
+ */
+html body {
+  margin: 0;
+  background-color: var(--pf-t--global--background--color--secondary--default);
+  color: var(--pf-t--global--text--color--regular);
+  font-family: var(--pf-t--global--font--family--body);
+  font-size: var(--pf-t--global--font--size--body--default);
+  font-weight: var(--pf-t--global--font--weight--body--default);
+  line-height: var(--pf-t--global--font--line-height--body);
+}

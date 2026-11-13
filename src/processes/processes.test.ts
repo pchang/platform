@@ -78,7 +78,7 @@ describe('kept on this device, for each person', () => {
 });
 
 describe('progress by archetype (design system spec 5.1)', () => {
-  const object = { iri: 'urn:o', identifier: 'X-1', type: 'urn:t', typeLabel: 'Thing', pluralLabel: 'Things', state: {} };
+  const object = { iri: 'urn:o', identifier: 'X-1', type: 'urn:t', typeLabel: 'Thing', title: 'A Thing title', pluralLabel: 'Things', state: {} };
   const of = (label: string, inputs: MethodComposition['inputs'] = []): MethodComposition => ({ method: 'urn:m', label: 'Do', archetype: { archetype: 'urn:a', label }, object, inputs });
   const two = [{ name: 'a', label: 'A', kind: 'text' as const }, { name: 'b', label: 'B', kind: 'text' as const }];
   const preview = { changes: [], created: [], pending: [], pendingDescriptions: [], background: [] };

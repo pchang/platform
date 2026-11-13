@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { eyebrow } from './cards';
 
 // The To do summary (platform spec 5.1, design system spec 4.3), on the in-page gateway.
 test.setTimeout(60_000);
@@ -28,10 +29,11 @@ test('the count tiles narrow the cards, and Waiting shows them all again', async
 
   await choose(page, 'Urgent');
   await expect(cards(page)).toHaveCount(1);
-  await expect(cards(page).getByRole('heading', { level: 2 })).toHaveText('SC-003');
+  await expect(eyebrow(cards(page), 'SC-003')).toBeVisible();
 
   await choose(page, 'Due within 7 days');
-  await expect(cards(page).getByRole('heading', { level: 2 })).toHaveText('SUB-1');
+  await expect(eyebrow(cards(page), 'SUB-1')).toBeVisible();
+  await expect(cards(page)).toHaveCount(1);
 
   await choose(page, 'Waiting');
   await expect(cards(page)).toHaveCount(all);

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { cardFor } from './cards';
 
 // Start and track, end to end on the in-page gateway (platform spec 3.4 and 5.4, design system spec 4.1, 4.3 and 5.1).
 test.setTimeout(90_000);
@@ -11,7 +12,7 @@ async function openProducts(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'Products' })).toBeVisible({ timeout: 30_000 });
   await expect(card(page, 'P-101')).toBeVisible({ timeout: 30_000 });
 }
-const card = (page: Page, id: string) => page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: id, exact: true }) });
+const card = cardFor;
 
 async function noViolations(page: Page) {
   await page.addScriptTag({ path: axePath });
@@ -55,7 +56,7 @@ test('start signal detection from the product list, follow it to the end, and re
 
   // The new signal is now work waiting on To do.
   await page.goto('/#/');
-  await expect(page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: 'Signal-2', exact: true }) })).toBeVisible({ timeout: 30_000 });
+  await expect(cardFor(page, 'Signal-2')).toBeVisible({ timeout: 30_000 });
 });
 
 test('a background method no worker can do says why, and cannot start', async ({ page }) => {

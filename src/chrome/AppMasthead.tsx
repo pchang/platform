@@ -38,14 +38,14 @@ export function AppMasthead({
 }) {
   const unread = notifications?.unread ?? 0;
   return (
-    <Masthead display={{ default: 'inline' }}>
+    <Masthead display={{ default: 'inline' }} className="app-masthead">
       <MastheadMain className="app-masthead__main">
         <MastheadToggle>
           <PageToggleButton isHamburgerButton isSidebarOpen={isSidebarOpen} onSidebarToggle={onSidebarToggle} aria-label="Navigation" />
         </MastheadToggle>
-        <MastheadBrand>
+        <MastheadBrand className="app-masthead__brand">
           <MastheadLogo href={product.homeHref} className="app-masthead__logo">
-            {product.name}
+            <span className="app-masthead__name">{product.name}</span>
           </MastheadLogo>
         </MastheadBrand>
       </MastheadMain>

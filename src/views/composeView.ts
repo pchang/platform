@@ -111,7 +111,7 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
 export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false): ViewSpec {
   const isConfirm = composition.archetype.label === 'Confirm';
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
+  const body: ViewNode[][] = [];
   if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   body.push(previewSection(composition, state));
   return {
@@ -121,7 +121,7 @@ export function buildComposeView(composition: MethodComposition, state: PreviewS
       component: 'Modal',
       props: { variant: isConfirm ? 'small' : 'medium', 'aria-label': title },
       children: [
-        { component: 'ModalHeader', props: { title, description: composition.object.typeLabel } },
+        modalHeader(title, composition.object.title, minimizable),
         { component: 'ModalBody', children: [stack(body)] },
         {
           component: 'ModalFooter',
@@ -177,7 +177,7 @@ function runSection(run: RunView): ViewNode[] {
  */
 export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
-  const body: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
+  const body: ViewNode[][] = [];
   if (run) body.push(runSection(run));
   else {
     if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
@@ -198,7 +198,7 @@ export function buildStartView(composition: MethodComposition, state: PreviewSta
       component: 'Modal',
       props: { variant: 'small', 'aria-label': title },
       children: [
-        { component: 'ModalHeader', props: { title, description: composition.object.typeLabel } },
+        modalHeader(title, composition.object.title, minimizable),
         { component: 'ModalBody', children: [stack(body)] },
         { component: 'ModalFooter', children: footer },
       ],
@@ -239,7 +239,7 @@ export function buildDraftView(
 ): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const back: ViewNode = { component: 'Button', props: { label: 'Back', variant: 'link' }, intent: 'cancel' };
-  const items: ViewNode[][] = [...(options.minimizable ? [[minimizeButton]] : []), [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')]];
+  const items: ViewNode[][] = [pageTitle(title, composition.object.title, Boolean(options.minimizable))];
 
   if (state.status === 'drafting') {
     items.push([
@@ -342,7 +342,10 @@ function compareCard(view: ObjectView, rows: string[], other?: Map<string, strin
         component: 'Card',
         props: { isFullHeight: true },
         children: [
-          { component: 'CardTitle', props: { label: view.identifier, component: 'h2' } },
+          {
+            component: 'CardHeader',
+            children: [text(`${view.identifier} · ${view.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: view.title, component: 'h2' } }],
+          },
           {
             component: 'CardBody',
             children: [
@@ -393,8 +396,7 @@ export function buildCompareView(
   const title = `${composition.label} ${composition.object.identifier}`;
   const pick = composition.inputs.find((i) => i.kind === 'object');
   const items: ViewNode[][] = [
-    ...(minimizable ? [[minimizeButton]] : []),
-    [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(composition.object.typeLabel, 'small')],
+    pageTitle(title, composition.object.title, minimizable),
     [{ component: 'Form', children: composition.inputs.map(fieldFor) }],
   ];
   if (other) {
@@ -435,11 +437,10 @@ export function nameMatches(composition: MethodComposition, typed: string | unde
 export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false, minimizable = false): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const signature = composition.signature!;
-  const review: ViewNode[][] = minimizable ? [[minimizeButton]] : [];
+  const review: ViewNode[][] = [];
   if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   review.push(previewSection(composition, state));
   const sign: ViewNode[][] = [
-    ...(minimizable ? [[minimizeButton]] : []),
     [
       {
         component: 'DescriptionList',
@@ -462,7 +463,7 @@ export function buildSignView(composition: MethodComposition, state: PreviewStat
     sign.push([
       {
         component: 'Alert',
-        props: { variant: 'warning', title: 'Development signature', isInline: true, component: 'h3' },
+        props: { variant: 'warning', title: 'Development signature', isInline: true, component: 'h2' },
         children: [text('This is not a valid electronic signature. Signing for real needs the identity provider, which is not connected yet.')],
       },
     ]);
@@ -486,11 +487,13 @@ export function buildSignView(composition: MethodComposition, state: PreviewStat
       component: 'Modal',
       props: { variant: 'medium', 'aria-label': title },
       children: [
+        // With Minimize, the modal's own header carries the title, Minimize and close; otherwise the wizard's does.
+        ...(minimizable ? [modalHeader(title, composition.object.title, true)] : []),
         {
           component: 'Wizard',
           props: { navAriaLabel: `${title} steps` },
           children: [
-            { component: 'WizardHeader', props: { title, description: composition.object.typeLabel, closeButtonAriaLabel: 'Close' } },
+            ...(minimizable ? [] : [{ component: 'WizardHeader', props: { title, description: composition.object.title, closeButtonAriaLabel: 'Close' } } as ViewNode]),
             { component: 'WizardStep', props: { name: 'Review', id: 'review', footer: { isNextDisabled: state.status !== 'ready' } }, children: [stack(review)] },
             {
               component: 'WizardStep',
@@ -578,9 +581,27 @@ export function processProgress(
   return { fraction: given / (needed + 1), words: `${given} of ${needed} ${needed === 1 ? 'field' : 'fields'}` };
 }
 
-/** The Minimize button every pattern carries at the top of the process (design system spec 5.1). */
+/** Minimize (design system spec 5.1): a minus icon with a tooltip, left of the close button, or at the right of a page's title. */
 export const minimizeButton: ViewNode = {
-  component: 'Flex',
-  props: { justifyContent: { default: 'justifyContentFlexEnd' } },
-  children: [{ component: 'Button', props: { label: 'Minimize', variant: 'link' }, intent: 'minimize' }],
+  component: 'Tooltip',
+  props: { content: 'Minimize' },
+  children: [{ component: 'Button', props: { variant: 'plain', icon: 'minus', 'aria-label': 'Minimize' }, intent: 'minimize' }],
 };
+
+/** A modal's header: the process's title and its object's type, and Minimize beside the close button when it can be set aside. */
+function modalHeader(title: string, description: string, minimizable: boolean): ViewNode {
+  return { component: 'ModalHeader', props: { title, description }, ...(minimizable ? { children: [minimizeButton] } : {}) };
+}
+
+/** A page pattern's title row: the title and its object's type, and Minimize at the right when it can be set aside. */
+function pageTitle(title: string, description: string, minimizable: boolean): ViewNode[] {
+  const heading: ViewNode[] = [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(description, 'small')];
+  if (!minimizable) return heading;
+  return [
+    {
+      component: 'Flex',
+      props: { justifyContent: { default: 'justifyContentSpaceBetween' }, alignItems: { default: 'alignItemsFlexStart' }, flexWrap: { default: 'nowrap' } },
+      children: [{ component: 'FlexItem', children: heading }, { component: 'FlexItem', children: [minimizeButton] }],
+    },
+  ];
+}

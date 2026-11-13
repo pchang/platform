@@ -19,7 +19,41 @@ export interface Interpretation {
   identifiers: { iri: string; identifier: string }[];
   /** Words that must each appear in what the principal may read of an object. */
   words: string[];
+  /** Only the principal's own objects: work waiting for them, or objects that name them (spec 5.2). */
+  mine: boolean;
 }
+
+/**
+ * A search plan from a connected model (spec 5.2, Understanding with a connected model): the same parts as an
+ * interpretation, by IRI for types and states and by identifier for objects. The gateway checks every part.
+ */
+export interface SearchPlan {
+  types: string[];
+  states: string[];
+  identifiers: string[];
+  words: string[];
+  mine: boolean;
+}
+
+/** What a model is given to understand a query: the vocabulary the principal may read, and who they are. Never a record. */
+export interface SearchPlanRequest {
+  query: string;
+  person: { name: string; role: string };
+  types: { iri: string; name: string; plural: string }[];
+  states: { iri: string; type: string; dimension: string; value: string }[];
+  relationships: string[];
+  /** Identifiers the principal may read that appear in the query. */
+  identifiers: string[];
+}
+
+/** A connected model that understands search queries. Rejects when it fails or declines; the gateway then reads the query itself. */
+export interface SearchModel {
+  readonly model: string;
+  plan(request: SearchPlanRequest): Promise<SearchPlan>;
+}
+
+/** Words that mean the principal's own objects. */
+const MINE = new Set(['my', 'mine', 'me', 'i', "i'm", 'myself']);
 
 export const normalize = (text: string) => text.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -42,7 +76,7 @@ function forms(word: string): string[] {
  */
 export function interpret(query: string, vocabulary: SearchVocabulary): Interpretation {
   let rest = ` ${normalize(query)} `;
-  const result: Interpretation = { types: [], states: [], identifiers: [], words: [] };
+  const result: Interpretation = { types: [], states: [], identifiers: [], words: [], mine: false };
   const take = (phrase: string) => {
     const at = rest.indexOf(` ${phrase} `);
     if (at < 0) return false;
@@ -87,7 +121,9 @@ export function interpret(query: string, vocabulary: SearchVocabulary): Interpre
 
   // A state read before its type was known, such as "open" in "open queries", keeps only the types the query names.
   if (result.types.length) result.states = result.states.filter((s) => result.types.some((t) => t.type === s.type));
-  result.words = rest.split(' ').filter((w) => w && !FILLER.has(w));
+  const left = rest.split(' ').filter((w) => w && !FILLER.has(w));
+  result.mine = left.some((w) => MINE.has(w));
+  result.words = left.filter((w) => !MINE.has(w));
   return result;
 }
 

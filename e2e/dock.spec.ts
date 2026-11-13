@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { cardFor } from './cards';
 
 // Several processes at once (platform spec 5.4; design system spec 4.1 and 5.1), on the in-page gateway.
 test.setTimeout(90_000);
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
-const card = (page: Page, id: string) => page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: id, exact: true }) });
+const card = cardFor;
 const dock = (page: Page) => page.getByRole('region', { name: 'Processes set aside' });
 
 async function openTodo(page: Page) {

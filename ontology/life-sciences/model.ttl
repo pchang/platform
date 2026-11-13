@@ -35,7 +35,8 @@ ls:Compound a p:ObjectType, rdfs:Class ;
   rdfs:label "Compound" ;
   p:pluralLabel "Compounds" ;
   rdfs:comment "A molecule under research." ;
-  p:inDomain ls:ScientificInnovation .
+  p:inDomain ls:ScientificInnovation ;
+  p:titleTemplate "{ls:compoundName} | Analog of {ls:derivedFrom}" .
 
 ls:compoundStage a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Stage" ;
@@ -55,7 +56,8 @@ ls:Simulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Simulation" ;
   p:pluralLabel "Simulations" ;
   rdfs:comment "An in silico run predicting a compound's properties." ;
-  p:inDomain ls:ScientificInnovation .
+  p:inDomain ls:ScientificInnovation ;
+  p:titleTemplate "{ls:modelType} prediction for {ls:predicts}" .
 
 ls:simulationRun a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Run" ;
@@ -76,7 +78,8 @@ ls:Experiment a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Experiments" ;
   rdfs:comment "A lab experiment recorded in an electronic notebook." ;
   p:inDomain ls:ScientificInnovation ;
-  skos:closeMatch ncit:C42790 .
+  skos:closeMatch ncit:C42790 ;
+  p:titleTemplate "{ls:aim}, {ls:tests}" .
 
 ls:experimentRecord a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Record" ;
@@ -96,7 +99,8 @@ ls:AssayResult a p:ObjectType, rdfs:Class ;
   rdfs:label "Assay Result" ;
   p:pluralLabel "Assay Results" ;
   rdfs:comment "A measured property from an experiment." ;
-  p:inDomain ls:ScientificInnovation .
+  p:inDomain ls:ScientificInnovation ;
+  p:titleTemplate "{ls:resultValue}" .
 
 ls:assayResultValidity a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Validity" ;
@@ -109,7 +113,8 @@ ls:Formulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Formulation" ;
   p:pluralLabel "Formulations" ;
   rdfs:comment "A compound combined with other ingredients into a product." ;
-  p:inDomain ls:ScientificInnovation .
+  p:inDomain ls:ScientificInnovation ;
+  p:titleTemplate "{ls:formulationName}" .
 
 ls:formulationStage a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Stage" ;
@@ -122,7 +127,8 @@ ls:Process a p:ObjectType, rdfs:Class ;
   rdfs:label "Process" ;
   p:pluralLabel "Processes" ;
   rdfs:comment "The approved way a formulation is manufactured." ;
-  p:inDomain ls:ScientificInnovation .
+  p:inDomain ls:ScientificInnovation ;
+  p:titleTemplate "Manufacturing process for {ls:manufactures}" .
 
 ls:processStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -136,7 +142,8 @@ ls:Batch a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Batches" ;
   rdfs:comment "One manufactured lot of a formulation." ;
   p:inDomain ls:ScientificInnovation ;
-  skos:exactMatch ncit:C41396 .
+  skos:exactMatch ncit:C41396 ;
+  p:titleTemplate "Lot {ls:lotNumber}" .
 
 ls:batchProduction a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Production" ;
@@ -164,7 +171,8 @@ ls:Study a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Studies" ;
   rdfs:comment "A clinical trial of one or more formulations, in patients or in people without the disease." ;
   p:inDomain ls:ClinicalDevelopment ;
-  skos:closeMatch ncit:C15206 .
+  skos:closeMatch ncit:C15206 ;
+  p:titleTemplate "{ls:studyTitle}" .
 
 ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Phase" ;
@@ -192,7 +200,8 @@ ls:Site a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Sites" ;
   rdfs:comment "A hospital or clinic running the study." ;
   p:inDomain ls:ClinicalDevelopment ;
-  skos:exactMatch ncit:C85838 .
+  skos:exactMatch ncit:C85838 ;
+  p:titleTemplate "{ls:siteName}" .
 
 ls:siteStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -214,7 +223,8 @@ ls:Patient a p:ObjectType, rdfs:Class ;
   rdfs:comment "A person enrolled in a study. Labeled participant in studies without a disease state." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:closeMatch ncit:C16960 ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "Patient at {ls:enrolledAt}" .
 
 ls:patientEnrollment a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Enrollment" ;
@@ -243,7 +253,8 @@ ls:Visit a p:ObjectType, rdfs:Class ;
   rdfs:comment "A scheduled encounter with a patient." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:exactMatch ncit:C191214 ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "{ls:visitName} for {ls:visitFor:id} | Visit for {ls:visitFor:id}" .
 
 ls:visitStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -257,7 +268,8 @@ ls:DataRecord a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Data Records" ;
   rdfs:comment "A captured data point: a lab value, vital sign, diary entry or device reading." ;
   p:inDomain ls:ClinicalDevelopment ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "{ls:recordedValue} | Data point at {ls:capturedAt:id}" .
 
 ls:dataRecordEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
@@ -277,7 +289,8 @@ ls:DataQuery a p:ObjectType, rdfs:Class ;
   rdfs:label "Data Query" ;
   p:pluralLabel "Data Queries" ;
   rdfs:comment "A question raised about a data record." ;
-  p:inDomain ls:ClinicalDevelopment .
+  p:inDomain ls:ClinicalDevelopment ;
+  p:titleTemplate "{ls:queryText} | Query on {ls:raisedOn:id}" .
 
 ls:dataQueryStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -292,7 +305,8 @@ ls:AdverseEvent a p:ObjectType, rdfs:Class ;
   rdfs:comment "Something harmful that happened to a patient during the study." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:exactMatch ncit:C41331 ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "{ls:verbatimTerm} | Adverse event for {ls:experiencedBy:id}" .
 
 ls:adverseEventEntry a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Entry" ;
@@ -327,7 +341,8 @@ ls:SafetyCase a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Safety Cases" ;
   rdfs:comment "One report of an adverse reaction in one patient." ;
   p:inDomain ls:SafetyAndRegulatory ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "{ls:reaction} with {ls:concerns} | Case from {ls:originatesFrom:id} | Case for {ls:concerns}" .
 
 ls:safetyCaseWorkflow a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Workflow" ;
@@ -362,7 +377,8 @@ ls:Product a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Products" ;
   rdfs:comment "A marketed or investigational product." ;
   p:inDomain ls:SafetyAndRegulatory ;
-  skos:closeMatch ncit:C221818 .
+  skos:closeMatch ncit:C221818 ;
+  p:titleTemplate "{ls:productName}" .
 
 ls:productStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -375,7 +391,8 @@ ls:Signal a p:ObjectType, rdfs:Class ;
   rdfs:label "Signal" ;
   p:pluralLabel "Signals" ;
   rdfs:comment "A possible new risk detected across many cases." ;
-  p:inDomain ls:SafetyAndRegulatory .
+  p:inDomain ls:SafetyAndRegulatory ;
+  p:titleTemplate "{ls:reaction} with {ls:concerns} | Signal for {ls:concerns}" .
 
 ls:signalStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -389,7 +406,8 @@ ls:Submission a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Submissions" ;
   rdfs:comment "A regulatory filing to an authority." ;
   p:inDomain ls:SafetyAndRegulatory ;
-  skos:exactMatch ncit:C70885 .
+  skos:exactMatch ncit:C70885 ;
+  p:titleTemplate "Expedited report for {ls:reports:id}" .
 
 ls:submissionStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -409,7 +427,8 @@ ls:QualityEvent a p:ObjectType, rdfs:Class ;
   rdfs:label "Quality Event" ;
   p:pluralLabel "Quality Events" ;
   rdfs:comment "A deviation, complaint or audit finding." ;
-  p:inDomain ls:SafetyAndRegulatory .
+  p:inDomain ls:SafetyAndRegulatory ;
+  p:titleTemplate "{ls:eventDescription} | Quality event on {ls:raisedOn:id}" .
 
 ls:qualityEventStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -429,7 +448,8 @@ ls:CAPA a p:ObjectType, rdfs:Class ;
   rdfs:label "CAPA" ;
   p:pluralLabel "CAPAs" ;
   rdfs:comment "A corrective and preventive action." ;
-  p:inDomain ls:SafetyAndRegulatory .
+  p:inDomain ls:SafetyAndRegulatory ;
+  p:titleTemplate "{ls:capaAction} | CAPA for {ls:resolves:id}" .
 
 ls:capaStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -443,7 +463,8 @@ ls:MedicalInquiry a p:ObjectType, rdfs:Class ;
   p:pluralLabel "Medical Inquiries" ;
   rdfs:comment "A question from a clinician or patient about a product." ;
   p:inDomain ls:SafetyAndRegulatory ;
-  p:holdsPersonalData true .
+  p:holdsPersonalData true ;
+  p:titleTemplate "{ls:inquiryText}" .
 
 ls:medicalInquiryStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
@@ -549,6 +570,62 @@ ls:reaction a owl:ObjectProperty ;
   rdfs:comment "An adverse reaction, coded. A case may have several; a signal is for one." ;
   p:valuesFrom lst:Reaction .
 
+ls:compoundName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The compound's code and what it is." .
+
+ls:modelType a owl:DatatypeProperty ;
+  rdfs:label "model type" ;
+  rdfs:comment "The kind of model the simulation ran, such as ADMET." .
+
+ls:aim a owl:DatatypeProperty ;
+  rdfs:label "aim" ;
+  rdfs:comment "What the experiment set out to measure." .
+
+ls:resultValue a owl:DatatypeProperty ;
+  rdfs:label "result" ;
+  rdfs:comment "The measured result, with its units." .
+
+ls:formulationName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The formulation's name: product, strength and dosage form." .
+
+ls:lotNumber a owl:DatatypeProperty ;
+  rdfs:label "lot number" ;
+  rdfs:comment "The batch's lot number." .
+
+ls:studyTitle a owl:DatatypeProperty ;
+  rdfs:label "title" ;
+  rdfs:comment "The study's short name and title." .
+
+ls:siteName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The site's name." .
+
+ls:visitName a owl:DatatypeProperty ;
+  rdfs:label "visit" ;
+  rdfs:comment "The visit's name in the schedule of assessments, such as Week 12 visit." .
+
+ls:queryText a owl:DatatypeProperty ;
+  rdfs:label "question" ;
+  rdfs:comment "What the query asks the site." .
+
+ls:productName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The product's name and strength." .
+
+ls:eventDescription a owl:DatatypeProperty ;
+  rdfs:label "description" ;
+  rdfs:comment "What happened, as recorded when the event was opened." .
+
+ls:capaAction a owl:DatatypeProperty ;
+  rdfs:label "action" ;
+  rdfs:comment "The corrective or preventive action to take." .
+
+ls:inquiryText a owl:DatatypeProperty ;
+  rdfs:label "question" ;
+  rdfs:comment "What the clinician or patient asked." .
+
 ls:receivedOn a owl:DatatypeProperty ;
   rdfs:label "received on" ;
   rdfs:comment "The date the safety case was received." .
@@ -611,9 +688,15 @@ lsh:Compound-derivedFrom a sh:PropertyShape ;
   sh:class ls:Compound ;
   sh:name "derived from" .
 
+lsh:Compound-compoundName a sh:PropertyShape ;
+  sh:path ls:compoundName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
 lsh:Compound a sh:NodeShape ;
   sh:targetClass ls:Compound ;
-  sh:property lsh:Compound-identifier, lsh:Compound-stage, lsh:Compound-registration, lsh:Compound-derivedFrom .
+  sh:property lsh:Compound-identifier, lsh:Compound-stage, lsh:Compound-registration, lsh:Compound-derivedFrom, lsh:Compound-compoundName .
 
 lsh:Simulation-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -637,9 +720,15 @@ lsh:Simulation-predicts a sh:PropertyShape ;
   sh:class ls:Compound ;
   sh:name "predicts" .
 
+lsh:Simulation-modelType a sh:PropertyShape ;
+  sh:path ls:modelType ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "model type" .
+
 lsh:Simulation a sh:NodeShape ;
   sh:targetClass ls:Simulation ;
-  sh:property lsh:Simulation-identifier, lsh:Simulation-run, lsh:Simulation-review, lsh:Simulation-predicts .
+  sh:property lsh:Simulation-identifier, lsh:Simulation-run, lsh:Simulation-review, lsh:Simulation-predicts, lsh:Simulation-modelType .
 
 lsh:Experiment-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -668,9 +757,15 @@ lsh:Experiment-produces a sh:PropertyShape ;
   sh:class ls:AssayResult ;
   sh:name "produces" .
 
+lsh:Experiment-aim a sh:PropertyShape ;
+  sh:path ls:aim ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "aim" .
+
 lsh:Experiment a sh:NodeShape ;
   sh:targetClass ls:Experiment ;
-  sh:property lsh:Experiment-identifier, lsh:Experiment-record, lsh:Experiment-signOff, lsh:Experiment-tests, lsh:Experiment-produces .
+  sh:property lsh:Experiment-identifier, lsh:Experiment-record, lsh:Experiment-signOff, lsh:Experiment-tests, lsh:Experiment-produces, lsh:Experiment-aim .
 
 lsh:AssayResult-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -683,9 +778,15 @@ lsh:AssayResult-validity a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "Validity" .
 
+lsh:AssayResult-resultValue a sh:PropertyShape ;
+  sh:path ls:resultValue ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "result" .
+
 lsh:AssayResult a sh:NodeShape ;
   sh:targetClass ls:AssayResult ;
-  sh:property lsh:AssayResult-identifier, lsh:AssayResult-validity .
+  sh:property lsh:AssayResult-identifier, lsh:AssayResult-validity, lsh:AssayResult-resultValue .
 
 lsh:Formulation-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -703,9 +804,15 @@ lsh:Formulation-contains a sh:PropertyShape ;
   sh:class ls:Compound ;
   sh:name "contains" .
 
+lsh:Formulation-formulationName a sh:PropertyShape ;
+  sh:path ls:formulationName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
 lsh:Formulation a sh:NodeShape ;
   sh:targetClass ls:Formulation ;
-  sh:property lsh:Formulation-identifier, lsh:Formulation-stage, lsh:Formulation-contains .
+  sh:property lsh:Formulation-identifier, lsh:Formulation-stage, lsh:Formulation-contains, lsh:Formulation-formulationName .
 
 lsh:Process-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -755,9 +862,15 @@ lsh:Batch-follows a sh:PropertyShape ;
   sh:class ls:Process ;
   sh:name "follows" .
 
+lsh:Batch-lotNumber a sh:PropertyShape ;
+  sh:path ls:lotNumber ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "lot number" .
+
 lsh:Batch a sh:NodeShape ;
   sh:targetClass ls:Batch ;
-  sh:property lsh:Batch-identifier, lsh:Batch-production, lsh:Batch-quality, lsh:Batch-deviationRisk, lsh:Batch-follows .
+  sh:property lsh:Batch-identifier, lsh:Batch-production, lsh:Batch-quality, lsh:Batch-deviationRisk, lsh:Batch-follows, lsh:Batch-lotNumber .
 
 lsh:Study-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -792,9 +905,15 @@ lsh:Study-runsAt a sh:PropertyShape ;
   sh:class ls:Site ;
   sh:name "runs at" .
 
+lsh:Study-studyTitle a sh:PropertyShape ;
+  sh:path ls:studyTitle ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "title" .
+
 lsh:Study a sh:NodeShape ;
   sh:targetClass ls:Study ;
-  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt .
+  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-studyTitle .
 
 lsh:Site-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -813,9 +932,15 @@ lsh:Site-payment a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "Payment" .
 
+lsh:Site-siteName a sh:PropertyShape ;
+  sh:path ls:siteName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
 lsh:Site a sh:NodeShape ;
   sh:targetClass ls:Site ;
-  sh:property lsh:Site-identifier, lsh:Site-status, lsh:Site-payment .
+  sh:property lsh:Site-identifier, lsh:Site-status, lsh:Site-payment, lsh:Site-siteName .
 
 lsh:Patient-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -881,6 +1006,12 @@ lsh:Visit-visitFor a sh:PropertyShape ;
   sh:class ls:Patient ;
   sh:name "for" .
 
+lsh:Visit-visitName a sh:PropertyShape ;
+  sh:path ls:visitName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "visit" .
+
 lsh:Visit-scheduledOn a sh:PropertyShape ;
   sh:path ls:scheduledOn ;
   sh:datatype xsd:date ;
@@ -895,7 +1026,7 @@ lsh:Visit-missedReason a sh:PropertyShape ;
 
 lsh:Visit a sh:NodeShape ;
   sh:targetClass ls:Visit ;
-  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-scheduledOn, lsh:Visit-missedReason .
+  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-visitName, lsh:Visit-scheduledOn, lsh:Visit-missedReason .
 
 lsh:DataRecord-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -945,9 +1076,15 @@ lsh:DataQuery-raisedOn a sh:PropertyShape ;
   sh:class ls:DataRecord ;
   sh:name "raised on" .
 
+lsh:DataQuery-queryText a sh:PropertyShape ;
+  sh:path ls:queryText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "question" .
+
 lsh:DataQuery a sh:NodeShape ;
   sh:targetClass ls:DataQuery ;
-  sh:property lsh:DataQuery-identifier, lsh:DataQuery-status, lsh:DataQuery-raisedOn .
+  sh:property lsh:DataQuery-identifier, lsh:DataQuery-status, lsh:DataQuery-raisedOn, lsh:DataQuery-queryText .
 
 lsh:AdverseEvent-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1079,9 +1216,15 @@ lsh:Product-isFormulation a sh:PropertyShape ;
   sh:class ls:Formulation ;
   sh:name "is" .
 
+lsh:Product-productName a sh:PropertyShape ;
+  sh:path ls:productName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
 lsh:Product a sh:NodeShape ;
   sh:targetClass ls:Product ;
-  sh:property lsh:Product-identifier, lsh:Product-status, lsh:Product-isFormulation .
+  sh:property lsh:Product-identifier, lsh:Product-status, lsh:Product-isFormulation, lsh:Product-productName .
 
 lsh:Signal-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1174,9 +1317,15 @@ lsh:QualityEvent-raisedOn a sh:PropertyShape ;
   sh:class ls:Batch ;
   sh:name "raised on" .
 
+lsh:QualityEvent-eventDescription a sh:PropertyShape ;
+  sh:path ls:eventDescription ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "description" .
+
 lsh:QualityEvent a sh:NodeShape ;
   sh:targetClass ls:QualityEvent ;
-  sh:property lsh:QualityEvent-identifier, lsh:QualityEvent-status, lsh:QualityEvent-severity, lsh:QualityEvent-raisedOn .
+  sh:property lsh:QualityEvent-identifier, lsh:QualityEvent-status, lsh:QualityEvent-severity, lsh:QualityEvent-raisedOn, lsh:QualityEvent-eventDescription .
 
 lsh:CAPA-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1194,9 +1343,15 @@ lsh:CAPA-resolves a sh:PropertyShape ;
   sh:class ls:QualityEvent ;
   sh:name "resolves" .
 
+lsh:CAPA-capaAction a sh:PropertyShape ;
+  sh:path ls:capaAction ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "action" .
+
 lsh:CAPA a sh:NodeShape ;
   sh:targetClass ls:CAPA ;
-  sh:property lsh:CAPA-identifier, lsh:CAPA-status, lsh:CAPA-resolves .
+  sh:property lsh:CAPA-identifier, lsh:CAPA-status, lsh:CAPA-resolves, lsh:CAPA-capaAction .
 
 lsh:MedicalInquiry-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1209,9 +1364,15 @@ lsh:MedicalInquiry-status a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "Status" .
 
+lsh:MedicalInquiry-inquiryText a sh:PropertyShape ;
+  sh:path ls:inquiryText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "question" .
+
 lsh:MedicalInquiry a sh:NodeShape ;
   sh:targetClass ls:MedicalInquiry ;
-  sh:property lsh:MedicalInquiry-identifier, lsh:MedicalInquiry-status .
+  sh:property lsh:MedicalInquiry-identifier, lsh:MedicalInquiry-status, lsh:MedicalInquiry-inquiryText .
 
 lsh:IsAdverseEvent a sh:NodeShape ;
   sh:class ls:AdverseEvent .

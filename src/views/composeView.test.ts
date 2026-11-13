@@ -4,7 +4,7 @@ import type { MethodComposition } from '../data/client';
 import type { DraftView, RunView } from '../data/client';
 import { buildCompareView, buildComposeView, buildDraftView, buildRefusedView, buildSignView, buildStartView, changeLines, discardedNotice, nameMatches, runNotice, successNotice } from './composeView';
 
-const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', pluralLabel: 'Safety Cases', state: {} };
+const object = { iri: 'https://example.org/lsh-data/SC-004', identifier: 'SC-004', type: 'urn:t', typeLabel: 'Safety Case', title: 'A Safety Case title', pluralLabel: 'Safety Cases', state: {} };
 const triage: MethodComposition = {
   method: 'urn:Triage',
   label: 'Triage',

@@ -67,7 +67,8 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description:
         'Finds objects you may read from a short query, read against the ontology: identifiers ("SC-003"), type names ("open queries"), ' +
         'state values ("serious adverse events"), links ("cases for P-101") and words in their records ("pneumonia"). ' +
-        'Returns how the query was understood and why each object matched, best first.',
+        'Plain language works, such as "list all of my queries": a connected model understands it from the vocabulary you may read. ' +
+        'Returns who understood the query and how, and why each object matched, best first.',
       inputSchema: { query: z.string() },
       annotations: { readOnlyHint: true },
     },

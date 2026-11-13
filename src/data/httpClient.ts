@@ -20,7 +20,7 @@ export function httpClient(base = '/api'): GatewayClient {
     people: () => request('/dev/people'),
     navigation: (p) => request('/navigation', p),
     todo: (p) => request('/todo', p),
-    search: (p, query) => request(`/search?q=${encodeURIComponent(query)}`, p),
+    search: (p, query, options = {}) => request(`/search?q=${encodeURIComponent(query)}${options.understand === 'ontology' ? '&understand=ontology' : ''}`, p),
     find: (p, type) => request(`/objects?type=${encodeURIComponent(type)}`, p),
     read: (p, object) => request(`/objects/${encodeURIComponent(object)}`, p),
     compose: (p, object, method) => request(methodPath(object, method), p),

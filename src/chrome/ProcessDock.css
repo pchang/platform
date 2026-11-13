@@ -2,12 +2,12 @@
 .app-process-dock {
   border-block-start: var(--pf-t--global--border--width--regular) solid var(--pf-t--global--border--color--default);
   background-color: var(--pf-t--global--background--color--secondary--default);
-  padding-block: var(--pf-t--global--spacer--sm);
+  padding-block: var(--pf-t--global--spacer--md) var(--pf-t--global--spacer--sm);
 }
 
 .app-process-dock__title {
   padding-inline: var(--pf-t--global--spacer--md);
-  padding-block-end: var(--pf-t--global--spacer--xs);
+  padding-block-end: var(--pf-t--global--spacer--sm);
 }
 
 /* One row that scrolls sideways inside the dock when it does not fit, so the page never does. */

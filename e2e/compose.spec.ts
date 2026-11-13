@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { cardFor, eyebrow } from './cards';
 
 // Confirm and Fill in, end to end on the in-page gateway (platform spec 5.4, design system spec 5.1).
 test.setTimeout(60_000);
@@ -11,7 +12,7 @@ async function openTodo(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('main').getByRole('heading', { level: 2 }).first()).toBeVisible({ timeout: 30_000 });
 }
-const card = (page: Page, id: string) => page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: id, exact: true }) });
+const card = cardFor;
 
 test('Fill in: triage a case, see what will change, commit, and see the case move on', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -78,7 +79,7 @@ test('Compare and decide: flag a duplicate side by side, then merge it', async (
   await expect(page.getByRole('heading', { level: 1, name: 'Flag duplicate SC-003' })).toBeVisible();
   await expect(page.getByText('Choose candidate case to compare')).toBeVisible();
   await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
-  await expect(page.getByRole('heading', { level: 2, name: 'SC-006' })).toBeVisible();
+  await expect(eyebrow(page, 'SC-006')).toBeVisible();
   await expect(page.getByText('Different').first()).toBeVisible();
   await expect(page.getByText('set to SC-006')).toBeVisible();
   await page.getByRole('button', { name: 'Flag duplicate' }).click();
@@ -100,8 +101,8 @@ test('Compare and decide stacks the cards on a phone, with no accessibility viol
   await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
   await expect(page.getByText('set to SC-006')).toBeVisible();
   const [a, b] = await Promise.all([
-    page.getByRole('heading', { level: 2, name: 'SC-003' }).boundingBox(),
-    page.getByRole('heading', { level: 2, name: 'SC-006' }).boundingBox(),
+    eyebrow(page, 'SC-003').boundingBox(),
+    eyebrow(page, 'SC-006').boundingBox(),
   ]);
   expect(b!.y).toBeGreaterThan(a!.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);

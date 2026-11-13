@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.16. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.20, sections 3.6, 5.1, 5.4 and 7.
+Version 0.19. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -93,7 +93,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | A search field, then To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
-All masthead items stay visible at every width, on one row with the logo. The product name is LS&H.
+All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
@@ -101,10 +101,12 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 - As the person types, the best five matches appear under the field, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
 - Choosing a match, or pressing Enter, opens the search page; a match opens it at that object.
-- The search page (`#/search/…`) shows how the query was understood, as labels such as "Type: Safety Case" and "Seriousness: serious", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
+- The best matches under the field come from the ontology reading, so they appear as fast as the person types. The search page asks the connected model, if there is one, and says while it is understanding the query.
+- The search page (`#/search/…`) shows who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
+- The dock's heading, "Set aside", has the same space above it as below it, so it never touches the dock's edge.
 - Each process is one entry: the method and the object, a small progress bar, and its progress in words, such as "2 of 3 fields", "Ready to sign", "Running, 40%" or "Draft ready". Choosing an entry brings the process back in front; the process in front, if any, goes into the dock. A process in a modal covers the page, dock included, so the person minimizes it before choosing another; a page process leaves the dock in reach.
 - Each entry has a close button, named for the process. Closing ends it without committing anything; a background run keeps running, and an undecided draft stays undecided.
 - The entries sit in one row that scrolls sideways inside the dock when they do not fit, so the page itself never scrolls sideways.
@@ -118,12 +120,12 @@ Profile opens a menu showing who the person is and the role they act in. In deve
 
 ### 4.3 To do and object lists
 
-To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card shows the object's identifier and type, its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
+To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card leads with the object's identifier and type in small text, such as "AE-005 · Adverse Event", then its title from the ontology as the card's heading, such as "Fever and cough; admitted to hospital with pneumonia". Then its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The To do summary** sits above the cards, under the heading:
+**The To do summary** sits above the cards, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content:
 
 - **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 - **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
@@ -141,6 +143,7 @@ Every component, pattern and view works in both light and dark mode. Dark mode i
 - The day hours are configuration, not code.
 - The setting belongs to the person and will live in their user context (platform spec 3.3). Until identity exists, it is kept on the device.
 - Because colors come only from tokens (rule 2), components need no theme-specific code.
+- The page sets its own base text color, background, font and line height from tokens, on the page itself, not only through PatternFly's low-priority base styles. A page the platform is embedded in, such as a preview host, can then never turn text black on the dark theme or change the chrome's alignment.
 - The accessibility scans in section 4 run in both modes.
 
 ---
@@ -197,7 +200,7 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 **Confirm and Fill in, step by step:**
 
 1. On a To do card, each task waiting is a button named for the method. Tasks whose archetype is not built yet are shown as text.
-2. The button opens the archetype's modal, titled with the method and the object.
+2. The button opens the archetype's modal, titled with the method and the object's identifier, with the object's title under it.
 3. Fill in shows one field per input, with the input's choices and default from the gateway. Confirm shows no fields.
 4. As soon as every input has a value, the modal shows the preview from the gateway: each value that will change, from old to new, and each object that will be created. If the method would fail, it shows the reasons instead, and the commit button stays disabled.
 5. The commit button is named for the method. Cancel closes the modal and changes nothing.
@@ -236,7 +239,7 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 5. When the run ends while the modal is open, it shows the outcome: what was found and created, or why it failed.
 6. Closing the modal returns to the list, with an Alert saying the run started or how it ended. The object's card shows the run while it is running.
 
-**Setting a process aside, step by step:** every pattern has a **Minimize** button at the top of the process, in the same place for every archetype. It sends the process to the dock with everything given so far, and returns the person to the view underneath. Starting another process, or restoring one from the dock, minimizes the one in front the same way. Progress in the dock comes from the archetype:
+**Setting a process aside, step by step:** every pattern has a **Minimize** button: a minus icon with the tooltip and name Minimize, immediately left of a modal's close button, or at the right of a page pattern's title. It is in the same place for every archetype. It sends the process to the dock with everything given so far, and returns the person to the view underneath. Starting another process, or restoring one from the dock, minimizes the one in front the same way. Progress in the dock comes from the archetype:
 
 | Archetype | Progress |
 |---|---|
@@ -346,3 +349,6 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.14 | 2026-11-12 | Added the process dock to the chrome (4.1), the To do summary with counts and work by type and stage (4.3), and setting a process aside with progress by archetype (5.1). The view spec gains the `minimize` intent and selectable cards bound to a field. |
 | 0.15 | 2026-11-12 | A deadline already past is labeled Overdue since, as a danger, not Due, as a warning. |
 | 0.16 | 2026-11-13 | Added the search field to the sidebar and the search page (4.1). |
+| 0.17 | 2026-11-13 | Cards lead with the identifier and type in small text, then the object's title as their heading. Minimize is a minus icon left of the close button, or right of a page pattern's title. |
+| 0.18 | 2026-11-13 | Search page says who understood the query, the model or the ontology, and shows Yours for the person's own objects. Suggestions under the field come from the ontology reading. |
+| 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |

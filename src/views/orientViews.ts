@@ -34,8 +34,12 @@ function card(object: ObjectSummary, body: ViewNode[][]): ViewNode {
         component: 'Card',
         props: { isFullHeight: true },
         children: [
-          { component: 'CardTitle', props: { label: object.identifier, component: 'h2' } },
-          { component: 'CardBody', children: [stack([[text(object.typeLabel, 'small')], ...body])] },
+          // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
+          {
+            component: 'CardHeader',
+            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: 'h2' } }],
+          },
+          { component: 'CardBody', children: [stack(body)] },
         ],
       },
     ],
@@ -245,7 +249,8 @@ export function buildTodoView(
     root: stack([
       ...(notice ? [[notice]] : []),
       header('To do', summary),
-      ...(allItems.length ? [[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode, stack(buildSummary(allItems, today).map((n) => [n]))]] : []),
+      // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
+      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
       ...(cards.length ? [[gallery(cards)]] : []),
     ]),
@@ -286,6 +291,7 @@ function understood(result: SearchResult): ViewNode[] {
     ...i.states.map((s) => label(`${s.dimensionLabel}: ${s.label}`)),
     ...i.identifiers.map((o) => label(i.types.length ? `Linked to ${o.identifier}` : `Identifier: ${o.identifier}`)),
     ...(i.words.length ? [label(`Words: ${i.words.join(' ')}`)] : []),
+    ...(i.mine ? [label('Yours')] : []),
   ];
 }
 
@@ -313,7 +319,7 @@ export function buildSearchView(result: SearchResult, options: { methods?: Map<s
     root: stack([
       ...(options.notice ? [[options.notice]] : []),
       header('Search', `${count} for “${result.query}”${shown}.`),
-      ...(chips.length ? [[text('Understood as:', 'small'), flexOf(chips)]] : []),
+      [text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
       ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
       ...(cards.length ? [[gallery(cards)]] : []),
     ]),

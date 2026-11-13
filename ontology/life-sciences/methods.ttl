@@ -22,7 +22,8 @@ ls:RunSimulation-modelType a p:Input ;
   p:inputName "modelType" ;
   rdfs:label "Model type" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:recordedAs ls:modelType .
 
 ls:RunSimulation-effect1 a p:Creation ;
   p:createsType ls:Simulation ;
@@ -341,7 +342,8 @@ ls:RaiseQuery-question a p:Input ;
   p:inputName "question" ;
   rdfs:label "Question" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:recordedAs ls:queryText .
 
 ls:RaiseQuery-effect1 a p:Creation ;
   p:createsType ls:DataQuery ;
@@ -742,7 +744,8 @@ ls:OpenQualityEvent-description a p:Input ;
   p:inputName "description" ;
   rdfs:label "Description" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:recordedAs ls:eventDescription .
 
 ls:OpenQualityEvent-severity a p:Input ;
   p:inputName "severity" ;
@@ -793,7 +796,8 @@ ls:AssignCAPA-action a p:Input ;
   p:inputName "action" ;
   rdfs:label "Action" ;
   p:order 2 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:recordedAs ls:capaAction .
 
 ls:AssignCAPA-effect1 a p:Creation ;
   p:createsType ls:CAPA ;
