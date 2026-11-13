@@ -24,7 +24,7 @@ export function AppSidebar({ isOpen, route, onNavigate }: { isOpen: boolean; rou
   return (
     <PageSidebar isSidebarOpen={isOpen}>
       <PageSidebarBody>
-        <SearchField query={route.name === 'search' ? route.query : undefined} onNavigate={onNavigate} />
+        <SearchField query={route.name === 'search' ? route.query : undefined} onNavigate={onNavigate} isHidden={!isOpen} />
         <Nav aria-label="Main navigation" onSelect={onNavigate}>
           <NavList>
             <NavItem to={routeHref({ name: 'todo' })} isActive={route.name === 'todo'}>
