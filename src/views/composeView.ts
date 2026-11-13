@@ -463,7 +463,7 @@ export function buildSignView(composition: MethodComposition, state: PreviewStat
     sign.push([
       {
         component: 'Alert',
-        props: { variant: 'warning', title: 'Development signature', isInline: true, component: 'h3' },
+        props: { variant: 'warning', title: 'Development signature', isInline: true, component: 'h2' },
         children: [text('This is not a valid electronic signature. Signing for real needs the identity provider, which is not connected yet.')],
       },
     ]);
