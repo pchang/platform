@@ -3,7 +3,7 @@ import { validateView } from '../design-system/validateView';
 import type { MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
 import { buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter, stageColor } from './orientViews';
 
-const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
+const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [
   { object, tasks: [{ method: 'urn:m', label: 'Send for review', archetype: { archetype: 'urn:a', label: 'Fill in' } }], actions: [], urgency: 0, deadline: '2026-11-17' },
   { object: { ...object, identifier: 'B-002', typeLabel: 'Batch', state: { Quality: 'pending' } }, tasks: [], actions: [{ method: 'urn:q', label: 'Quarantine batch', archetype: { archetype: 'urn:a', label: 'Fill in' } }], urgency: 3 },
@@ -37,7 +37,7 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
     expect(json).toContain('"label":"Urgent","status":"danger"');
   });
 
-  const product = { iri: 'urn:p', identifier: 'P-101', type: 'urn:Product', typeLabel: 'Product', pluralLabel: 'Products', state: { Status: 'investigational' } };
+  const product = { iri: 'urn:p', identifier: 'P-101', type: 'urn:Product', typeLabel: 'Product', title: 'A Product title', pluralLabel: 'Products', state: { Status: 'investigational' } };
   const detect: MethodOption = { method: 'urn:detect', label: 'Run signal detection', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Start and track' } };
   const blocked: MethodOption = { ...detect, method: 'urn:x', label: 'Withdraw', available: false, blocks: ['No'] };
   const run: RunView = {
@@ -66,7 +66,7 @@ describe('the To do summary (design system spec 4.3)', () => {
   const lifecycle = (stage: string, position: number, stages: string[]) => ({ dimension: 'Workflow', stage, position, stages });
   const WF = ['received', 'triaged', 'assessed', 'reported', 'closed'];
   const caseItem = (id: string, position: number, extra: Partial<ToDoItem> = {}): ToDoItem => ({
-    object: { iri: `urn:${id}`, identifier: id, type: 'urn:SafetyCase', typeLabel: 'Safety Case', pluralLabel: 'Safety Cases', state: {}, lifecycle: lifecycle(WF[position], position, WF) },
+    object: { iri: `urn:${id}`, identifier: id, type: 'urn:SafetyCase', typeLabel: 'Safety Case', title: 'A Safety Case title', pluralLabel: 'Safety Cases', state: {}, lifecycle: lifecycle(WF[position], position, WF) },
     tasks: [{ method: 'urn:m', label: 'Triage', archetype: { archetype: 'urn:a', label: 'Fill in' } }],
     actions: [],
     urgency: 0,
@@ -74,7 +74,7 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
   const sub: ToDoItem = {
     ...caseItem('SUB-1', 0, { deadline: '2026-11-17' }),
-    object: { iri: 'urn:SUB-1', identifier: 'SUB-1', type: 'urn:Submission', typeLabel: 'Submission', pluralLabel: 'Submissions', state: {}, lifecycle: lifecycle('draft', 0, ['draft', 'in review', 'submitted', 'acknowledged']) },
+    object: { iri: 'urn:SUB-1', identifier: 'SUB-1', type: 'urn:Submission', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: {}, lifecycle: lifecycle('draft', 0, ['draft', 'in review', 'submitted', 'acknowledged']) },
   };
   const items = [sub, caseItem('SC-1', 0), caseItem('SC-2', 0, { urgency: 3 }), caseItem('SC-3', 2), caseItem('SC-4', 1, { deadline: '2026-11-10' })];
 
@@ -100,8 +100,8 @@ describe('the To do summary (design system spec 4.3)', () => {
 
   it('narrows the cards to the chosen count, and says so when nothing matches', () => {
     const urgent = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today, filter: 'urgent' }));
-    expect(urgent).toContain('"label":"SC-2","component":"h2"');
-    expect(urgent).not.toContain('"label":"SC-1","component":"h2"');
+    expect(urgent).toContain(`"label":"SC-2 · Safety Case"`);
+    expect(urgent).not.toContain(`"label":"SC-1 · Safety Case"`);
     // The counts stay those of every item.
     expect(urgent).toContain('"label":"Waiting","component":"h3"}},{"component":"CardBody","children":[{"component":"Content","props":{"label":"5"');
     const none = JSON.stringify(buildTodoView([caseItem('SC-1', 0)], 'Chloé Martin', undefined, [], { today, filter: 'overdue' }));
@@ -131,13 +131,18 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
   });
 
+  it('leads each card with the identifier and type in small text, then the title as its heading', () => {
+    const json = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today }));
+    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+  });
+
   it('has no summary when nothing is waiting', () => {
     expect(JSON.stringify(buildTodoView([], 'Ben Okafor'))).not.toContain('At a glance');
   });
 });
 
 describe('the search page (design system spec 4.1, Search)', () => {
-  const ae = { iri: 'urn:AE-005', identifier: 'AE-005', type: 'urn:AE', typeLabel: 'Adverse Event', pluralLabel: 'Adverse Events', state: { Seriousness: 'serious' } };
+  const ae = { iri: 'urn:AE-005', identifier: 'AE-005', type: 'urn:AE', typeLabel: 'Adverse Event', title: 'A Adverse Event title', pluralLabel: 'Adverse Events', state: { Seriousness: 'serious' } };
   const result: SearchResult = {
     query: 'serious adverse events PT-09 pneumonia',
     interpretation: {

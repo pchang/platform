@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.13. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.19.
+Version 0.14. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.21.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -325,6 +325,33 @@ The domain is written in the platform's ontology format (platform spec section 3
 | `roles.ttl` | The personas in section 6, with the methods they may run and what they may not read |
 
 - **Namespace.** `https://w3id.org/lsh-platform/life-sciences#`, with concepts under `…/life-sciences/term#` and shapes under `…/life-sciences/shape#` (platform spec section 3.1). Example and seed data use `https://example.org/`, which is reserved for examples, so it can never be mistaken for real records.
+- **Titles.** Each type titles its objects from a template (platform spec section 3.1, Title). The first alternative whose values are all present is used:
+
+  | Type | Title | Example |
+  |---|---|---|
+  | Compound | Its name, or "Analog of" its parent | LSH-4471, JAK1 inhibitor |
+  | Simulation | Model type, prediction for the compound | ADMET prediction for LSH-4471, JAK1 inhibitor |
+  | Experiment | Aim, compound | Kinase selectivity panel, LSH-4471, JAK1 inhibitor |
+  | Assay Result | The result | JAK1 IC50 4.2 nM |
+  | Formulation | Its name | Velcorin 25 mg film-coated tablet |
+  | Process | Manufacturing process for the formulation | Manufacturing process for Velcorin 25 mg film-coated tablet |
+  | Batch | Lot number | Lot VL25-2410-02 |
+  | Study | Short name and title | VELOCITY-2: Velcorin in moderate to severe rheumatoid arthritis |
+  | Site | Its name | Northfield General Hospital |
+  | Patient | Patient at the site, never a name | Patient at St. Brendan's University Hospital |
+  | Visit | Visit name for the patient's identifier | Week 12 visit for PT-03 |
+  | Data Record | The value | Heart rate 72 bpm |
+  | Data Query | The question | Units missing for this value; please confirm against the source |
+  | Adverse Event | The verbatim term | Fever and cough; admitted to hospital with pneumonia |
+  | Safety Case | Reactions with the product, or "Case from" its source | Skin rash, nausea with Velcorin 25 mg tablets |
+  | Product | Its name | Velcorin 25 mg tablets |
+  | Signal | Reaction with the product | Drug-induced liver injury with Velcorin 25 mg tablets |
+  | Submission | Expedited report for the case | Expedited report for SC-003 |
+  | Quality Event | Its description | Tablet hardness below specification in lot VL25-2410-02 |
+  | CAPA | Its action | (none in the seed) |
+  | Medical Inquiry | The question | Rash and nausea in the first week of Velcorin: report or wait? |
+
+  Methods that create objects record what the person typed where a title needs it: the model type, the query's question, the quality event's description and the CAPA's action.
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
@@ -401,7 +428,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - Six people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
 - One external agent, a contract research organization's, for the External agent journey.
 
-All names, compounds, sites and people are invented.
+All names, compounds, products, sites, lots, studies and people are invented. Product names, such as Velcorin and Duxalate, belong to no real medicine.
 
 The seed graph is `data/life-sciences/seed.ttl`, under `https://example.org/lsh-data/`. It starts each journey at its first step:
 
@@ -451,3 +478,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.11 | 2026-11-11 | Cases and signals carry coded reactions. Added rule 7, signal detection by disproportionality with Evans criteria; Run signal detection runs it in the background. Run simulation is refused until a model is connected. The seed adds an approved comparator product with 20 historical cases. Four open questions. |
 | 0.12 | 2026-11-12 | Generate narrative is declared as a drafting effect with its instructions; accepting the draft sets the case's narrative. Generate analogs is refused until a generative chemistry model is connected. |
 | 0.13 | 2026-11-12 | Added the Clinical Research Coordinator and Clinical Research Associate personas. New clinical methods: Complete visit, Record missed visit, Record data, Record adverse event, Verify data record, Verify adverse event, Re-query and Reconcile adverse event. Visits are scheduled with deadlines; adverse events carry verbatim terms and can be reconciled. The seed fleshes out clinical work for each clinical role. Two open questions. |
+| 0.14 | 2026-11-13 | Every type titles its objects from a template (section 9), and the seed carries the names they need: compounds, products, the study, sites, lots, visits, queries and inquiries. Methods that create objects record the text their titles use. |

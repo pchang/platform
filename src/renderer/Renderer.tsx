@@ -179,11 +179,20 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     props.onClose = () => host.onIntent?.('cancel');
   }
   if (entry.id === 'WizardHeader') props.onClose = () => host.onIntent?.('cancel');
+  // A button's icon is named in the catalog and drawn from @patternfly/react-icons.
+  if (entry.id === 'Button' && typeof props.icon === 'string') {
+    const Svg = icons[props.icon];
+    props.icon = <Svg />;
+  }
 
   let content: ReactNode = undefined;
   // PatternFly takes a Wizard's header as a prop, not a child, and accepts only WizardStep elements as
   // children: so the steps are made here directly, and only their contents go through Node.
-  if (entry.id === 'Wizard') {
+  // PatternFly takes a ModalHeader's action as its help prop, drawn beside the close button.
+  if (entry.id === 'ModalHeader' && node.children?.length) {
+    props.help = <Node node={node.children[0]} host={host} />;
+    content = undefined;
+  } else if (entry.id === 'Wizard') {
     const header = node.children?.find((c) => c.component === 'WizardHeader');
     if (header) props.header = <Node node={header} host={host} />;
     const Step = library.WizardStep;

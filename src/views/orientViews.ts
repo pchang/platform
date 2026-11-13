@@ -34,8 +34,12 @@ function card(object: ObjectSummary, body: ViewNode[][]): ViewNode {
         component: 'Card',
         props: { isFullHeight: true },
         children: [
-          { component: 'CardTitle', props: { label: object.identifier, component: 'h2' } },
-          { component: 'CardBody', children: [stack([[text(object.typeLabel, 'small')], ...body])] },
+          // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
+          {
+            component: 'CardHeader',
+            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: 'h2' } }],
+          },
+          { component: 'CardBody', children: [stack(body)] },
         ],
       },
     ],

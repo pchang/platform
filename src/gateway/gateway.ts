@@ -3,6 +3,7 @@ import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportional
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation } from './search';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
+import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
 
@@ -33,6 +34,8 @@ export interface ObjectSummary {
   identifier: string;
   type: string;
   typeLabel: string;
+  /** What people call the object, from its type's title template (spec 3.1, Title); the type's label when it has none. */
+  title: string;
   /** The type's plural label, for summaries and lists. */
   pluralLabel: string;
   state: Record<string, string>;
@@ -449,7 +452,8 @@ export class Gateway {
       this.q(`SELECT ?dim ?value WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?dim . <${object}> ?d ?v . ?v skos:prefLabel ?value }`).map((r) => [r.dim, r.value]),
     );
     const pluralLabel = this.q(`SELECT ?l WHERE { <${type}> p:pluralLabel ?l }`)[0]?.l ?? typeLabel;
-    return { iri: object, identifier, type, typeLabel, pluralLabel, state, ...this.lifecycleOf(object, type) };
+    const title = titleOf(this.graph.store, object) ?? typeLabel;
+    return { iri: object, identifier, type, typeLabel, title, pluralLabel, state, ...this.lifecycleOf(object, type) };
   }
 
   /** The object's stage in its type's first state dimension, with every stage in order. */
@@ -593,7 +597,7 @@ export class Gateway {
       query,
       interpretation,
       results: shown.map((m) => ({
-        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
+        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, title: m.view.title, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
         matched: m.matched,
       })),
       total: matches.length,

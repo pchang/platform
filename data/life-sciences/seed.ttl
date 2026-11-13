@@ -49,72 +49,85 @@ d:agent-northbridge a p:Person ;
 d:C-101 a ls:Compound ;
   ls:identifier "C-101" ;
   ls:compoundStage lst:CompoundStage-candidate ;
-  ls:compoundRegistration lst:CompoundRegistration-registered .
+  ls:compoundRegistration lst:CompoundRegistration-registered ;
+  ls:compoundName "LSH-4471, JAK1 inhibitor" .
 
 d:C-102 a ls:Compound ;
   ls:identifier "C-102" ;
   ls:compoundStage lst:CompoundStage-tested ;
-  ls:compoundRegistration lst:CompoundRegistration-registered .
+  ls:compoundRegistration lst:CompoundRegistration-registered ;
+  ls:compoundName "LSH-4388, JAK1 inhibitor" .
 
 d:C-103 a ls:Compound ;
   ls:identifier "C-103" ;
   ls:compoundStage lst:CompoundStage-synthesized ;
-  ls:compoundRegistration lst:CompoundRegistration-unregistered .
+  ls:compoundRegistration lst:CompoundRegistration-unregistered ;
+  ls:compoundName "LSH-4502, JAK1 inhibitor" .
 
 d:C-104 a ls:Compound ;
   ls:identifier "C-104" ;
   ls:compoundStage lst:CompoundStage-designed ;
   ls:compoundRegistration lst:CompoundRegistration-unregistered ;
-  ls:derivedFrom d:C-101 .
+  ls:derivedFrom d:C-101 ;
+  ls:compoundName "LSH-4471-F2, fluorinated analog" .
 
 d:C-105 a ls:Compound ;
   ls:identifier "C-105" ;
   ls:compoundStage lst:CompoundStage-designed ;
   ls:compoundRegistration lst:CompoundRegistration-unregistered ;
-  ls:derivedFrom d:C-101 .
+  ls:derivedFrom d:C-101 ;
+  ls:compoundName "LSH-4471-M1, methyl analog" .
 
 d:SIM-1 a ls:Simulation ;
   ls:identifier "SIM-1" ;
   ls:predicts d:C-101 ;
   ls:simulationRun lst:SimulationRun-complete ;
-  ls:simulationReview lst:SimulationReview-accepted .
+  ls:simulationReview lst:SimulationReview-accepted ;
+  ls:modelType "ADMET" .
 
 d:SIM-2 a ls:Simulation ;
   ls:identifier "SIM-2" ;
   ls:predicts d:C-102 ;
   ls:simulationRun lst:SimulationRun-complete ;
-  ls:simulationReview lst:SimulationReview-unreviewed .
+  ls:simulationReview lst:SimulationReview-unreviewed ;
+  ls:modelType "Aqueous solubility" .
 
 d:EXP-1 a ls:Experiment ;
   ls:identifier "EXP-1" ;
   ls:tests d:C-101 ;
   ls:produces d:AR-1, d:AR-2 ;
   ls:experimentRecord lst:ExperimentRecord-complete ;
-  ls:experimentSignOff lst:ExperimentSignOff-signed .
+  ls:experimentSignOff lst:ExperimentSignOff-signed ;
+  ls:aim "Kinase selectivity panel" .
 
 d:EXP-2 a ls:Experiment ;
   ls:identifier "EXP-2" ;
   ls:tests d:C-102 ;
   ls:produces d:AR-3 ;
   ls:experimentRecord lst:ExperimentRecord-complete ;
-  ls:experimentSignOff lst:ExperimentSignOff-unsigned .
+  ls:experimentSignOff lst:ExperimentSignOff-unsigned ;
+  ls:aim "Thermodynamic solubility study" .
 
 d:AR-1 a ls:AssayResult ;
   ls:identifier "AR-1" ;
-  ls:assayResultValidity lst:AssayResultValidity-valid .
+  ls:assayResultValidity lst:AssayResultValidity-valid ;
+  ls:resultValue "JAK1 IC50 4.2 nM" .
 
 d:AR-2 a ls:AssayResult ;
   ls:identifier "AR-2" ;
-  ls:assayResultValidity lst:AssayResultValidity-valid .
+  ls:assayResultValidity lst:AssayResultValidity-valid ;
+  ls:resultValue "JAK1 over JAK2 selectivity 38-fold" .
 
 d:AR-3 a ls:AssayResult ;
   ls:identifier "AR-3" ;
-  ls:assayResultValidity lst:AssayResultValidity-valid .
+  ls:assayResultValidity lst:AssayResultValidity-valid ;
+  ls:resultValue "Aqueous solubility 42 µg/mL at pH 6.8" .
 
 d:F-101 a ls:Formulation ;
   ls:identifier "F-101" ;
   ls:contains d:C-101 ;
-  ls:formulationStage lst:FormulationStage-underTest .
+  ls:formulationStage lst:FormulationStage-underTest ;
+  ls:formulationName "Velcorin 25 mg film-coated tablet" .
 
 d:PR-1 a ls:Process ;
   ls:identifier "PR-1" ;
@@ -128,21 +141,24 @@ d:B-001 a ls:Batch ;
   ls:follows d:PR-1 ;
   ls:batchProduction lst:BatchProduction-complete ;
   ls:batchQuality lst:BatchQuality-released ;
-  ls:batchDeviationRisk lst:BatchDeviationRisk-low .
+  ls:batchDeviationRisk lst:BatchDeviationRisk-low ;
+  ls:lotNumber "VL25-2409-01" .
 
 d:B-002 a ls:Batch ;
   ls:identifier "B-002" ;
   ls:follows d:PR-1 ;
   ls:batchProduction lst:BatchProduction-complete ;
   ls:batchQuality lst:BatchQuality-pending ;
-  ls:batchDeviationRisk lst:BatchDeviationRisk-high .
+  ls:batchDeviationRisk lst:BatchDeviationRisk-high ;
+  ls:lotNumber "VL25-2410-02" .
 
 d:B-003 a ls:Batch ;
   ls:identifier "B-003" ;
   ls:follows d:PR-1 ;
   ls:batchProduction lst:BatchProduction-inProduction ;
   ls:batchQuality lst:BatchQuality-pending ;
-  ls:batchDeviationRisk lst:BatchDeviationRisk-low .
+  ls:batchDeviationRisk lst:BatchDeviationRisk-low ;
+  ls:lotNumber "VL25-2411-03" .
 
 # Clinical Development: 1 blinded Phase II study at 3 sites, 12 patients, 2 arms
 
@@ -152,22 +168,26 @@ d:ST-01 a ls:Study ;
   ls:runsAt d:SITE-1, d:SITE-2, d:SITE-3 ;
   ls:studyPhase lst:StudyPhase-ii ;
   ls:studyStatus lst:StudyStatus-enrolling ;
-  ls:studyBlinding lst:StudyBlinding-blinded .
+  ls:studyBlinding lst:StudyBlinding-blinded ;
+  ls:studyTitle "VELOCITY-2: Velcorin in moderate to severe rheumatoid arthritis" .
 
 d:SITE-1 a ls:Site ;
   ls:identifier "SITE-1" ;
   ls:siteStatus lst:SiteStatus-activated ;
-  ls:sitePayment lst:SitePayment-current .
+  ls:sitePayment lst:SitePayment-current ;
+  ls:siteName "Northfield General Hospital" .
 
 d:SITE-2 a ls:Site ;
   ls:identifier "SITE-2" ;
   ls:siteStatus lst:SiteStatus-activated ;
-  ls:sitePayment lst:SitePayment-current .
+  ls:sitePayment lst:SitePayment-current ;
+  ls:siteName "Lakeside Clinical Research Center" .
 
 d:SITE-3 a ls:Site ;
   ls:identifier "SITE-3" ;
   ls:siteStatus lst:SiteStatus-activated ;
-  ls:sitePayment lst:SitePayment-overdue .
+  ls:sitePayment lst:SitePayment-overdue ;
+  ls:siteName "St. Brendan's University Hospital" .
 
 d:PT-01 a ls:Patient ;
   ls:identifier "PT-01" ;
@@ -293,7 +313,8 @@ d:V-01-1 a ls:Visit ;
   ls:identifier "V-01-1" ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-09-08"^^xsd:date .
+  ls:scheduledOn "2026-09-08"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-001 a ls:DataRecord ;
   ls:identifier "DR-001" ;
@@ -313,7 +334,8 @@ d:V-01-2 a ls:Visit ;
   ls:identifier "V-01-2" ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-06"^^xsd:date .
+  ls:scheduledOn "2026-10-06"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-003 a ls:DataRecord ;
   ls:identifier "DR-003" ;
@@ -333,7 +355,8 @@ d:V-02-1 a ls:Visit ;
   ls:identifier "V-02-1" ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-09-15"^^xsd:date .
+  ls:scheduledOn "2026-09-15"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-005 a ls:DataRecord ;
   ls:identifier "DR-005" ;
@@ -353,7 +376,8 @@ d:V-02-2 a ls:Visit ;
   ls:identifier "V-02-2" ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-13"^^xsd:date .
+  ls:scheduledOn "2026-10-13"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-007 a ls:DataRecord ;
   ls:identifier "DR-007" ;
@@ -373,7 +397,8 @@ d:V-03-1 a ls:Visit ;
   ls:identifier "V-03-1" ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-09-22"^^xsd:date .
+  ls:scheduledOn "2026-09-22"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-009 a ls:DataRecord ;
   ls:identifier "DR-009" ;
@@ -393,7 +418,8 @@ d:V-03-2 a ls:Visit ;
   ls:identifier "V-03-2" ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-20"^^xsd:date .
+  ls:scheduledOn "2026-10-20"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-011 a ls:DataRecord ;
   ls:identifier "DR-011" ;
@@ -413,7 +439,8 @@ d:V-04-1 a ls:Visit ;
   ls:identifier "V-04-1" ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-09-29"^^xsd:date .
+  ls:scheduledOn "2026-09-29"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-013 a ls:DataRecord ;
   ls:identifier "DR-013" ;
@@ -433,7 +460,8 @@ d:V-04-2 a ls:Visit ;
   ls:identifier "V-04-2" ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-27"^^xsd:date .
+  ls:scheduledOn "2026-10-27"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-015 a ls:DataRecord ;
   ls:identifier "DR-015" ;
@@ -453,7 +481,8 @@ d:V-05-1 a ls:Visit ;
   ls:identifier "V-05-1" ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-06"^^xsd:date .
+  ls:scheduledOn "2026-10-06"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-017 a ls:DataRecord ;
   ls:identifier "DR-017" ;
@@ -473,7 +502,8 @@ d:V-05-2 a ls:Visit ;
   ls:identifier "V-05-2" ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-03"^^xsd:date .
+  ls:scheduledOn "2026-11-03"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-019 a ls:DataRecord ;
   ls:identifier "DR-019" ;
@@ -493,7 +523,8 @@ d:V-06-1 a ls:Visit ;
   ls:identifier "V-06-1" ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-13"^^xsd:date .
+  ls:scheduledOn "2026-10-13"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-021 a ls:DataRecord ;
   ls:identifier "DR-021" ;
@@ -513,7 +544,8 @@ d:V-06-2 a ls:Visit ;
   ls:identifier "V-06-2" ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-10"^^xsd:date .
+  ls:scheduledOn "2026-11-10"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-023 a ls:DataRecord ;
   ls:identifier "DR-023" ;
@@ -533,7 +565,8 @@ d:V-07-1 a ls:Visit ;
   ls:identifier "V-07-1" ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-20"^^xsd:date .
+  ls:scheduledOn "2026-10-20"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-025 a ls:DataRecord ;
   ls:identifier "DR-025" ;
@@ -553,7 +586,8 @@ d:V-07-2 a ls:Visit ;
   ls:identifier "V-07-2" ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-17"^^xsd:date .
+  ls:scheduledOn "2026-11-17"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-027 a ls:DataRecord ;
   ls:identifier "DR-027" ;
@@ -573,7 +607,8 @@ d:V-08-1 a ls:Visit ;
   ls:identifier "V-08-1" ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-10-27"^^xsd:date .
+  ls:scheduledOn "2026-10-27"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-029 a ls:DataRecord ;
   ls:identifier "DR-029" ;
@@ -593,7 +628,8 @@ d:V-08-2 a ls:Visit ;
   ls:identifier "V-08-2" ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-24"^^xsd:date .
+  ls:scheduledOn "2026-11-24"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-031 a ls:DataRecord ;
   ls:identifier "DR-031" ;
@@ -613,7 +649,8 @@ d:V-09-1 a ls:Visit ;
   ls:identifier "V-09-1" ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-03"^^xsd:date .
+  ls:scheduledOn "2026-11-03"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-033 a ls:DataRecord ;
   ls:identifier "DR-033" ;
@@ -633,7 +670,8 @@ d:V-09-2 a ls:Visit ;
   ls:identifier "V-09-2" ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-12-01"^^xsd:date .
+  ls:scheduledOn "2026-12-01"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-035 a ls:DataRecord ;
   ls:identifier "DR-035" ;
@@ -653,7 +691,8 @@ d:V-10-1 a ls:Visit ;
   ls:identifier "V-10-1" ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-11-10"^^xsd:date .
+  ls:scheduledOn "2026-11-10"^^xsd:date ;
+  ls:visitName "Week 4 visit" .
 
 d:DR-037 a ls:DataRecord ;
   ls:identifier "DR-037" ;
@@ -673,7 +712,8 @@ d:V-10-2 a ls:Visit ;
   ls:identifier "V-10-2" ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-completed ;
-  ls:scheduledOn "2026-12-08"^^xsd:date .
+  ls:scheduledOn "2026-12-08"^^xsd:date ;
+  ls:visitName "Week 8 visit" .
 
 d:DR-039 a ls:DataRecord ;
   ls:identifier "DR-039" ;
@@ -693,101 +733,119 @@ d:V-01-3 a ls:Visit ;
   ls:identifier "V-01-3" ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-03"^^xsd:date .
+  ls:scheduledOn "2026-11-03"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-02-3 a ls:Visit ;
   ls:identifier "V-02-3" ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-09"^^xsd:date .
+  ls:scheduledOn "2026-11-09"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-03-3 a ls:Visit ;
   ls:identifier "V-03-3" ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-12"^^xsd:date .
+  ls:scheduledOn "2026-11-12"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-04-3 a ls:Visit ;
   ls:identifier "V-04-3" ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-13"^^xsd:date .
+  ls:scheduledOn "2026-11-13"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-05-3 a ls:Visit ;
   ls:identifier "V-05-3" ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-14"^^xsd:date .
+  ls:scheduledOn "2026-11-14"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-06-3 a ls:Visit ;
   ls:identifier "V-06-3" ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-16"^^xsd:date .
+  ls:scheduledOn "2026-11-16"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-07-3 a ls:Visit ;
   ls:identifier "V-07-3" ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-18"^^xsd:date .
+  ls:scheduledOn "2026-11-18"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-08-3 a ls:Visit ;
   ls:identifier "V-08-3" ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-21"^^xsd:date .
+  ls:scheduledOn "2026-11-21"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-09-3 a ls:Visit ;
   ls:identifier "V-09-3" ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-11-25"^^xsd:date .
+  ls:scheduledOn "2026-11-25"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:V-10-3 a ls:Visit ;
   ls:identifier "V-10-3" ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
-  ls:scheduledOn "2026-12-02"^^xsd:date .
+  ls:scheduledOn "2026-12-02"^^xsd:date ;
+  ls:visitName "Week 12 visit" .
 
 d:Q-01 a ls:DataQuery ;
   ls:identifier "Q-01" ;
   ls:raisedOn d:DR-005 ;
-  ls:dataQueryStatus lst:DataQueryStatus-open .
+  ls:dataQueryStatus lst:DataQueryStatus-open ;
+  ls:queryText "Units missing for this value; please confirm against the source" .
 
 d:Q-02 a ls:DataQuery ;
   ls:identifier "Q-02" ;
   ls:raisedOn d:DR-010 ;
-  ls:dataQueryStatus lst:DataQueryStatus-open .
+  ls:dataQueryStatus lst:DataQueryStatus-open ;
+  ls:queryText "Value outside the expected range; please confirm or correct" .
 
 d:Q-03 a ls:DataQuery ;
   ls:identifier "Q-03" ;
   ls:raisedOn d:DR-015 ;
-  ls:dataQueryStatus lst:DataQueryStatus-open .
+  ls:dataQueryStatus lst:DataQueryStatus-open ;
+  ls:queryText "Date of measurement is after the visit date; please check" .
 
 d:Q-04 a ls:DataQuery ;
   ls:identifier "Q-04" ;
   ls:raisedOn d:DR-020 ;
-  ls:dataQueryStatus lst:DataQueryStatus-answered .
+  ls:dataQueryStatus lst:DataQueryStatus-answered ;
+  ls:queryText "Source document not on file for this value" .
 
 d:Q-05 a ls:DataQuery ;
   ls:identifier "Q-05" ;
   ls:raisedOn d:DR-025 ;
-  ls:dataQueryStatus lst:DataQueryStatus-answered .
+  ls:dataQueryStatus lst:DataQueryStatus-answered ;
+  ls:queryText "Value differs from the lab report; please confirm which is correct" .
 
 d:Q-06 a ls:DataQuery ;
   ls:identifier "Q-06" ;
   ls:raisedOn d:DR-027 ;
-  ls:dataQueryStatus lst:DataQueryStatus-answered .
+  ls:dataQueryStatus lst:DataQueryStatus-answered ;
+  ls:queryText "Reading taken before dosing? Please confirm the time" .
 
 d:Q-07 a ls:DataQuery ;
   ls:identifier "Q-07" ;
   ls:raisedOn d:DR-028 ;
-  ls:dataQueryStatus lst:DataQueryStatus-closed .
+  ls:dataQueryStatus lst:DataQueryStatus-closed ;
+  ls:queryText "Please confirm the device serial number for this reading" .
 
 d:Q-08 a ls:DataQuery ;
   ls:identifier "Q-08" ;
   ls:raisedOn d:DR-030 ;
-  ls:dataQueryStatus lst:DataQueryStatus-closed .
+  ls:dataQueryStatus lst:DataQueryStatus-closed ;
+  ls:queryText "Value repeated from the previous visit; please confirm" .
 
 # 5 adverse events. AE-001 and AE-002 are reported and await reconciliation with their safety cases.
 # AE-003 starts J1: serious, verified, not yet reported to safety. AE-004 and AE-005 are new from the site, not yet verified.
@@ -842,23 +900,28 @@ d:AE-005 a ls:AdverseEvent ;
 d:P-101 a ls:Product ;
   ls:identifier "P-101" ;
   ls:isFormulation d:F-101 ;
-  ls:productStatus lst:ProductStatus-investigational .
+  ls:productStatus lst:ProductStatus-investigational ;
+  ls:productName "Velcorin 25 mg tablets" .
 
 d:MI-1 a ls:MedicalInquiry ;
   ls:identifier "MI-1" ;
-  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered .
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered ;
+  ls:inquiryText "Patient on Velcorin reports yellowing of the eyes; is this a known effect?" .
 
 d:MI-2 a ls:MedicalInquiry ;
   ls:identifier "MI-2" ;
-  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered .
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-answered ;
+  ls:inquiryText "Liver enzymes doubled after starting Velcorin; should dosing continue?" .
 
 d:MI-3 a ls:MedicalInquiry ;
   ls:identifier "MI-3" ;
-  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received .
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received ;
+  ls:inquiryText "Rash and nausea in the first week of Velcorin: report or wait?" .
 
 d:MI-4 a ls:MedicalInquiry ;
   ls:identifier "MI-4" ;
-  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received .
+  ls:medicalInquiryStatus lst:MedicalInquiryStatus-received ;
+  ls:inquiryText "Widespread rash with headache after the second Velcorin dose" .
 
 # SC-005 reports the same event as SC-002, from a medical inquiry instead of the trial: the duplicate pair, not yet flagged.
 
@@ -928,7 +991,8 @@ d:SC-006 a ls:SafetyCase ;
 
 d:P-102 a ls:Product ;
   ls:identifier "P-102" ;
-  ls:productStatus lst:ProductStatus-approved .
+  ls:productStatus lst:ProductStatus-approved ;
+  ls:productName "Duxalate 10 mg tablets" .
 
 d:SC-101 a ls:SafetyCase ;
   ls:identifier "SC-101" ;
@@ -1151,4 +1215,5 @@ d:QE-1 a ls:QualityEvent ;
   ls:identifier "QE-1" ;
   ls:raisedOn d:B-002 ;
   ls:qualityEventStatus lst:QualityEventStatus-open ;
-  ls:qualityEventSeverity lst:QualityEventSeverity-major .
+  ls:qualityEventSeverity lst:QualityEventSeverity-major ;
+  ls:eventDescription "Tablet hardness below specification in lot VL25-2410-02" .

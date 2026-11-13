@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { cardFor, cardIds, eyebrow } from './cards';
 
 // Orient with the in-page gateway and the seed graph (platform spec 5.1, design system spec 4.1 and 4.3).
 test.setTimeout(60_000);
@@ -14,7 +15,7 @@ async function actAs(page: Page, name: string) {
 async function todoCards(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 30_000 });
-  return page.getByRole('main').locator('.pf-v6-l-gallery').getByRole('heading', { level: 2 }).allTextContents();
+  return cardIds(page.getByRole('main').locator('.pf-v6-l-gallery'));
 }
 
 test('opens on To do for the Drug Safety Physician, nearest deadline first', async ({ page }) => {
@@ -55,7 +56,7 @@ test('gives the Clinical Research Coordinator visits by date and the Clinical Re
   await expect(page.getByRole('img', { name: 'Visits by stage' })).toBeVisible();
 
   // Completing a visit takes it off the list.
-  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ has: page.getByRole('heading', { level: 2, name: 'V-01-3', exact: true }) });
+  const card = cardFor(page, 'V-01-3');
   await card.getByRole('button', { name: 'Complete visit' }).click();
   const dialog = page.getByRole('dialog', { name: 'Complete visit V-01-3' });
   await expect(dialog.getByText('scheduled → completed')).toBeVisible();
@@ -76,7 +77,7 @@ test('opens a list of objects from the navigation', async ({ page }) => {
   await actAs(page, 'Elena Kovacs');
   await page.getByRole('link', { name: /^Batches/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Batches' })).toBeVisible();
-  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(['B-001', 'B-002', 'B-003']);
+  await expect(page.getByRole('main').locator('.pf-v6-c-card__header').getByText(/ · /)).toHaveText(['B-001 · Batch', 'B-002 · Batch', 'B-003 · Batch']);
 });
 
 test('on a phone, navigation is a drawer that closes when a destination is chosen', async ({ page }) => {

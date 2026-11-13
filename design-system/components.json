@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.7",
+  "version": "0.8",
   "components": [
     {
       "id": "Button",
@@ -52,17 +52,53 @@
           "isDisabled": {
             "type": "boolean",
             "description": "Not available. Prefer hiding methods that are not valid"
+          },
+          "icon": {
+            "enum": [
+              "check-circle",
+              "exclamation-triangle",
+              "exclamation-circle",
+              "info-circle",
+              "bell",
+              "cog",
+              "user",
+              "minus"
+            ],
+            "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The button's name when it shows only an icon"
           }
         },
-        "required": [
-          "label"
+        "anyOf": [
+          {
+            "properties": {
+              "label": true
+            },
+            "required": [
+              "label"
+            ]
+          },
+          {
+            "properties": {
+              "aria-label": true,
+              "icon": true
+            },
+            "required": [
+              "aria-label",
+              "icon"
+            ]
+          }
         ]
       },
       "children": null,
       "responsive": "Inline at every width. Use isBlock for a full-width action in narrow containers.",
       "accessibility": [
         "Always has a visible label",
-        "Disabled buttons must say why elsewhere in the view"
+        "Disabled buttons must say why elsewhere in the view",
+        "A button that shows only an icon has an aria-label, and a Tooltip with the same words"
       ],
       "examples": [
         {
@@ -76,6 +112,23 @@
             "target": "case:SC-0007"
           },
           "because": "Assess is valid: workflow is triaged"
+        },
+        {
+          "component": "Tooltip",
+          "props": {
+            "content": "Minimize"
+          },
+          "children": [
+            {
+              "component": "Button",
+              "props": {
+                "variant": "plain",
+                "icon": "minus",
+                "aria-label": "Minimize"
+              },
+              "intent": "minimize"
+            }
+          ]
         }
       ]
     },
@@ -243,7 +296,8 @@
               "info-circle",
               "bell",
               "cog",
-              "user"
+              "user",
+              "minus"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -1031,7 +1085,8 @@
       },
       "purpose": "The top of a card: its title, and for a selectable card, the radio button that chooses it.",
       "useWhen": [
-        "A selectable card: the renderer puts its title in a header with the radio button"
+        "A selectable card: the renderer puts its title in a header with the radio button",
+        "An object card: its identifier and type in small text, then its title"
       ],
       "avoidWhen": [
         "Plain cards: use CardTitle alone"
@@ -1043,6 +1098,7 @@
       },
       "children": {
         "accepts": [
+          "Content",
           "CardTitle"
         ]
       },
@@ -1073,6 +1129,41 @@
                   "component": "Content",
                   "props": {
                     "label": "1"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "component": "Card",
+          "children": [
+            {
+              "component": "CardHeader",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "AE-005 · Adverse Event",
+                    "component": "small"
+                  }
+                },
+                {
+                  "component": "CardTitle",
+                  "props": {
+                    "label": "Fever and cough; admitted to hospital with pneumonia",
+                    "component": "h2"
+                  }
+                }
+              ]
+            },
+            {
+              "component": "CardBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Seriousness: serious"
                   }
                 }
               ]
@@ -1374,7 +1465,7 @@
         "package": "@patternfly/react-core",
         "export": "ModalHeader"
       },
-      "purpose": "The title of a Modal.",
+      "purpose": "The title of a Modal. An action given as its child, such as Minimize, sits beside the close button.",
       "useWhen": [
         "Every Modal"
       ],
@@ -1398,7 +1489,13 @@
           "title"
         ]
       },
-      "children": null,
+      "children": {
+        "accepts": [
+          "Tooltip",
+          "Button"
+        ],
+        "maxItems": 1
+      },
       "responsive": "Wraps at narrow widths.",
       "accessibility": [
         "The title names the dialog"
@@ -1504,6 +1601,52 @@
                     "variant": "link"
                   },
                   "intent": "cancel"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "component": "Modal",
+          "props": {
+            "variant": "small",
+            "aria-label": "Triage SC-004"
+          },
+          "children": [
+            {
+              "component": "ModalHeader",
+              "props": {
+                "title": "Triage SC-004",
+                "description": "Safety Case"
+              },
+              "children": [
+                {
+                  "component": "Tooltip",
+                  "props": {
+                    "content": "Minimize"
+                  },
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "variant": "plain",
+                        "icon": "minus",
+                        "aria-label": "Minimize"
+                      },
+                      "intent": "minimize"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "ModalBody",
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "What will change"
+                  }
                 }
               ]
             }

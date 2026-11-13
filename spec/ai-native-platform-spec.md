@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.20. November 13, 2026. Author: Paul Chang.
+Version 0.21. November 13, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -58,6 +58,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Precondition | A SHACL shape the object must conform to. Its messages explain a block |
 | Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
 | Drafting | A value a connected model drafts and a person accepts, declared with the property it fills, the model's instructions and the linked objects it may draw on (section 3.4, Generated drafts) |
+| Title | How a type names its objects for people: one or more templates over the object's properties, coded values and links, declared with the type. The first template whose values are all present is used, so new objects are titled without anyone naming them. A title may use only what no role or rule hides. The identifier stays the stable reference |
 | Analysis | Background work the platform computes, such as a disproportionality analysis, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
@@ -411,3 +412,4 @@ To resolve in future versions of this spec.
 | 0.18 | 2026-11-12 | Added generated drafts to the gateway contract (section 3.4): drafting effects declared in the ontology, connected models only and never a stand-in, the model sees only what the principal may read, every draft recorded with its model and fingerprints, and a person accepts, edits or discards it. Drafting joins the ontology's expressions (section 3.1). The gateway answers Drafts. Three open questions. |
 | 0.19 | 2026-11-12 | To do leads with a summary computed from its items: counts that narrow the list, and work by type and lifecycle stage (section 5.1). State dimensions and their values are ordered, the first being the lifecycle. Several processes at once: set aside, keep what was given, restore one at a time, with progress by archetype (section 5.4). |
 | 0.20 | 2026-11-13 | The gateway answers Search (section 3.4). Section 5.2 says how a query is understood against the ontology (identifiers, types, states, links and words), that the understanding is shown, and that search keeps read permissions and audits matches in personal data. One open question. |
+| 0.21 | 2026-11-13 | Added titles to the ontology's expressions (section 3.1): templates per type, the first complete one used, never using hidden values. |

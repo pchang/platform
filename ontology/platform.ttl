@@ -666,6 +666,12 @@ p:recordedAs a rdf:Property ;
   rdfs:domain p:Input ;
   rdfs:range rdf:Property .
 
+p:titleTemplate a rdf:Property ;
+  rdfs:label "title template" ;
+  rdfs:comment "How the type's objects are titled for people (platform spec 3.1, Title). Alternatives are separated by ' | ', and the first whose values are all present is used. {prefix:property} is the property's value, a coded value's label, or a linked object's title; {prefix:property:id} is a linked object's identifier. Several values are joined with commas." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:string .
+
 p:draftsProperty a rdf:Property ;
   rdfs:label "drafts property" ;
   rdfs:comment "The property the accepted text of a drafting effect fills." ;

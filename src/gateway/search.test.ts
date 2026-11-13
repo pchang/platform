@@ -103,7 +103,7 @@ describe('search through the gateway', () => {
     expect(r.results).toEqual([
       expect.objectContaining({ object: expect.objectContaining({ identifier: 'AE-005' }), matched: ['verbatim term: Fever and cough; admitted to hospital with pneumonia'] }),
     ]);
-    expect(ids('rash', dsp)).toEqual(['AE-002', 'SC-002', 'SC-004', 'SC-005', 'SC-006', 'SC-111']);
+    expect(ids('rash', dsp)).toEqual(['AE-002', 'MI-3', 'MI-4', 'SC-002', 'SC-004', 'SC-005', 'SC-006', 'SC-111']);
   });
 
   it('never matches what the principal may not read', () => {
