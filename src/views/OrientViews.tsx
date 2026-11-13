@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
+import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildTodoView, buildTypeView, loadingView, TODO_FILTER_FIELD, type TodoFilter } from './orientViews';
+import { buildSearchView, buildTodoView, buildTypeView, loadingView, TODO_FILTER_FIELD, type TodoFilter } from './orientViews';
 
 /** A method to run from a card: its label and archetype, as the view knows them. */
 type Runnable = { method: string; label: string; archetype: { label: string } };
@@ -119,5 +119,34 @@ export function TypeView({ type }: { type: string }) {
   }, [client, principal, type, processes.changes, changes]);
 
   const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
+  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method) }} />;
+}
+
+/** The search page (design system spec 4.1, Search): the gateway's understanding of the query, and what it found. */
+export function SearchView({ query }: { query: string }) {
+  const { client, principal } = usePrincipal();
+  const { changes } = useNotifications();
+  const [loaded, setLoaded] = useState<{ result: SearchResult; methods: Map<string, MethodOption[]> }>();
+  const processes = useProcesses();
+  const openMethod = useOpenMethod((object, method) => {
+    const found = loaded?.result.results.find((r) => r.object.iri === object);
+    const option = loaded?.methods.get(object)?.find((m) => m.method === method);
+    return found && option && { object: found.object, method: option };
+  });
+  const runs = useActiveRuns([query, processes.changes, changes]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoaded(undefined);
+    (async () => {
+      const result = await client.search(principal, query);
+      const methods = new Map(await Promise.all(result.results.map(async (r) => [r.object.iri, await client.methods(principal, r.object.iri)] as const)));
+      if (!cancelled) setLoaded({ result, methods });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, query, processes.changes, changes]);
+
+  const view = loaded ? buildSearchView(loaded.result, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
   return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method) }} />;
 }

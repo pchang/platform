@@ -11,6 +11,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/navigation                     the domains and object types of the principal's work
  *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
+ *   GET  /api/search?q=serious+adverse+events  search: how the query was understood, and what it found
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
@@ -88,6 +89,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const state = Object.fromEntries([...url.searchParams].filter(([k]) => k !== 'type').map(([k, v]) => [expand(k, NS.ls), expand(v, NS.lst)]));
         return send(res, 200, gateway.find(principal, expand(type, NS.ls), state));
       }
+      case 'GET search':
+        return send(res, 200, gateway.search(principal, url.searchParams.get('q') ?? ''));
       case 'GET objects/:':
         return send(res, 200, gateway.read(principal, parts[2]));
       case 'GET objects/:/methods':

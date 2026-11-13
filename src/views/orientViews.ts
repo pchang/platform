@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
+import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -272,6 +272,49 @@ export function buildTypeView(pluralLabel: string, objects: ObjectSummary[], opt
     root: stack([
       ...(options.notice ? [[options.notice]] : []),
       header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`),
+      ...(cards.length ? [[gallery(cards)]] : []),
+    ]),
+  };
+}
+
+/** What a search understood, as labels: the types, states, links and words it used (platform spec 5.2). */
+function understood(result: SearchResult): ViewNode[] {
+  const i = result.interpretation;
+  const label = (text: string): ViewNode => ({ component: 'Label', props: { label: text, color: 'blue', isCompact: true } });
+  return [
+    ...i.types.map((t) => label(`Type: ${t.label}`)),
+    ...i.states.map((s) => label(`${s.dimensionLabel}: ${s.label}`)),
+    ...i.identifiers.map((o) => label(i.types.length ? `Linked to ${o.identifier}` : `Identifier: ${o.identifier}`)),
+    ...(i.words.length ? [label(`Words: ${i.words.join(' ')}`)] : []),
+  ];
+}
+
+/**
+ * The search page (design system spec 4.1, Search): how the query was understood, then the results as cards like an
+ * object list, each saying why it matched and offering the methods the person can run now.
+ */
+export function buildSearchView(result: SearchResult, options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode } = {}): ViewSpec {
+  const cards = result.results.map(({ object: o, matched }) => {
+    const body: ViewNode[][] = [];
+    const running = runLabels(o, options.runs ?? []);
+    if (running.length) body.push([flexOf(running)]);
+    body.push([flexOf(stateLabels(o))]);
+    if (matched.length) body.push([text(`Matched: ${matched.join(' · ')}`, 'small')]);
+    const available = (options.methods?.get(o.iri) ?? []).filter((m) => m.available);
+    if (available.length) body.push([text('You can:', 'small')], ...runnable(available, o.iri, false));
+    return card(o, body);
+  });
+  const chips = understood(result);
+  const count = result.total === 0 ? 'Nothing matches' : `${result.total} ${result.total === 1 ? 'match' : 'matches'}`;
+  const shown = result.total > result.results.length ? `, the best ${result.results.length} shown` : '';
+  return {
+    pattern: 'card-view',
+    because: `Search for "${result.query}": the objects the person may read that it finds, best first`,
+    root: stack([
+      ...(options.notice ? [[options.notice]] : []),
+      header('Search', `${count} for “${result.query}”${shown}.`),
+      ...(chips.length ? [[text('Understood as:', 'small'), flexOf(chips)]] : []),
+      ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
       ...(cards.length ? [[gallery(cards)]] : []),
     ]),
   };

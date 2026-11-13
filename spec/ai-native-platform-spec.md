@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.19. November 12, 2026. Author: Paul Chang.
+Version 0.20. November 13, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -119,7 +119,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers twelve kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers thirteen kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -134,6 +134,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Preview a method | Runs commit steps 1 to 5 without saving, and returns every value that would change, every object that would be created and every described effect that would be recorded as pending work, or the reasons it would fail |
 | Track runs | The background runs on objects the principal may read: each run's status and progress, and its outcome once it ends |
 | Notifications | The principal's notifications, newest first, with which are unread; and marking them read |
+| Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
@@ -249,6 +250,16 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 - Understands the ontology: types, properties, relationships and their meaning.
 - Resolves ambiguity by asking, not guessing.
 - Returns objects, not documents. Each result is actionable.
+
+**How a query is understood.** The gateway reads a query against the ontology, so search works the same in every domain without designing it per domain:
+
+- **Identifiers.** A word that is an object's identifier, such as SC-003, finds that object first. With an object type in the query, it finds the objects of that type linked to it, either way, such as "cases for P-101".
+- **Object types.** A type's name, singular or plural, or the last word of it, such as "cases" for Safety Cases, narrows the search to that type. A word that fits several types, such as "event", keeps all of them.
+- **States.** A value of a type's state dimension, such as "serious" or "open", narrows to objects in that state. The longest value that fits is taken, so "non-serious" is never read as "serious".
+- **Any other words** must each appear in what the principal may read of the object: its identifier, its state, its properties and the identifiers it links to.
+- The answer says how the query was understood, as the types, states, links and words it used, so the person can see why each object matched and correct the query. Results come best first: an identifier match, then objects that meet what was understood, then text matches.
+- **Permissions as in a read.** Search never matches what the principal may not read, such as a hidden property or an unreadable type. A result whose personal data matched the query is a read of that data, and is recorded in the audit trail as one.
+- Interpreting freer language with a connected model, under the same rules, comes later.
 
 ### 5.3 Method Engine
 - Offers only methods valid for the object's current state and the person's context.
@@ -366,6 +377,7 @@ To resolve in future versions of this spec.
 - How is a drafting model validated for its intended use, and how are its instructions changed under change control?
 - Where may a drafting model process records: which providers, regions and retention terms satisfy each domain's privacy obligations?
 - Should a draft expire, or be refused on acceptance, when its object has changed since it was written?
+- How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
@@ -398,3 +410,4 @@ To resolve in future versions of this spec.
 | 0.17 | 2026-11-11 | Added background runs to the gateway contract (section 3.4): started by a commit, finished by a platform worker acting through the gateway, results committed and journaled once, restarted after a restart, and the starter notified. Analyses join the ontology's expressions (section 3.1). The gateway answers Track runs and Notifications. Two open questions. |
 | 0.18 | 2026-11-12 | Added generated drafts to the gateway contract (section 3.4): drafting effects declared in the ontology, connected models only and never a stand-in, the model sees only what the principal may read, every draft recorded with its model and fingerprints, and a person accepts, edits or discards it. Drafting joins the ontology's expressions (section 3.1). The gateway answers Drafts. Three open questions. |
 | 0.19 | 2026-11-12 | To do leads with a summary computed from its items: counts that narrow the list, and work by type and lifecycle stage (section 5.1). State dimensions and their values are ordered, the first being the lifecycle. Several processes at once: set aside, keep what was given, restore one at a time, with progress by archetype (section 5.4). |
+| 0.20 | 2026-11-13 | The gateway answers Search (section 3.4). Section 5.2 says how a query is understood against the ontology (identifiers, types, states, links and words), that the understanding is shown, and that search keeps read permissions and audits matches in personal data. One open question. |

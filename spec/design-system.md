@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.15. November 12, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.19, sections 3.6, 5.1, 5.4 and 7.
+Version 0.16. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.20, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -91,11 +91,17 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
 | Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
-| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
+| Sidebar | A search field, then To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 All masthead items stay visible at every width, on one row with the logo. The product name is LS&H.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
+
+**Search.** The search field heads the sidebar, so it is in the same place on every page; on phones it is in the navigation drawer.
+
+- As the person types, the best five matches appear under the field, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
+- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object.
+- The search page (`#/search/…`) shows how the query was understood, as labels such as "Type: Safety Case" and "Seriousness: serious", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
@@ -339,3 +345,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.13 | 2026-11-12 | Review a draft specified step by step: a page that asks for the draft at once, shows it marked as generated with its model and sources, then Accept, Edit, Discard or Back. The view spec gains the `edit` and `discard` intents. |
 | 0.14 | 2026-11-12 | Added the process dock to the chrome (4.1), the To do summary with counts and work by type and stage (4.3), and setting a process aside with progress by archetype (5.1). The view spec gains the `minimize` intent and selectable cards bound to a field. |
 | 0.15 | 2026-11-12 | A deadline already past is labeled Overdue since, as a danger, not Due, as a warning. |
+| 0.16 | 2026-11-13 | Added the search field to the sidebar and the search page (4.1). |

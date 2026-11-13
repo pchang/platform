@@ -48,6 +48,7 @@ export async function inPageClient(): Promise<GatewayClient> {
     people: async () => gateway.people(),
     navigation: async (p) => gateway.navigation(p),
     todo: (p) => gateway.todo(p),
+    search: async (p, query) => gateway.search(p, query),
     find: async (p, type) => gateway.find(p, type),
     read: (p, object) => refused(() => gateway.read(p, object)),
     compose: async (p, object, method) => refused(() => gateway.compose(p, object, method)),

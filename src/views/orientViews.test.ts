@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
-import type { MethodOption, RunView, ToDoItem } from '../data/client';
-import { buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter, stageColor } from './orientViews';
+import type { MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
+import { buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter, stageColor } from './orientViews';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [
@@ -133,5 +133,39 @@ describe('the To do summary (design system spec 4.3)', () => {
 
   it('has no summary when nothing is waiting', () => {
     expect(JSON.stringify(buildTodoView([], 'Ben Okafor'))).not.toContain('At a glance');
+  });
+});
+
+describe('the search page (design system spec 4.1, Search)', () => {
+  const ae = { iri: 'urn:AE-005', identifier: 'AE-005', type: 'urn:AE', typeLabel: 'Adverse Event', pluralLabel: 'Adverse Events', state: { Seriousness: 'serious' } };
+  const result: SearchResult = {
+    query: 'serious adverse events PT-09 pneumonia',
+    interpretation: {
+      types: [{ type: 'urn:AE', label: 'Adverse Event' }],
+      states: [{ dimension: 'urn:d', dimensionLabel: 'Seriousness', type: 'urn:AE', value: 'urn:v', label: 'serious' }],
+      identifiers: [{ iri: 'urn:PT-09', identifier: 'PT-09' }],
+      words: ['pneumonia'],
+    },
+    results: [{ object: ae, matched: ['Linked to PT-09', 'Type: Adverse Event', 'Seriousness: serious', 'verbatim term: Fever and cough'] }],
+    total: 1,
+  };
+  const verify: MethodOption = { method: 'urn:verify', label: 'Verify adverse event', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Confirm' } };
+
+  it('says how the query was understood, and why each object matched, with its methods', () => {
+    const view = buildSearchView(result, { methods: new Map([['urn:AE-005', [verify]]]) });
+    expect(validateView(view).errors).toEqual([]);
+    const json = JSON.stringify(view);
+    expect(json).toContain('1 match for “serious adverse events PT-09 pneumonia”.');
+    for (const chip of ['Type: Adverse Event', 'Seriousness: serious', 'Linked to PT-09', 'Words: pneumonia']) expect(json).toContain(`"label":"${chip}","color":"blue"`);
+    expect(json).toContain('Matched: Linked to PT-09 · Type: Adverse Event · Seriousness: serious · verbatim term: Fever and cough');
+    expect(json).toContain('"label":"Verify adverse event"');
+  });
+
+  it('suggests how to search when nothing matches, and says when only the best are shown', () => {
+    const none = JSON.stringify(buildSearchView({ ...result, results: [], total: 0 }));
+    expect(none).toContain('Nothing matches for');
+    expect(none).toContain('Try fewer words');
+    expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown.');
+    expect(JSON.stringify(buildSearchView({ ...result, interpretation: { ...result.interpretation, types: [] } }))).toContain('"label":"Identifier: PT-09"');
   });
 });

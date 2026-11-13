@@ -9,7 +9,7 @@ import { ProcessDock } from './chrome/ProcessDock';
 import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
 import { ProcessProvider } from './processes/ProcessProvider';
 import { useRoute } from './routing';
-import { TodoView, TypeView } from './views/OrientViews';
+import { SearchView, TodoView, TypeView } from './views/OrientViews';
 
 /** From PatternFly's xl breakpoint up, the sidebar sits beside the content; below it, it is a drawer (design system spec 4.1). */
 const isWide = () => window.innerWidth >= 1200;
@@ -56,10 +56,11 @@ function AppPage() {
       mainTabIndex={0}
       isContentFilled
     >
-      <PageSection isFilled aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : 'Objects'}>
+      <PageSection isFilled aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
         {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
         {!frontIsPage && route.name === 'todo' && <TodoView />}
         {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
+        {!frontIsPage && route.name === 'search' && <SearchView query={route.query} />}
         <ProcessHost />
       </PageSection>
       <ProcessDock />

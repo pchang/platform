@@ -1,6 +1,7 @@
 import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
+import { containsWords, interpret, normalize, type Interpretation } from './search';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
 import { ask, defaultGraphDataset, NS, select, type Graph } from '../ontology/ontology';
@@ -121,6 +122,15 @@ export interface CommitResult {
   run?: RunView;
   /** The draft the commit accepted, for a method that produces a draft. */
   fromDraft?: { draft: string; model: string; edited: boolean };
+}
+
+/** A search's answer (spec 5.2): how the query was understood, and the objects it found, best first. */
+export interface SearchResult {
+  query: string;
+  interpretation: Interpretation;
+  results: { object: ObjectSummary; matched: string[] }[];
+  /** How many objects matched, of which results holds the best. */
+  total: number;
 }
 
 export type DraftStatus = 'undecided' | 'accepted' | 'discarded';
@@ -456,6 +466,13 @@ export class Gateway {
   read(principal: Principal, idOrIri: string): ObjectView {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
+    const view = this.view(principal, object);
+    if (ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
+    return view;
+  }
+
+  /** An object as the principal may see it, with nothing recorded: reads and searches decide what to audit. */
+  private view(principal: Principal, object: string): ObjectView {
     const summary = this.summary(object);
     if (!this.canRead(principal, summary.type)) throw new GatewayError(403, ['Your role cannot read this object']);
     const hidden = this.unreadable(principal.role);
@@ -486,8 +503,101 @@ export class Gateway {
       const value = r.valueLabel ?? r.value;
       properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
     }
-    if (ask(this.graph.store, `ASK { <${summary.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
     return { ...summary, links, properties };
+  }
+
+  // ---------------------------------------------------------------- search (spec 5.2)
+
+  /**
+   * Search (spec 5.2): the query read against the ontology, then applied to what the principal may read. A result whose
+   * personal data matched the query is a read of it, and is audited as one.
+   */
+  search(principal: Principal, query: string, limit = 50): SearchResult {
+    this.authorize(principal);
+    const hidden = this.unreadable(principal.role);
+    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel } ORDER BY ?label`)
+      .filter((t) => !hidden.has(t.type)) as { type: string; label: string; pluralLabel: string }[];
+    const readable = new Set(types.map((t) => t.type));
+    const states = this.q(`SELECT ?dimension ?dimensionLabel ?type ?value ?label WHERE { ?dimension p:dimensionOf ?type ; rdfs:label ?dimensionLabel ; p:valuesFrom ?scheme .
+        ?value skos:inScheme ?scheme ; skos:prefLabel ?label }`).filter((v) => readable.has(v.type)) as never;
+    const identifiers = new Map(
+      this.q(`SELECT ?o ?id ?type WHERE { ?o ls:identifier ?id ; a ?type . ?type a p:ObjectType }`)
+        .filter((r) => readable.has(r.type))
+        .map((r) => [normalize(r.id), { iri: r.o, identifier: r.id }]),
+    );
+    const interpretation = interpret(query, { types, states, identifier: (w) => identifiers.get(w) });
+    const empty = { query, interpretation, results: [], total: 0 };
+    const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length;
+    if (!understood) return empty;
+
+    // Candidates: the identified objects, the objects of the types linked to them, or every object of the types.
+    const wanted = interpretation.types.length ? interpretation.types.map((t) => t.type) : [...readable];
+    const linked = interpretation.identifiers.length > 0 && interpretation.types.length > 0;
+    let candidates: { iri: string; score: number; matched: string[] }[];
+    if (linked) {
+      candidates = interpretation.identifiers.flatMap((anchor) =>
+        this.q(`SELECT DISTINCT ?o ?type WHERE { { <${anchor.iri}> ?r ?o } UNION { ?o ?r <${anchor.iri}> } ?r a p:Relationship . ?o a ?type . ?type a p:ObjectType }`)
+          .filter((r) => wanted.includes(r.type))
+          .map((r) => ({ iri: r.o, score: 60, matched: [`Linked to ${anchor.identifier}`] })),
+      );
+    } else if (interpretation.identifiers.length) {
+      candidates = interpretation.identifiers.map((i) => ({ iri: i.iri, score: 100, matched: ['Identifier'] }));
+    } else {
+      candidates = wanted.flatMap((type) => this.q(`SELECT ?o WHERE { ?o a <${type}> }`).map((r) => ({ iri: r.o, score: interpretation.words.length ? 20 : 50, matched: [] })));
+    }
+    const seen = new Set<string>();
+    candidates = candidates.filter((c) => !seen.has(c.iri) && seen.add(c.iri));
+
+    // States: within a dimension any of the values understood; across dimensions, all of them.
+    const byDimension = new Map<string, { values: Set<string>; label: string }>();
+    for (const s of interpretation.states) {
+      const entry = byDimension.get(s.dimension) ?? { values: new Set(), label: s.dimensionLabel };
+      entry.values.add(s.value);
+      byDimension.set(s.dimension, entry);
+    }
+    const typeLabel = new Map(interpretation.types.map((t) => [t.type, t.label]));
+    const matches: { iri: string; score: number; matched: string[]; view: ObjectView; personal: boolean }[] = [];
+    for (const c of candidates) {
+      const view = this.view(principal, c.iri);
+      const matched = [...c.matched];
+      if (typeLabel.has(view.type)) matched.push(`Type: ${typeLabel.get(view.type)}`);
+      if (byDimension.size) {
+        const own = this.q(`SELECT ?d ?v WHERE { ?d p:dimensionOf <${view.type}> . <${c.iri}> ?d ?v }`);
+        const relevant = [...byDimension.entries()].filter(([d]) => this.q(`SELECT ?t WHERE { <${d}> p:dimensionOf ?t }`)[0]?.t === view.type);
+        if (!relevant.length || !relevant.every(([d, { values }]) => own.some((o) => o.d === d && values.has(o.v)))) continue;
+        for (const [d, { label }] of relevant) matched.push(`${label}: ${own.filter((o) => o.d === d).map((o) => this.q(`SELECT ?l WHERE { <${o.v}> skos:prefLabel ?l }`)[0].l).join(', ')}`);
+      }
+      // Words: each must appear in what the principal may read; say where, preferring the identifier and state.
+      let personal = false;
+      if (interpretation.words.length) {
+        const fields: [string, string][] = [
+          ['Identifier', view.identifier],
+          ...Object.entries(view.state).map(([k, v]) => [k, v] as [string, string]),
+          ...Object.entries(view.properties).map(([k, v]) => [k, v] as [string, string]),
+          ...view.links.map((l) => [l.label, l.objects.map((o) => o.identifier).join(', ')] as [string, string]),
+        ];
+        const all = fields.map(([, v]) => v).join(' ');
+        if (!containsWords(all, interpretation.words)) continue;
+        const hits = fields.filter(([, v]) => interpretation.words.some((w) => containsWords(v, [w])));
+        for (const [k, v] of hits.slice(0, 2)) matched.push(k === 'Identifier' ? 'Identifier' : `${k}: ${v.length > 80 ? `${v.slice(0, 77).trimEnd()}…` : v}`);
+        personal = hits.some(([k]) => k in view.properties);
+        c.score += hits.some(([k]) => k === 'Identifier') ? 10 : 5;
+      }
+      matches.push({ ...c, matched, view, personal: personal && ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`) });
+    }
+    matches.sort((a, b) => b.score - a.score || a.view.identifier.localeCompare(b.view.identifier, undefined, { numeric: true }));
+    const shown = matches.slice(0, limit);
+    // Matching personal data is reading it (spec 5.2): audited as the principal's read.
+    for (const m of shown) if (m.personal) this.recordRead(principal, m.iri);
+    return {
+      query,
+      interpretation,
+      results: shown.map((m) => ({
+        object: { iri: m.view.iri, identifier: m.view.identifier, type: m.view.type, typeLabel: m.view.typeLabel, pluralLabel: m.view.pluralLabel, state: m.view.state, ...(m.view.lifecycle ? { lifecycle: m.view.lifecycle } : {}) },
+        matched: m.matched,
+      })),
+      total: matches.length,
+    };
   }
 
   /** A synchronous check of the hiding shapes, which use only core constraints on the object's own values. */
