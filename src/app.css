@@ -21,3 +21,11 @@ html body {
   font-weight: var(--pf-t--global--font--weight--body--default);
   line-height: var(--pf-t--global--font--line-height--body);
 }
+
+/*
+ * Card surface (design system spec 1, Visual style): cards carry PatternFly's small shadow, so they stand out from the
+ * content area's secondary background. Plain cards have no surface, so no shadow.
+ */
+html body .pf-v6-c-card:not(.pf-m-plain) {
+  box-shadow: var(--pf-t--global--box-shadow--sm);
+}

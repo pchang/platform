@@ -57,7 +57,8 @@ function AppPage() {
       mainTabIndex={0}
       isContentFilled
     >
-      <PageSection isFilled aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
+      {/* The secondary background, so cards stand out from it (design system spec 1, Card surface). */}
+      <PageSection isFilled variant="secondary" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
         {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
         {!frontIsPage && route.name === 'todo' && <TodoView />}
         {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}

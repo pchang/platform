@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.21. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.22. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -21,10 +21,11 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 
 ### Visual style
 
-The platform uses PatternFly's default visual style, with one change: the typeface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
+The platform uses PatternFly's default visual style, with two changes: the typeface and the card surface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
 
 - **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
 - Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
+- **Card surface.** Cards stand out from the content area. The content area uses PatternFly's secondary background (the page section's `secondary` variant), a subtle gray in light mode and the darker surface in dark mode. Cards keep their own primary background and carry PatternFly's small shadow (`--pf-t--global--box-shadow--sm`). Both come from tokens, so both modes follow.
 
 ### Packages
 
@@ -360,3 +361,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |
 | 0.20 | 2026-11-13 | Search moves from the sidebar to the masthead, left of the icon buttons; below md it is an icon button that opens the field under the masthead. Matches show in a raised panel. More space above the dock's heading. |
 | 0.21 | 2026-11-14 | Inter replaces the Red Hat typefaces for headings and body, through PatternFly's two font-family tokens, bundled rather than loaded from a font service. |
+| 0.22 | 2026-11-14 | Card surface: the content area takes PatternFly's secondary background and cards a small shadow, for more contrast between cards and the page. |
