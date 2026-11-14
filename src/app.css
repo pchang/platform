@@ -3,6 +3,15 @@
  * with :where(body), which has no specificity, so any page the platform is embedded in, such as a preview host, could
  * turn text black on the dark theme. Tokens only (design system spec, rule 2).
  */
+/*
+ * The typeface (design system spec 1, Visual style): Inter for headings and body, through PatternFly's own tokens, so
+ * every component follows. html:root outranks PatternFly's :root, wherever its styles load. Red Hat Mono stays for code.
+ */
+html:root {
+  --pf-t--global--font--family--body: "Inter", Helvetica, Arial, sans-serif;
+  --pf-t--global--font--family--heading: "Inter", Helvetica, Arial, sans-serif;
+}
+
 html body {
   margin: 0;
   background-color: var(--pf-t--global--background--color--secondary--default);

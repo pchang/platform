@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.19. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.21. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -21,7 +21,10 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 
 ### Visual style
 
-The platform uses PatternFly's default visual style, unchanged: no custom theme, brand colors or fonts. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The only product-specific element is the product name in the logo, set in configuration.
+The platform uses PatternFly's default visual style, with one change: the typeface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
+
+- **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
+- Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
 
 ### Packages
 
@@ -35,6 +38,7 @@ The platform uses PatternFly's default visual style, unchanged: no custom theme,
 | `@patternfly/react-component-groups` | Higher-level composites | 6.7.0 |
 | `@patternfly/chatbot` | Conversational components | 6.9.0 |
 | `@patternfly/patternfly-mcp` | Docs for coding agents (development time only) | 2.5.0 |
+| `@fontsource/inter` | The Inter typeface, bundled (see Visual style) | 5.3.0 |
 
 ### Alternatives considered
 
@@ -90,23 +94,25 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Position | Content |
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
-| Masthead, right | Notifications, settings and profile, as icon buttons with accessible names |
-| Sidebar | A search field, then To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
+| Masthead, right | The search field, then notifications, settings and profile, as icon buttons with accessible names |
+| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
-**Search.** The search field heads the sidebar, so it is in the same place on every page; on phones it is in the navigation drawer.
+**Search.** The search field sits in the masthead, immediately left of the icon buttons, so it is in the same place on every page.
 
-- As the person types, the best five matches appear under the field, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
-- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object.
+- From md up it is a field. Below md there is no room for a field beside the logo and the icons, so it is a Search icon button; choosing it opens the field in a row across the page under the masthead, with focus in it. That row closes when a search opens, on Escape, or on the button again.
+
+- As the person types, the best five matches appear in a raised panel under the field, over the page, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
+- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object. Escape, or a click outside, closes the panel.
 - The best matches under the field come from the ontology reading, so they appear as fast as the person types. The search page asks the connected model, if there is one, and says while it is understanding the query.
 - The search page (`#/search/…`) shows who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
-- The dock's heading, "Set aside", has the same space above it as below it, so it never touches the dock's edge.
+- The dock's heading, "Set aside", has the large spacer above it, more than the space below it, so it never crowds the dock's top edge.
 - Each process is one entry: the method and the object, a small progress bar, and its progress in words, such as "2 of 3 fields", "Ready to sign", "Running, 40%" or "Draft ready". Choosing an entry brings the process back in front; the process in front, if any, goes into the dock. A process in a modal covers the page, dock included, so the person minimizes it before choosing another; a page process leaves the dock in reach.
 - Each entry has a close button, named for the process. Closing ends it without committing anything; a background run keeps running, and an undecided draft stays undecided.
 - The entries sit in one row that scrolls sideways inside the dock when they do not fit, so the page itself never scrolls sideways.
@@ -352,3 +358,5 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.17 | 2026-11-13 | Cards lead with the identifier and type in small text, then the object's title as their heading. Minimize is a minus icon left of the close button, or right of a page pattern's title. |
 | 0.18 | 2026-11-13 | Search page says who understood the query, the model or the ontology, and shows Yours for the person's own objects. Suggestions under the field come from the ontology reading. |
 | 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |
+| 0.20 | 2026-11-13 | Search moves from the sidebar to the masthead, left of the icon buttons; below md it is an icon button that opens the field under the masthead. Matches show in a raised panel. More space above the dock's heading. |
+| 0.21 | 2026-11-14 | Inter replaces the Red Hat typefaces for headings and body, through PatternFly's two font-family tokens, bundled rather than loaded from a font service. |

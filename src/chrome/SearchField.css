@@ -1,15 +1,18 @@
-/* The sidebar's search field and its matches. Tokens only, no raw colors (design system spec, rule 2). */
+/* The masthead's search field and its matches. Tokens only, no raw colors (design system spec, rule 2). */
 .app-search {
+  position: relative;
   display: block;
-  padding-inline: var(--pf-t--global--spacer--md);
-  padding-block-end: var(--pf-t--global--spacer--sm);
 }
 
-.app-search__count:empty {
-  display: none;
+/* The matches float over the page under the field, at least as wide as it. */
+.app-search__panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--pf-t--global--spacer--xs));
+  inset-inline-end: 0;
+  min-inline-size: 100%;
+  z-index: var(--pf-t--global--z-index--md);
 }
 
-.app-search__count,
 .app-search__matches {
   padding-block-start: var(--pf-t--global--spacer--xs);
 }

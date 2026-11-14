@@ -41,6 +41,7 @@ function AppPage() {
           isSidebarOpen={isSidebarOpen}
           onSidebarToggle={() => setSidebarOpen((open) => !open)}
           notifications={{ unread, isExpanded: isDrawerOpen, onToggle: () => setDrawerOpen((open) => !open) }}
+          searchQuery={route.name === 'search' ? route.query : undefined}
         />
       }
       notificationDrawer={<NotificationsDrawer onClose={() => setDrawerOpen(false)} />}
