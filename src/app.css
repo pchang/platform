@@ -23,9 +23,29 @@ html body {
 }
 
 /*
- * Card surface (design system spec 1, Visual style): cards carry PatternFly's small shadow, so they stand out from the
- * content area's secondary background. Plain cards have no surface, so no shadow.
+ * Card surface (design system spec 1, Visual style): three surfaces in even steps, from tokens only, so dark mode
+ * follows. The chrome keeps PatternFly's secondary background; the content area is halfway between it and the card
+ * surface, with no border; cards carry a shadow subtler than PatternFly's small one.
  */
+.pf-v6-c-page.app-page {
+  --pf-v6-c-page__main-container--BackgroundColor: color-mix(
+    in srgb,
+    var(--pf-t--global--background--color--secondary--default),
+    var(--pf-t--global--background--color--primary--default)
+  );
+}
+
+.app-page .pf-v6-c-page__main-container {
+  border-width: 0;
+}
+
+/* The content's own section lets the content area show through. */
+.pf-v6-c-page__main-section.app-content {
+  --pf-v6-c-page__main-section--BackgroundColor: transparent;
+}
+
+/* PatternFly's small shadow at half the blur and half the opacity. Plain cards have no surface, so no shadow. */
 html body .pf-v6-c-card:not(.pf-m-plain) {
-  box-shadow: var(--pf-t--global--box-shadow--sm);
+  box-shadow: 0 var(--pf-t--global--box-shadow--Y--500) calc(var(--pf-t--global--box-shadow--blur--sm) / 2) 0
+    color-mix(in srgb, var(--pf-t--global--box-shadow--color--sm--default) 50%, transparent);
 }

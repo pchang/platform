@@ -74,7 +74,7 @@ describe('tokens', () => {
       );
     for (const file of cssFiles('src')) {
       const css = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-      for (const [, name] of css.matchAll(/var\((--pf-t--[a-z0-9-]+)\)/g)) {
+      for (const [, name] of css.matchAll(/var\((--pf-t--[a-zA-Z0-9-]+)/g)) {
         expect(catalog.tokens, `${file} uses ${name}`).toContain(name);
       }
       expect(css, `${file} has a raw color`).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
