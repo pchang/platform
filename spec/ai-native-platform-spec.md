@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.22. November 13, 2026. Author: Paul Chang.
+Version 0.24. November 14, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -53,7 +53,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Object type | An RDF class with a named SHACL node shape |
 | Property | A named SHACL property shape |
 | State dimension | A property whose values come from a SKOS concept scheme |
-| Relationship | An RDF property whose shape names the target class |
+| Relationship | An RDF property whose shape names the target class. It also declares how it reads from the other end (its inverse label, such as "enrolled in" and "enrolls"), whether one end is part of the other (containment), and, where the domain is certain, that an object links to at most one object along it |
 | Method | A resource in the platform vocabulary, with its inputs, precondition and effects |
 | Precondition | A SHACL shape the object must conform to. Its messages explain a block |
 | Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
@@ -124,9 +124,9 @@ Every request carries a **principal**: the person or agent making it and the rol
 
 | Request | Answer |
 |---|---|
-| Describe the ontology | Object types, their state dimensions, relationships and methods |
+| Describe the ontology | Object types, their state dimensions, relationships (read both ways, with containment and cardinality) and methods |
 | Find objects | Objects of a type, filtered by state |
-| Read an object | Its identifier, state, relationships and properties, as the principal may see them |
+| Read an object | Its identifier, title, state, properties and last change, and its relationship ends, as the principal may see them (section 5.1, Within an object) |
 | Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
 | Commit a method | Runs one method on one object with its inputs (core loop step 6) |
 | Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
@@ -243,8 +243,20 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 - An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
 - The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines.
 - Each card shows the object, its state, its deadline and the tasks waiting.
-- **A summary leads the list**, so the person sees the shape of their work before its parts. It is computed from the same items, never designed per role: how many items are waiting, urgent, due within 7 days and overdue, and the waiting work by object type, split by lifecycle stage. Choosing a count narrows the list to those items.
-- **Lifecycle stage.** Each object type's state dimensions are ordered in the ontology; the first is its lifecycle, such as a case's workflow or a submission's status, and its values are ordered too. The summary uses that order, so stages read earliest to latest in every domain.
+- **A summary leads the list**, so the person sees the shape of their work before its parts. It is computed from the same items, never designed per role: how many items are waiting, urgent, due within 7 days and overdue. Choosing a count narrows the list to those items.
+- **Lifecycle stage.** Each object type's state dimensions are ordered in the ontology; the first is its lifecycle, such as a case's workflow or a submission's status, and its values are ordered too, so an object's stage reads as a step along the way, such as "stage 3 of 5", in every domain.
+
+#### Within an object
+
+Every object opens on its own, from wherever it appears: a card, a link, a search result. What it shows is generated from the ontology, the same way for every type in every domain, never designed per type.
+
+- **Header.** The object's identifier, type and title, its state, its deadline and urgency, and the methods the person can run on it now.
+- **Relationship ends.** For each relationship its type has in the ontology, in either direction, the object has an end: what the relationship reads as from this object (such as "enrolls" for a study's patients), whether it contains the objects at the other end, is part of them, or is only related, and whether it holds at most one object or many. Ends that reach a type the person may not read are left out.
+- **Overview first.** The object's properties; the ends that hold at most one object, as links, the objects it is part of first; and its last change: the method, who ran it and when.
+- **Then the many-valued ends.** One section per end, in order: the objects it contains first, then related objects, in the ontology's order. Each section shows its count and lists its objects as cards, with the methods the person can run on each. Empty sections are shown too, so every object of a type has the same structure.
+- **Names.** An end is named by the type at the other end, such as Patients. When two ends of one object reach the same type, or an end reaches the object's own type, it is named by how its relationship reads instead, such as "Duplicate of".
+- **Moving through the graph.** Opening a related object from inside another keeps the way back, one step at a time.
+- Reading an object is a read like any other: permissions apply, hidden properties stay hidden, and reads of personal data are audited.
 
 ### 5.2 AI Search
 - Accepts natural language and structured queries.
@@ -311,6 +323,10 @@ Every method has exactly one **interaction archetype**, derived from what the on
 - Each archetype has one pattern in the design system (design system spec 5.1). The same archetype always looks and behaves the same way.
 - Every archetype ends the same way: a preview of each value that will change and each object that will be created, the commit, and the outcome. A blocked commit shows the gateway's reasons.
 - **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
+  - The methods offered are those every selected object has available to the person now.
+  - For now, only Confirm and Fill in run for many. A signature, a draft, a comparison and a background run each stay with one object at a time.
+  - The inputs are given once. Each object is previewed and committed in its own commit, so each is checked, recorded and atomic on its own. An object whose preview is refused is named with the gateway's reasons and left out, never skipped silently.
+  - The outcome names every object: what changed, and what was refused and why.
 - Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
 - **Several at once.** A person can set a method they are running aside and come back to it: the process is minimized, keeping everything given so far, and another can be started. One process is in front at a time; restoring one sets the one in front aside. Each set-aside process shows how far along it is, in terms of its archetype, so the measure is the same for every method of that archetype. Nothing is committed until the person finishes the process.
 - **Choices come from the ontology.** A value from a concept scheme offers the scheme's values, narrowed by the input's shape. A person offers the people who may act. An object offers the objects that qualify. A person input defaults to the principal.
@@ -392,6 +408,8 @@ To resolve in future versions of this spec.
 - When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
 - What are the deployment model and hosting targets?
 - What are the performance and scale targets for the first release?
+- May one signature cover many records at once, and how would each record carry it, so methods that need a signature can run for many?
+- Should a run for many objects be one transaction, all or nothing, where a domain needs it?
 
 ---
 
@@ -421,3 +439,5 @@ To resolve in future versions of this spec.
 | 0.20 | 2026-11-13 | The gateway answers Search (section 3.4). Section 5.2 says how a query is understood against the ontology (identifiers, types, states, links and words), that the understanding is shown, and that search keeps read permissions and audits matches in personal data. One open question. |
 | 0.21 | 2026-11-13 | Added titles to the ontology's expressions (section 3.1): templates per type, the first complete one used, never using hidden values. |
 | 0.22 | 2026-11-13 | Search understood by a connected model (section 5.2): the model turns a query into a search plan from the vocabulary the principal may read, never a record; the gateway checks and runs the plan, and falls back to the ontology reading. "My" and "mine" mean the principal's own objects. One open question. |
+| 0.23 | 2026-11-14 | Relationships read both ways, with containment and cardinality where certain (section 3.1). Added Within an object (section 5.1): every object opens with its header, an overview and one section per many-valued relationship end, contained objects first, generated from the ontology. Read an object answers relationship ends and the last change. |
+| 0.24 | 2026-11-14 | The To do summary is its counts only. Acting on many objects (section 5.4): the methods every selected object has available, Confirm and Fill in for now, inputs given once, one commit per object, refused objects named with their reasons. Two open questions. |

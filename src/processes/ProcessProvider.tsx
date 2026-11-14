@@ -31,6 +31,8 @@ interface ProcessesContext {
   /** Ends a process that committed, with its outcome. */
   finish: (id: string, notice: ViewNode) => void;
   update: (id: string, snapshot: Partial<ProcessSnapshot>) => void;
+  /** Reports the outcome of work done outside a process, such as a batch action, so views show it and load again. */
+  report: (notice: ViewNode) => void;
   /** The outcome of the last process to finish, for the view to show. */
   notice?: ViewNode;
   /** Goes up each time a process finishes, so views load again. */
@@ -79,6 +81,11 @@ export function ProcessProvider({ children }: { children: ReactNode }) {
     setChanges((c) => c + 1);
   }, []);
 
+  const report = useCallback((reportNotice: ViewNode) => {
+    setNotice(reportNotice);
+    setChanges((c) => c + 1);
+  }, []);
+
   // Runs keep going while their process waits in the dock: follow them so the dock shows how they are doing.
   const dockedRuns = state.docked.filter((p) => p.run && p.progress.status === undefined).map((p) => `${p.id} ${p.run}`).join('|');
   useEffect(() => {
@@ -110,8 +117,8 @@ export function ProcessProvider({ children }: { children: ReactNode }) {
   }, [client, principal, dockedRuns]);
 
   const value = useMemo(
-    () => ({ front: state.front, docked: state.docked, open, minimize, restore, close, finish, update, notice, changes }),
-    [state, open, minimize, restore, close, finish, update, notice, changes],
+    () => ({ front: state.front, docked: state.docked, open, minimize, restore, close, finish, update, report, notice, changes }),
+    [state, open, minimize, restore, close, finish, update, report, notice, changes],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

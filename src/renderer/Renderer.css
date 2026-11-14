@@ -1,0 +1,47 @@
+/* Openable cards (design system spec 4.4). Tokens only, no raw colors (design system spec, rule 2). */
+
+/* A card that opens its object can be chosen anywhere but its buttons. */
+.app-openable-card {
+  cursor: pointer;
+}
+
+.app-openable-card:hover {
+  border-color: var(--pf-t--global--border--color--hover);
+}
+
+/* Its title is its button: it reads as the card's heading, not as a link, until it is pointed at or focused. */
+.app-card-open.pf-v6-c-button {
+  --pf-v6-c-button--m-link--m-inline--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--hover--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--m-clicked--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--TextDecorationLine: none;
+  --pf-v6-c-button--m-link--m-inline--FontSize: inherit;
+  --pf-v6-c-button--m-link--m-inline--FontWeight: inherit;
+  --pf-v6-c-button--m-link--m-inline--LineHeight: inherit;
+  text-align: start;
+}
+
+/* A chosen card shows it by its border as well as its check (design system spec 4.3). */
+.app-openable-card.app-card-chosen {
+  outline: var(--pf-t--global--border--width--strong) solid var(--pf-t--global--border--color--status--success--default);
+  outline-offset: calc(var(--pf-t--global--border--width--strong) * -1);
+}
+
+/* An object table keeps each cell on one line, and scrolls sideways inside itself when wide (design system spec 4.3). */
+.app-object-table th,
+.app-object-table td {
+  white-space: nowrap;
+}
+
+/* The title, an inline link button, stays on one line too; PatternFly's own inline-link rule would let it wrap. */
+.app-object-table .pf-v6-c-button.pf-m-link.pf-m-inline,
+.app-object-table .pf-v6-c-button.pf-m-link.pf-m-inline .pf-v6-c-button__text {
+  white-space: nowrap;
+}
+
+/* On phones a pinned actions column would hide most of the row, so below md it scrolls with the rest. */
+@media (max-width: 767px) {
+  .app-object-table .pf-v6-c-table__sticky-cell {
+    position: static;
+  }
+}

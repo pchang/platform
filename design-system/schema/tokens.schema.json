@@ -45,7 +45,7 @@
               "properties": {
                 "name": {
                   "type": "string",
-                  "pattern": "^--pf-t--(global|chart)--[a-z0-9-]+$"
+                  "pattern": "^--pf-t--(global|chart)--[a-zA-Z0-9-]+$"
                 },
                 "use": {
                   "type": "string",

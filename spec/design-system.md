@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.21. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.29. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -21,10 +21,11 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 
 ### Visual style
 
-The platform uses PatternFly's default visual style, with one change: the typeface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
+The platform uses PatternFly's default visual style, with two changes: the typeface and the card surface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
 
 - **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
 - Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
+- **Card surface.** Three surfaces step evenly: the outer chrome (masthead and sidebar) on PatternFly's secondary background, the content area halfway between secondary and primary, and cards on primary. The content area has no border of its own. Cards carry a shadow subtler than PatternFly's small one: its 1px offset, half its blur, and its color at half the opacity. Every value is a PatternFly token or mixed from tokens, so dark mode follows: there the chrome is darkest and cards lightest.
 
 ### Packages
 
@@ -97,6 +98,8 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Masthead, right | The search field, then notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
+The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
+
 All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
@@ -120,21 +123,54 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
-Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its badge shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
+Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its button is a plain icon button like Settings and Profile, with no frame; a badge on it shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
 
 Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
 
 ### 4.3 To do and object lists
 
-To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card leads with the object's identifier and type in small text, such as "AE-005 · Adverse Event", then its title from the ontology as the card's heading, such as "Fever and cough; admitted to hospital with pneumonia". Then its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
+To do, the list of a type's objects and the search page are object lists (pattern `card-view`), composed as view specs and drawn by the renderer. Each shows its objects as cards or as a list, the person's choice. Each card leads with the object's identifier and type in small text, such as "AE-005 · Adverse Event", then its title from the ontology as the card's heading, such as "Fever and cough; admitted to hospital with pneumonia". Then its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The To do summary** sits above the cards, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content:
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
-- **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
-- **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
+- **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
+  - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
+  - Beside it, how many are chosen, such as "3 selected".
+  - Its menu offers Select all, with how many there are, and Select none.
+- **At its end,** a compact toggle between Cards and List, as icon buttons with those names. The choice is kept on the device and applies to every object list.
+- **Cards.**
+  - Before selecting, the bar's start holds one Select link, the word "Select". Choosing it starts select mode: each card shows its select control, and the bar shows the same selection control and batch actions as List, and a Done link at the bar's end, before the view toggle and apart from the actions, that ends select mode and clears the choice. Once in select mode, Cards and List work the same way.
+  - In select mode, each card shows a round select control at its top right: an empty circle, or a green check when chosen. It is a checkbox named "Select" and the object's title.
+  - Choosing anywhere on a card, except its buttons, chooses it, rather than opening it. The card's title still opens the object.
+  - A chosen card's border shows it is chosen, as well as its check.
+- **List.** A table, PatternFly's Table. The selection control is always there.
+  - Columns, in order: a checkbox, named "Select" and the row's identifier; Identifier; Title, a button that opens the object; Type, only when the list holds more than one type; Attention, the status labels (deadline, urgency and runs in progress), shown only when some listed object has one, and named so it never clashes with a state dimension named Status; then one column per state dimension the listed objects have, headed by the dimension's name, such as Workflow or Causality, with each value in plain text, and empty where the object's type has no such dimension; and last the row's actions.
+  - The lifecycle dimension comes first among the state columns, then the rest by name.
+  - Actions: a column pinned to the end of the row, behind a thin border, so it stays in view while a wide table scrolls under it; on phones, below md, it scrolls with the row, since pinned it would hide most of it. One method raised to the row, the first task waiting or else the first method available, and the rest in a "…" menu, named "More actions for" the object's identifier.
+  - Cells keep their content on one line, with PatternFly's default, roomy cell padding, on the content area's white table surface. When the table is wider than the content area, it scrolls sideways inside itself; the page never does. It stays a table on phones.
+- **Batch actions.** Once one or more objects are chosen, in either view, a thin divider follows the selection control, then the methods every chosen object has available that run for many (platform spec 5.4), as plain text buttons. The first three are shown; the rest are in a "…" menu named "More actions for the selected". When none applies to all of them, it says so, quietly.
+  - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects, gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons.
+  - Commit runs only the objects that would succeed, one commit each.
+  - The outcome names each object, those changed and those refused, and the choice is cleared.
+  - A batch is not set aside in the dock.
+
+**The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
+
+### 4.4 The object panel
+
+Every object opens in a side panel (platform spec 5.1, Within an object). It is the Choose step's primary-detail pattern: PatternFly's Drawer, its panel over the content area.
+
+- **Opening.** A click anywhere on a card opens its object, except on the card's buttons. The card's title is also a button, so keyboard and screen reader users open it the same way. Cards and linked objects inside the panel open the same way, and so do search results.
+- **Size.** The panel slides in from the right and takes three quarters of the content area from lg up, and all of it below. From lg up, Expand widens it to the whole content area and Restore returns it; the choice is kept on the device. The masthead, the sidebar and the process dock stay in reach, and choosing another card behind the panel opens that object in its place.
+- **Top bar.** Back, a left arrow named "Back to" the previous object's identifier, once the person has moved in. Expand or Restore. Close, an X at the top right, which closes the whole panel; Escape does too. Focus moves to the object's heading as the panel opens, and back to the card that opened it as the panel closes.
+- **Moving in.** Opening a related object slides the current one out to the left as the new one slides in from the right. Back reverses it. The slide is timed by PatternFly's motion tokens; with reduced motion asked for, the content changes without moving.
+- **Header.** The identifier and type in small text, the title as the panel's heading, the state as labels, the deadline and urgency as status labels, and the methods the person can run now as buttons. Running one opens its process as from a card. While a page pattern, such as Compare and decide, is in front, the panel steps aside; after any commit it shows the object as it now is.
+- **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
+  - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
+  - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as cards like an object list, each with the methods the person can run on it, or says there are none yet.
 
 ### 4.2 Light and dark mode
 
@@ -360,3 +396,11 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |
 | 0.20 | 2026-11-13 | Search moves from the sidebar to the masthead, left of the icon buttons; below md it is an icon button that opens the field under the masthead. Matches show in a raised panel. More space above the dock's heading. |
 | 0.21 | 2026-11-14 | Inter replaces the Red Hat typefaces for headings and body, through PatternFly's two font-family tokens, bundled rather than loaded from a font service. |
+| 0.22 | 2026-11-14 | Card surface: the content area takes PatternFly's secondary background and cards a small shadow, for more contrast between cards and the page. |
+| 0.23 | 2026-11-14 | Card surface made subtler: the content area halfway between the chrome's gray and the card surface, no border around it, and a lighter, shallower card shadow. |
+| 0.24 | 2026-11-14 | The menu button is two lines that turn into an X while the sidebar is open, instead of PatternFly's hamburger with an arrow. |
+| 0.25 | 2026-11-14 | Added the object panel (4.4): cards open their object in a side panel, three quarters of the content area and expandable to all of it, with a header of identity, state and methods, then tabs for the overview and each many-valued relationship end. Moving in slides the current object out; Back steps out one at a time; Close ends the panel. |
+| 0.26 | 2026-11-14 | Notifications is a plain icon button like Settings and Profile. Object lists show cards or a list, with a list bar: select mode with a round select control on cards, checkboxes on rows, one raised method per row and the rest in a … menu, and batch actions for the methods every chosen object has. The To do summary is its count tiles only. |
+| 0.27 | 2026-11-14 | The list bar follows Gmail's: PatternFly's bulk select checkbox with its menu and count at the start, the chosen objects' actions as plain buttons after a divider, extras in a … menu, and the view toggle at the end. Select and Done selecting are icon buttons. |
+| 0.28 | 2026-11-14 | The list view is a table: checkbox, identifier, title, type when mixed, status labels, one column per state dimension with plain values, and actions. Wide tables scroll sideways inside themselves. |
+| 0.29 | 2026-11-14 | Card view's select mode starts from a Select link and ends with a Done link; between them the bar is the same as List's. |

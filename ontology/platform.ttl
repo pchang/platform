@@ -482,6 +482,24 @@ p:pluralLabel a rdf:Property ;
   rdfs:domain p:ObjectType ;
   rdfs:range xsd:string .
 
+p:inverseLabel a rdf:Property ;
+  rdfs:label "inverse label" ;
+  rdfs:comment "How a relationship reads from the object at its other end, as a verb phrase that completes \"this object ... these objects\": a study \"enrolls\" its patients, a product \"is named in\" its safety cases (platform spec 3.1)." ;
+  rdfs:domain p:Relationship ;
+  rdfs:range xsd:string .
+
+p:partOf a rdf:Property ;
+  rdfs:label "part of" ;
+  rdfs:comment "True when the subject of the relationship is part of its object, such as a visit of the patient it is for. The object then contains the subject (platform spec 5.1, Within an object)." ;
+  rdfs:domain p:Relationship ;
+  rdfs:range xsd:boolean .
+
+p:hasPart a rdf:Property ;
+  rdfs:label "has part" ;
+  rdfs:comment "True when the object of the relationship is part of its subject, such as an assay result of the experiment that produced it (platform spec 5.1, Within an object)." ;
+  rdfs:domain p:Relationship ;
+  rdfs:range xsd:boolean .
+
 p:runsInBackground a rdf:Property ;
   rdfs:label "runs in background" ;
   rdfs:comment "True when the method starts work that finishes later, such as a computation." ;

@@ -21,3 +21,40 @@ html body {
   font-weight: var(--pf-t--global--font--weight--body--default);
   line-height: var(--pf-t--global--font--line-height--body);
 }
+
+/*
+ * Card surface (design system spec 1, Visual style): three surfaces in even steps, from tokens only, so dark mode
+ * follows. The chrome keeps PatternFly's secondary background; the content area is halfway between it and the card
+ * surface, with no border; cards carry a shadow subtler than PatternFly's small one.
+ */
+.pf-v6-c-page.app-page {
+  --app-content--BackgroundColor: color-mix(
+    in srgb,
+    var(--pf-t--global--background--color--secondary--default),
+    var(--pf-t--global--background--color--primary--default)
+  );
+  --pf-v6-c-page__main-container--BackgroundColor: var(--app-content--BackgroundColor);
+}
+
+/* A sticky list bar takes the content area's own surface, so it reads as part of the page, not a strip over it. */
+.app-page .pf-v6-c-toolbar.pf-m-sticky {
+  --pf-v6-c-toolbar--m-sticky--BackgroundColor: var(--app-content--BackgroundColor);
+  /* Low, like Gmail's: just enough room for its controls (design system spec 4.3). */
+  --pf-v6-c-toolbar--m-sticky--PaddingBlockStart: var(--pf-t--global--spacer--xs);
+  --pf-v6-c-toolbar--m-sticky--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
+}
+
+.app-page .pf-v6-c-page__main-container {
+  border-width: 0;
+}
+
+/* The content's own section lets the content area show through. */
+.pf-v6-c-page__main-section.app-content {
+  --pf-v6-c-page__main-section--BackgroundColor: transparent;
+}
+
+/* PatternFly's small shadow at half the blur and half the opacity. Plain cards have no surface, so no shadow. */
+html body .pf-v6-c-card:not(.pf-m-plain) {
+  box-shadow: 0 var(--pf-t--global--box-shadow--Y--500) calc(var(--pf-t--global--box-shadow--blur--sm) / 2) 0
+    color-mix(in srgb, var(--pf-t--global--box-shadow--color--sm--default) 50%, transparent);
+}

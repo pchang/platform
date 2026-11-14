@@ -81,8 +81,8 @@ describe('Compare and decide (design system spec 5.1)', () => {
     object,
     inputs: [{ name: 'candidateCase', label: 'Candidate case', kind: 'object', choices: [{ value: 'urn:sc6', label: 'SC-006' }] }],
   };
-  const self = { ...object, state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-05' }, links: [] };
-  const other = { ...object, iri: 'urn:sc6', identifier: 'SC-006', state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-07' }, links: [] };
+  const self = { ...object, state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-05' }, links: [], domainLabel: 'Safety and Regulatory', urgency: 0 };
+  const other = { ...object, iri: 'urn:sc6', identifier: 'SC-006', state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-07' }, links: [], domainLabel: 'Safety and Regulatory', urgency: 0 };
 
   it.each([
     ['before a case is chosen', buildCompareView(flag, { status: 'incomplete' }, self, undefined)],

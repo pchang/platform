@@ -38,6 +38,9 @@ function checkNode(node: ViewNode, at: string): string[] {
   if (!entry) return [`${at} unknown component "${node.component}"`];
 
   const errors: string[] = [];
+  if (node.opens && entry.id !== 'Card' && entry.id !== 'Button') errors.push(`${at} only a Card or a Button opens an object`);
+  if (node.selects && entry.id !== 'Card' && entry.id !== 'Tr') errors.push(`${at} only a Card or a table row chooses an object`);
+  if (node.batch && entry.id !== 'Button' && entry.id !== 'DropdownItem') errors.push(`${at} only a Button or a DropdownItem runs a batch action`);
   const validateProps = propsValidator(entry.id);
   if (!validateProps(node.props ?? {})) errors.push(...ajvErrors(validateProps, `${at}.props`));
 

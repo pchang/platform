@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import * as PatternFlyCharts from '@patternfly/react-charts/victory';
+import * as PatternFlyTable from '@patternfly/react-table';
 import * as PatternFly from '@patternfly/react-core';
 import { describe, expect, it } from 'vitest';
 import { catalog, componentsById, schemas, type ViewNode } from './catalog';
@@ -32,7 +33,8 @@ describe('catalog files', () => {
 
 describe.each(catalog.components.map((c) => [c.id, c] as const))('component %s', (_id, entry) => {
   it('imports a real PatternFly export', () => {
-    const pkg = entry.import.package === '@patternfly/react-charts/victory' ? PatternFlyCharts : PatternFly;
+    const packages: Record<string, object> = { '@patternfly/react-core': PatternFly, '@patternfly/react-charts/victory': PatternFlyCharts, '@patternfly/react-table': PatternFlyTable };
+    const pkg = packages[entry.import.package];
     expect(pkg).toHaveProperty(entry.import.export);
   });
 
@@ -74,7 +76,7 @@ describe('tokens', () => {
       );
     for (const file of cssFiles('src')) {
       const css = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-      for (const [, name] of css.matchAll(/var\((--pf-t--[a-z0-9-]+)\)/g)) {
+      for (const [, name] of css.matchAll(/var\((--pf-t--[a-zA-Z0-9-]+)/g)) {
         expect(catalog.tokens, `${file} uses ${name}`).toContain(name);
       }
       expect(css, `${file} has a raw color`).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);

@@ -30,7 +30,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
     'describe_ontology',
     {
       title: 'Describe the ontology',
-      description: 'Object types you may read, with their state dimensions and values, and the methods on each with their inputs.',
+      description: 'Object types you may read, with their state dimensions and values, the methods on each with their inputs, and their relationships read both ways: what each contains, is part of or is related to, and which hold at most one object.',
       annotations: { readOnlyHint: true },
     },
     () => result(() => gateway.describe(principal)),
@@ -79,7 +79,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
     'read_object',
     {
       title: 'Read an object',
-      description: 'An object by identifier, such as "SC-003": its state, links and properties, as your role may see them.',
+      description: 'An object by identifier, such as "SC-003": its title, state, properties and last change, and every relationship end with the objects at the other end, contained objects first, as your role may see them.',
       inputSchema: { id: z.string() },
       annotations: { readOnlyHint: true },
     },

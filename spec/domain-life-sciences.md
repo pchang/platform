@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.14. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.21.
+Version 0.16. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.23.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -81,6 +81,7 @@ Covers a clinical trial from design to locked data.
 | Type | What it is | State dimensions |
 |---|---|---|
 | Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
+| Protocol | The plan a study is conducted under: its objectives, design, eligibility and schedule of assessments. Each version is its own protocol, with its version number, primary objective, planned enrollment and the date it came into force; an amendment is a new version that amends the one before it, with a summary of what it changes | Status: draft, in review, approved, superseded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
 | Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: unassigned, assigned. Arm visibility: hidden, revealed. The assigned arm itself is hidden while the study is blinded (rule 2). |
 | Visit | A scheduled encounter with a patient. Has the date it is scheduled for, a deadline, and why it was missed if it was | Status: scheduled, completed, missed. |
@@ -91,6 +92,7 @@ Covers a clinical trial from design to locked data.
 ### 3.2 Relationships
 
 - Study **tests** Formulation (cross-domain).
+- Study **conducted under** Protocol: the version in force. Protocol **amends** Protocol: each amendment, the version before it.
 - Study **runs at** Site. Patient **enrolled in** Study. Patient **enrolled at** Site.
 - Patient **receives** Batch (cross-domain, via study drug supply).
 - Visit **for** Patient. Data Record **captured at** Visit.
@@ -117,6 +119,9 @@ Covers a clinical trial from design to locked data.
 | Reconcile adverse event | Adverse Event | None | Reported to safety, and a Safety Case originates from it | Reporting: reconciled. The person confirms the event and its case agree: seriousness, dates and outcome (SAE reconciliation) |
 | Unblind patient | Patient | Justification | Study is blinded, arm is hidden, and rule 2 allows it | Arm visibility: revealed, for this patient only. Logged with its justification |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
+| Send protocol for review | Protocol | None | Status is draft | Status: in review |
+| Approve protocol | Protocol | Electronic signature (approval) | Status is in review | Status: approved. The version it amends: superseded. Moves the studies the amended version governs to this version |
+| Amend protocol | Protocol | What the amendment changes | Status is approved, and no amendment of it is in progress | Creates a Protocol in draft that amends this one, with the summary |
 
 ---
 
@@ -199,7 +204,7 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Computational Chemist | Scientific Innovation | Find a better compound | Run simulations, generate analogs, register and promote compounds | See patient-level clinical data |
 | Clinical Research Coordinator | Clinical Development | Run the study well at their site | Consent and randomize patients, complete visits or record them as missed, record data and adverse events, answer queries | Verify data. Close queries. See unblinded arms |
 | Clinical Research Associate | Clinical Development | Make sure site data match their sources | Verify data records and adverse events against source documents, raise queries | Enter or change site data. Answer queries. See unblinded arms |
-| Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise, close and re-query queries, report adverse events to safety and reconcile them with their safety cases, lock studies | See unblinded arms. Change safety assessments |
+| Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise, close and re-query queries, report adverse events to safety and reconcile them with their safety cases, lock studies, and send, approve and amend protocol versions | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
 
@@ -213,7 +218,7 @@ The same object must look different to each persona. A Batch is a production rec
 
 These make To do work for this domain (platform spec section 5.1).
 
-- **On-demand methods**, which a person chooses to run rather than work waiting: Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
+- **On-demand methods**, which a person chooses to run rather than work waiting: Amend protocol, Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
 - **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
 - **Deadlines:** a submission's due date, and the date a visit is scheduled for.
 
@@ -225,6 +230,7 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 |---|---|---|
 | Sign experiment | Experiment | Review and sign |
 | Submit | Submission | Review and sign |
+| Approve protocol | Protocol | Review and sign |
 | Run signal detection | Product | Start and track |
 | Run simulation | Compound | Start and track |
 | Flag duplicate | Safety Case | Compare and decide |
@@ -260,6 +266,8 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Verify adverse event | Adverse Event | Confirm |
 | Verify data record | Data Record | Confirm |
 | Evaluate signal | Signal | Confirm |
+| Send protocol for review | Protocol | Confirm |
+| Amend protocol | Protocol | Fill in |
 | Lock study | Study | Confirm |
 | Prepare expedited report | Safety Case | Confirm |
 | Randomize | Patient | Confirm |
@@ -337,6 +345,7 @@ The domain is written in the platform's ontology format (platform spec section 3
   | Process | Manufacturing process for the formulation | Manufacturing process for Velcorin 25 mg film-coated tablet |
   | Batch | Lot number | Lot VL25-2410-02 |
   | Study | Short name and title | VELOCITY-2: Velcorin in moderate to severe rheumatoid arthritis |
+  | Protocol | Name and version, or "Amendment to" the version it amends | VELOCITY-2 protocol, version 2.0 |
   | Site | Its name | Northfield General Hospital |
   | Patient | Patient at the site, never a name | Patient at St. Brendan's University Hospital |
   | Visit | Visit name for the patient's identifier | Week 12 visit for PT-03 |
@@ -352,6 +361,36 @@ The domain is written in the platform's ontology format (platform spec section 3
   | Medical Inquiry | The question | Rash and nausea in the first week of Velcorin: report or wait? |
 
   Methods that create objects record what the person typed where a title needs it: the model type, the query's question, the quality event's description and the CAPA's action.
+- **Relationships.** Each relationship reads both ways, as verb phrases that complete "this object ... these objects", says which end is part of the other, and, where the domain is certain, says that an object links to at most one object along it (platform spec section 3.1). From these, every object's panel takes its tabs: a study's Sites and Patients, a patient's Visits and Adverse Events, a data record's Data Queries (platform spec section 5.1, Within an object).
+
+  | Relationship | From → To | Reads back as | Containment | At most |
+  |---|---|---|---|---|
+  | predicts | Simulation → Compound | is predicted by | Related only | one compound |
+  | tests | Experiment → Compound; Study → Formulation | is tested in | Related only | Many |
+  | produces | Experiment → Assay Result | is produced by | The assay result is part of the experiment | Many |
+  | contains | Formulation → Compound | is contained in | Related only | Many |
+  | manufactures | Process → Formulation | is manufactured by | Related only | one formulation |
+  | follows | Batch → Process | is followed by | Related only | one process |
+  | derived from | Compound → Compound | is the source of | Related only | one parent |
+  | runs at | Study → Site | hosts | Related only | Many |
+  | conducted under | Study → Protocol | governs | Related only | one protocol |
+  | amends | Protocol → Protocol | is amended by | Related only | one version |
+  | enrolled in | Patient → Study | enrolls | The patient is part of the study | one study |
+  | enrolled at | Patient → Site | enrolls | Related only | one site |
+  | receives | Patient → Batch | is received by | Related only | Many |
+  | for | Visit → Patient | has | The visit is part of the patient's record | one patient |
+  | captured at | Data Record → Visit | captures | The data record is part of the visit | one visit |
+  | raised on | Data Query → Data Record; Quality Event → Batch | has | The query is part of the data record; the quality event is part of the batch's record | one data record; one batch |
+  | experienced by | Adverse Event → Patient | experienced | The adverse event is part of the patient's record | one patient |
+  | originates from | Safety Case → Adverse Event or Medical Inquiry | is the source of | Related only | one source |
+  | concerns | Safety Case → Product; Signal → Product | is named in | Related only | one product, for a signal |
+  | is | Product → Formulation | is marketed as | Related only | one formulation |
+  | may involve | Safety Case → Batch | may be involved in | Related only | Many |
+  | aggregates | Signal → Safety Case | is aggregated in | Related only | Many |
+  | reports | Submission → Safety Case or Signal | is reported in | Related only | Many |
+  | resolves | CAPA → Quality Event | is resolved by | The CAPA is part of the quality event | one quality event |
+  | duplicate of | Safety Case → Safety Case | is duplicated by | Related only | one case |
+
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
@@ -418,6 +457,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - One research program with 5 compounds, including 1 candidate and 2 analogs.
 - 1 formulation of the candidate, 1 validated process and 3 batches. One batch has high deviation risk.
 - 1 blinded Phase II study, enrolling, at 3 sites with 12 patients and 2 arms: 10 randomized, 1 consented, 1 screened.
+- The study's protocol in three versions: 1.0 superseded, 2.0 approved and in force, and 3.0, a draft amendment that adds a Week 16 safety visit and waits to be sent for review.
 - 30 visits: 2 completed for each randomized patient, and a third scheduled around November 12, 2026, two of them overdue.
 - 40 data records: 14 entered and awaiting source data verification, the rest verified. 8 queries: 3 open, 3 answered, 2 closed.
 - 5 adverse events: 2 reported to safety and awaiting reconciliation, 1 serious and not yet reported (J1), and 2 new from the site awaiting verification, one of them serious.
@@ -479,3 +519,5 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.12 | 2026-11-12 | Generate narrative is declared as a drafting effect with its instructions; accepting the draft sets the case's narrative. Generate analogs is refused until a generative chemistry model is connected. |
 | 0.13 | 2026-11-12 | Added the Clinical Research Coordinator and Clinical Research Associate personas. New clinical methods: Complete visit, Record missed visit, Record data, Record adverse event, Verify data record, Verify adverse event, Re-query and Reconcile adverse event. Visits are scheduled with deadlines; adverse events carry verbatim terms and can be reconciled. The seed fleshes out clinical work for each clinical role. Two open questions. |
 | 0.14 | 2026-11-13 | Every type titles its objects from a template (section 9), and the seed carries the names they need: compounds, products, the study, sites, lots, visits, queries and inquiries. Methods that create objects record the text their titles use. |
+| 0.15 | 2026-11-14 | Relationships read both ways, with containment and at-most-one ends where the domain is certain (section 9), so every object opens with its overview and tabs. |
+| 0.16 | 2026-11-14 | Added Protocol to Clinical Development, mapped to NCIt Study Protocol (C70817): versions with a status lifecycle, conducted under by a study and amended by the next version, with Send protocol for review, Approve protocol (signed) and Amend protocol (on demand), run by the Clinical Data Manager. The seed carries VELOCITY-2's protocol in three versions. Added by ontology and seed alone. |

@@ -41,6 +41,8 @@ import {
   Stack,
   StackItem,
   Switch,
+  Tab,
+  Tabs,
   TextArea,
   TextInput,
   Title,
@@ -48,8 +50,17 @@ import {
   Wizard,
   WizardHeader,
   WizardStep,
+  Dropdown,
+  DropdownItem,
+  ToggleGroup,
+  ToggleGroupItem,
+  Toolbar,
+  ToolbarContent,
+  ToolbarGroup,
+  ToolbarItem,
 } from '@patternfly/react-core';
 import { Chart, ChartBar, ChartStack } from '@patternfly/react-charts/victory';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { ComponentType } from 'react';
 
 /**
@@ -102,6 +113,8 @@ export const library = {
   Stack,
   StackItem,
   Switch,
+  Tab,
+  Tabs,
   TextArea,
   TextInput,
   Title,
@@ -109,4 +122,18 @@ export const library = {
   Wizard,
   WizardHeader,
   WizardStep,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  Dropdown,
+  DropdownItem,
+  ToggleGroup,
+  ToggleGroupItem,
+  Toolbar,
+  ToolbarContent,
+  ToolbarGroup,
+  ToolbarItem,
 } as unknown as Record<string, ComponentType<Record<string, unknown>>>;

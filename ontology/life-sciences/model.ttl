@@ -195,6 +195,21 @@ ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
   p:valuesFrom lst:StudyBlinding ;
   p:order 3 .
 
+ls:Protocol a p:ObjectType, rdfs:Class ;
+  rdfs:label "Protocol" ;
+  p:pluralLabel "Protocols" ;
+  rdfs:comment "The plan a study is conducted under: its objectives, design, eligibility and schedule of assessments. Each version is its own protocol; an amendment is a new version that amends the one before it." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:exactMatch ncit:C70817 ;
+  p:titleTemplate "{ls:protocolName}, version {ls:protocolVersion} | Amendment to {ls:amends:id}" .
+
+ls:protocolStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a protocol." ;
+  p:dimensionOf ls:Protocol ;
+  p:valuesFrom lst:ProtocolStatus ;
+  p:order 1 .
+
 ls:Site a p:ObjectType, rdfs:Class ;
   rdfs:label "Site" ;
   p:pluralLabel "Sites" ;
@@ -475,94 +490,159 @@ ls:medicalInquiryStatus a p:StateDimension, owl:ObjectProperty ;
 
 ls:predicts a p:Relationship, owl:ObjectProperty ;
   rdfs:label "predicts" ;
+  p:inverseLabel "is predicted by" ;
+  p:order 1 ;
   rdfs:comment "A simulation predicts properties of a compound." .
 
 ls:tests a p:Relationship, owl:ObjectProperty ;
   rdfs:label "tests" ;
+  p:inverseLabel "is tested in" ;
+  p:order 2 ;
   rdfs:comment "An experiment tests a compound; a study tests a formulation." .
 
 ls:produces a p:Relationship, owl:ObjectProperty ;
   rdfs:label "produces" ;
+  p:inverseLabel "is produced by" ;
+  p:order 3 ;
+  p:hasPart true ;
   rdfs:comment "An experiment produces an assay result." .
 
 ls:contains a p:Relationship, owl:ObjectProperty ;
   rdfs:label "contains" ;
+  p:inverseLabel "is contained in" ;
+  p:order 4 ;
   rdfs:comment "A formulation contains a compound." .
 
 ls:manufactures a p:Relationship, owl:ObjectProperty ;
   rdfs:label "manufactures" ;
+  p:inverseLabel "is manufactured by" ;
+  p:order 5 ;
   rdfs:comment "A process manufactures a formulation." .
 
 ls:follows a p:Relationship, owl:ObjectProperty ;
   rdfs:label "follows" ;
+  p:inverseLabel "is followed by" ;
+  p:order 6 ;
   rdfs:comment "A batch is made by following a process." .
 
 ls:derivedFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "derived from" ;
+  p:inverseLabel "is the source of" ;
+  p:order 7 ;
   rdfs:comment "A compound is an analog derived from another." .
 
 ls:runsAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "runs at" ;
+  p:inverseLabel "hosts" ;
+  p:order 8 ;
   rdfs:comment "A study runs at a site." .
+
+ls:conductedUnder a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "conducted under" ;
+  p:inverseLabel "governs" ;
+  p:order 9 ;
+  rdfs:comment "A study is conducted under the protocol version in force." .
+
+ls:amends a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "amends" ;
+  p:inverseLabel "is amended by" ;
+  p:order 10 ;
+  rdfs:comment "A protocol version amends the version before it." .
 
 ls:enrolledIn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "enrolled in" ;
+  p:inverseLabel "enrolls" ;
+  p:order 11 ;
+  p:partOf true ;
   rdfs:comment "A patient is enrolled in a study." .
 
 ls:enrolledAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "enrolled at" ;
+  p:inverseLabel "enrolls" ;
+  p:order 12 ;
   rdfs:comment "A patient is enrolled at a site." .
 
 ls:receives a p:Relationship, owl:ObjectProperty ;
   rdfs:label "receives" ;
+  p:inverseLabel "is received by" ;
+  p:order 13 ;
   rdfs:comment "A patient receives study drug from a batch." .
 
 ls:visitFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "for" ;
+  p:inverseLabel "has" ;
+  p:order 14 ;
+  p:partOf true ;
   rdfs:comment "A visit is for a patient." .
 
 ls:capturedAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "captured at" ;
+  p:inverseLabel "captures" ;
+  p:order 15 ;
+  p:partOf true ;
   rdfs:comment "A data record is captured at a visit." .
 
 ls:raisedOn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "raised on" ;
+  p:inverseLabel "has" ;
+  p:order 16 ;
+  p:partOf true ;
   rdfs:comment "A data query is raised on a data record; a quality event on a batch." .
 
 ls:experiencedBy a p:Relationship, owl:ObjectProperty ;
   rdfs:label "experienced by" ;
+  p:inverseLabel "experienced" ;
+  p:order 17 ;
+  p:partOf true ;
   rdfs:comment "An adverse event is experienced by a patient." .
 
 ls:originatesFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "originates from" ;
+  p:inverseLabel "is the source of" ;
+  p:order 18 ;
   rdfs:comment "A safety case originates from an adverse event or a medical inquiry." .
 
 ls:concerns a p:Relationship, owl:ObjectProperty ;
   rdfs:label "concerns" ;
+  p:inverseLabel "is named in" ;
+  p:order 19 ;
   rdfs:comment "A safety case or signal concerns a product." .
 
 ls:isFormulation a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is" ;
+  p:inverseLabel "is marketed as" ;
+  p:order 20 ;
   rdfs:comment "A product is a formulation." .
 
 ls:mayInvolve a p:Relationship, owl:ObjectProperty ;
   rdfs:label "may involve" ;
+  p:inverseLabel "may be involved in" ;
+  p:order 21 ;
   rdfs:comment "A safety case may involve a batch." .
 
 ls:aggregates a p:Relationship, owl:ObjectProperty ;
   rdfs:label "aggregates" ;
+  p:inverseLabel "is aggregated in" ;
+  p:order 22 ;
   rdfs:comment "A signal aggregates safety cases." .
 
 ls:reports a p:Relationship, owl:ObjectProperty ;
   rdfs:label "reports" ;
+  p:inverseLabel "is reported in" ;
+  p:order 23 ;
   rdfs:comment "A submission reports a safety case or a signal." .
 
 ls:resolves a p:Relationship, owl:ObjectProperty ;
   rdfs:label "resolves" ;
+  p:inverseLabel "is resolved by" ;
+  p:order 24 ;
+  p:partOf true ;
   rdfs:comment "A CAPA resolves a quality event." .
 
 ls:duplicateOf a p:Relationship, owl:ObjectProperty ;
   rdfs:label "duplicate of" ;
+  p:inverseLabel "is duplicated by" ;
+  p:order 25 ;
   rdfs:comment "A safety case duplicates another." .
 
 ls:reaction a owl:ObjectProperty ;
@@ -601,6 +681,30 @@ ls:studyTitle a owl:DatatypeProperty ;
 ls:siteName a owl:DatatypeProperty ;
   rdfs:label "name" ;
   rdfs:comment "The site's name." .
+
+ls:protocolName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The protocol's short name, usually the study's." .
+
+ls:protocolVersion a owl:DatatypeProperty ;
+  rdfs:label "version" ;
+  rdfs:comment "The protocol's version number, such as 2.0." .
+
+ls:primaryObjective a owl:DatatypeProperty ;
+  rdfs:label "primary objective" ;
+  rdfs:comment "What the study must show, as the protocol states it." .
+
+ls:plannedEnrollment a owl:DatatypeProperty ;
+  rdfs:label "planned enrollment" ;
+  rdfs:comment "How many patients the protocol plans to enroll." .
+
+ls:effectiveOn a owl:DatatypeProperty ;
+  rdfs:label "effective on" ;
+  rdfs:comment "The date the version came into force." .
+
+ls:amendmentSummary a owl:DatatypeProperty ;
+  rdfs:label "amendment summary" ;
+  rdfs:comment "What an amendment changes, and why." .
 
 ls:visitName a owl:DatatypeProperty ;
   rdfs:label "visit" ;
@@ -686,6 +790,7 @@ lsh:Compound-registration a sh:PropertyShape ;
 lsh:Compound-derivedFrom a sh:PropertyShape ;
   sh:path ls:derivedFrom ;
   sh:class ls:Compound ;
+  sh:maxCount 1 ;
   sh:name "derived from" .
 
 lsh:Compound-compoundName a sh:PropertyShape ;
@@ -718,6 +823,7 @@ lsh:Simulation-review a sh:PropertyShape ;
 lsh:Simulation-predicts a sh:PropertyShape ;
   sh:path ls:predicts ;
   sh:class ls:Compound ;
+  sh:maxCount 1 ;
   sh:name "predicts" .
 
 lsh:Simulation-modelType a sh:PropertyShape ;
@@ -828,6 +934,7 @@ lsh:Process-status a sh:PropertyShape ;
 lsh:Process-manufactures a sh:PropertyShape ;
   sh:path ls:manufactures ;
   sh:class ls:Formulation ;
+  sh:maxCount 1 ;
   sh:name "manufactures" .
 
 lsh:Process a sh:NodeShape ;
@@ -860,6 +967,7 @@ lsh:Batch-deviationRisk a sh:PropertyShape ;
 lsh:Batch-follows a sh:PropertyShape ;
   sh:path ls:follows ;
   sh:class ls:Process ;
+  sh:maxCount 1 ;
   sh:name "follows" .
 
 lsh:Batch-lotNumber a sh:PropertyShape ;
@@ -905,6 +1013,12 @@ lsh:Study-runsAt a sh:PropertyShape ;
   sh:class ls:Site ;
   sh:name "runs at" .
 
+lsh:Study-conductedUnder a sh:PropertyShape ;
+  sh:path ls:conductedUnder ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "conducted under" .
+
 lsh:Study-studyTitle a sh:PropertyShape ;
   sh:path ls:studyTitle ;
   sh:datatype xsd:string ;
@@ -913,7 +1027,64 @@ lsh:Study-studyTitle a sh:PropertyShape ;
 
 lsh:Study a sh:NodeShape ;
   sh:targetClass ls:Study ;
-  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-studyTitle .
+  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-conductedUnder, lsh:Study-studyTitle .
+
+lsh:Protocol-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Protocol-status a sh:PropertyShape ;
+  sh:path ls:protocolStatus ;
+  sh:in ( lst:ProtocolStatus-draft lst:ProtocolStatus-inReview lst:ProtocolStatus-approved lst:ProtocolStatus-superseded ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Protocol-amends a sh:PropertyShape ;
+  sh:path ls:amends ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "amends" .
+
+lsh:Protocol-protocolName a sh:PropertyShape ;
+  sh:path ls:protocolName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Protocol-protocolVersion a sh:PropertyShape ;
+  sh:path ls:protocolVersion ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "version" .
+
+lsh:Protocol-primaryObjective a sh:PropertyShape ;
+  sh:path ls:primaryObjective ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "primary objective" .
+
+lsh:Protocol-plannedEnrollment a sh:PropertyShape ;
+  sh:path ls:plannedEnrollment ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "planned enrollment" .
+
+lsh:Protocol-effectiveOn a sh:PropertyShape ;
+  sh:path ls:effectiveOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "effective on" .
+
+lsh:Protocol-amendmentSummary a sh:PropertyShape ;
+  sh:path ls:amendmentSummary ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "amendment summary" .
+
+lsh:Protocol a sh:NodeShape ;
+  sh:targetClass ls:Protocol ;
+  sh:property lsh:Protocol-identifier, lsh:Protocol-status, lsh:Protocol-amends, lsh:Protocol-protocolName, lsh:Protocol-protocolVersion, lsh:Protocol-primaryObjective, lsh:Protocol-plannedEnrollment, lsh:Protocol-effectiveOn, lsh:Protocol-amendmentSummary .
 
 lsh:Site-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -968,11 +1139,13 @@ lsh:Patient-armVisibility a sh:PropertyShape ;
 lsh:Patient-enrolledIn a sh:PropertyShape ;
   sh:path ls:enrolledIn ;
   sh:class ls:Study ;
+  sh:maxCount 1 ;
   sh:name "enrolled in" .
 
 lsh:Patient-enrolledAt a sh:PropertyShape ;
   sh:path ls:enrolledAt ;
   sh:class ls:Site ;
+  sh:maxCount 1 ;
   sh:name "enrolled at" .
 
 lsh:Patient-receives a sh:PropertyShape ;
@@ -1004,6 +1177,7 @@ lsh:Visit-status a sh:PropertyShape ;
 lsh:Visit-visitFor a sh:PropertyShape ;
   sh:path ls:visitFor ;
   sh:class ls:Patient ;
+  sh:maxCount 1 ;
   sh:name "for" .
 
 lsh:Visit-visitName a sh:PropertyShape ;
@@ -1048,6 +1222,7 @@ lsh:DataRecord-source a sh:PropertyShape ;
 lsh:DataRecord-capturedAt a sh:PropertyShape ;
   sh:path ls:capturedAt ;
   sh:class ls:Visit ;
+  sh:maxCount 1 ;
   sh:name "captured at" .
 
 lsh:DataRecord-recordedValue a sh:PropertyShape ;
@@ -1074,6 +1249,7 @@ lsh:DataQuery-status a sh:PropertyShape ;
 lsh:DataQuery-raisedOn a sh:PropertyShape ;
   sh:path ls:raisedOn ;
   sh:class ls:DataRecord ;
+  sh:maxCount 1 ;
   sh:name "raised on" .
 
 lsh:DataQuery-queryText a sh:PropertyShape ;
@@ -1118,6 +1294,7 @@ lsh:AdverseEvent-reporting a sh:PropertyShape ;
 lsh:AdverseEvent-experiencedBy a sh:PropertyShape ;
   sh:path ls:experiencedBy ;
   sh:class ls:Patient ;
+  sh:maxCount 1 ;
   sh:name "experienced by" .
 
 lsh:AdverseEvent-verbatimTerm a sh:PropertyShape ;
@@ -1162,6 +1339,7 @@ lsh:SafetyCase-causality a sh:PropertyShape ;
 lsh:SafetyCase-originatesFrom a sh:PropertyShape ;
   sh:path ls:originatesFrom ;
   sh:or ( lsh:IsAdverseEvent lsh:IsMedicalInquiry ) ;
+  sh:maxCount 1 ;
   sh:name "originates from" .
 
 lsh:SafetyCase-concerns a sh:PropertyShape ;
@@ -1177,6 +1355,7 @@ lsh:SafetyCase-mayInvolve a sh:PropertyShape ;
 lsh:SafetyCase-duplicateOf a sh:PropertyShape ;
   sh:path ls:duplicateOf ;
   sh:class ls:SafetyCase ;
+  sh:maxCount 1 ;
   sh:name "duplicate of" .
 
 lsh:SafetyCase-reaction a sh:PropertyShape ;
@@ -1214,6 +1393,7 @@ lsh:Product-status a sh:PropertyShape ;
 lsh:Product-isFormulation a sh:PropertyShape ;
   sh:path ls:isFormulation ;
   sh:class ls:Formulation ;
+  sh:maxCount 1 ;
   sh:name "is" .
 
 lsh:Product-productName a sh:PropertyShape ;
@@ -1240,6 +1420,7 @@ lsh:Signal-status a sh:PropertyShape ;
 lsh:Signal-concerns a sh:PropertyShape ;
   sh:path ls:concerns ;
   sh:class ls:Product ;
+  sh:maxCount 1 ;
   sh:name "concerns" .
 
 lsh:Signal-aggregates a sh:PropertyShape ;
@@ -1315,6 +1496,7 @@ lsh:QualityEvent-severity a sh:PropertyShape ;
 lsh:QualityEvent-raisedOn a sh:PropertyShape ;
   sh:path ls:raisedOn ;
   sh:class ls:Batch ;
+  sh:maxCount 1 ;
   sh:name "raised on" .
 
 lsh:QualityEvent-eventDescription a sh:PropertyShape ;
@@ -1341,6 +1523,7 @@ lsh:CAPA-status a sh:PropertyShape ;
 lsh:CAPA-resolves a sh:PropertyShape ;
   sh:path ls:resolves ;
   sh:class ls:QualityEvent ;
+  sh:maxCount 1 ;
   sh:name "resolves" .
 
 lsh:CAPA-capaAction a sh:PropertyShape ;

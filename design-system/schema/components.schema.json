@@ -64,7 +64,8 @@
             "package": {
               "enum": [
                 "@patternfly/react-core",
-                "@patternfly/react-charts/victory"
+                "@patternfly/react-charts/victory",
+                "@patternfly/react-table"
               ]
             },
             "export": {

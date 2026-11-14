@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.8",
+  "version": "0.12",
   "components": [
     {
       "id": "Button",
@@ -62,7 +62,11 @@
               "bell",
               "cog",
               "user",
-              "minus"
+              "minus",
+              "th-large",
+              "list",
+              "outlined-check-square",
+              "times"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -70,6 +74,10 @@
             "type": "string",
             "minLength": 1,
             "description": "The button's name when it shows only an icon"
+          },
+          "isInline": {
+            "type": "boolean",
+            "description": "Sits in a line of text, for a link button such as a linked object"
           }
         },
         "anyOf": [
@@ -297,7 +305,11 @@
               "bell",
               "cog",
               "user",
-              "minus"
+              "minus",
+              "th-large",
+              "list",
+              "outlined-check-square",
+              "times"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -2251,6 +2263,14 @@
           "isHorizontal": {
             "type": "boolean",
             "description": "Terms beside their values"
+          },
+          "termWidth": {
+            "enum": [
+              "12ch",
+              "16ch",
+              "20ch"
+            ],
+            "description": "The width of the terms, beside their values, so a term such as Expectedness fits on one line"
           }
         }
       },
@@ -4540,6 +4560,1575 @@
                       }
                     }
                   }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tabs",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Tabs"
+      },
+      "purpose": "Switches between sections of one object, such as its overview and each kind of related object.",
+      "useWhen": [
+        "An object panel's overview and its relationship ends (design system 4.4)"
+      ],
+      "avoidWhen": [
+        "Steps a person must go through in order: use Wizard",
+        "Moving to another place: use navigation"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the tabs switch between, such as the object they belong to"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "Tab"
+        ],
+        "minItems": 1
+      },
+      "responsive": "One row at every width; on phones the tabs scroll sideways inside the row, so the page never does.",
+      "accessibility": [
+        "A tab list: arrow keys move between tabs, and each tab's panel is labeled by its tab",
+        "Bind it to a field so the chosen tab is kept; with no value the first tab is shown"
+      ],
+      "examples": [
+        {
+          "component": "Tabs",
+          "props": {
+            "aria-label": "ST-01"
+          },
+          "field": "objectTab",
+          "children": [
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "overview",
+                "label": "Overview"
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Phase II, enrolling."
+                  }
+                }
+              ]
+            },
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "patients",
+                "label": "Patients",
+                "count": 12
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "This study enrolls these patients."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tab",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Tab"
+      },
+      "purpose": "One section of Tabs: its title, with a count when it lists objects, and its content.",
+      "useWhen": [
+        "Every section of Tabs"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "eventKey",
+          "label"
+        ],
+        "properties": {
+          "eventKey": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The tab's key, the value its Tabs field takes when it is chosen"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible title"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many objects the tab lists, shown as a badge after the title"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Its content takes the full width under the tabs.",
+      "accessibility": [
+        "The title and the count are both in the tab's name, such as \"Patients 12\""
+      ],
+      "examples": [
+        {
+          "component": "Tabs",
+          "props": {
+            "aria-label": "PT-03"
+          },
+          "children": [
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "visits",
+                "label": "Visits",
+                "count": 4
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "This patient has these visits."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Toolbar",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Toolbar"
+      },
+      "purpose": "A low bar of controls above a list: how it is shown, what is chosen and what can be done to it.",
+      "useWhen": [
+        "The list bar above object lists (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "The masthead's own toolbar, which is chrome"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isSticky": {
+            "type": "boolean",
+            "description": "Stays at the top of its scrolling area, so what is chosen and what can be done stay in view"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToolbarContent"
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "responsive": "One row that wraps onto more as space runs out.",
+      "accessibility": [
+        "Its controls keep their own names; group related ones in ToolbarGroup"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "label": "Select",
+                        "variant": "link",
+                        "isInline": true
+                      },
+                      "intent": "select"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarContent",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarContent"
+      },
+      "purpose": "The row of a Toolbar.",
+      "useWhen": [
+        "Every Toolbar"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "ToolbarGroup",
+          "ToolbarItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "Holds the toolbar's groups and items in reading order"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "2 selected"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarGroup",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarGroup"
+      },
+      "purpose": "Related items of a Toolbar, kept together.",
+      "useWhen": [
+        "Batch actions together, or the view toggle at the end"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "align": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "default": {
+                "enum": [
+                  "alignStart",
+                  "alignEnd"
+                ]
+              }
+            },
+            "description": "Where the group sits; alignEnd pushes it to the end of the row"
+          },
+          "variant": {
+            "enum": [
+              "action-group",
+              "action-group-plain"
+            ],
+            "description": "A group of buttons"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToolbarItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Its items wrap together.",
+      "accessibility": [
+        "Order follows reading order, whatever the alignment"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarGroup",
+                  "props": {
+                    "align": {
+                      "default": "alignEnd"
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "ToolbarItem",
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "Cards"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarItem",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarItem"
+      },
+      "purpose": "One control or piece of text in a Toolbar.",
+      "useWhen": [
+        "Every control in a Toolbar"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "variant": {
+            "enum": [
+              "separator"
+            ],
+            "description": "A thin divider between groups of controls"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 0
+      },
+      "responsive": "Keeps its size; the row wraps around it.",
+      "accessibility": [
+        "The control inside it is named on its own"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "label": "Clear",
+                        "variant": "link",
+                        "isInline": true
+                      },
+                      "intent": "clear-selection"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToggleGroup",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToggleGroup"
+      },
+      "purpose": "Chooses one of a few ways to show the same thing, such as cards or a list.",
+      "useWhen": [
+        "Switching an object list between Cards and List"
+      ],
+      "avoidWhen": [
+        "Choosing a value for a method: use Radio"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the group chooses, such as how objects are shown"
+          },
+          "isCompact": {
+            "type": "boolean",
+            "description": "Smaller buttons, for a low bar"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToggleGroupItem"
+        ],
+        "minItems": 2
+      },
+      "responsive": "Stays on one line.",
+      "accessibility": [
+        "Each item is a toggle button that says whether it is chosen"
+      ],
+      "examples": [
+        {
+          "component": "ToggleGroup",
+          "props": {
+            "aria-label": "Show objects as",
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "cards",
+                "icon": "th-large",
+                "aria-label": "Cards"
+              },
+              "field": "listMode"
+            },
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "list",
+                "icon": "list",
+                "aria-label": "List"
+              },
+              "field": "listMode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToggleGroupItem",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToggleGroupItem"
+      },
+      "purpose": "One choice in a ToggleGroup. Bound to a field, it is chosen while the field has its value.",
+      "useWhen": [
+        "Every choice in a ToggleGroup"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value its field takes when it is chosen"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "icon": {
+            "enum": [
+              "th-large",
+              "list"
+            ],
+            "description": "An icon from the catalog's Icon names"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Its name when it shows only an icon"
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "text": true
+            },
+            "required": [
+              "text"
+            ]
+          },
+          {
+            "properties": {
+              "icon": true,
+              "aria-label": true
+            },
+            "required": [
+              "icon",
+              "aria-label"
+            ]
+          }
+        ]
+      },
+      "children": null,
+      "responsive": "Keeps its size.",
+      "accessibility": [
+        "An icon-only item is named by aria-label, and says whether it is chosen"
+      ],
+      "examples": [
+        {
+          "component": "ToggleGroup",
+          "props": {
+            "aria-label": "Show objects as"
+          },
+          "children": [
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "cards",
+                "text": "Cards"
+              },
+              "field": "listMode"
+            },
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "list",
+                "text": "List"
+              },
+              "field": "listMode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Dropdown",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Dropdown"
+      },
+      "purpose": "A menu behind a toggle: more actions behind a … button, or PatternFly's bulk select, a checkbox split with a menu, for choosing the objects of a list.",
+      "useWhen": [
+        "A list row's methods beyond the one raised",
+        "The list bar's batch actions beyond the first three",
+        "The list bar's selection control (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "One or two actions: show them as buttons"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The … button's name, such as More actions for SC-004"
+          },
+          "toggle": {
+            "enum": [
+              "actions",
+              "bulk-select"
+            ],
+            "description": "The toggle PatternFly draws: a plain … button (actions, the default), or the bulk select checkbox with a count"
+          },
+          "checked": {
+            "enum": [
+              "none",
+              "some",
+              "all"
+            ],
+            "description": "Bulk select: how many of the listed objects are chosen. Choosing the checkbox chooses all when none are, and none otherwise"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Bulk select: how many are chosen, shown beside the checkbox when more than none"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "DropdownItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "The menu opens toward the space available.",
+      "accessibility": [
+        "The … button says whether its menu is open; arrow keys move through the items and Escape closes it",
+        "The bulk select checkbox is named for what choosing it does: Select all, or Select none"
+      ],
+      "examples": [
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "More actions for SC-004"
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Flag duplicate"
+              }
+            }
+          ]
+        },
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "Select objects",
+            "toggle": "bulk-select",
+            "checked": "some",
+            "count": 2
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Select all (8)"
+              },
+              "intent": "select-all"
+            },
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Select none"
+              },
+              "intent": "clear-selection"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DropdownItem",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DropdownItem"
+      },
+      "purpose": "One item in a Dropdown: an ontology method, a batch action on the chosen objects, or a selection intent.",
+      "useWhen": [
+        "Every action in a Dropdown"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          }
+        }
+      },
+      "children": null,
+      "responsive": "Wraps in narrow menus.",
+      "accessibility": [
+        "A menu item named by its text"
+      ],
+      "examples": [
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "More actions for Q-04"
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Close query"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Table",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Table"
+      },
+      "purpose": "Objects as rows and their facts as columns, such as an object list in List view.",
+      "useWhen": [
+        "An object list in List view (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "One object's facts: use DescriptionList"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the table holds, such as the objects of a type"
+          },
+          "variant": {
+            "enum": [
+              "compact"
+            ],
+            "description": "Less padding; the default padding reads better for object lists"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "Thead",
+          "Tbody"
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "responsive": "Stays a table at every width. When wider than its container it scrolls sideways inside itself, so the page never does.",
+      "accessibility": [
+        "A real table: headers name their columns",
+        "A row that chooses its object starts with a checkbox named \"Select\" and the row's first cell"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Thead",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Thead"
+      },
+      "purpose": "A Table's header row.",
+      "useWhen": [
+        "Every Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Tr"
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "responsive": "Scrolls sideways with its table.",
+      "accessibility": [
+        "Holds the column headers"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tbody",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Tbody"
+      },
+      "purpose": "A Table's rows.",
+      "useWhen": [
+        "Every Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Tr"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Scrolls sideways with its table.",
+      "accessibility": [
+        "One row per object"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tr",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Tr"
+      },
+      "purpose": "One row of a Table. With selects, a checkbox at its start chooses its object.",
+      "useWhen": [
+        "Every row of a Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Th",
+          "Td"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Keeps its cells on one line.",
+      "accessibility": [
+        "Its checkbox is named \"Select\" and its first cell"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Th",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Th"
+      },
+      "purpose": "A column header.",
+      "useWhen": [
+        "Every column of a Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The column's name"
+          },
+          "screenReaderText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name of a column with no visible header, such as Actions"
+          },
+          "modifier": {
+            "enum": [
+              "nowrap",
+              "fitContent",
+              "wrap",
+              "truncate"
+            ],
+            "description": "How the cell's content fits: nowrap keeps it on one line, so a wide table scrolls; fitContent sizes the column to it"
+          },
+          "isStickyColumn": {
+            "type": "boolean",
+            "description": "Stays in view while the table scrolls sideways, such as the row's actions"
+          },
+          "stickyRightOffset": {
+            "enum": [
+              "0"
+            ],
+            "description": "A sticky column at the end of the row"
+          },
+          "hasLeftBorder": {
+            "type": "boolean",
+            "description": "A thin border before a sticky end column, so it reads as apart from what scrolls under it"
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "label": true
+            },
+            "required": [
+              "label"
+            ]
+          },
+          {
+            "properties": {
+              "screenReaderText": true
+            },
+            "required": [
+              "screenReaderText"
+            ]
+          }
+        ]
+      },
+      "children": null,
+      "responsive": "Stays on one line.",
+      "accessibility": [
+        "Every column has a name, visible or for screen readers"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Td",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Td"
+      },
+      "purpose": "A cell of a Table row.",
+      "useWhen": [
+        "Every cell of a Table row"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dataLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The column the cell belongs to"
+          },
+          "isActionCell": {
+            "type": "boolean",
+            "description": "The row's actions, at the end"
+          },
+          "modifier": {
+            "enum": [
+              "nowrap",
+              "fitContent",
+              "wrap",
+              "truncate"
+            ],
+            "description": "How the cell's content fits: nowrap keeps it on one line, so a wide table scrolls; fitContent sizes the column to it"
+          },
+          "isStickyColumn": {
+            "type": "boolean",
+            "description": "Stays in view while the table scrolls sideways, such as the row's actions"
+          },
+          "stickyRightOffset": {
+            "enum": [
+              "0"
+            ],
+            "description": "A sticky column at the end of the row"
+          },
+          "hasLeftBorder": {
+            "type": "boolean",
+            "description": "A thin border before a sticky end column, so it reads as apart from what scrolls under it"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 0
+      },
+      "responsive": "Keeps its content on one line.",
+      "accessibility": [
+        "An empty cell means the object has no such value"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }

@@ -31,7 +31,7 @@ const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: {
 /** Up to this many values show as radio buttons; more as a select (design system spec 5.1). */
 const MAX_RADIOS = 5;
 
-function fieldFor(input: ComposedInput): ViewNode {
+export function fieldFor(input: ComposedInput): ViewNode {
   const group = (children: ViewNode[], role?: 'radiogroup'): ViewNode => ({
     component: 'FormGroup',
     // Radio buttons sit side by side, so each has room to be tapped (WCAG 2.2 target size).
@@ -328,7 +328,8 @@ function compareRows(view: ObjectView): Map<string, string> {
   const rows = new Map<string, string>();
   for (const [k, v] of Object.entries(view.state).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
   for (const [k, v] of Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
-  for (const l of view.links.filter((l) => l.direction === 'out')) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
+  // Ends with nothing at the other end add no row, so only what the objects record is compared.
+  for (const l of view.links.filter((l) => l.direction === 'out' && l.objects.length)) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
   return rows;
 }
 

@@ -26,10 +26,10 @@ beforeEach(() => {
   })) as unknown as typeof window.matchMedia;
 });
 
-const Masthead = () => (
+const Masthead = ({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) => (
   <AppearanceProvider>
     <PrincipalProvider fallback={null}>
-      <AppMasthead isSidebarOpen={false} onSidebarToggle={() => {}} />
+      <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
     </PrincipalProvider>
   </AppearanceProvider>
 );
@@ -39,6 +39,15 @@ describe('AppMasthead', () => {
     render(<Masthead />);
     const logo = await screen.findByRole('link', { name: product.name });
     expect(logo).toHaveAttribute('href', product.homeHref);
+  });
+
+  it('draws the menu button as two lines, and says whether the sidebar is open', async () => {
+    const { rerender } = render(<Masthead />);
+    const button = await screen.findByRole('button', { name: 'Navigation' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button.querySelectorAll('svg.app-menu-icon line')).toHaveLength(2);
+    rerender(<Masthead isSidebarOpen />);
+    expect(screen.getByRole('button', { name: 'Navigation' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('offers navigation, notifications, settings and profile by accessible name', async () => {
