@@ -32,7 +32,7 @@ test('gives each person the navigation and To do of their own work', async ({ pa
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
 
   await actAs(page, 'Ben Okafor');
-  expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'Q-04', 'Q-05', 'Q-06']);
+  expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'PROT-3', 'Q-04', 'Q-05', 'Q-06']);
   await expect(nav.getByText('Clinical Development')).toBeVisible();
   await expect(nav.getByText('Safety and Regulatory')).toHaveCount(0);
   await expect(nav.getByText('Scientific Innovation')).toHaveCount(0);

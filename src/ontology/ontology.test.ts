@@ -67,7 +67,7 @@ describe('model', () => {
 
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
-    expect(dims.length).toBe(40);
+    expect(dims.length).toBe(41);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
       const allowed = q(`SELECT ?c WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
@@ -91,7 +91,7 @@ describe('model', () => {
 
   it('says an end holds at most one object only where the domain is certain', () => {
     const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
-    expect(one.length).toBe(16);
+    expect(one.length).toBe(18);
     expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
     expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
   });
@@ -164,8 +164,8 @@ describe('rules and roles', () => {
   });
 
   it('use only NCIt codes checked against the NCI Thesaurus service', () => {
-    // Verified on 2026-11-08, and the reactions on 2026-11-11. Add a code here only after checking its name and definition at the source.
-    const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70885', 'C85838', 'C191214', 'C221818'];
+    // Verified on 2026-11-08, the reactions on 2026-11-11, and Study Protocol (C70817) on 2026-11-14. Add a code here only after checking its name and definition at the source.
+    const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70817', 'C70885', 'C85838', 'C191214', 'C221818'];
     const used = q(`SELECT DISTINCT ?code WHERE { ?s ?match ?code FILTER(STRSTARTS(STR(?code), "http://purl.obolibrary.org/obo/NCIT_")) }`)
       .map((r) => r.code.replace('http://purl.obolibrary.org/obo/NCIT_', ''));
     expect(used.length).toBeGreaterThan(10);
@@ -208,8 +208,8 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(43);
-    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(43);
+    expect(count).toBe(46);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(46);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {

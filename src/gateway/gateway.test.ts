@@ -54,6 +54,7 @@ describe('reads', () => {
         ['enrolls', 'Patients', 'contains', 'many', 'PT-01 PT-02 PT-03 PT-04 PT-05 PT-06 PT-07 PT-08 PT-09 PT-10 PT-11 PT-12'],
         ['tests', 'Formulations', 'related', 'many', 'F-101'],
         ['runs at', 'Sites', 'related', 'many', 'SITE-1 SITE-2 SITE-3'],
+        ['conducted under', 'Protocols', 'related', 'one', 'PROT-2'],
       ]);
     });
 
@@ -90,6 +91,7 @@ describe('reads', () => {
         'enrolls Patients',
         'tests Formulations',
         'runs at Sites',
+        'conducted under Protocols',
       ]);
     });
 

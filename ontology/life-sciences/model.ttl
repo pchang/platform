@@ -195,6 +195,21 @@ ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
   p:valuesFrom lst:StudyBlinding ;
   p:order 3 .
 
+ls:Protocol a p:ObjectType, rdfs:Class ;
+  rdfs:label "Protocol" ;
+  p:pluralLabel "Protocols" ;
+  rdfs:comment "The plan a study is conducted under: its objectives, design, eligibility and schedule of assessments. Each version is its own protocol; an amendment is a new version that amends the one before it." ;
+  p:inDomain ls:ClinicalDevelopment ;
+  skos:exactMatch ncit:C70817 ;
+  p:titleTemplate "{ls:protocolName}, version {ls:protocolVersion} | Amendment to {ls:amends:id}" .
+
+ls:protocolStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a protocol." ;
+  p:dimensionOf ls:Protocol ;
+  p:valuesFrom lst:ProtocolStatus ;
+  p:order 1 .
+
 ls:Site a p:ObjectType, rdfs:Class ;
   rdfs:label "Site" ;
   p:pluralLabel "Sites" ;
@@ -522,100 +537,112 @@ ls:runsAt a p:Relationship, owl:ObjectProperty ;
   p:order 8 ;
   rdfs:comment "A study runs at a site." .
 
+ls:conductedUnder a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "conducted under" ;
+  p:inverseLabel "governs" ;
+  p:order 9 ;
+  rdfs:comment "A study is conducted under the protocol version in force." .
+
+ls:amends a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "amends" ;
+  p:inverseLabel "is amended by" ;
+  p:order 10 ;
+  rdfs:comment "A protocol version amends the version before it." .
+
 ls:enrolledIn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "enrolled in" ;
   p:inverseLabel "enrolls" ;
-  p:order 9 ;
+  p:order 11 ;
   p:partOf true ;
   rdfs:comment "A patient is enrolled in a study." .
 
 ls:enrolledAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "enrolled at" ;
   p:inverseLabel "enrolls" ;
-  p:order 10 ;
+  p:order 12 ;
   rdfs:comment "A patient is enrolled at a site." .
 
 ls:receives a p:Relationship, owl:ObjectProperty ;
   rdfs:label "receives" ;
   p:inverseLabel "is received by" ;
-  p:order 11 ;
+  p:order 13 ;
   rdfs:comment "A patient receives study drug from a batch." .
 
 ls:visitFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "for" ;
   p:inverseLabel "has" ;
-  p:order 12 ;
+  p:order 14 ;
   p:partOf true ;
   rdfs:comment "A visit is for a patient." .
 
 ls:capturedAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "captured at" ;
   p:inverseLabel "captures" ;
-  p:order 13 ;
+  p:order 15 ;
   p:partOf true ;
   rdfs:comment "A data record is captured at a visit." .
 
 ls:raisedOn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "raised on" ;
   p:inverseLabel "has" ;
-  p:order 14 ;
+  p:order 16 ;
   p:partOf true ;
   rdfs:comment "A data query is raised on a data record; a quality event on a batch." .
 
 ls:experiencedBy a p:Relationship, owl:ObjectProperty ;
   rdfs:label "experienced by" ;
   p:inverseLabel "experienced" ;
-  p:order 15 ;
+  p:order 17 ;
   p:partOf true ;
   rdfs:comment "An adverse event is experienced by a patient." .
 
 ls:originatesFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "originates from" ;
   p:inverseLabel "is the source of" ;
-  p:order 16 ;
+  p:order 18 ;
   rdfs:comment "A safety case originates from an adverse event or a medical inquiry." .
 
 ls:concerns a p:Relationship, owl:ObjectProperty ;
   rdfs:label "concerns" ;
   p:inverseLabel "is named in" ;
-  p:order 17 ;
+  p:order 19 ;
   rdfs:comment "A safety case or signal concerns a product." .
 
 ls:isFormulation a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is" ;
   p:inverseLabel "is marketed as" ;
-  p:order 18 ;
+  p:order 20 ;
   rdfs:comment "A product is a formulation." .
 
 ls:mayInvolve a p:Relationship, owl:ObjectProperty ;
   rdfs:label "may involve" ;
   p:inverseLabel "may be involved in" ;
-  p:order 19 ;
+  p:order 21 ;
   rdfs:comment "A safety case may involve a batch." .
 
 ls:aggregates a p:Relationship, owl:ObjectProperty ;
   rdfs:label "aggregates" ;
   p:inverseLabel "is aggregated in" ;
-  p:order 20 ;
+  p:order 22 ;
   rdfs:comment "A signal aggregates safety cases." .
 
 ls:reports a p:Relationship, owl:ObjectProperty ;
   rdfs:label "reports" ;
   p:inverseLabel "is reported in" ;
-  p:order 21 ;
+  p:order 23 ;
   rdfs:comment "A submission reports a safety case or a signal." .
 
 ls:resolves a p:Relationship, owl:ObjectProperty ;
   rdfs:label "resolves" ;
   p:inverseLabel "is resolved by" ;
-  p:order 22 ;
+  p:order 24 ;
   p:partOf true ;
   rdfs:comment "A CAPA resolves a quality event." .
 
 ls:duplicateOf a p:Relationship, owl:ObjectProperty ;
   rdfs:label "duplicate of" ;
   p:inverseLabel "is duplicated by" ;
-  p:order 23 ;
+  p:order 25 ;
   rdfs:comment "A safety case duplicates another." .
 
 ls:reaction a owl:ObjectProperty ;
@@ -654,6 +681,30 @@ ls:studyTitle a owl:DatatypeProperty ;
 ls:siteName a owl:DatatypeProperty ;
   rdfs:label "name" ;
   rdfs:comment "The site's name." .
+
+ls:protocolName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The protocol's short name, usually the study's." .
+
+ls:protocolVersion a owl:DatatypeProperty ;
+  rdfs:label "version" ;
+  rdfs:comment "The protocol's version number, such as 2.0." .
+
+ls:primaryObjective a owl:DatatypeProperty ;
+  rdfs:label "primary objective" ;
+  rdfs:comment "What the study must show, as the protocol states it." .
+
+ls:plannedEnrollment a owl:DatatypeProperty ;
+  rdfs:label "planned enrollment" ;
+  rdfs:comment "How many patients the protocol plans to enroll." .
+
+ls:effectiveOn a owl:DatatypeProperty ;
+  rdfs:label "effective on" ;
+  rdfs:comment "The date the version came into force." .
+
+ls:amendmentSummary a owl:DatatypeProperty ;
+  rdfs:label "amendment summary" ;
+  rdfs:comment "What an amendment changes, and why." .
 
 ls:visitName a owl:DatatypeProperty ;
   rdfs:label "visit" ;
@@ -962,6 +1013,12 @@ lsh:Study-runsAt a sh:PropertyShape ;
   sh:class ls:Site ;
   sh:name "runs at" .
 
+lsh:Study-conductedUnder a sh:PropertyShape ;
+  sh:path ls:conductedUnder ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "conducted under" .
+
 lsh:Study-studyTitle a sh:PropertyShape ;
   sh:path ls:studyTitle ;
   sh:datatype xsd:string ;
@@ -970,7 +1027,64 @@ lsh:Study-studyTitle a sh:PropertyShape ;
 
 lsh:Study a sh:NodeShape ;
   sh:targetClass ls:Study ;
-  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-studyTitle .
+  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-conductedUnder, lsh:Study-studyTitle .
+
+lsh:Protocol-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Protocol-status a sh:PropertyShape ;
+  sh:path ls:protocolStatus ;
+  sh:in ( lst:ProtocolStatus-draft lst:ProtocolStatus-inReview lst:ProtocolStatus-approved lst:ProtocolStatus-superseded ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Protocol-amends a sh:PropertyShape ;
+  sh:path ls:amends ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "amends" .
+
+lsh:Protocol-protocolName a sh:PropertyShape ;
+  sh:path ls:protocolName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Protocol-protocolVersion a sh:PropertyShape ;
+  sh:path ls:protocolVersion ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "version" .
+
+lsh:Protocol-primaryObjective a sh:PropertyShape ;
+  sh:path ls:primaryObjective ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "primary objective" .
+
+lsh:Protocol-plannedEnrollment a sh:PropertyShape ;
+  sh:path ls:plannedEnrollment ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "planned enrollment" .
+
+lsh:Protocol-effectiveOn a sh:PropertyShape ;
+  sh:path ls:effectiveOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "effective on" .
+
+lsh:Protocol-amendmentSummary a sh:PropertyShape ;
+  sh:path ls:amendmentSummary ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "amendment summary" .
+
+lsh:Protocol a sh:NodeShape ;
+  sh:targetClass ls:Protocol ;
+  sh:property lsh:Protocol-identifier, lsh:Protocol-status, lsh:Protocol-amends, lsh:Protocol-protocolName, lsh:Protocol-protocolVersion, lsh:Protocol-primaryObjective, lsh:Protocol-plannedEnrollment, lsh:Protocol-effectiveOn, lsh:Protocol-amendmentSummary .
 
 lsh:Site-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
