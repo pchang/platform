@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.20. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.21. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -21,7 +21,10 @@ The platform uses **PatternFly** (Red Hat's open source design system), version 
 
 ### Visual style
 
-The platform uses PatternFly's default visual style, unchanged: no custom theme, brand colors or fonts. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The only product-specific element is the product name in the logo, set in configuration.
+The platform uses PatternFly's default visual style, with one change: the typeface. There is no custom theme and there are no brand colors. Light and dark modes come from PatternFly, and both are supported from the start (section 4.2). The product name in the logo is set in configuration.
+
+- **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
+- Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
 
 ### Packages
 
@@ -35,6 +38,7 @@ The platform uses PatternFly's default visual style, unchanged: no custom theme,
 | `@patternfly/react-component-groups` | Higher-level composites | 6.7.0 |
 | `@patternfly/chatbot` | Conversational components | 6.9.0 |
 | `@patternfly/patternfly-mcp` | Docs for coding agents (development time only) | 2.5.0 |
+| `@fontsource/inter` | The Inter typeface, bundled (see Visual style) | 5.3.0 |
 
 ### Alternatives considered
 
@@ -355,3 +359,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.18 | 2026-11-13 | Search page says who understood the query, the model or the ontology, and shows Yours for the person's own objects. Suggestions under the field come from the ontology reading. |
 | 0.19 | 2026-11-13 | Product name LS&H Ecosystem, centered with the menu button. The page owns its base text color, background and font, so an embedding page cannot override them in dark mode. A gutter under At a glance and above the dock's heading. |
 | 0.20 | 2026-11-13 | Search moves from the sidebar to the masthead, left of the icon buttons; below md it is an icon button that opens the field under the masthead. Matches show in a raised panel. More space above the dock's heading. |
+| 0.21 | 2026-11-14 | Inter replaces the Red Hat typefaces for headings and body, through PatternFly's two font-family tokens, bundled rather than loaded from a font service. |
