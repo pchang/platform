@@ -17,6 +17,7 @@ import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 import { useRef, useState } from 'react';
 import { product } from '../config/product';
 import { ProfileMenu } from './ProfileMenu';
+import { MenuIcon } from './MenuIcon';
 import { SearchField } from './SearchField';
 import { SettingsMenu } from './SettingsMenu';
 import { useMediaQuery } from './useMediaQuery';
@@ -58,7 +59,7 @@ export function AppMasthead({
     <Masthead display={{ default: 'inline' }} className="app-masthead">
       <MastheadMain className="app-masthead__main">
         <MastheadToggle>
-          <PageToggleButton isHamburgerButton isSidebarOpen={isSidebarOpen} onSidebarToggle={onSidebarToggle} aria-label="Navigation" />
+          <PageToggleButton isSidebarOpen={isSidebarOpen} onSidebarToggle={onSidebarToggle} aria-label="Navigation" className="app-menu-toggle" icon={<MenuIcon />} />
         </MastheadToggle>
         <MastheadBrand className="app-masthead__brand">
           <MastheadLogo href={product.homeHref} className="app-masthead__logo">
