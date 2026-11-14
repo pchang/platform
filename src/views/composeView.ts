@@ -328,7 +328,8 @@ function compareRows(view: ObjectView): Map<string, string> {
   const rows = new Map<string, string>();
   for (const [k, v] of Object.entries(view.state).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
   for (const [k, v] of Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
-  for (const l of view.links.filter((l) => l.direction === 'out')) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
+  // Ends with nothing at the other end add no row, so only what the objects record is compared.
+  for (const l of view.links.filter((l) => l.direction === 'out' && l.objects.length)) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
   return rows;
 }
 

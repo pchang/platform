@@ -38,6 +38,7 @@ function checkNode(node: ViewNode, at: string): string[] {
   if (!entry) return [`${at} unknown component "${node.component}"`];
 
   const errors: string[] = [];
+  if (node.opens && entry.id !== 'Card' && entry.id !== 'Button') errors.push(`${at} only a Card or a Button opens an object`);
   const validateProps = propsValidator(entry.id);
   if (!validateProps(node.props ?? {})) errors.push(...ajvErrors(validateProps, `${at}.props`));
 

@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.14. November 13, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.21.
+Version 0.15. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.23.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -352,6 +352,34 @@ The domain is written in the platform's ontology format (platform spec section 3
   | Medical Inquiry | The question | Rash and nausea in the first week of Velcorin: report or wait? |
 
   Methods that create objects record what the person typed where a title needs it: the model type, the query's question, the quality event's description and the CAPA's action.
+- **Relationships.** Each relationship reads both ways, as verb phrases that complete "this object ... these objects", says which end is part of the other, and, where the domain is certain, says that an object links to at most one object along it (platform spec section 3.1). From these, every object's panel takes its tabs: a study's Sites and Patients, a patient's Visits and Adverse Events, a data record's Data Queries (platform spec section 5.1, Within an object).
+
+  | Relationship | From → To | Reads back as | Containment | At most |
+  |---|---|---|---|---|
+  | predicts | Simulation → Compound | is predicted by | Related only | one compound |
+  | tests | Experiment → Compound; Study → Formulation | is tested in | Related only | Many |
+  | produces | Experiment → Assay Result | is produced by | The assay result is part of the experiment | Many |
+  | contains | Formulation → Compound | is contained in | Related only | Many |
+  | manufactures | Process → Formulation | is manufactured by | Related only | one formulation |
+  | follows | Batch → Process | is followed by | Related only | one process |
+  | derived from | Compound → Compound | is the source of | Related only | one parent |
+  | runs at | Study → Site | hosts | Related only | Many |
+  | enrolled in | Patient → Study | enrolls | The patient is part of the study | one study |
+  | enrolled at | Patient → Site | enrolls | Related only | one site |
+  | receives | Patient → Batch | is received by | Related only | Many |
+  | for | Visit → Patient | has | The visit is part of the patient's record | one patient |
+  | captured at | Data Record → Visit | captures | The data record is part of the visit | one visit |
+  | raised on | Data Query → Data Record; Quality Event → Batch | has | The query is part of the data record; the quality event is part of the batch's record | one data record; one batch |
+  | experienced by | Adverse Event → Patient | experienced | The adverse event is part of the patient's record | one patient |
+  | originates from | Safety Case → Adverse Event or Medical Inquiry | is the source of | Related only | one source |
+  | concerns | Safety Case → Product; Signal → Product | is named in | Related only | one product, for a signal |
+  | is | Product → Formulation | is marketed as | Related only | one formulation |
+  | may involve | Safety Case → Batch | may be involved in | Related only | Many |
+  | aggregates | Signal → Safety Case | is aggregated in | Related only | Many |
+  | reports | Submission → Safety Case or Signal | is reported in | Related only | Many |
+  | resolves | CAPA → Quality Event | is resolved by | The CAPA is part of the quality event | one quality event |
+  | duplicate of | Safety Case → Safety Case | is duplicated by | Related only | one case |
+
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
@@ -479,3 +507,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.12 | 2026-11-12 | Generate narrative is declared as a drafting effect with its instructions; accepting the draft sets the case's narrative. Generate analogs is refused until a generative chemistry model is connected. |
 | 0.13 | 2026-11-12 | Added the Clinical Research Coordinator and Clinical Research Associate personas. New clinical methods: Complete visit, Record missed visit, Record data, Record adverse event, Verify data record, Verify adverse event, Re-query and Reconcile adverse event. Visits are scheduled with deadlines; adverse events carry verbatim terms and can be reconciled. The seed fleshes out clinical work for each clinical role. Two open questions. |
 | 0.14 | 2026-11-13 | Every type titles its objects from a template (section 9), and the seed carries the names they need: compounds, products, the study, sites, lots, visits, queries and inquiries. Methods that create objects record the text their titles use. |
+| 0.15 | 2026-11-14 | Relationships read both ways, with containment and at-most-one ends where the domain is certain (section 9), so every object opens with its overview and tabs. |

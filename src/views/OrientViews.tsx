@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
+import { useObjectPanel } from '../objects/ObjectPanelProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
@@ -13,7 +14,7 @@ type Runnable = { method: string; label: string; archetype: { label: string } };
  * Running a method from a card opens it as a process (platform spec 5.4): the process in front, if any, is set aside,
  * and the outcome comes back to whichever view is showing. Shared by To do and object lists.
  */
-function useOpenMethod(find: (object: string, method: string) => { object: ObjectSummary; method: Runnable } | undefined) {
+export function useOpenMethod(find: (object: string, method: string) => { object: ObjectSummary; method: Runnable } | undefined) {
   const { open } = useProcesses();
   return (object: string, method: string) => {
     const found = find(object, method);
@@ -29,7 +30,7 @@ function useOpenMethod(find: (object: string, method: string) => { object: Objec
 }
 
 /** Runs that have not ended, so cards can show them (design system spec 4.3). Asked again while any is running. */
-function useActiveRuns(deps: unknown[]): RunView[] {
+export function useActiveRuns(deps: unknown[]): RunView[] {
   const { client, principal } = usePrincipal();
   const [runs, setRuns] = useState<RunView[]>([]);
   useEffect(() => {
@@ -56,6 +57,7 @@ function useActiveRuns(deps: unknown[]): RunView[] {
 
 /** Orient's To do (platform spec 5.1). Each task runs through its archetype's pattern (platform spec 5.4). */
 export function TodoView() {
+  const panel = useObjectPanel();
   const { client, principal, name, roleLabel } = usePrincipal();
   const { changes } = useNotifications();
   const [items, setItems] = useState<ToDoItem[]>();
@@ -86,6 +88,7 @@ export function TodoView() {
         values: { [TODO_FILTER_FIELD]: filter },
         onField: (field, value) => field === TODO_FILTER_FIELD && setFilter(value as TodoFilter),
         onAction: (action) => openMethod(action.target, action.method),
+        onOpen: panel.open,
       }}
     />
   );
@@ -93,6 +96,7 @@ export function TodoView() {
 
 /** The objects of one type, from the navigation, each with the methods the person can run on it now (design system spec 4.3). */
 export function TypeView({ type }: { type: string }) {
+  const panel = useObjectPanel();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
   const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
@@ -119,11 +123,12 @@ export function TypeView({ type }: { type: string }) {
   }, [client, principal, type, processes.changes, changes]);
 
   const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
-  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method) }} />;
+  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }} />;
 }
 
 /** The search page (design system spec 4.1, Search): the gateway's understanding of the query, and what it found. */
 export function SearchView({ query }: { query: string }) {
+  const panel = useObjectPanel();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
   const [loaded, setLoaded] = useState<{ result: SearchResult; methods: Map<string, MethodOption[]> }>();
@@ -148,5 +153,5 @@ export function SearchView({ query }: { query: string }) {
   }, [client, principal, query, processes.changes, changes]);
 
   const view = loaded ? buildSearchView(loaded.result, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
-  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method) }} />;
+  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }} />;
 }

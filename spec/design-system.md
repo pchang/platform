@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.24. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.22, sections 3.6, 5.1, 5.4 and 7.
+Version 0.25. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.23, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -138,6 +138,19 @@ To do and the list of a type's objects are card views (pattern `card-view`), com
 
 - **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 - **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
+
+### 4.4 The object panel
+
+Every object opens in a side panel (platform spec 5.1, Within an object). It is the Choose step's primary-detail pattern: PatternFly's Drawer, its panel over the content area.
+
+- **Opening.** A click anywhere on a card opens its object, except on the card's buttons. The card's title is also a button, so keyboard and screen reader users open it the same way. Cards and linked objects inside the panel open the same way, and so do search results.
+- **Size.** The panel slides in from the right and takes three quarters of the content area from lg up, and all of it below. From lg up, Expand widens it to the whole content area and Restore returns it; the choice is kept on the device. The masthead, the sidebar and the process dock stay in reach, and choosing another card behind the panel opens that object in its place.
+- **Top bar.** Back, a left arrow named "Back to" the previous object's identifier, once the person has moved in. Expand or Restore. Close, an X at the top right, which closes the whole panel; Escape does too. Focus moves to the object's heading as the panel opens, and back to the card that opened it as the panel closes.
+- **Moving in.** Opening a related object slides the current one out to the left as the new one slides in from the right. Back reverses it. The slide is timed by PatternFly's motion tokens; with reduced motion asked for, the content changes without moving.
+- **Header.** The identifier and type in small text, the title as the panel's heading, the state as labels, the deadline and urgency as status labels, and the methods the person can run now as buttons. Running one opens its process as from a card. While a page pattern, such as Compare and decide, is in front, the panel steps aside; after any commit it shows the object as it now is.
+- **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
+  - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
+  - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as cards like an object list, each with the methods the person can run on it, or says there are none yet.
 
 ### 4.2 Light and dark mode
 
@@ -366,3 +379,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.22 | 2026-11-14 | Card surface: the content area takes PatternFly's secondary background and cards a small shadow, for more contrast between cards and the page. |
 | 0.23 | 2026-11-14 | Card surface made subtler: the content area halfway between the chrome's gray and the card surface, no border around it, and a lighter, shallower card shadow. |
 | 0.24 | 2026-11-14 | The menu button is two lines that turn into an X while the sidebar is open, instead of PatternFly's hamburger with an arrow. |
+| 0.25 | 2026-11-14 | Added the object panel (4.4): cards open their object in a side panel, three quarters of the content area and expandable to all of it, with a header of identity, state and methods, then tabs for the overview and each many-valued relationship end. Moving in slides the current object out; Back steps out one at a time; Close ends the panel. |

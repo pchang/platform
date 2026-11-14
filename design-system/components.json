@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.8",
+  "version": "0.9",
   "components": [
     {
       "id": "Button",
@@ -70,6 +70,10 @@
             "type": "string",
             "minLength": 1,
             "description": "The button's name when it shows only an icon"
+          },
+          "isInline": {
+            "type": "boolean",
+            "description": "Sits in a line of text, for a link button such as a linked object"
           }
         },
         "anyOf": [
@@ -4539,6 +4543,166 @@
                         "strokeWidth": 2
                       }
                     }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tabs",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Tabs"
+      },
+      "purpose": "Switches between sections of one object, such as its overview and each kind of related object.",
+      "useWhen": [
+        "An object panel's overview and its relationship ends (design system 4.4)"
+      ],
+      "avoidWhen": [
+        "Steps a person must go through in order: use Wizard",
+        "Moving to another place: use navigation"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the tabs switch between, such as the object they belong to"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "Tab"
+        ],
+        "minItems": 1
+      },
+      "responsive": "One row at every width; on phones the tabs scroll sideways inside the row, so the page never does.",
+      "accessibility": [
+        "A tab list: arrow keys move between tabs, and each tab's panel is labeled by its tab",
+        "Bind it to a field so the chosen tab is kept; with no value the first tab is shown"
+      ],
+      "examples": [
+        {
+          "component": "Tabs",
+          "props": {
+            "aria-label": "ST-01"
+          },
+          "field": "objectTab",
+          "children": [
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "overview",
+                "label": "Overview"
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "Phase II, enrolling."
+                  }
+                }
+              ]
+            },
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "patients",
+                "label": "Patients",
+                "count": 12
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "This study enrolls these patients."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tab",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Tab"
+      },
+      "purpose": "One section of Tabs: its title, with a count when it lists objects, and its content.",
+      "useWhen": [
+        "Every section of Tabs"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "eventKey",
+          "label"
+        ],
+        "properties": {
+          "eventKey": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The tab's key, the value its Tabs field takes when it is chosen"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible title"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many objects the tab lists, shown as a badge after the title"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Its content takes the full width under the tabs.",
+      "accessibility": [
+        "The title and the count are both in the tab's name, such as \"Patients 12\""
+      ],
+      "examples": [
+        {
+          "component": "Tabs",
+          "props": {
+            "aria-label": "PT-03"
+          },
+          "children": [
+            {
+              "component": "Tab",
+              "props": {
+                "eventKey": "visits",
+                "label": "Visits",
+                "count": 4
+              },
+              "children": [
+                {
+                  "component": "Content",
+                  "props": {
+                    "label": "This patient has these visits."
                   }
                 }
               ]

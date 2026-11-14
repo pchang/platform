@@ -35,6 +35,8 @@ export interface ViewNode {
   because?: string;
   field?: string;
   intent?: Intent;
+  /** A graph object the node opens in the object panel (design system spec 4.4). Only on a Card or a Button. */
+  opens?: string;
   children?: ViewNode[];
 }
 

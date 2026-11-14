@@ -7,37 +7,39 @@ import { BUILT_ARCHETYPES } from './composeView';
  * Everything on these pages is drawn by the renderer from catalog components.
  */
 
-const text = (label: string, component?: 'p' | 'small'): ViewNode => ({ component: 'Content', props: component ? { label, component } : { label } });
-const flexOf = (children: ViewNode[]): ViewNode => ({
+export const text = (label: string, component?: 'p' | 'small'): ViewNode => ({ component: 'Content', props: component ? { label, component } : { label } });
+export const flexOf = (children: ViewNode[]): ViewNode => ({
   component: 'Flex',
   props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' } },
   children,
 });
-const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: { hasGutter: true }, children: items.map((children) => ({ component: 'StackItem', children })) });
-const gallery = (items: ViewNode[]): ViewNode => ({ component: 'Gallery', props: { hasGutter: true, minWidths: { default: '100%', md: '20rem' } }, children: items });
+export const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: { hasGutter: true }, children: items.map((children) => ({ component: 'StackItem', children })) });
+export const gallery = (items: ViewNode[]): ViewNode => ({ component: 'Gallery', props: { hasGutter: true, minWidths: { default: '100%', md: '20rem' } }, children: items });
 
 export function formatDate(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 
-function stateLabels(object: ObjectSummary): ViewNode[] {
+export function stateLabels(object: ObjectSummary): ViewNode[] {
   return Object.entries(object.state)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([dimension, value]) => ({ component: 'Label', props: { label: `${dimension}: ${value}`, color: 'grey', variant: 'outline', isCompact: true } }));
 }
 
-function card(object: ObjectSummary, body: ViewNode[][]): ViewNode {
+/** An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4). */
+export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
   return {
     component: 'GalleryItem',
     children: [
       {
         component: 'Card',
         props: { isFullHeight: true },
+        opens: object.iri,
         children: [
           // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
           {
             component: 'CardHeader',
-            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: 'h2' } }],
+            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: heading } }],
           },
           { component: 'CardBody', children: [stack(body)] },
         ],
@@ -49,7 +51,7 @@ function card(object: ObjectSummary, body: ViewNode[][]): ViewNode {
 type Runnable = { method: string; label: string; archetype: { label: string } };
 
 /** Methods as buttons named for them when their archetype's pattern is built; otherwise as text. */
-function runnable(methods: Runnable[], object: string, firstIsPrimary: boolean): ViewNode[][] {
+export function runnable(methods: Runnable[], object: string, firstIsPrimary: boolean): ViewNode[][] {
   const built = methods.filter((t) => BUILT_ARCHETYPES.has(t.archetype.label));
   const notYet = methods.filter((t) => !BUILT_ARCHETYPES.has(t.archetype.label));
   const rows: ViewNode[][] = [];
@@ -69,7 +71,7 @@ function runnable(methods: Runnable[], object: string, firstIsPrimary: boolean):
 }
 
 /** A status label for each run on the object that has not ended (design system spec 4.3). */
-function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
+export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
   return runs
     .filter((r) => r.object === object.iri && (r.status === 'queued' || r.status === 'running'))
     .map((r) => ({ component: 'Label', props: { label: `${r.methodLabel}: ${r.status === 'queued' ? 'waiting to start' : 'running'}`, status: 'info' } }));
@@ -87,7 +89,7 @@ export type TodoFilter = 'all' | 'urgent' | 'due' | 'overdue';
 const DUE_WITHIN_DAYS = 7;
 
 /** Days from today to an ISO date, by calendar date in UTC, as deadlines are stored. */
-const daysUntil = (iso: string, today: Date) => Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) / 86_400_000);
+export const daysUntil = (iso: string, today: Date) => Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) / 86_400_000);
 
 /** Whether an item is in a filter's set. Overdue items are not also counted as due. */
 export function matchesFilter(item: ToDoItem, filter: TodoFilter, today: Date): boolean {

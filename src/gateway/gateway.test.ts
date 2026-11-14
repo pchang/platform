@@ -40,7 +40,65 @@ describe('reads', () => {
   it('shows an object with its state, links and properties', () => {
     const batch = withSeed().read(elena, 'B-002');
     expect(batch.state).toEqual({ Production: 'complete', Quality: 'pending', 'Deviation risk': 'high' });
-    expect(batch.links.find((l) => l.label === 'raised on' && l.direction === 'in')?.objects.map((o) => o.identifier)).toEqual(['QE-1']);
+    const qualityEvents = batch.links.find((l) => l.relationship === ls('raisedOn') && l.direction === 'in');
+    expect(qualityEvents).toMatchObject({ label: 'has', kind: 'contains', one: false, typeLabel: 'Quality Event' });
+    expect(qualityEvents?.objects.map((o) => o.identifier)).toEqual(['QE-1']);
+  });
+
+  describe('relationship ends (spec 3.1 and 5.1, Within an object)', () => {
+    const ends = (view: { links: { relationship: string; direction: string; label: string; kind: string; one: boolean; pluralLabel: string; objects: { identifier: string }[] }[] }) =>
+      view.links.map((l) => [l.label, l.pluralLabel, l.kind, l.one ? 'one' : 'many', l.objects.map((o) => o.identifier).join(' ')]);
+
+    it('gives a study its patients first, as contained, then the sites it runs at and the formulation it tests', () => {
+      expect(ends(withSeed().read(ben, 'ST-01'))).toEqual([
+        ['enrolls', 'Patients', 'contains', 'many', 'PT-01 PT-02 PT-03 PT-04 PT-05 PT-06 PT-07 PT-08 PT-09 PT-10 PT-11 PT-12'],
+        ['tests', 'Formulations', 'related', 'many', 'F-101'],
+        ['runs at', 'Sites', 'related', 'many', 'SITE-1 SITE-2 SITE-3'],
+      ]);
+    });
+
+    it('gives a patient its visits and adverse events, and the one study it is part of', () => {
+      const patient = withSeed().read(ben, 'PT-03');
+      const view = Object.fromEntries(ends(patient).map(([label, plural, kind, count, ids]) => [`${label} ${plural}`, `${kind} ${count}: ${ids}`]));
+      expect(view['enrolled in Studies']).toBe('partOf one: ST-01');
+      expect(view['enrolled at Sites']).toBe('related one: SITE-3');
+      expect(view['has Visits']).toMatch(/^contains many: V-03/);
+      expect(view['experienced Adverse Events']).toMatch(/^contains many/);
+      // Contained ends come first, in the ontology's order.
+      expect(patient.links.findIndex((l) => l.kind !== 'contains')).toBe(patient.links.filter((l) => l.kind === 'contains').length);
+    });
+
+    it('keeps an end with nothing at the other end, so every object of a type has the same structure', () => {
+      const site = withSeed().read(ben, 'SITE-1');
+      expect(ends(site).map(([label, plural]) => `${label} ${plural}`)).toEqual(['hosts Studies', 'enrolls Patients']);
+      expect(withSeed().read(elena, 'QE-1').links.find((l) => l.relationship === ls('resolves'))).toMatchObject({ label: 'is resolved by', kind: 'contains', objects: [] });
+    });
+
+    it('reads a relationship from a type to itself both ways', () => {
+      const compound = withSeed().read(ada, 'C-101');
+      expect(compound.links.filter((l) => l.relationship === ls('derivedFrom')).map((l) => [l.direction, l.label, l.one])).toEqual([
+        ['out', 'derived from', true],
+        ['in', 'is the source of', false],
+      ]);
+    });
+
+    it('leaves out ends that reach a type the role may not read, in reads and in describing the ontology', () => {
+      const gateway = withSeed();
+      expect(gateway.read(ada, 'B-002').links.map((l) => l.pluralLabel)).not.toContain('Patients');
+      expect(gateway.describe(ada).find((t) => t.label === 'Batch')?.relationships.map((r) => r.pluralLabel)).not.toContain('Patients');
+      expect(gateway.describe(ben).find((t) => t.label === 'Study')?.relationships.map((r) => `${r.label} ${r.pluralLabel}`)).toEqual([
+        'enrolls Patients',
+        'tests Formulations',
+        'runs at Sites',
+      ]);
+    });
+
+    it('says who last changed an object, with which method and when', async () => {
+      const gateway = withSeed([], { now: fixedClock });
+      expect(gateway.read(chloe, 'SC-004').lastChange).toBeUndefined();
+      await gateway.commit(chloe, 'SC-004', ls('Triage'), { seriousness: lst('SafetyCaseSeriousness-serious'), expectedness: lst('SafetyCaseExpectedness-unexpected') });
+      expect(gateway.read(chloe, 'SC-004').lastChange).toMatchObject({ methodLabel: 'Triage', personName: 'Chloé Martin', at: '2026-11-09T10:00:00Z' });
+    });
   });
 
   it('never shows the Computational Chemist patient-level data', async () => {
@@ -96,7 +154,7 @@ describe('J1 through the gateway: from trial adverse event to expedited report',
     await gateway.commit(chloe, caseId, ls('Assess'), { causality: lst('SafetyCaseCausality-probable') });
     const prepared = await gateway.commit(chloe, caseId, ls('PrepareExpeditedReport'));
     const submission = prepared.created[0];
-    expect(gateway.read(chloe, submission)).toMatchObject({ state: { Status: 'draft', Deadline: 'on track' }, properties: { 'due on': '2026-11-24', 'prepared by': person('chloe') } });
+    expect(gateway.read(chloe, submission)).toMatchObject({ state: { Status: 'draft', Deadline: 'on track' }, properties: { 'due on': '2026-11-24', 'prepared by': 'Chloé Martin' } });
 
     // Rule 5: the preparer cannot approve; a second physician can.
     await gateway.commit(chloe, submission, ls('SendForReview'), { reviewer: person('dev') });

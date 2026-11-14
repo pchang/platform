@@ -5,6 +5,8 @@ import { AppMasthead } from './chrome/AppMasthead';
 import { AppSidebar } from './chrome/AppSidebar';
 import { NotificationsDrawer } from './chrome/NotificationsDrawer';
 import { NotificationsProvider, useNotifications } from './notifications/NotificationsProvider';
+import { ObjectDrawer } from './objects/ObjectPanel';
+import { ObjectPanelProvider } from './objects/ObjectPanelProvider';
 import { ProcessDock } from './chrome/ProcessDock';
 import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
 import { ProcessProvider } from './processes/ProcessProvider';
@@ -19,7 +21,9 @@ export function App() {
   return (
     <NotificationsProvider>
       <ProcessProvider>
-        <AppPage />
+        <ObjectPanelProvider>
+          <AppPage />
+        </ObjectPanelProvider>
       </ProcessProvider>
     </NotificationsProvider>
   );
@@ -58,12 +62,15 @@ function AppPage() {
       mainTabIndex={0}
       isContentFilled
     >
-      <PageSection isFilled className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
-        {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
-        {!frontIsPage && route.name === 'todo' && <TodoView />}
-        {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
-        {!frontIsPage && route.name === 'search' && <SearchView query={route.query} />}
-        <ProcessHost />
+      {/* The content area is the object panel's drawer content, so the panel opens over it (design system spec 4.4). */}
+      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
+        <ObjectDrawer>
+          {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
+          {!frontIsPage && route.name === 'todo' && <TodoView />}
+          {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
+          {!frontIsPage && route.name === 'search' && <SearchView query={route.query} />}
+          <ProcessHost />
+        </ObjectDrawer>
       </PageSection>
       <ProcessDock />
     </Page>

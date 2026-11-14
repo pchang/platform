@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadOntology, ontologyFiles } from './files';
-import { ask, select, type Graph } from './ontology';
+import { ask, NS, select, type Graph } from './ontology';
 import { validateData } from './methods';
 
 let graph: Graph;
@@ -78,6 +78,22 @@ describe('model', () => {
   it('points every relationship shape at an object type', () => {
     const bad = q(`SELECT ?ps WHERE { ?ps sh:path ?rel . ?rel a p:Relationship . ?ps sh:class ?c FILTER NOT EXISTS { ?c a p:ObjectType } }`);
     expect(bad).toEqual([]);
+  });
+
+  it('reads every relationship both ways, in order, with at most one end contained (platform spec 3.1)', () => {
+    expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship FILTER NOT EXISTS { ?rel p:inverseLabel ?inverse ; p:order ?order } }`)).toEqual([]);
+    expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship ; p:partOf true ; p:hasPart true }`)).toEqual([]);
+    // The domain spec's containment: a study's patients, a patient's visits and adverse events, a visit's records, a record's queries.
+    const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true }`).map((r) => r.rel.split('#').pop()).sort();
+    expect(partOf).toEqual(['capturedAt', 'enrolledIn', 'experiencedBy', 'raisedOn', 'resolves', 'visitFor']);
+    expect(q(`SELECT ?rel WHERE { ?rel p:hasPart true }`).map((r) => r.rel.split('#').pop())).toEqual(['produces']);
+  });
+
+  it('says an end holds at most one object only where the domain is certain', () => {
+    const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
+    expect(one.length).toBe(16);
+    expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
+    expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
   });
 });
 

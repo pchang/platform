@@ -43,10 +43,45 @@ export interface ObjectSummary {
   lifecycle?: { dimension: string; stage: string; position: number; stages: string[] };
 }
 
+/**
+ * One end of a relationship, as seen from an object of a type (spec 3.1 and 5.1, Within an object): the relationship read
+ * from this side, whether the objects at the other end are contained here, contain this object, or are only related, and
+ * whether this end holds at most one object.
+ */
+export interface RelationshipEndDescription {
+  relationship: string;
+  /** The relationship's label going out, its inverse label coming in: a study "enrolls" patients. */
+  label: string;
+  direction: 'out' | 'in';
+  kind: 'contains' | 'partOf' | 'related';
+  /** True when this end holds at most one object. */
+  one: boolean;
+  /** The type at the other end. */
+  type: string;
+  typeLabel: string;
+  pluralLabel: string;
+}
+
+/** A relationship end of one object, with the objects at its other end that the principal may read. */
+export interface RelationshipEnd extends RelationshipEndDescription {
+  objects: ObjectSummary[];
+}
+
 export interface ObjectView extends ObjectSummary {
-  /** Outgoing and incoming links the principal may see, by relationship label. */
-  links: { relationship: string; label: string; direction: 'out' | 'in'; objects: { iri: string; identifier: string }[] }[];
+  /**
+   * Every relationship end the object's type has in the ontology, in both directions, that reaches a type the principal
+   * may read: contained objects first, then in the ontology's order (spec 5.1, Within an object). Empty ends are kept.
+   */
+  links: RelationshipEnd[];
   properties: Record<string, string>;
+  /** The domain the object's type belongs to. */
+  domainLabel: string;
+  /** Highest urgency of its state values; 0 when none is urgent. */
+  urgency: number;
+  /** Its earliest deadline, as an ISO date. */
+  deadline?: string;
+  /** The latest commit on the object: which method, who ran it and when. Absent when nothing has changed it. */
+  lastChange?: { commit: string; method: string; methodLabel: string; person: string; personName: string; at: string };
 }
 
 export interface TypeDescription {
@@ -56,6 +91,8 @@ export interface TypeDescription {
   domain: string;
   dimensions: Record<string, unknown>[];
   methods: Record<string, unknown>[];
+  /** The type's relationship ends, both ways (spec 3.1). */
+  relationships: RelationshipEndDescription[];
 }
 
 export interface NavigationDomain {
@@ -337,7 +374,63 @@ export class Gateway {
       methods: this.q(`SELECT ?method ?label ?comment WHERE { ?method p:appliesTo <${t.type}> ; rdfs:label ?label ; rdfs:comment ?comment } ORDER BY ?label`).map(
         (m) => ({ ...m, archetype: archetypeOf(this.graph.store, m.method), inputs: this.inputs(m.method) }),
       ),
+      relationships: this.ends(t.type).filter((e) => !hidden.has(e.type)),
     }));
+  }
+
+  private endsCache = new Map<string, RelationshipEndDescription[]>();
+
+  /**
+   * A type's relationship ends, from its shapes and the shapes that point at it (spec 3.1): each relationship read from
+   * this side, with its containment and whether it holds at most one object. The ontology does not change while the
+   * gateway runs, so the answer is kept.
+   */
+  private ends(type: string): RelationshipEndDescription[] {
+    const cached = this.endsCache.get(type);
+    if (cached) return cached;
+    const target = (ps: string, cls: string) => `{ ${ps} sh:class ${cls} } UNION { ${ps} sh:or/rdf:rest*/rdf:first/sh:class ${cls} }`;
+    type EndRow = { rel: string; label: string; order: string; partOf?: string; hasPart?: string; max?: string; other: string; direction: 'out' | 'in' };
+    const rows: EndRow[] = [
+      ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?max ?other WHERE {
+          ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; rdfs:label ?label ; p:order ?order .
+          OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart } OPTIONAL { ?ps sh:maxCount ?max }
+          ${target('?ps', '?other')} }`).map((r) => ({ ...r, direction: 'out' }) as EndRow),
+      ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?other WHERE {
+          ?shape sh:targetClass ?other ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; p:inverseLabel ?label ; p:order ?order .
+          OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart }
+          ${target('?ps', `<${type}>`)} }`).map((r) => ({ ...r, direction: 'in' }) as EndRow),
+    ];
+    const kindOf = (r: EndRow): RelationshipEndDescription['kind'] => {
+      const subjectIsPart = r.partOf === 'true';
+      const objectIsPart = r.hasPart === 'true';
+      if (r.direction === 'out') return subjectIsPart ? 'partOf' : objectIsPart ? 'contains' : 'related';
+      return subjectIsPart ? 'contains' : objectIsPart ? 'partOf' : 'related';
+    };
+    const rank = { contains: 0, partOf: 1, related: 2 };
+    const ends = rows
+      .map((r) => {
+        const other = this.typeLabels(r.other);
+        return { relationship: r.rel, label: r.label, direction: r.direction, kind: kindOf(r), one: r.direction === 'out' && r.max === '1', type: r.other, ...other, order: Number(r.order) };
+      })
+      .sort((a, b) => rank[a.kind] - rank[b.kind] || a.order - b.order || (a.direction === b.direction ? 0 : a.direction === 'out' ? -1 : 1) || a.typeLabel.localeCompare(b.typeLabel))
+      .map(({ order: _order, ...end }) => end);
+    this.endsCache.set(type, ends);
+    return ends;
+  }
+
+  /** Highest urgency of the object's state values; 0 when none is urgent (spec 5.1). */
+  private urgencyOf(object: string): number {
+    return Number(this.q(`SELECT (MAX(?u) AS ?max) WHERE { <${object}> ?d ?v . ?d a p:StateDimension . ?v p:urgency ?u }`)[0]?.max ?? 0);
+  }
+
+  /** The object's earliest deadline, as an ISO date (spec 5.1). */
+  private deadlineOf(object: string): string | undefined {
+    return this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${object}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+  }
+
+  private typeLabels(type: string): { typeLabel: string; pluralLabel: string } {
+    const row = this.q(`SELECT ?label ?plural WHERE { <${type}> rdfs:label ?label . OPTIONAL { <${type}> p:pluralLabel ?plural } }`)[0];
+    return { typeLabel: row?.label ?? type, pluralLabel: row?.plural ?? row?.label ?? type };
   }
 
   private inputs(method: string) {
@@ -399,7 +492,7 @@ export class Gateway {
     const items: ToDoItem[] = [];
     for (const type of new Set(methods.map((m) => m.type))) {
       for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> }`)) {
-        const urgency = Number(this.q(`SELECT (MAX(?u) AS ?max) WHERE { <${o}> ?d ?v . ?d a p:StateDimension . ?v p:urgency ?u }`)[0]?.max ?? 0);
+        const urgency = this.urgencyOf(o);
         const tasks: ToDoItem['tasks'] = [];
         const actions: ToDoItem['actions'] = [];
         for (const m of methods.filter((m) => m.type === type)) {
@@ -410,7 +503,7 @@ export class Gateway {
           (isTask ? tasks : actions).push({ method: m.method, label: m.label, archetype: archetypeOf(this.graph.store, m.method) });
         }
         if (!tasks.length && !(urgency >= 3 && actions.length)) continue;
-        const deadline = this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${o}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+        const deadline = this.deadlineOf(o);
         items.push({ object: this.summary(o), tasks, actions, urgency, ...(deadline ? { deadline } : {}) });
       }
     }
@@ -487,31 +580,30 @@ export class Gateway {
     for (const { prop, shape } of this.q(`SELECT ?prop ?shape WHERE { ?rule p:hides ?prop ; p:hiddenWhen ?shape }`)) {
       if (this.conformsSync(object, shape)) hidden.add(prop);
     }
-    const visible = (o: string) => {
-      const t = this.q(`SELECT ?t WHERE { <${o}> a ?t . ?t a p:ObjectType }`)[0]?.t;
-      return !t || !hidden.has(t);
-    };
-    const links: ObjectView['links'] = [];
-    for (const direction of ['out', 'in'] as const) {
-      const pattern = direction === 'out' ? `<${object}> ?rel ?o` : `?o ?rel <${object}>`;
-      const rows = this.q(`SELECT ?rel ?label ?o ?id WHERE { ${pattern} . ?rel a p:Relationship ; rdfs:label ?label . OPTIONAL { ?o ls:identifier ?id } } ORDER BY ?label ?id`);
-      for (const r of rows) {
-        if (!visible(r.o)) continue;
-        let entry = links.find((l) => l.relationship === r.rel && l.direction === direction);
-        if (!entry) links.push((entry = { relationship: r.rel, label: r.label, direction, objects: [] }));
-        entry.objects.push({ iri: r.o, identifier: r.id ?? r.o });
-      }
-    }
-    // Coded values show their labels; a property with several values shows them all, in order.
+    const unreadableTypes = this.unreadable(principal.role);
+    const links: RelationshipEnd[] = this.ends(summary.type)
+      .filter((end) => !unreadableTypes.has(end.type))
+      .map((end) => {
+        const pattern = end.direction === 'out' ? `<${object}> <${end.relationship}> ?o` : `?o <${end.relationship}> <${object}>`;
+        const objects = this.q(`SELECT ?o WHERE { ${pattern} . ?o a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+        return { ...end, objects };
+      });
+    // Coded values show their labels, people their names; a property with several values shows them all, in order.
     const properties: Record<string, string> = {};
     for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value . ?prop rdfs:label ?label .
-          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value p:order ?order }
+          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value p:order ?order }
           FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
       if (hidden.has(r.prop)) continue;
       const value = r.valueLabel ?? r.value;
       properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
     }
-    return { ...summary, links, properties };
+    const last = this.q(`SELECT ?commit ?method ?methodLabel ?person ?personName ?at WHERE { GRAPH ?commit {
+        ?commit a p:Commit ; p:method ?method ; p:target <${object}> ; prov:wasAssociatedWith ?person ; prov:startedAtTime ?at } .
+        OPTIONAL { ?method rdfs:label ?methodLabel } OPTIONAL { ?person rdfs:label ?personName } } ORDER BY DESC(?at) DESC(STRLEN(STR(?commit))) DESC(?commit) LIMIT 1`)[0];
+    const lastChange = last && { commit: last.commit, method: last.method, methodLabel: last.methodLabel ?? last.method, person: last.person, personName: last.personName ?? last.person, at: last.at };
+    const domainLabel = this.q(`SELECT ?label WHERE { <${summary.type}> p:inDomain/rdfs:label ?label }`)[0]?.label ?? '';
+    const deadline = this.deadlineOf(object);
+    return { ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(lastChange ? { lastChange } : {}) };
   }
 
   // ---------------------------------------------------------------- search (spec 5.2)

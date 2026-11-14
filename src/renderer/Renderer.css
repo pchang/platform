@@ -1,0 +1,22 @@
+/* Openable cards (design system spec 4.4). Tokens only, no raw colors (design system spec, rule 2). */
+
+/* A card that opens its object can be chosen anywhere but its buttons. */
+.app-openable-card {
+  cursor: pointer;
+}
+
+.app-openable-card:hover {
+  border-color: var(--pf-t--global--border--color--hover);
+}
+
+/* Its title is its button: it reads as the card's heading, not as a link, until it is pointed at or focused. */
+.app-card-open.pf-v6-c-button {
+  --pf-v6-c-button--m-link--m-inline--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--hover--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--m-clicked--Color: var(--pf-t--global--text--color--regular);
+  --pf-v6-c-button--m-link--m-inline--TextDecorationLine: none;
+  --pf-v6-c-button--m-link--m-inline--FontSize: inherit;
+  --pf-v6-c-button--m-link--m-inline--FontWeight: inherit;
+  --pf-v6-c-button--m-link--m-inline--LineHeight: inherit;
+  text-align: start;
+}

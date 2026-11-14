@@ -1,8 +1,10 @@
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
+import { TabTitleText } from '@patternfly/react-core';
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { componentsById, type Intent, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { icons } from './icons';
 import { library } from './library';
+import './Renderer.css';
 
 /**
  * Draws view specs with PatternFly (design system spec, sections 5.2 and 5.3).
@@ -20,6 +22,83 @@ export interface RenderHost {
   onField?: (field: string, value: string) => void;
   /** Called when the person presses a button with an intent, or closes a Modal (cancel). */
   onIntent?: (intent: Intent) => void;
+  /** Opens a graph object in the object panel (view spec `opens`, design system spec 4.4), from the element chosen. */
+  onOpen?: (object: string, origin?: HTMLElement) => void;
+}
+
+/** The object the Card being drawn opens, so its title can be the card's button. */
+const OpensContext = createContext<string | undefined>(undefined);
+
+/** Clicks on these, inside an openable card, do their own thing and do not open the card's object. */
+const INTERACTIVE = 'button, a, input, select, textarea, label, [role="tab"], [role="radio"], [role="checkbox"]';
+
+/**
+ * A card that opens its object (design system spec 4.4): a click anywhere on it opens the object, except on its buttons
+ * and other controls. Its title is a button too, so keyboard and screen reader users open it the same way.
+ */
+function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const object = node.opens!;
+  const { Card } = library;
+  const onClick = (event: MouseEvent<HTMLElement>) => {
+    const control = (event.target as HTMLElement).closest(INTERACTIVE);
+    if (control && event.currentTarget.contains(control)) return;
+    // Selecting text in a card is not a click on it.
+    if (window.getSelection()?.toString()) return;
+    host.onOpen?.(object, event.currentTarget);
+  };
+  return (
+    <OpensContext.Provider value={object}>
+      <Card {...(node.props ?? {})} className="app-openable-card" onClick={onClick}>
+        {(node.children ?? []).map((child, i) => (
+          <Node key={i} node={child} host={host} />
+        ))}
+      </Card>
+    </OpensContext.Provider>
+  );
+}
+
+/** Tabs bound to a field (design system spec 4.4): the chosen tab is the field's value, the first tab when it has none. */
+function BoundTabs({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const { Tabs, Tab, Badge } = library;
+  const tabs = (node.children ?? []).filter((c) => c.component === 'Tab');
+  const keys = tabs.map((t) => (t.props as { eventKey: string }).eventKey);
+  const chosen = node.field ? host.values?.[node.field] : undefined;
+  const [own, setOwn] = useState(keys[0]);
+  const active = chosen && keys.includes(chosen) ? chosen : node.field ? keys[0] : own;
+  return (
+    <Tabs
+      {...(node.props ?? {})}
+      activeKey={active}
+      onSelect={(_event: unknown, key: string | number) => (node.field ? host.onField?.(node.field, String(key)) : setOwn(String(key)))}
+      mountOnEnter
+      unmountOnExit
+    >
+      {tabs.map((tab) => {
+        const { eventKey, label, count } = tab.props as { eventKey: string; label: string; count?: number };
+        return (
+          <Tab
+            key={eventKey}
+            eventKey={eventKey}
+            title={
+              <TabTitleText>
+                {label}
+                {count !== undefined && (
+                  <>
+                    {' '}
+                    <Badge isRead>{count}</Badge>
+                  </>
+                )}
+              </TabTitleText>
+            }
+          >
+            {(tab.children ?? []).map((child, i) => (
+              <Node key={i} node={child} host={host} />
+            ))}
+          </Tab>
+        );
+      })}
+    </Tabs>
+  );
 }
 
 /**
@@ -144,10 +223,13 @@ function SelectableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
 function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref<unknown> }) {
   const generatedId = useId();
   const groupId = useContext(FieldIdContext);
+  const opens = useContext(OpensContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
   if (entry.id === 'Chart') return <ChartFrame node={node} />;
   if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
+  if (entry.id === 'Card' && node.opens) return <OpenableCard node={node} host={host} />;
+  if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
   if (NEEDS_ID.has(entry.id)) props.id = entry.id !== 'Radio' && groupId ? groupId : generatedId;
@@ -226,6 +308,19 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (node.action && host.onAction) {
     const action = node.action;
     props.onClick = () => host.onAction!(action, node);
+  }
+  if (entry.id === 'Button' && node.opens) {
+    const object = node.opens;
+    props.onClick = (event: MouseEvent<HTMLElement>) => host.onOpen?.(object, event.currentTarget);
+  }
+  // In a card that opens its object, the title is the card's button.
+  if (entry.id === 'CardTitle' && opens && content !== undefined) {
+    const Button = library.Button;
+    content = (
+      <Button variant="link" isInline className="app-card-open" onClick={(event: MouseEvent<HTMLElement>) => host.onOpen?.(opens, event.currentTarget.closest<HTMLElement>('.app-openable-card') ?? undefined)}>
+        {content}
+      </Button>
+    );
   }
 
   // Void elements, such as inputs and dividers, must get no children at all.
