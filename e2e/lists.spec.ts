@@ -30,6 +30,13 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
   await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
+  // Select starts select mode: the cards show their controls, and the bar is the same as the list's, with Done.
+  await bar(page).getByRole('button', { name: 'Select', exact: true }).click();
+  await expect(bar(page).getByRole('checkbox', { name: 'Select all' })).toBeVisible();
+  await card(page, 'SC-001').getByRole('checkbox').click();
+  await bar(page).getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
+  await expect(bar(page).getByText('1 selected')).toHaveCount(0);
   await bar(page).getByRole('button', { name: 'Select', exact: true }).click();
   // Choosing a card anywhere but its buttons chooses it; its control is a checkbox named for it.
   await card(page, 'SC-004').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });

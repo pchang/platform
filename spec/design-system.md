@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.28. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
+Version 0.29. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -134,7 +134,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its controls are plain icon and text buttons with tooltips, not links or boxed buttons.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -142,7 +142,7 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Its menu offers Select all, with how many there are, and Select none.
 - **At its end,** a compact toggle between Cards and List, as icon buttons with those names. The choice is kept on the device and applies to every object list.
 - **Cards.**
-  - Before selecting, the bar's start holds one plain Select button with a checkbox icon. It starts select mode and shows the selection control, with a close button, an X named "Done selecting", before it that ends select mode and clears the choice.
+  - Before selecting, the bar's start holds one Select link, the word "Select". Choosing it starts select mode: each card shows its select control, and the bar shows the same selection control and batch actions as List, and a Done link at the bar's end, before the view toggle and apart from the actions, that ends select mode and clears the choice. Once in select mode, Cards and List work the same way.
   - In select mode, each card shows a round select control at its top right: an empty circle, or a green check when chosen. It is a checkbox named "Select" and the object's title.
   - Choosing anywhere on a card, except its buttons, chooses it, rather than opening it. The card's title still opens the object.
   - A chosen card's border shows it is chosen, as well as its check.
@@ -403,3 +403,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.26 | 2026-11-14 | Notifications is a plain icon button like Settings and Profile. Object lists show cards or a list, with a list bar: select mode with a round select control on cards, checkboxes on rows, one raised method per row and the rest in a … menu, and batch actions for the methods every chosen object has. The To do summary is its count tiles only. |
 | 0.27 | 2026-11-14 | The list bar follows Gmail's: PatternFly's bulk select checkbox with its menu and count at the start, the chosen objects' actions as plain buttons after a divider, extras in a … menu, and the view toggle at the end. Select and Done selecting are icon buttons. |
 | 0.28 | 2026-11-14 | The list view is a table: checkbox, identifier, title, type when mixed, status labels, one column per state dimension with plain values, and actions. Wide tables scroll sideways inside themselves. |
+| 0.29 | 2026-11-14 | Card view's select mode starts from a Select link and ends with a Done link; between them the bar is the same as List's. |

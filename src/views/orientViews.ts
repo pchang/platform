@@ -177,12 +177,8 @@ export function commonMethods(entries: ListEntry[], selected: ReadonlySet<string
 
 const barItem = (child: ViewNode): ViewNode => ({ component: 'ToolbarItem', children: [child] });
 const separator: ViewNode = { component: 'ToolbarItem', props: { variant: 'separator' } };
-/** A plain icon button with a tooltip, named for what it does. */
-const iconButton = (icon: string, label: string, intent: 'select'): ViewNode => ({
-  component: 'Tooltip',
-  props: { content: label },
-  children: [{ component: 'Button', props: { variant: 'plain', icon, 'aria-label': label }, intent }],
-});
+/** A quiet link in the bar, such as Select. */
+const barLink = (label: string, intent: 'select'): ViewNode => ({ component: 'Button', props: { label, variant: 'link', isInline: true }, intent });
 /** Batch actions shown as buttons; the rest go in a … menu. */
 const SHOWN_BATCH_ACTIONS = 3;
 
@@ -195,9 +191,9 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
   const chosen = entries.filter((e) => controls.selected.has(e.object.iri)).length;
   const start: ViewNode[] = [];
   if (controls.mode === 'cards' && !controls.selecting) {
-    start.push(barItem(iconButton('outlined-check-square', 'Select', 'select')));
+    // Cards start select mode from a Select link; once selecting, the bar is the same as List's (design system spec 4.3).
+    start.push(barItem(barLink('Select', 'select')));
   } else {
-    if (controls.mode === 'cards') start.push(barItem(iconButton('times', 'Done selecting', 'select')));
     start.push(
       barItem({
         component: 'Dropdown',
@@ -231,6 +227,8 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       component: 'ToolbarGroup',
       props: { align: { default: 'alignEnd' } },
       children: [
+        // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
+        ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
         barItem({
           component: 'ToggleGroup',
           props: { 'aria-label': 'Show objects as', isCompact: true },

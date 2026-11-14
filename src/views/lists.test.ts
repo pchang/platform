@@ -29,6 +29,7 @@ describe('the list bar (design system spec 4.3)', () => {
     const bar = find(view.root, (n) => n.component === 'Toolbar')[0];
     expect(bar.props).toMatchObject({ isSticky: true });
     expect(labelsOf(find(bar, (n) => n.component === 'Button'))).toEqual(['Select']);
+    expect(find(bar, (n) => n.component === 'Button')[0].props).toMatchObject({ variant: 'link' });
     expect(find(bar, (n) => n.component === 'ToggleGroupItem').map((n) => (n.props as { value: string }).value)).toEqual(['cards', 'list']);
     expect(find(view.root, (n) => n.component === 'Card' && Boolean(n.selects)).map((n) => n.selects)).toEqual(cases.map((c) => c.iri));
   });
@@ -44,7 +45,17 @@ describe('the list bar (design system spec 4.3)', () => {
       ['Select all (3)', 'select-all'],
       ['Select none', 'clear-selection'],
     ]);
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done selecting']);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done']);
+    // Once selecting, the card bar is the list bar, with Done to end select mode.
+    const listBar = find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) }).root, (n) => n.component === 'Toolbar')[0];
+    const dropDone = (n: ViewNode): ViewNode => ({
+      ...n,
+      ...(n.children
+        ? { children: n.children.filter((c) => !(c.component === 'ToolbarItem' && (c.children?.[0]?.props as { label?: string } | undefined)?.label === 'Done')).map(dropDone) }
+        : {}),
+    });
+    const withoutDone = dropDone(bar);
+    expect(withoutDone).toEqual(listBar);
     // A thin divider before the actions for what is chosen.
     expect(find(bar, (n) => n.component === 'ToolbarItem' && (n.props as { variant?: string } | undefined)?.variant === 'separator')).toHaveLength(1);
     // Flag duplicate is common to both but is a comparison, so it stays with one object at a time.
