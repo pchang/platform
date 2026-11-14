@@ -26,3 +26,22 @@
   outline: var(--pf-t--global--border--width--strong) solid var(--pf-t--global--border--color--status--success--default);
   outline-offset: calc(var(--pf-t--global--border--width--strong) * -1);
 }
+
+/* An object table keeps each cell on one line, and scrolls sideways inside itself when wide (design system spec 4.3). */
+.app-object-table th,
+.app-object-table td {
+  white-space: nowrap;
+}
+
+/* The title, an inline link button, stays on one line too; PatternFly's own inline-link rule would let it wrap. */
+.app-object-table .pf-v6-c-button.pf-m-link.pf-m-inline,
+.app-object-table .pf-v6-c-button.pf-m-link.pf-m-inline .pf-v6-c-button__text {
+  white-space: nowrap;
+}
+
+/* On phones a pinned actions column would hide most of the row, so below md it scrolls with the rest. */
+@media (max-width: 767px) {
+  .app-object-table .pf-v6-c-table__sticky-cell {
+    position: static;
+  }
+}

@@ -68,19 +68,54 @@ describe('the list bar (design system spec 4.3)', () => {
 describe('the list view (design system spec 4.3)', () => {
   const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list' }) });
 
-  it('is a DataList with a row for each object, each choosing its object', () => {
+  const bodyRows = (root: ViewNode) => find(find(root, (n) => n.component === 'Tbody')[0], (n) => n.component === 'Tr');
+  const cellText = (cell: ViewNode) => find(cell, (n) => n.component === 'Content' || n.component === 'Label' || n.component === 'Button').map((n) => (n.props as { label?: string }).label ?? '').join(' ');
+
+  it('is a table with a row for each object, each choosing its object', () => {
     expect(validateView(view).errors).toEqual([]);
     expect(find(view.root, (n) => n.component === 'Gallery')).toEqual([]);
-    const rows = find(view.root, (n) => n.component === 'DataListItem');
+    const rows = bodyRows(view.root);
     expect(rows.map((r) => r.selects)).toEqual(cases.map((c) => c.iri));
     // The title opens the object.
     expect(find(rows[0], (n) => Boolean(n.opens)).map((n) => [n.component, n.opens])).toEqual([['Button', 'urn:SC-4']]);
   });
 
+  it('heads a column for each state dimension, with the values in plain text, and leaves out Type when all are one type', () => {
+    const head = find(view.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string; screenReaderText?: string }).label ?? `(${(n.props as { screenReaderText: string }).screenReaderText})`);
+    // No object needs attention here, so there is no Attention column.
+    expect(head).toEqual(['Identifier', 'Title', 'Workflow', '(Actions)']);
+    const [row] = bodyRows(view.root);
+    expect((row.children ?? []).map(cellText)).toEqual(['SC-4', 'Case SC-4', 'received', 'Triage']);
+    // Every cell keeps to one line; the actions column fits its content.
+    expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'nowrap', 'fitContent']);
+  });
+
+  it('adds an Attention column for deadlines, urgency and runs once any object has one', () => {
+    const runs = [{ run: 'urn:r', method: 'urn:Detect', methodLabel: 'Run signal detection', object: 'urn:SC-5', objectIdentifier: 'SC-5', status: 'running' as const, startedAt: '', startedBy: '', startedByName: '' }];
+    const withRun = buildTypeView('Safety Cases', cases, { methods, runs: runs as never, controls: controls({ mode: 'list' }) });
+    const head = find(withRun.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
+    expect(head).toEqual(['Identifier', 'Title', 'Attention', 'Workflow', undefined]);
+    const [, second] = bodyRows(withRun.root);
+    expect(cellText((second.children ?? [])[2])).toBe('Run signal detection: running');
+  });
+
+  it('puts the lifecycle first among the state columns, adds Type for mixed types, and leaves cells empty where a type has no such dimension', () => {
+    const lifecycle = (dimension: string, stage: string) => ({ dimension, stage, position: 0, stages: [stage] });
+    const mixed: ObjectSummary[] = [
+      { ...summary('SC-7'), state: { Causality: 'possible', Workflow: 'triaged' }, lifecycle: lifecycle('Workflow', 'triaged') },
+      { ...summary('SUB-1'), type: 'urn:Submission', typeLabel: 'Submission', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' }, lifecycle: lifecycle('Status', 'draft') },
+    ];
+    const table = buildTypeView('Mixed', mixed, { controls: controls({ mode: 'list' }) });
+    expect(validateView(table).errors).toEqual([]);
+    const head = find(table.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
+    expect(head).toEqual(['Identifier', 'Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
+    const [, sub] = bodyRows(table.root);
+    expect((sub.children ?? []).map(cellText).slice(0, 7)).toEqual(['SUB-1', 'Case SUB-1', 'Submission', '', '', 'draft', 'on track']);
+  });
+
   it('raises one method to the row and keeps the rest in a … menu named for the object', () => {
-    const [row] = find(view.root, (n) => n.component === 'DataListItem');
-    const actions = find(row, (n) => n.component === 'DataListAction')[0];
-    expect(actions.props).toEqual({ 'aria-label': 'Actions for SC-4' });
+    const [row] = bodyRows(view.root);
+    const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];
     expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Triage']);
     const menu = find(actions, (n) => n.component === 'Dropdown')[0];
     expect(menu.props).toEqual({ 'aria-label': 'More actions for SC-4' });
@@ -89,8 +124,17 @@ describe('the list view (design system spec 4.3)', () => {
     ]);
   });
 
+  it('raises the work waiting before an action the person chooses to take', () => {
+    const onDemandFirst = new Map([['urn:SC-4', [{ ...option('Flag', 'Flag duplicate', 'Compare and decide'), onDemand: true }, option('Triage', 'Triage')]]]);
+    const table = buildTypeView('Safety Cases', cases.slice(0, 1), { methods: onDemandFirst, controls: controls({ mode: 'list' }) });
+    const [row] = bodyRows(table.root);
+    const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];
+    expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Triage']);
+    expect(find(actions, (n) => n.component === 'DropdownItem').map((n) => (n.props as { label: string }).label)).toEqual(['Flag duplicate']);
+  });
+
   it('has no … menu for an object with one method', () => {
-    const [, , row] = find(view.root, (n) => n.component === 'DataListItem');
+    const [, , row] = bodyRows(view.root);
     expect(find(row, (n) => n.component === 'Dropdown')).toEqual([]);
   });
 

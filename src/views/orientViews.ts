@@ -255,8 +255,23 @@ function entryCard(entry: ListEntry, heading: 'h2' | 'h3'): ViewNode {
   return card(entry.object, body, heading);
 }
 
-/** A list row: what the object is, its labels, one method raised and the rest in a … menu (design system spec 4.3). */
-function entryRow(entry: ListEntry): ViewNode {
+/** The state dimensions of the listed objects, as table columns: each object's lifecycle first, then the rest by name. */
+function stateColumns(entries: ListEntry[]): string[] {
+  const columns: string[] = [];
+  for (const { object } of entries) {
+    const lifecycle = object.lifecycle?.dimension;
+    const names = Object.keys(object.state).sort((a, b) => (a === lifecycle ? -1 : b === lifecycle ? 1 : a.localeCompare(b)));
+    for (const name of names) if (!columns.includes(name)) columns.push(name);
+  }
+  return columns;
+}
+
+// Every cell keeps its content on one line, so a wide table scrolls sideways rather than wrapping (design system spec 4.3).
+const th = (label: string): ViewNode => ({ component: 'Th', props: { label, modifier: 'nowrap' } });
+const td = (column: string, children: ViewNode[] = []): ViewNode => ({ component: 'Td', props: { dataLabel: column, modifier: 'nowrap' }, children });
+
+/** A row's actions: one method raised and the rest in a … menu (design system spec 4.3). */
+function rowActions(entry: ListEntry): ViewNode[] {
   const o = entry.object;
   const built = entry.methods.filter((m) => BUILT_ARCHETYPES.has(m.archetype.label));
   const [raised, ...rest] = built;
@@ -269,21 +284,52 @@ function entryRow(entry: ListEntry): ViewNode {
       children: rest.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, action: { method: m.method, target: o.iri } })),
     });
   }
+  // The raised method and its … menu stay side by side.
+  return actions.length ? [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }] : [];
+}
+
+/**
+ * The list view (design system spec 4.3): a table with a column for each fact, the state dimensions headed by name and
+ * their values in plain text, and the actions last.
+ */
+function objectTable(entries: ListEntry[], name: string): ViewNode {
+  const columns = stateColumns(entries);
+  const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
+  const hasDetail = entries.some((e) => e.detail);
+  // Attention only when some object needs it: a deadline, urgency or a run in progress.
+  const hasAttention = entries.some((e) => e.status.length);
+  const head: ViewNode[] = [
+    th('Identifier'),
+    th('Title'),
+    ...(mixed ? [th('Type')] : []),
+    ...(hasAttention ? [th('Attention')] : []),
+    ...columns.map(th),
+    ...(hasDetail ? [th('Matched')] : []),
+    // The actions stay in view at the end of the row while a wide table scrolls under them.
+    { component: 'Th', props: { screenReaderText: 'Actions', modifier: 'fitContent', isStickyColumn: true, stickyRightOffset: '0', hasLeftBorder: true } },
+  ];
+  const rows = entries.map((entry): ViewNode => {
+    const o = entry.object;
+    return {
+      component: 'Tr',
+      selects: o.iri,
+      children: [
+        td('Identifier', [text(o.identifier)]),
+        td('Title', [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }]),
+        ...(mixed ? [td('Type', [text(o.typeLabel)])] : []),
+        ...(hasAttention ? [td('Attention', entry.status.length ? [flexOf(entry.status)] : [])] : []),
+        ...columns.map((c) => td(c, o.state[c] ? [text(o.state[c])] : [])),
+        ...(hasDetail ? [td('Matched', entry.detail ? [text(entry.detail.replace(/^Matched: /, ''), 'small')] : [])] : []),
+        { component: 'Td', props: { isActionCell: true, modifier: 'fitContent', isStickyColumn: true, stickyRightOffset: '0', hasLeftBorder: true }, children: rowActions(entry) },
+      ],
+    };
+  });
   return {
-    component: 'DataListItem',
-    selects: o.iri,
+    component: 'Table',
+    props: { 'aria-label': name },
     children: [
-      {
-        component: 'DataListCell',
-        props: { width: 3 },
-        children: [
-          text(`${o.identifier} · ${o.typeLabel}`, 'small'),
-          { component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri },
-          ...(entry.detail ? [text(entry.detail, 'small')] : []),
-        ],
-      },
-      { component: 'DataListCell', props: { width: 2 }, children: [flexOf([...entry.status, ...stateLabels(o)])] },
-      ...(actions.length ? [{ component: 'DataListAction', props: { 'aria-label': `Actions for ${o.identifier}` }, children: actions }] : []),
+      { component: 'Thead', children: [{ component: 'Tr', children: head }] },
+      { component: 'Tbody', children: rows },
     ],
   };
 }
@@ -292,9 +338,7 @@ function entryRow(entry: ListEntry): ViewNode {
 export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[][] {
   if (!entries.length) return [];
   const objects: ViewNode =
-    controls.mode === 'list'
-      ? { component: 'DataList', props: { 'aria-label': name, isCompact: true }, children: entries.map(entryRow) }
-      : gallery(entries.map((e) => entryCard(e, heading)));
+    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
   return [[listBar(entries, controls), objects]];
 }
@@ -348,6 +392,9 @@ export function buildTodoView(
  * A type's objects (design system spec 4.3). Each card offers the methods the person can run on it now, which is how
  * on-demand methods are reached, and shows runs in progress.
  */
+/** Methods with the work waiting first, then actions a person chooses to take, so a row raises a task (design system spec 4.3). */
+const tasksFirst = (methods: MethodOption[]) => [...methods.filter((m) => !m.onDemand), ...methods.filter((m) => m.onDemand)];
+
 export function buildTypeView(
   pluralLabel: string,
   objects: ObjectSummary[],
@@ -356,7 +403,7 @@ export function buildTypeView(
   const entries: ListEntry[] = objects.map((o) => ({
     object: o,
     status: runLabels(o, options.runs ?? []),
-    methods: (options.methods?.get(o.iri) ?? []).filter((m) => m.available),
+    methods: tasksFirst((options.methods?.get(o.iri) ?? []).filter((m) => m.available)),
     firstIsPrimary: false,
   }));
   return {
@@ -394,7 +441,7 @@ export function buildSearchView(
   const entries: ListEntry[] = result.results.map(({ object: o, matched }) => ({
     object: o,
     status: runLabels(o, options.runs ?? []),
-    methods: (options.methods?.get(o.iri) ?? []).filter((m) => m.available),
+    methods: tasksFirst((options.methods?.get(o.iri) ?? []).filter((m) => m.available)),
     firstIsPrimary: false,
     ...(matched.length ? { detail: `Matched: ${matched.join(' · ')}` } : {}),
   }));

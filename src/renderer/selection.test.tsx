@@ -56,22 +56,29 @@ describe('choosing objects', () => {
   });
 });
 
-describe('a list row', () => {
-  const row: ViewNode = {
-    component: 'DataList',
+describe('a table row', () => {
+  const table: ViewNode = {
+    component: 'Table',
     props: { 'aria-label': 'Safety Cases' },
     children: [
+      { component: 'Thead', children: [{ component: 'Tr', children: [{ component: 'Th', props: { label: 'Identifier' } }, { component: 'Th', props: { label: 'Workflow' } }, { component: 'Th', props: { screenReaderText: 'Actions' } }] }] },
       {
-        component: 'DataListItem',
-        selects: A,
+        component: 'Tbody',
         children: [
-          { component: 'DataListCell', props: { isFilled: true }, children: [{ component: 'Content', props: { label: 'SC-004 · Safety Case' } }] },
           {
-            component: 'DataListAction',
-            props: { 'aria-label': 'Actions for SC-004' },
+            component: 'Tr',
+            selects: A,
             children: [
-              { component: 'Button', props: { label: 'Triage', variant: 'secondary', size: 'sm' }, action: { method: 'urn:Triage', target: A } },
-              { component: 'Dropdown', props: { 'aria-label': 'More actions for SC-004' }, children: [{ component: 'DropdownItem', props: { label: 'Flag duplicate' }, action: { method: 'urn:Flag', target: A } }] },
+              { component: 'Td', props: { dataLabel: 'Identifier' }, children: [{ component: 'Content', props: { label: 'SC-004' } }] },
+              { component: 'Td', props: { dataLabel: 'Workflow' }, children: [{ component: 'Content', props: { label: 'received' } }] },
+              {
+                component: 'Td',
+                props: { isActionCell: true },
+                children: [
+                  { component: 'Button', props: { label: 'Triage', variant: 'secondary', size: 'sm' }, action: { method: 'urn:Triage', target: A } },
+                  { component: 'Dropdown', props: { 'aria-label': 'More actions for SC-004' }, children: [{ component: 'DropdownItem', props: { label: 'Flag duplicate' }, action: { method: 'urn:Flag', target: A } }] },
+                ],
+              },
             ],
           },
         ],
@@ -79,22 +86,30 @@ describe('a list row', () => {
     ],
   };
 
-  it('has a checkbox named for its object, always', async () => {
+  it('is a real table, with a named checkbox column and a checkbox named for its row', async () => {
     const host: RenderHost = { selection: selection(false) };
-    render(<ViewRenderer view={view(row)} host={host} />);
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Select SC-004 · Safety Case' }));
+    render(<ViewRenderer view={view(table)} host={host} />);
+    expect(screen.getByRole('grid', { name: 'Safety Cases' })).toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Select', 'Identifier', 'Workflow', 'Actions']);
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Select SC-004' }));
     expect(host.selection!.onSelect).toHaveBeenCalledWith(A, true);
   });
 
   it('raises one method and keeps the rest in a … menu that runs them', async () => {
     const host: RenderHost = { selection: selection(false), onAction: vi.fn() };
-    render(<ViewRenderer view={view(row)} host={host} />);
+    render(<ViewRenderer view={view(table)} host={host} />);
     expect(screen.getByRole('button', { name: 'Triage' })).toBeInTheDocument();
     const more = screen.getByRole('button', { name: 'More actions for SC-004' });
     expect(more).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(more);
     await userEvent.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Flag duplicate' }));
     expect(host.onAction).toHaveBeenCalledWith({ method: 'urn:Flag', target: A }, expect.anything());
+  });
+
+  it('has no checkbox column without a selection to choose into', () => {
+    render(<ViewRenderer view={view(table)} host={{}} />);
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader')).toHaveLength(3);
   });
 });
 

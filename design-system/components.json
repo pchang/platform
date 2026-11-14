@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.11",
+  "version": "0.12",
   "components": [
     {
       "id": "Button",
@@ -5155,315 +5155,6 @@
       ]
     },
     {
-      "id": "DataList",
-      "level": "organism",
-      "import": {
-        "package": "@patternfly/react-core",
-        "export": "DataList"
-      },
-      "purpose": "Objects as rows: each with a checkbox, what it is, its state and its actions.",
-      "useWhen": [
-        "An object list in List view (design system 4.3)"
-      ],
-      "avoidWhen": [
-        "Comparing values column by column: use a table"
-      ],
-      "props": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "aria-label"
-        ],
-        "properties": {
-          "aria-label": {
-            "type": "string",
-            "minLength": 1,
-            "description": "What the list holds, such as the objects of a type"
-          },
-          "isCompact": {
-            "type": "boolean",
-            "description": "Less padding"
-          }
-        }
-      },
-      "children": {
-        "accepts": [
-          "DataListItem"
-        ],
-        "minItems": 1
-      },
-      "responsive": "A row's cells stack on phones; from md up they sit side by side.",
-      "accessibility": [
-        "Each row is named by its first cell",
-        "A row's checkbox and actions are named for the row's object"
-      ],
-      "examples": [
-        {
-          "component": "DataList",
-          "props": {
-            "aria-label": "Safety Cases"
-          },
-          "children": [
-            {
-              "component": "DataListItem",
-              "children": [
-                {
-                  "component": "DataListCell",
-                  "props": {
-                    "isFilled": true
-                  },
-                  "children": [
-                    {
-                      "component": "Content",
-                      "props": {
-                        "label": "SC-004 · Safety Case"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "component": "DataListAction",
-                  "props": {
-                    "aria-label": "Actions for SC-004"
-                  },
-                  "children": [
-                    {
-                      "component": "Button",
-                      "props": {
-                        "label": "Triage",
-                        "variant": "secondary",
-                        "size": "sm"
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "DataListItem",
-      "level": "organism",
-      "import": {
-        "package": "@patternfly/react-core",
-        "export": "DataListItem"
-      },
-      "purpose": "One row of a DataList: its cells, then its actions. With selects, a checkbox at its start chooses its object.",
-      "useWhen": [
-        "Every row of a DataList"
-      ],
-      "avoidWhen": [],
-      "props": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {}
-      },
-      "children": {
-        "accepts": [
-          "DataListCell",
-          "DataListAction"
-        ],
-        "minItems": 1
-      },
-      "responsive": "Its cells stack on phones.",
-      "accessibility": [
-        "Named by its first cell; its checkbox is named \"Select\" and that cell's text"
-      ],
-      "examples": [
-        {
-          "component": "DataList",
-          "props": {
-            "aria-label": "Patients"
-          },
-          "children": [
-            {
-              "component": "DataListItem",
-              "children": [
-                {
-                  "component": "DataListCell",
-                  "children": [
-                    {
-                      "component": "Content",
-                      "props": {
-                        "label": "PT-03 · Patient"
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "DataListCell",
-      "level": "organism",
-      "import": {
-        "package": "@patternfly/react-core",
-        "export": "DataListCell"
-      },
-      "purpose": "One part of a DataList row.",
-      "useWhen": [
-        "What the object is, its labels, or its raised method"
-      ],
-      "avoidWhen": [],
-      "props": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "isFilled": {
-            "type": "boolean",
-            "description": "Takes the room left in the row"
-          },
-          "width": {
-            "enum": [
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "description": "Its share of the row, from 1 to 5"
-          },
-          "alignRight": {
-            "type": "boolean",
-            "description": "Sits at the end of the row"
-          }
-        }
-      },
-      "children": {
-        "accepts": [
-          "level:atom",
-          "level:molecule",
-          "level:organism",
-          "level:layout"
-        ],
-        "minItems": 1
-      },
-      "responsive": "Full width on phones.",
-      "accessibility": [
-        "The first cell names the row"
-      ],
-      "examples": [
-        {
-          "component": "DataList",
-          "props": {
-            "aria-label": "Visits"
-          },
-          "children": [
-            {
-              "component": "DataListItem",
-              "children": [
-                {
-                  "component": "DataListCell",
-                  "props": {
-                    "width": 2
-                  },
-                  "children": [
-                    {
-                      "component": "Content",
-                      "props": {
-                        "label": "V-03-1 · Visit"
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "DataListAction",
-      "level": "organism",
-      "import": {
-        "package": "@patternfly/react-core",
-        "export": "DataListAction"
-      },
-      "purpose": "The actions at the end of a DataList row: one raised method and a menu for the rest.",
-      "useWhen": [
-        "A row's methods"
-      ],
-      "avoidWhen": [],
-      "props": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "aria-label"
-        ],
-        "properties": {
-          "aria-label": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Names the actions for the row's object"
-          }
-        }
-      },
-      "children": {
-        "accepts": [
-          "Button",
-          "Dropdown"
-        ],
-        "minItems": 1
-      },
-      "responsive": "Stays at the end of the row; wraps under it on phones.",
-      "accessibility": [
-        "Each action is named for what it does"
-      ],
-      "examples": [
-        {
-          "component": "DataList",
-          "props": {
-            "aria-label": "Queries"
-          },
-          "children": [
-            {
-              "component": "DataListItem",
-              "children": [
-                {
-                  "component": "DataListCell",
-                  "children": [
-                    {
-                      "component": "Content",
-                      "props": {
-                        "label": "Q-04 · Data Query"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "component": "DataListAction",
-                  "props": {
-                    "aria-label": "Actions for Q-04"
-                  },
-                  "children": [
-                    {
-                      "component": "Dropdown",
-                      "props": {
-                        "aria-label": "More actions for Q-04"
-                      },
-                      "children": [
-                        {
-                          "component": "DropdownItem",
-                          "props": {
-                            "label": "Close query"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "Dropdown",
       "level": "molecule",
       "import": {
@@ -5609,6 +5300,837 @@
               "props": {
                 "label": "Close query"
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Table",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Table"
+      },
+      "purpose": "Objects as rows and their facts as columns, such as an object list in List view.",
+      "useWhen": [
+        "An object list in List view (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "One object's facts: use DescriptionList"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the table holds, such as the objects of a type"
+          },
+          "variant": {
+            "enum": [
+              "compact"
+            ],
+            "description": "Less padding; the default padding reads better for object lists"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "Thead",
+          "Tbody"
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "responsive": "Stays a table at every width. When wider than its container it scrolls sideways inside itself, so the page never does.",
+      "accessibility": [
+        "A real table: headers name their columns",
+        "A row that chooses its object starts with a checkbox named \"Select\" and the row's first cell"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Thead",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Thead"
+      },
+      "purpose": "A Table's header row.",
+      "useWhen": [
+        "Every Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Tr"
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "responsive": "Scrolls sideways with its table.",
+      "accessibility": [
+        "Holds the column headers"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tbody",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Tbody"
+      },
+      "purpose": "A Table's rows.",
+      "useWhen": [
+        "Every Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Tr"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Scrolls sideways with its table.",
+      "accessibility": [
+        "One row per object"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Tr",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Tr"
+      },
+      "purpose": "One row of a Table. With selects, a checkbox at its start chooses its object.",
+      "useWhen": [
+        "Every row of a Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "Th",
+          "Td"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Keeps its cells on one line.",
+      "accessibility": [
+        "Its checkbox is named \"Select\" and its first cell"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Th",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Th"
+      },
+      "purpose": "A column header.",
+      "useWhen": [
+        "Every column of a Table"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The column's name"
+          },
+          "screenReaderText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name of a column with no visible header, such as Actions"
+          },
+          "modifier": {
+            "enum": [
+              "nowrap",
+              "fitContent",
+              "wrap",
+              "truncate"
+            ],
+            "description": "How the cell's content fits: nowrap keeps it on one line, so a wide table scrolls; fitContent sizes the column to it"
+          },
+          "isStickyColumn": {
+            "type": "boolean",
+            "description": "Stays in view while the table scrolls sideways, such as the row's actions"
+          },
+          "stickyRightOffset": {
+            "enum": [
+              "0"
+            ],
+            "description": "A sticky column at the end of the row"
+          },
+          "hasLeftBorder": {
+            "type": "boolean",
+            "description": "A thin border before a sticky end column, so it reads as apart from what scrolls under it"
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "label": true
+            },
+            "required": [
+              "label"
+            ]
+          },
+          {
+            "properties": {
+              "screenReaderText": true
+            },
+            "required": [
+              "screenReaderText"
+            ]
+          }
+        ]
+      },
+      "children": null,
+      "responsive": "Stays on one line.",
+      "accessibility": [
+        "Every column has a name, visible or for screen readers"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Td",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-table",
+        "export": "Td"
+      },
+      "purpose": "A cell of a Table row.",
+      "useWhen": [
+        "Every cell of a Table row"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dataLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The column the cell belongs to"
+          },
+          "isActionCell": {
+            "type": "boolean",
+            "description": "The row's actions, at the end"
+          },
+          "modifier": {
+            "enum": [
+              "nowrap",
+              "fitContent",
+              "wrap",
+              "truncate"
+            ],
+            "description": "How the cell's content fits: nowrap keeps it on one line, so a wide table scrolls; fitContent sizes the column to it"
+          },
+          "isStickyColumn": {
+            "type": "boolean",
+            "description": "Stays in view while the table scrolls sideways, such as the row's actions"
+          },
+          "stickyRightOffset": {
+            "enum": [
+              "0"
+            ],
+            "description": "A sticky column at the end of the row"
+          },
+          "hasLeftBorder": {
+            "type": "boolean",
+            "description": "A thin border before a sticky end column, so it reads as apart from what scrolls under it"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 0
+      },
+      "responsive": "Keeps its content on one line.",
+      "accessibility": [
+        "An empty cell means the object has no such value"
+      ],
+      "examples": [
+        {
+          "component": "Table",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "Thead",
+              "children": [
+                {
+                  "component": "Tr",
+                  "children": [
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Identifier"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "label": "Workflow"
+                      }
+                    },
+                    {
+                      "component": "Th",
+                      "props": {
+                        "screenReaderText": "Actions"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "component": "Tbody",
+              "children": [
+                {
+                  "component": "Tr",
+                  "selects": "urn:SC-004",
+                  "children": [
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Identifier"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "SC-004"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "dataLabel": "Workflow"
+                      },
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "received"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "component": "Td",
+                      "props": {
+                        "isActionCell": true
+                      },
+                      "children": [
+                        {
+                          "component": "Button",
+                          "props": {
+                            "label": "Triage",
+                            "variant": "secondary",
+                            "size": "sm"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }

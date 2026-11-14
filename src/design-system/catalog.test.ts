@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import * as PatternFlyCharts from '@patternfly/react-charts/victory';
+import * as PatternFlyTable from '@patternfly/react-table';
 import * as PatternFly from '@patternfly/react-core';
 import { describe, expect, it } from 'vitest';
 import { catalog, componentsById, schemas, type ViewNode } from './catalog';
@@ -32,7 +33,8 @@ describe('catalog files', () => {
 
 describe.each(catalog.components.map((c) => [c.id, c] as const))('component %s', (_id, entry) => {
   it('imports a real PatternFly export', () => {
-    const pkg = entry.import.package === '@patternfly/react-charts/victory' ? PatternFlyCharts : PatternFly;
+    const packages: Record<string, object> = { '@patternfly/react-core': PatternFly, '@patternfly/react-charts/victory': PatternFlyCharts, '@patternfly/react-table': PatternFlyTable };
+    const pkg = packages[entry.import.package];
     expect(pkg).toHaveProperty(entry.import.export);
   });
 

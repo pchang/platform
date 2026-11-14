@@ -50,10 +50,6 @@ import {
   Wizard,
   WizardHeader,
   WizardStep,
-  DataList,
-  DataListAction,
-  DataListCell,
-  DataListItem,
   Dropdown,
   DropdownItem,
   ToggleGroup,
@@ -64,6 +60,7 @@ import {
   ToolbarItem,
 } from '@patternfly/react-core';
 import { Chart, ChartBar, ChartStack } from '@patternfly/react-charts/victory';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { ComponentType } from 'react';
 
 /**
@@ -125,10 +122,12 @@ export const library = {
   Wizard,
   WizardHeader,
   WizardStep,
-  DataList,
-  DataListAction,
-  DataListCell,
-  DataListItem,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
   Dropdown,
   DropdownItem,
   ToggleGroup,

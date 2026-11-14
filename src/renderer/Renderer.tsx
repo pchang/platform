@@ -1,4 +1,5 @@
-import { DataListCheck, DataListItemCells, DataListItemRow, DropdownList, Icon, MenuToggle, MenuToggleCheckbox, TabTitleText, type MenuToggleElement } from '@patternfly/react-core';
+import { Checkbox, DropdownList, Icon, MenuToggle, MenuToggleCheckbox, TabTitleText, type MenuToggleElement } from '@patternfly/react-core';
+import { InnerScrollContainer } from '@patternfly/react-table';
 import CheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
 import EllipsisHIcon from '@patternfly/react-icons/dist/esm/icons/ellipsis-h-icon';
 import OutlinedCircleIcon from '@patternfly/react-icons/dist/esm/icons/outlined-circle-icon';
@@ -76,43 +77,64 @@ function SelectCircle() {
 }
 const { Button } = library;
 
-/** A list row (design system spec 4.3): a checkbox when it chooses an object, its cells, then its actions. */
-function ListRow({ node, host }: { node: ViewNode; host: RenderHost }) {
+/** Whether the Table being drawn has rows that choose objects, so its header gives the checkbox column a name. */
+const TableSelectContext = createContext(false);
+
+/**
+ * An object table (design system spec 4.3): a real table that stays one at every width and scrolls sideways inside
+ * itself when wide. Rows that choose an object start with a checkbox.
+ */
+function ObjectTable({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const { Table } = library;
+  const body = node.children?.find((c) => c.component === 'Tbody');
+  const selectable = Boolean(host.selection && body?.children?.some((row) => row.selects));
+  return (
+    <TableSelectContext.Provider value={selectable}>
+      <InnerScrollContainer>
+        <Table {...(node.props ?? {})} gridBreakPoint="" className="app-object-table">
+          {(node.children ?? []).map((child, i) => (
+            <Node key={i} node={child} host={host} />
+          ))}
+        </Table>
+      </InnerScrollContainer>
+    </TableSelectContext.Provider>
+  );
+}
+
+/** A table row: in a table of objects, a checkbox cell first, named "Select" and the row's first cell. */
+function TableRow({ node, host }: { node: ViewNode; host: RenderHost }) {
   const id = useId();
-  const { DataListItem, DataListCell, DataListAction } = library;
-  const cells = (node.children ?? []).filter((c) => c.component === 'DataListCell');
-  const action = (node.children ?? []).find((c) => c.component === 'DataListAction');
+  const selectable = useContext(TableSelectContext);
+  const { Tr, Td, Th } = library;
   const object = node.selects;
   const chosen = Boolean(object && host.selection?.selected.has(object));
+  const [first, ...rest] = node.children ?? [];
+  const firstCell =
+    first && first.component === 'Td' ? (
+      <Td {...(first.props ?? {})} id={`${id}-name`}>
+        {(first.children ?? []).map((child, j) => (
+          <Node key={j} node={child} host={host} />
+        ))}
+      </Td>
+    ) : (
+      first && <Node node={first} host={host} />
+    );
   return (
-    <DataListItem aria-labelledby={`${id}-name`} className={chosen ? 'app-row-chosen' : undefined}>
-      <DataListItemRow>
-        {object && host.selection && (
-          <>
-            <span id={`${id}-select`} className="pf-v6-screen-reader">
-              Select
-            </span>
-            <DataListCheck id={`${id}-check`} aria-labelledby={`${id}-select ${id}-name`} isChecked={chosen} onChange={(_event, checked) => host.selection!.onSelect(object, checked)} />
-          </>
-        )}
-        <DataListItemCells
-          dataListCells={cells.map((cell, i) => (
-            <DataListCell key={i} {...(cell.props ?? {})} id={i === 0 ? `${id}-name` : undefined}>
-              {(cell.children ?? []).map((child, j) => (
-                <Node key={j} node={child} host={host} />
-              ))}
-            </DataListCell>
-          ))}
-        />
-        {action && (
-          <DataListAction {...(action.props ?? {})} id={`${id}-action`} aria-labelledby={`${id}-action`}>
-            {(action.children ?? []).map((child, j) => (
-              <Node key={j} node={child} host={host} />
-            ))}
-          </DataListAction>
-        )}
-      </DataListItemRow>
-    </DataListItem>
+    <Tr isRowSelected={chosen}>
+      {selectable && !object && <Th screenReaderText="Select" />}
+      {selectable && object && (
+        <Td className="pf-v6-c-table__check">
+          <span id={`${id}-select`} className="pf-v6-screen-reader">
+            Select
+          </span>
+          <Checkbox id={`${id}-check`} aria-labelledby={`${id}-select ${id}-name`} isChecked={chosen} onChange={(_event, checked) => host.selection!.onSelect(object, checked)} />
+        </Td>
+      )}
+      {firstCell}
+      {rest.map((child, j) => (
+        <Node key={j} node={child} host={host} />
+      ))}
+    </Tr>
   );
 }
 
@@ -386,7 +408,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Chart') return <ChartFrame node={node} />;
   if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
   if (entry.id === 'Card' && (node.opens || node.selects)) return <OpenableCard node={node} host={host} />;
-  if (entry.id === 'DataListItem') return <ListRow node={node} host={host} />;
+  if (entry.id === 'Table') return <ObjectTable node={node} host={host} />;
+  if (entry.id === 'Tr') return <TableRow node={node} host={host} />;
   if (entry.id === 'Dropdown') return <ActionsMenu node={node} host={host} />;
   if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;

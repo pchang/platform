@@ -102,7 +102,7 @@
         "selects": {
           "type": "string",
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
-          "description": "A graph object the node chooses for a batch action (design system 4.3): a Card in select mode, or a DataListItem's checkbox."
+          "description": "A graph object the node chooses for a batch action (design system 4.3): a Card in select mode, or a table row's checkbox."
         },
         "batch": {
           "type": "string",

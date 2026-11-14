@@ -37,7 +37,7 @@ export interface ViewNode {
   intent?: Intent;
   /** A graph object the node opens in the object panel (design system spec 4.4). Only on a Card or a Button. */
   opens?: string;
-  /** A graph object the node chooses for a batch action (design system spec 4.3). Only on a Card or a DataListItem. */
+  /** A graph object the node chooses for a batch action (design system spec 4.3). Only on a Card or a table row (Tr). */
   selects?: string;
   /** A method a Button runs on every chosen object (design system spec 4.3). */
   batch?: string;

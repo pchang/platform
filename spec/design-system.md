@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.27. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
+Version 0.28. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -146,10 +146,11 @@ To do, the list of a type's objects and the search page are object lists (patter
   - In select mode, each card shows a round select control at its top right: an empty circle, or a green check when chosen. It is a checkbox named "Select" and the object's title.
   - Choosing anywhere on a card, except its buttons, chooses it, rather than opening it. The card's title still opens the object.
   - A chosen card's border shows it is chosen, as well as its check.
-- **List.** The selection control is always there.
-  - One row per object, each with a checkbox at its start: the identifier and type, the title as a button that opens the object, the state and status labels, and one method raised to the row (the first task waiting, or else the first method available).
-  - The row's other methods are in a "…" menu, named "More actions for" the object's identifier.
-  - On phones, a row's parts stack.
+- **List.** A table, PatternFly's Table. The selection control is always there.
+  - Columns, in order: a checkbox, named "Select" and the row's identifier; Identifier; Title, a button that opens the object; Type, only when the list holds more than one type; Attention, the status labels (deadline, urgency and runs in progress), shown only when some listed object has one, and named so it never clashes with a state dimension named Status; then one column per state dimension the listed objects have, headed by the dimension's name, such as Workflow or Causality, with each value in plain text, and empty where the object's type has no such dimension; and last the row's actions.
+  - The lifecycle dimension comes first among the state columns, then the rest by name.
+  - Actions: a column pinned to the end of the row, behind a thin border, so it stays in view while a wide table scrolls under it; on phones, below md, it scrolls with the row, since pinned it would hide most of it. One method raised to the row, the first task waiting or else the first method available, and the rest in a "…" menu, named "More actions for" the object's identifier.
+  - Cells keep their content on one line, with PatternFly's default, roomy cell padding, on the content area's white table surface. When the table is wider than the content area, it scrolls sideways inside itself; the page never does. It stays a table on phones.
 - **Batch actions.** Once one or more objects are chosen, in either view, a thin divider follows the selection control, then the methods every chosen object has available that run for many (platform spec 5.4), as plain text buttons. The first three are shown; the rest are in a "…" menu named "More actions for the selected". When none applies to all of them, it says so, quietly.
   - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects, gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons.
   - Commit runs only the objects that would succeed, one commit each.
@@ -401,3 +402,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.25 | 2026-11-14 | Added the object panel (4.4): cards open their object in a side panel, three quarters of the content area and expandable to all of it, with a header of identity, state and methods, then tabs for the overview and each many-valued relationship end. Moving in slides the current object out; Back steps out one at a time; Close ends the panel. |
 | 0.26 | 2026-11-14 | Notifications is a plain icon button like Settings and Profile. Object lists show cards or a list, with a list bar: select mode with a round select control on cards, checkboxes on rows, one raised method per row and the rest in a … menu, and batch actions for the methods every chosen object has. The To do summary is its count tiles only. |
 | 0.27 | 2026-11-14 | The list bar follows Gmail's: PatternFly's bulk select checkbox with its menu and count at the start, the chosen objects' actions as plain buttons after a divider, extras in a … menu, and the view toggle at the end. Select and Done selecting are icon buttons. |
+| 0.28 | 2026-11-14 | The list view is a table: checkbox, identifier, title, type when mixed, status labels, one column per state dimension with plain values, and actions. Wide tables scroll sideways inside themselves. |

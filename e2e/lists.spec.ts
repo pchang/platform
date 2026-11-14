@@ -9,7 +9,7 @@ const axePath = require.resolve('axe-core/axe.min.js');
 
 const bar = (page: Page) => page.getByRole('main').locator('.pf-v6-c-toolbar');
 const card = (page: Page, id: string) => page.locator('.app-object-drawer__content .pf-v6-c-card').filter({ has: eyebrow(page, id) });
-const row = (page: Page, id: string) => page.locator('.pf-v6-c-data-list__item').filter({ has: eyebrow(page, id) });
+const row = (page: Page, id: string) => page.locator('.app-object-table tbody tr').filter({ has: page.getByRole('gridcell', { name: id, exact: true }) });
 
 async function openTodo(page: Page) {
   await page.goto('/');
@@ -63,7 +63,11 @@ test('list: a checkbox on every row, one method raised and the rest in a … men
   await expect(card(page, 'SC-001')).toBeVisible({ timeout: 30_000 });
   await bar(page).getByRole('button', { name: 'List' }).click();
   await expect(bar(page).getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(row(page, 'SC-001').getByRole('checkbox', { name: /^Select SC-001 · Safety Case/ })).toBeVisible();
+  await expect(row(page, 'SC-001').getByRole('checkbox', { name: 'Select SC-001' })).toBeVisible();
+  // A real table: a column per state dimension, headed by its name, with the value in each row.
+  const table = page.getByRole('grid', { name: 'Safety Cases' });
+  await expect(table.getByRole('columnheader')).toHaveText(['Select', 'Identifier', 'Title', 'Workflow', 'Causality', 'Expectedness', 'Seriousness', 'Actions']);
+  await expect(row(page, 'SC-001').getByRole('gridcell', { name: 'assessed', exact: true })).toBeVisible();
   await expect(row(page, 'SC-002').getByRole('button', { name: 'Assess' })).toBeVisible();
   await row(page, 'SC-002').getByRole('button', { name: 'More actions for SC-002' }).click();
   await page.getByRole('menuitem', { name: 'Flag duplicate' }).click();
