@@ -51,8 +51,15 @@ for (const mode of modes) for (const { label, width } of widths) {
 
 test('tooltip opens on keyboard focus', async ({ page }) => {
   await page.goto('/#/catalog');
-  await page.getByRole('button', { name: 'Deadline' }).focus();
-  await expect(page.getByRole('tooltip')).toHaveText('Expedited report due in 3 days');
+  await expect(page.getByRole('heading', { level: 1, name: 'Design system catalog' })).toBeVisible();
+  // The catalog is drawn again once the person's context loads, which can drop a focus that came first; focus again
+  // until the page has settled.
+  const button = page.getByRole('button', { name: 'Deadline' });
+  await expect(async () => {
+    await button.blur();
+    await button.focus();
+    await expect(page.getByRole('tooltip')).toHaveText('Expedited report due in 3 days', { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
 });
 
 test('the logo returns home from the catalog', async ({ page }) => {

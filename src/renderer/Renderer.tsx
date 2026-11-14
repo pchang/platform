@@ -1,4 +1,4 @@
-import { DataListCheck, DataListItemCells, DataListItemRow, DropdownList, Icon, MenuToggle, TabTitleText, type MenuToggleElement } from '@patternfly/react-core';
+import { DataListCheck, DataListItemCells, DataListItemRow, DropdownList, Icon, MenuToggle, MenuToggleCheckbox, TabTitleText, type MenuToggleElement } from '@patternfly/react-core';
 import CheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
 import EllipsisHIcon from '@patternfly/react-icons/dist/esm/icons/ellipsis-h-icon';
 import OutlinedCircleIcon from '@patternfly/react-icons/dist/esm/icons/outlined-circle-icon';
@@ -116,24 +116,55 @@ function ListRow({ node, host }: { node: ViewNode; host: RenderHost }) {
   );
 }
 
-/** A … menu of actions (design system spec 4.3): each item runs its method. */
+/**
+ * A menu (design system spec 4.3): a … button over actions, or PatternFly's bulk select, a checkbox split with a menu and
+ * the count chosen. Each item runs its method, its batch action, or its selection intent.
+ */
 function ActionsMenu({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const id = useId();
   const [isOpen, setOpen] = useState(false);
   const { Dropdown, DropdownItem } = library;
-  const label = (node.props as { 'aria-label': string })['aria-label'];
+  const props = node.props as { 'aria-label': string; toggle?: 'actions' | 'bulk-select'; checked?: 'none' | 'some' | 'all'; count?: number };
+  const run = (item: ViewNode) => {
+    if (item.action) host.onAction?.(item.action, item);
+    else if (item.batch) host.onBatch?.(item.batch);
+    else if (item.intent) host.onIntent?.(item.intent);
+  };
+  const bulk = props.toggle === 'bulk-select';
+  const checked = props.checked ?? 'none';
   return (
     <Dropdown
       isOpen={isOpen}
       onOpenChange={(open: boolean) => setOpen(open)}
       onSelect={() => setOpen(false)}
-      popperProps={{ position: 'right' }}
-      toggle={(ref: Ref<MenuToggleElement>) => (
-        <MenuToggle ref={ref} variant="plain" aria-label={label} isExpanded={isOpen} onClick={() => setOpen((open) => !open)} icon={<EllipsisHIcon />} />
-      )}
+      popperProps={{ position: bulk ? 'left' : 'right' }}
+      toggle={(ref: Ref<MenuToggleElement>) =>
+        bulk ? (
+          <MenuToggle
+            ref={ref}
+            aria-label={props['aria-label']}
+            isExpanded={isOpen}
+            onClick={() => setOpen((open) => !open)}
+            splitButtonItems={[
+              <MenuToggleCheckbox
+                key="all"
+                id={`${id}-checkbox`}
+                aria-label={checked === 'none' ? 'Select all' : 'Select none'}
+                isChecked={checked === 'all' ? true : checked === 'some' ? null : false}
+                onChange={() => host.onIntent?.(checked === 'none' ? 'select-all' : 'clear-selection')}
+              >
+                {props.count ? `${props.count} selected` : undefined}
+              </MenuToggleCheckbox>,
+            ]}
+          />
+        ) : (
+          <MenuToggle ref={ref} variant="plain" aria-label={props['aria-label']} isExpanded={isOpen} onClick={() => setOpen((open) => !open)} icon={<EllipsisHIcon />} />
+        )
+      }
     >
       <DropdownList>
         {(node.children ?? []).map((item, i) => (
-          <DropdownItem key={i} onClick={() => item.action && host.onAction?.(item.action, item)}>
+          <DropdownItem key={i} onClick={() => run(item)}>
             {(item.props as { label: string }).label}
           </DropdownItem>
         ))}

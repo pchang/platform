@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.10",
+  "version": "0.11",
   "components": [
     {
       "id": "Button",
@@ -64,7 +64,9 @@
               "user",
               "minus",
               "th-large",
-              "list"
+              "list",
+              "outlined-check-square",
+              "times"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -305,7 +307,9 @@
               "user",
               "minus",
               "th-large",
-              "list"
+              "list",
+              "outlined-check-square",
+              "times"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -4934,7 +4938,14 @@
       "props": {
         "type": "object",
         "additionalProperties": false,
-        "properties": {}
+        "properties": {
+          "variant": {
+            "enum": [
+              "separator"
+            ],
+            "description": "A thin divider between groups of controls"
+          }
+        }
       },
       "children": {
         "accepts": [
@@ -4943,7 +4954,7 @@
           "level:organism",
           "level:layout"
         ],
-        "minItems": 1
+        "minItems": 0
       },
       "responsive": "Keeps its size; the row wraps around it.",
       "accessibility": [
@@ -5459,9 +5470,11 @@
         "package": "@patternfly/react-core",
         "export": "Dropdown"
       },
-      "purpose": "More actions behind a … button, when there is no room to show them all.",
+      "purpose": "A menu behind a toggle: more actions behind a … button, or PatternFly's bulk select, a checkbox split with a menu, for choosing the objects of a list.",
       "useWhen": [
-        "A list row's methods beyond the one raised"
+        "A list row's methods beyond the one raised",
+        "The list bar's batch actions beyond the first three",
+        "The list bar's selection control (design system 4.3)"
       ],
       "avoidWhen": [
         "One or two actions: show them as buttons"
@@ -5477,6 +5490,26 @@
             "type": "string",
             "minLength": 1,
             "description": "The … button's name, such as More actions for SC-004"
+          },
+          "toggle": {
+            "enum": [
+              "actions",
+              "bulk-select"
+            ],
+            "description": "The toggle PatternFly draws: a plain … button (actions, the default), or the bulk select checkbox with a count"
+          },
+          "checked": {
+            "enum": [
+              "none",
+              "some",
+              "all"
+            ],
+            "description": "Bulk select: how many of the listed objects are chosen. Choosing the checkbox chooses all when none are, and none otherwise"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Bulk select: how many are chosen, shown beside the checkbox when more than none"
           }
         }
       },
@@ -5488,7 +5521,8 @@
       },
       "responsive": "The menu opens toward the space available.",
       "accessibility": [
-        "The … button says whether its menu is open; arrow keys move through the items and Escape closes it"
+        "The … button says whether its menu is open; arrow keys move through the items and Escape closes it",
+        "The bulk select checkbox is named for what choosing it does: Select all, or Select none"
       ],
       "examples": [
         {
@@ -5504,6 +5538,31 @@
               }
             }
           ]
+        },
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "Select objects",
+            "toggle": "bulk-select",
+            "checked": "some",
+            "count": 2
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Select all (8)"
+              },
+              "intent": "select-all"
+            },
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Select none"
+              },
+              "intent": "clear-selection"
+            }
+          ]
         }
       ]
     },
@@ -5514,7 +5573,7 @@
         "package": "@patternfly/react-core",
         "export": "DropdownItem"
       },
-      "purpose": "One action in a Dropdown, usually an ontology method.",
+      "purpose": "One item in a Dropdown: an ontology method, a batch action on the chosen objects, or a selection intent.",
       "useWhen": [
         "Every action in a Dropdown"
       ],

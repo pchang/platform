@@ -37,8 +37,16 @@ describe('the list bar (design system spec 4.3)', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-5']) }) });
     expect(validateView(view).errors).toEqual([]);
     const bar = find(view.root, (n) => n.component === 'Toolbar')[0];
-    expect(JSON.stringify(bar)).toContain('"label":"2 selected"');
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Select all', 'Clear', 'Done']);
+    // PatternFly's bulk select: some chosen, how many, and a menu to choose all or none.
+    const bulk = find(bar, (n) => n.component === 'Dropdown' && (n.props as { toggle?: string }).toggle === 'bulk-select')[0];
+    expect(bulk.props).toMatchObject({ checked: 'some', count: 2 });
+    expect(find(bulk, (n) => n.component === 'DropdownItem').map((n) => [(n.props as { label: string }).label, n.intent])).toEqual([
+      ['Select all (3)', 'select-all'],
+      ['Select none', 'clear-selection'],
+    ]);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done selecting']);
+    // A thin divider before the actions for what is chosen.
+    expect(find(bar, (n) => n.component === 'ToolbarItem' && (n.props as { variant?: string } | undefined)?.variant === 'separator')).toHaveLength(1);
     // Flag duplicate is common to both but is a comparison, so it stays with one object at a time.
     const batch = find(bar, (n) => Boolean(n.batch));
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
@@ -86,9 +94,21 @@ describe('the list view (design system spec 4.3)', () => {
     expect(find(row, (n) => n.component === 'Dropdown')).toEqual([]);
   });
 
-  it('keeps the checkbox column in list mode, with no Select button', () => {
+  it('always has the bulk select in list mode, with no Select button', () => {
     const bar = find(view.root, (n) => n.component === 'Toolbar')[0];
-    expect(labelsOf(find(bar, (n) => n.component === 'Button'))).toEqual(['Select all']);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button'))).toEqual([]);
+    expect(find(bar, (n) => n.component === 'Dropdown')[0].props).toMatchObject({ toggle: 'bulk-select', checked: 'none', count: 0 });
+  });
+
+  it('shows three batch actions and keeps the rest in a … menu', () => {
+    const many = [option('A', 'Alpha'), option('B', 'Beta'), option('C', 'Gamma'), option('D', 'Delta')];
+    const all = new Map(cases.map((c) => [c.iri, many]));
+    const chosen = buildTypeView('Safety Cases', cases, { methods: all, controls: controls({ mode: 'list', selected: new Set(cases.map((c) => c.iri)) }) });
+    const bar = find(chosen.root, (n) => n.component === 'Toolbar')[0];
+    expect(find(bar, (n) => n.component === 'Button' && Boolean(n.batch)).map((n) => (n.props as { label: string }).label)).toEqual(['Alpha', 'Beta', 'Gamma']);
+    const more = find(bar, (n) => n.component === 'Dropdown' && (n.props as { 'aria-label': string })['aria-label'] === 'More actions for the selected')[0];
+    expect(find(more, (n) => n.component === 'DropdownItem').map((n) => n.batch)).toEqual(['urn:D']);
+    expect(validateView(chosen).errors).toEqual([]);
   });
 });
 

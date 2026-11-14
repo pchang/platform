@@ -107,7 +107,7 @@
         "batch": {
           "type": "string",
           "minLength": 1,
-          "description": "An ontology method a Button runs on every chosen object (design system 4.3). The gateway checks each object again."
+          "description": "An ontology method a Button or a DropdownItem runs on every chosen object (design system 4.3). The gateway checks each object again."
         }
       }
     }

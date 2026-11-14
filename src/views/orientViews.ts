@@ -175,47 +175,73 @@ export function commonMethods(entries: ListEntry[], selected: ReadonlySet<string
   );
 }
 
-const barButton = (label: string, intent: 'select' | 'select-all' | 'clear-selection'): ViewNode => ({ component: 'Button', props: { label, variant: 'link', isInline: true }, intent });
 const barItem = (child: ViewNode): ViewNode => ({ component: 'ToolbarItem', children: [child] });
+const separator: ViewNode = { component: 'ToolbarItem', props: { variant: 'separator' } };
+/** A plain icon button with a tooltip, named for what it does. */
+const iconButton = (icon: string, label: string, intent: 'select'): ViewNode => ({
+  component: 'Tooltip',
+  props: { content: label },
+  children: [{ component: 'Button', props: { variant: 'plain', icon, 'aria-label': label }, intent }],
+});
+/** Batch actions shown as buttons; the rest go in a … menu. */
+const SHOWN_BATCH_ACTIONS = 3;
 
-/** The list bar (design system spec 4.3): what is chosen and what can be done to it, then the view toggle at its end. */
+/**
+ * The list bar (design system spec 4.3), after Gmail's: the selection control at its start, the chosen objects' actions
+ * beside it while any are chosen, and the view toggle at its end.
+ */
 function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
+  const total = entries.length;
   const chosen = entries.filter((e) => controls.selected.has(e.object.iri)).length;
   const start: ViewNode[] = [];
   if (controls.mode === 'cards' && !controls.selecting) {
-    start.push(barItem(barButton('Select', 'select')));
+    start.push(barItem(iconButton('outlined-check-square', 'Select', 'select')));
   } else {
-    if (chosen) start.push(barItem(text(`${chosen} selected`, 'small')));
-    if (chosen < entries.length) start.push(barItem(barButton('Select all', 'select-all')));
-    if (chosen) start.push(barItem(barButton('Clear', 'clear-selection')));
-    if (controls.mode === 'cards') start.push(barItem(barButton('Done', 'select')));
-  }
-  const groups: ViewNode[] = [];
-  if (start.length) groups.push({ component: 'ToolbarGroup', children: start });
-  if (chosen) {
-    const batch = commonMethods(entries, controls.selected);
-    groups.push({
-      component: 'ToolbarGroup',
-      props: { variant: 'action-group' },
-      children: batch.length
-        ? batch.map((m) => barItem({ component: 'Button', props: { label: m.label, variant: 'secondary', size: 'sm' }, batch: m.method }))
-        : [barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small'))],
-    });
-  }
-  groups.push({
-    component: 'ToolbarGroup',
-    props: { align: { default: 'alignEnd' } },
-    children: [
+    if (controls.mode === 'cards') start.push(barItem(iconButton('times', 'Done selecting', 'select')));
+    start.push(
       barItem({
-        component: 'ToggleGroup',
-        props: { 'aria-label': 'Show objects as', isCompact: true },
+        component: 'Dropdown',
+        props: { 'aria-label': 'Choose which to select', toggle: 'bulk-select', checked: chosen === 0 ? 'none' : chosen === total ? 'all' : 'some', count: chosen },
         children: [
-          { component: 'ToggleGroupItem', props: { value: 'cards', icon: 'th-large', 'aria-label': 'Cards' }, field: LIST_MODE_FIELD },
-          { component: 'ToggleGroupItem', props: { value: 'list', icon: 'list', 'aria-label': 'List' }, field: LIST_MODE_FIELD },
+          { component: 'DropdownItem', props: { label: `Select all (${total})` }, intent: 'select-all' },
+          { component: 'DropdownItem', props: { label: 'Select none' }, intent: 'clear-selection' },
         ],
       }),
-    ],
-  });
+    );
+  }
+  if (chosen) {
+    const batch = commonMethods(entries, controls.selected);
+    start.push(separator);
+    if (!batch.length) start.push(barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small')));
+    for (const m of batch.slice(0, SHOWN_BATCH_ACTIONS)) start.push(barItem({ component: 'Button', props: { label: m.label, variant: 'plain' }, batch: m.method }));
+    const more = batch.slice(SHOWN_BATCH_ACTIONS);
+    if (more.length) {
+      start.push(
+        barItem({
+          component: 'Dropdown',
+          props: { 'aria-label': 'More actions for the selected' },
+          children: more.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, batch: m.method })),
+        }),
+      );
+    }
+  }
+  const groups: ViewNode[] = [
+    { component: 'ToolbarGroup', props: { variant: 'action-group-plain' }, children: start },
+    {
+      component: 'ToolbarGroup',
+      props: { align: { default: 'alignEnd' } },
+      children: [
+        barItem({
+          component: 'ToggleGroup',
+          props: { 'aria-label': 'Show objects as', isCompact: true },
+          children: [
+            { component: 'ToggleGroupItem', props: { value: 'cards', icon: 'th-large', 'aria-label': 'Cards' }, field: LIST_MODE_FIELD },
+            { component: 'ToggleGroupItem', props: { value: 'list', icon: 'list', 'aria-label': 'List' }, field: LIST_MODE_FIELD },
+          ],
+        }),
+      ],
+    },
+  ];
   // Sticky, so what is chosen and the batch actions stay in view while the person scrolls to choose more.
   return { component: 'Toolbar', props: { isSticky: true }, children: [{ component: 'ToolbarContent', children: groups }] };
 }

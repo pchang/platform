@@ -40,7 +40,7 @@ function checkNode(node: ViewNode, at: string): string[] {
   const errors: string[] = [];
   if (node.opens && entry.id !== 'Card' && entry.id !== 'Button') errors.push(`${at} only a Card or a Button opens an object`);
   if (node.selects && entry.id !== 'Card' && entry.id !== 'DataListItem') errors.push(`${at} only a Card or a DataListItem chooses an object`);
-  if (node.batch && entry.id !== 'Button') errors.push(`${at} only a Button runs a batch action`);
+  if (node.batch && entry.id !== 'Button' && entry.id !== 'DropdownItem') errors.push(`${at} only a Button or a DropdownItem runs a batch action`);
   const validateProps = propsValidator(entry.id);
   if (!validateProps(node.props ?? {})) errors.push(...ajvErrors(validateProps, `${at}.props`));
 

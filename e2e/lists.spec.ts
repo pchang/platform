@@ -29,7 +29,7 @@ test('the notification bell is a plain icon button like settings and profile', a
 test('cards: Select shows a round control on each card; choosing three cases offers Triage, which runs once for all three', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
-  await expect(page.getByRole('checkbox', { name: /^Select / })).toHaveCount(0);
+  await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
   await bar(page).getByRole('button', { name: 'Select', exact: true }).click();
   // Choosing a card anywhere but its buttons chooses it; its control is a checkbox named for it.
   await card(page, 'SC-004').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
@@ -53,7 +53,8 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await expect(page.getByText('Triage done on 3 safety cases')).toBeVisible();
   await expect(page.getByText('Done on SC-004, SC-005, SC-006.')).toBeVisible();
   // The choice is cleared, and select mode ends.
-  await expect(page.getByRole('checkbox', { name: /^Select / })).toHaveCount(0);
+  await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
+  await expect(bar(page).getByRole('button', { name: 'Select', exact: true })).toBeVisible();
 });
 
 test('list: a checkbox on every row, one method raised and the rest in a … menu, kept on the device', async ({ page }) => {
@@ -81,8 +82,14 @@ test('list: a checkbox on every row, one method raised and the rest in a … men
   await row(page, 'SC-005').getByRole('checkbox').check();
   await expect(bar(page).getByText('2 selected')).toBeVisible();
   await expect(bar(page).getByRole('button', { name: 'Triage' })).toBeVisible();
-  await bar(page).getByRole('button', { name: 'Clear' }).click();
+  // The bulk select's menu chooses none; its checkbox chooses all when none are chosen.
+  await bar(page).getByRole('button', { name: 'Choose which to select' }).click();
+  await page.getByRole('menuitem', { name: 'Select none' }).click();
   await expect(bar(page).getByText('2 selected')).toHaveCount(0);
+  await bar(page).getByRole('checkbox', { name: 'Select all' }).check();
+  await expect(bar(page).getByText('26 selected')).toBeVisible();
+  await bar(page).getByRole('checkbox', { name: 'Select none' }).uncheck();
+  await expect(bar(page).getByText('26 selected')).toHaveCount(0);
 });
 
 for (const mode of ['light', 'dark'] as const) {
@@ -104,6 +111,9 @@ for (const mode of ['light', 'dark'] as const) {
           await card(page, 'SC-004').getByRole('checkbox').click();
         }
         await expect(bar(page).getByText('1 selected')).toBeVisible();
+        // Tooltips are passing hints, shown while pointed at: move away so the scan sees the page itself.
+        await page.mouse.move(0, 0);
+        await expect(page.getByRole('tooltip')).toHaveCount(0);
         await page.addScriptTag({ path: axePath });
         const violations = await page.evaluate(async () => {
           const axe = (window as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
