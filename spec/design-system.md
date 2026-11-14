@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.25. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.23, sections 3.6, 5.1, 5.4 and 7.
+Version 0.26. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -123,21 +123,35 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
-Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its badge shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
+Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its button is a plain icon button like Settings and Profile, with no frame; a badge on it shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
 
 Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
 
 ### 4.3 To do and object lists
 
-To do and the list of a type's objects are card views (pattern `card-view`), composed as view specs and drawn by the renderer. Each card leads with the object's identifier and type in small text, such as "AE-005 · Adverse Event", then its title from the ontology as the card's heading, such as "Fever and cough; admitted to hospital with pneumonia". Then its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
+To do, the list of a type's objects and the search page are object lists (pattern `card-view`), composed as view specs and drawn by the renderer. Each shows its objects as cards or as a list, the person's choice. Each card leads with the object's identifier and type in small text, such as "AE-005 · Adverse Event", then its title from the ontology as the card's heading, such as "Fever and cough; admitted to hospital with pneumonia". Then its state as labels, its deadline and urgency as status labels (a deadline to come as a warning, "Due", and one already past as a danger, "Overdue since"), and, on To do, the tasks waiting. Running a task from a card comes with the Compose step.
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The To do summary** sits above the cards, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content:
+**The list bar** is a low, plain Toolbar above the objects.
 
-- **Counts.** Four tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
-- **Work by type and stage.** One row per object type with work waiting: its name and count, then a thin segmented bar of its items by lifecycle stage, and below it each stage's name and count beside a swatch. The bars share one scale, so a longer bar is more work. Stages are ordinal, so they take one hue, light to dark from earliest to latest in light mode and dark to light in dark mode, from PatternFly's chart and color tokens, validated against the card surface in each mode. The figures beside each bar are its text alternative, and the chart's accessible name and description say the same.
+- At its end, a toggle between Cards and List, as icon buttons with those names. The choice is kept on the device and applies to every object list.
+- **Cards.** Select starts select mode, and Done ends it.
+  - In select mode, each card shows a round select control at its top right: an empty circle, or a green check when chosen. It is a checkbox named "Select" and the object's title.
+  - Choosing anywhere on a card, except its buttons, chooses it, rather than opening it. The card's title still opens the object.
+  - A chosen card's border shows it is chosen, as well as its check.
+- **List.** One row per object, each with a checkbox at its start, always there.
+  - Each row shows the identifier and type, the title as a button that opens the object, the state and status labels, and one method raised to the row: the first task waiting, or else the first method available.
+  - The row's other methods are in a "…" menu, named "More actions for" the object's identifier.
+  - On phones, a row's parts stack.
+- **Batch actions.** Once one or more objects are chosen, in either view, the bar says how many, with Select all and Clear, and offers as buttons the methods every chosen object has available that run for many (platform spec 5.4). When none applies to all of them, it says so.
+  - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects, gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons.
+  - Commit runs only the objects that would succeed, one commit each.
+  - The outcome names each object, those changed and those refused, and the choice is cleared.
+  - A batch is not set aside in the dock.
+
+**The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 
 ### 4.4 The object panel
 
@@ -380,3 +394,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.23 | 2026-11-14 | Card surface made subtler: the content area halfway between the chrome's gray and the card surface, no border around it, and a lighter, shallower card shadow. |
 | 0.24 | 2026-11-14 | The menu button is two lines that turn into an X while the sidebar is open, instead of PatternFly's hamburger with an arrow. |
 | 0.25 | 2026-11-14 | Added the object panel (4.4): cards open their object in a side panel, three quarters of the content area and expandable to all of it, with a header of identity, state and methods, then tabs for the overview and each many-valued relationship end. Moving in slides the current object out; Back steps out one at a time; Close ends the panel. |
+| 0.26 | 2026-11-14 | Notifications is a plain icon button like Settings and Profile. Object lists show cards or a list, with a list bar: select mode with a round select control on cards, checkboxes on rows, one raised method per row and the rest in a … menu, and batch actions for the methods every chosen object has. The To do summary is its count tiles only. |

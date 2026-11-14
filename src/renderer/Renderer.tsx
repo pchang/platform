@@ -1,4 +1,7 @@
-import { TabTitleText } from '@patternfly/react-core';
+import { DataListCheck, DataListItemCells, DataListItemRow, DropdownList, Icon, MenuToggle, TabTitleText, type MenuToggleElement } from '@patternfly/react-core';
+import CheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
+import EllipsisHIcon from '@patternfly/react-icons/dist/esm/icons/ellipsis-h-icon';
+import OutlinedCircleIcon from '@patternfly/react-icons/dist/esm/icons/outlined-circle-icon';
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { componentsById, type Intent, type ViewNode, type ViewSpec } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
@@ -24,6 +27,119 @@ export interface RenderHost {
   onIntent?: (intent: Intent) => void;
   /** Opens a graph object in the object panel (view spec `opens`, design system spec 4.4), from the element chosen. */
   onOpen?: (object: string, origin?: HTMLElement) => void;
+  /**
+   * The objects chosen for a batch action (view spec `selects`, design system spec 4.3). While `selecting`, cards show
+   * their select control and choosing a card chooses it; list rows always have their checkbox.
+   */
+  selection?: { selecting: boolean; selected: ReadonlySet<string>; onSelect: (object: string, chosen: boolean) => void };
+  /** Runs a method on every chosen object (view spec `batch`). */
+  onBatch?: (method: string) => void;
+}
+
+/** A card in select mode: whether it is chosen, how to change that, and its title for the control's name. */
+const SelectContext = createContext<{ chosen: boolean; toggle: () => void; title: string } | undefined>(undefined);
+
+/** The text of the first CardTitle in a node, to name a card's select control. */
+function cardTitle(node: ViewNode): string {
+  if (node.component === 'CardTitle') return String((node.props as { label?: string } | undefined)?.label ?? '');
+  for (const child of node.children ?? []) {
+    const found = cardTitle(child);
+    if (found) return found;
+  }
+  return '';
+}
+
+/** A card's round select control (design system spec 4.3): an empty circle, or a green check when chosen. A checkbox. */
+function SelectCircle() {
+  const select = useContext(SelectContext)!;
+  return (
+    <Button
+      variant="plain"
+      role="checkbox"
+      aria-checked={select.chosen}
+      aria-label={`Select ${select.title}`}
+      className="app-select-circle"
+      onClick={select.toggle}
+      icon={
+        select.chosen ? (
+          <Icon status="success" size="lg">
+            <CheckCircleIcon />
+          </Icon>
+        ) : (
+          <Icon size="lg">
+            <OutlinedCircleIcon />
+          </Icon>
+        )
+      }
+    />
+  );
+}
+const { Button } = library;
+
+/** A list row (design system spec 4.3): a checkbox when it chooses an object, its cells, then its actions. */
+function ListRow({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const id = useId();
+  const { DataListItem, DataListCell, DataListAction } = library;
+  const cells = (node.children ?? []).filter((c) => c.component === 'DataListCell');
+  const action = (node.children ?? []).find((c) => c.component === 'DataListAction');
+  const object = node.selects;
+  const chosen = Boolean(object && host.selection?.selected.has(object));
+  return (
+    <DataListItem aria-labelledby={`${id}-name`} className={chosen ? 'app-row-chosen' : undefined}>
+      <DataListItemRow>
+        {object && host.selection && (
+          <>
+            <span id={`${id}-select`} className="pf-v6-screen-reader">
+              Select
+            </span>
+            <DataListCheck id={`${id}-check`} aria-labelledby={`${id}-select ${id}-name`} isChecked={chosen} onChange={(_event, checked) => host.selection!.onSelect(object, checked)} />
+          </>
+        )}
+        <DataListItemCells
+          dataListCells={cells.map((cell, i) => (
+            <DataListCell key={i} {...(cell.props ?? {})} id={i === 0 ? `${id}-name` : undefined}>
+              {(cell.children ?? []).map((child, j) => (
+                <Node key={j} node={child} host={host} />
+              ))}
+            </DataListCell>
+          ))}
+        />
+        {action && (
+          <DataListAction {...(action.props ?? {})} id={`${id}-action`} aria-labelledby={`${id}-action`}>
+            {(action.children ?? []).map((child, j) => (
+              <Node key={j} node={child} host={host} />
+            ))}
+          </DataListAction>
+        )}
+      </DataListItemRow>
+    </DataListItem>
+  );
+}
+
+/** A … menu of actions (design system spec 4.3): each item runs its method. */
+function ActionsMenu({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const [isOpen, setOpen] = useState(false);
+  const { Dropdown, DropdownItem } = library;
+  const label = (node.props as { 'aria-label': string })['aria-label'];
+  return (
+    <Dropdown
+      isOpen={isOpen}
+      onOpenChange={(open: boolean) => setOpen(open)}
+      onSelect={() => setOpen(false)}
+      popperProps={{ position: 'right' }}
+      toggle={(ref: Ref<MenuToggleElement>) => (
+        <MenuToggle ref={ref} variant="plain" aria-label={label} isExpanded={isOpen} onClick={() => setOpen((open) => !open)} icon={<EllipsisHIcon />} />
+      )}
+    >
+      <DropdownList>
+        {(node.children ?? []).map((item, i) => (
+          <DropdownItem key={i} onClick={() => item.action && host.onAction?.(item.action, item)}>
+            {(item.props as { label: string }).label}
+          </DropdownItem>
+        ))}
+      </DropdownList>
+    </Dropdown>
+  );
 }
 
 /** The object the Card being drawn opens, so its title can be the card's button. */
@@ -37,22 +153,31 @@ const INTERACTIVE = 'button, a, input, select, textarea, label, [role="tab"], [r
  * and other controls. Its title is a button too, so keyboard and screen reader users open it the same way.
  */
 function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
-  const object = node.opens!;
+  const object = node.opens;
+  const selects = node.selects;
+  // In select mode, choosing the card chooses it (design system spec 4.3); its title still opens it.
+  const selecting = Boolean(selects && host.selection?.selecting);
+  const chosen = Boolean(selects && host.selection?.selected.has(selects));
+  const toggle = () => selects && host.selection?.onSelect(selects, !chosen);
   const { Card } = library;
   const onClick = (event: MouseEvent<HTMLElement>) => {
     const control = (event.target as HTMLElement).closest(INTERACTIVE);
     if (control && event.currentTarget.contains(control)) return;
     // Selecting text in a card is not a click on it.
     if (window.getSelection()?.toString()) return;
-    host.onOpen?.(object, event.currentTarget);
+    if (selecting) toggle();
+    else if (object) host.onOpen?.(object, event.currentTarget);
   };
+  const className = ['app-openable-card', chosen ? 'app-card-chosen' : ''].filter(Boolean).join(' ');
   return (
     <OpensContext.Provider value={object}>
-      <Card {...(node.props ?? {})} className="app-openable-card" onClick={onClick}>
-        {(node.children ?? []).map((child, i) => (
-          <Node key={i} node={child} host={host} />
-        ))}
-      </Card>
+      <SelectContext.Provider value={selecting ? { chosen, toggle, title: cardTitle(node) } : undefined}>
+        <Card {...(node.props ?? {})} className={className} onClick={onClick}>
+          {(node.children ?? []).map((child, i) => (
+            <Node key={i} node={child} host={host} />
+          ))}
+        </Card>
+      </SelectContext.Provider>
     </OpensContext.Provider>
   );
 }
@@ -224,11 +349,14 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   const generatedId = useId();
   const groupId = useContext(FieldIdContext);
   const opens = useContext(OpensContext);
+  const select = useContext(SelectContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
   if (entry.id === 'Chart') return <ChartFrame node={node} />;
   if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
-  if (entry.id === 'Card' && node.opens) return <OpenableCard node={node} host={host} />;
+  if (entry.id === 'Card' && (node.opens || node.selects)) return <OpenableCard node={node} host={host} />;
+  if (entry.id === 'DataListItem') return <ListRow node={node} host={host} />;
+  if (entry.id === 'Dropdown') return <ActionsMenu node={node} host={host} />;
   if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
@@ -241,6 +369,19 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     props.value = host.values?.[field] ?? '';
     props.onChange = (_event: unknown, value: string) => host.onField?.(field, value);
   }
+  // A ToggleGroupItem is chosen while its field has its value.
+  if (field && entry.id === 'ToggleGroupItem') {
+    const value = props.value as string;
+    props.isSelected = host.values?.[field] === value;
+    props.onChange = () => host.onField?.(field, value);
+    delete props.value;
+  }
+  if (entry.id === 'ToggleGroupItem' && typeof props.icon === 'string') {
+    const Svg = icons[props.icon];
+    props.icon = <Svg />;
+  }
+  // A CardHeader in select mode carries the card's select control at its end.
+  if (entry.id === 'CardHeader' && select) props.actions = { actions: <SelectCircle />, hasNoOffset: true };
   if (field && entry.id === 'Radio') {
     const value = props.value as string;
     props.isChecked = host.values?.[field] === value;
@@ -308,6 +449,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (node.action && host.onAction) {
     const action = node.action;
     props.onClick = () => host.onAction!(action, node);
+  }
+  if (entry.id === 'Button' && node.batch) {
+    const method = node.batch;
+    props.onClick = () => host.onBatch?.(method);
   }
   if (entry.id === 'Button' && node.opens) {
     const object = node.opens;

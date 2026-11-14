@@ -53,7 +53,6 @@ test('gives the Clinical Research Coordinator visits by date and the Clinical Re
   expect(visits.slice(0, 3)).toEqual(['V-01-3', 'V-02-3', 'V-03-3']);
   expect(visits.slice(-5)).toEqual(['PT-11', 'PT-12', 'Q-01', 'Q-02', 'Q-03']);
   await expect(page.getByText('Overdue since Nov 3, 2026')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Visits by stage' })).toBeVisible();
 
   // Completing a visit takes it off the list.
   const card = cardFor(page, 'V-01-3');

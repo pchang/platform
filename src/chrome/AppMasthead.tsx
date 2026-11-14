@@ -6,13 +6,14 @@ import {
   MastheadLogo,
   MastheadMain,
   MastheadToggle,
-  NotificationBadge,
   PageToggleButton,
   Toolbar,
   ToolbarContent,
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core';
+import AttentionBellIcon from '@patternfly/react-icons/dist/esm/icons/attention-bell-icon';
+import BellIcon from '@patternfly/react-icons/dist/esm/icons/bell-icon';
 import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 import { useRef, useState } from 'react';
 import { product } from '../config/product';
@@ -91,10 +92,12 @@ export function AppMasthead({
                 )}
               </ToolbarItem>
               <ToolbarItem>
-                <NotificationBadge
-                  variant={unread ? 'unread' : 'read'}
-                  count={unread}
-                  isExpanded={notifications?.isExpanded ?? false}
+                {/* A plain icon button like Settings and Profile, with the unread count as its badge (design system spec 4.1). */}
+                <Button
+                  variant="plain"
+                  icon={unread ? <AttentionBellIcon /> : <BellIcon />}
+                  {...(unread ? { countOptions: { count: unread, isRead: false } } : {})}
+                  aria-expanded={notifications?.isExpanded ?? false}
                   onClick={notifications?.onToggle}
                   aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
                 />

@@ -28,11 +28,17 @@ html body {
  * surface, with no border; cards carry a shadow subtler than PatternFly's small one.
  */
 .pf-v6-c-page.app-page {
-  --pf-v6-c-page__main-container--BackgroundColor: color-mix(
+  --app-content--BackgroundColor: color-mix(
     in srgb,
     var(--pf-t--global--background--color--secondary--default),
     var(--pf-t--global--background--color--primary--default)
   );
+  --pf-v6-c-page__main-container--BackgroundColor: var(--app-content--BackgroundColor);
+}
+
+/* A sticky list bar takes the content area's own surface, so it reads as part of the page, not a strip over it. */
+.app-page .pf-v6-c-toolbar.pf-m-sticky {
+  --pf-v6-c-toolbar--m-sticky--BackgroundColor: var(--app-content--BackgroundColor);
 }
 
 .app-page .pf-v6-c-page__main-container {

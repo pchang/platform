@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
-import { buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter, stageColor } from './orientViews';
+import { buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter } from './orientViews';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [
@@ -25,7 +25,8 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
     const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
     const json = JSON.stringify(buildTodoView(choose, 'Dev Raman, Drug Safety Physician'));
     expect(json).toContain('Link a record (Choose an object, coming soon)');
-    expect(json).not.toContain('"component":"Button"');
+    // No method button: only the list bar's own controls.
+    expect(json).not.toContain('"action":');
   });
 
   it('says what is waiting, and what can be done on an urgent object', () => {
@@ -108,21 +109,10 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(none).toContain('Nothing matches. Choose Waiting to see every item.');
   });
 
-  it('shows work by type, most first, as thin segmented bars by stage on one shared scale', () => {
-    const [, card] = buildSummary(items, today);
-    const json = JSON.stringify(card);
-    const charts = [...json.matchAll(/"ariaTitle":"([^"]+)","ariaDesc":"([^"]+)"/g)].map((m) => [m[1], m[2]]);
-    expect(charts).toEqual([
-      ['Safety Cases by stage', '4 safety cases: 2 received, 1 triaged, 1 assessed.'],
-      ['Submissions by stage', '1 submission: 1 draft.'],
-    ]);
-    expect(json.match(/"domain":\{"y":\[0,4\]\}/g)).toHaveLength(2);
-    expect(json).toContain('{"name":"received 2","symbol":{"fill":"var(--pf-t--chart--color--blue--100)","type":"square"}}');
-    expect(json).toContain('{"name":"assessed 1","symbol":{"fill":"var(--pf-t--chart--color--blue--300)","type":"square"}}');
-  });
-
-  it('colors stages by their place in the lifecycle, five steps from PatternFly tokens', () => {
-    expect([0, 1, 2, 3, 4, 7].map(stageColor)).toEqual([1, 2, 3, 4, 5, 5].map((n) => `var(--pf-t--chart--color--blue--${n}00)`));
+  it('is only the count tiles: no chart of work by type and stage', () => {
+    const summary = buildSummary(items, today);
+    expect(summary).toHaveLength(1);
+    expect(JSON.stringify(summary)).not.toContain('"component":"Chart"');
   });
 
   it('labels a deadline already past as overdue, a danger, and one to come as due, a warning', () => {

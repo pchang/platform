@@ -1,11 +1,94 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { RenderHost } from '../renderer/Renderer';
 import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildSearchView, buildTodoView, buildTypeView, loadingView, TODO_FILTER_FIELD, type TodoFilter } from './orientViews';
+import { BatchDialog } from './BatchDialog';
+import { buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientViews';
+
+/** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
+const LIST_MODE_KEY = 'lsh.listMode';
+function loadListMode(): ListMode {
+  try {
+    return localStorage.getItem(LIST_MODE_KEY) === 'list' ? 'list' : 'cards';
+  } catch {
+    return 'cards';
+  }
+}
+
+/**
+ * How an object list is shown and what is chosen in it (design system spec 4.3), and batch actions on the chosen
+ * objects. Objects no longer listed are no longer chosen.
+ */
+function useObjectList(listed: ObjectSummary[]) {
+  const processes = useProcesses();
+  const [mode, setMode] = useState<ListMode>(loadListMode);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [batch, setBatch] = useState<{ method: string; objects: ObjectSummary[] }>();
+  const key = listed.map((o) => o.iri).join('|');
+  useEffect(() => {
+    const present = new Set(key.split('|'));
+    setSelected((s) => {
+      const kept = [...s].filter((o) => present.has(o));
+      return kept.length === s.size ? s : new Set(kept);
+    });
+  }, [key]);
+
+  // Cards with something chosen are in select mode, so the choice shows; Done ends it and clears the choice.
+  const controls: ListControls = useMemo(() => ({ mode, selecting: mode === 'cards' && (selecting || selected.size > 0), selected }), [mode, selecting, selected]);
+  const host: RenderHost = {
+    selection: {
+      selecting: controls.selecting,
+      selected,
+      onSelect: (object, chosen) =>
+        setSelected((s) => {
+          const next = new Set(s);
+          if (chosen) next.add(object);
+          else next.delete(object);
+          return next;
+        }),
+    },
+    onBatch: (method) => setBatch({ method, objects: listed.filter((o) => selected.has(o.iri)) }),
+  };
+  const onIntent = (intent: string) => {
+    if (intent === 'select') {
+      if (controls.selecting) setSelected(new Set());
+      setSelecting(!controls.selecting);
+    }
+    if (intent === 'select-all') setSelected(new Set(listed.map((o) => o.iri)));
+    if (intent === 'clear-selection') setSelected(new Set());
+  };
+  const onField = (field: string, value: string) => {
+    if (field !== LIST_MODE_FIELD) return false;
+    setMode(value as ListMode);
+    try {
+      localStorage.setItem(LIST_MODE_KEY, value);
+    } catch {
+      // Not kept on this device; the choice still applies until the page closes.
+    }
+    return true;
+  };
+  const dialog = batch && (
+    <BatchDialog
+      objects={batch.objects}
+      method={batch.method}
+      onCancel={() => setBatch(undefined)}
+      onDone={(notice) => {
+        setBatch(undefined);
+        setSelected(new Set());
+        setSelecting(false);
+        processes.report(notice);
+      }}
+    />
+  );
+  return { controls, host, onIntent, onField, dialog, values: { [LIST_MODE_FIELD]: mode } };
+}
+
+const NONE: ObjectSummary[] = [];
 
 /** A method to run from a card: its label and archetype, as the view knows them. */
 type Runnable = { method: string; label: string; archetype: { label: string } };
@@ -80,17 +163,25 @@ export function TodoView() {
     };
   }, [client, principal, processes.changes, changes]);
 
-  const view = items ? buildTodoView(items, `${name}, ${roleLabel}`, processes.notice, runs, { filter }) : loadingView;
+  const today = useMemo(() => new Date(), [items]);
+  const shown = useMemo(() => (items ?? []).filter((i) => matchesFilter(i, filter, today)).map((i) => i.object), [items, filter, today]);
+  const list = useObjectList(shown);
+  const view = items ? buildTodoView(items, `${name}, ${roleLabel}`, processes.notice, runs, { filter, today, controls: list.controls }) : loadingView;
   return (
-    <ViewRenderer
-      view={view}
-      host={{
-        values: { [TODO_FILTER_FIELD]: filter },
-        onField: (field, value) => field === TODO_FILTER_FIELD && setFilter(value as TodoFilter),
-        onAction: (action) => openMethod(action.target, action.method),
-        onOpen: panel.open,
-      }}
-    />
+    <>
+      <ViewRenderer
+        view={view}
+        host={{
+          ...list.host,
+          values: { [TODO_FILTER_FIELD]: filter, ...list.values },
+          onField: (field, value) => list.onField(field, value) || (field === TODO_FILTER_FIELD && setFilter(value as TodoFilter)),
+          onIntent: list.onIntent,
+          onAction: (action) => openMethod(action.target, action.method),
+          onOpen: panel.open,
+        }}
+      />
+      {list.dialog}
+    </>
   );
 }
 
@@ -122,8 +213,17 @@ export function TypeView({ type }: { type: string }) {
     };
   }, [client, principal, type, processes.changes, changes]);
 
-  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
-  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }} />;
+  const list = useObjectList(loaded?.objects ?? NONE);
+  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: list.controls }) : loadingView;
+  return (
+    <>
+      <ViewRenderer
+        view={view}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }}
+      />
+      {list.dialog}
+    </>
+  );
 }
 
 /** The search page (design system spec 4.1, Search): the gateway's understanding of the query, and what it found. */
@@ -152,6 +252,16 @@ export function SearchView({ query }: { query: string }) {
     };
   }, [client, principal, query, processes.changes, changes]);
 
-  const view = loaded ? buildSearchView(loaded.result, { methods: loaded.methods, runs, notice: processes.notice }) : loadingView;
-  return <ViewRenderer view={view} host={{ onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }} />;
+  const found = useMemo(() => loaded?.result.results.map((r) => r.object) ?? NONE, [loaded]);
+  const list = useObjectList(found);
+  const view = loaded ? buildSearchView(loaded.result, { methods: loaded.methods, runs, notice: processes.notice, controls: list.controls }) : loadingView;
+  return (
+    <>
+      <ViewRenderer
+        view={view}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }}
+      />
+      {list.dialog}
+    </>
+  );
 }

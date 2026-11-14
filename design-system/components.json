@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.9",
+  "version": "0.10",
   "components": [
     {
       "id": "Button",
@@ -62,7 +62,9 @@
               "bell",
               "cog",
               "user",
-              "minus"
+              "minus",
+              "th-large",
+              "list"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -301,7 +303,9 @@
               "bell",
               "cog",
               "user",
-              "minus"
+              "minus",
+              "th-large",
+              "list"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -2255,6 +2259,14 @@
           "isHorizontal": {
             "type": "boolean",
             "description": "Terms beside their values"
+          },
+          "termWidth": {
+            "enum": [
+              "12ch",
+              "16ch",
+              "20ch"
+            ],
+            "description": "The width of the terms, beside their values, so a term such as Expectedness fits on one line"
           }
         }
       },
@@ -4706,6 +4718,838 @@
                   }
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Toolbar",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Toolbar"
+      },
+      "purpose": "A low bar of controls above a list: how it is shown, what is chosen and what can be done to it.",
+      "useWhen": [
+        "The list bar above object lists (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "The masthead's own toolbar, which is chrome"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isSticky": {
+            "type": "boolean",
+            "description": "Stays at the top of its scrolling area, so what is chosen and what can be done stay in view"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToolbarContent"
+        ],
+        "minItems": 1,
+        "maxItems": 1
+      },
+      "responsive": "One row that wraps onto more as space runs out.",
+      "accessibility": [
+        "Its controls keep their own names; group related ones in ToolbarGroup"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "label": "Select",
+                        "variant": "link",
+                        "isInline": true
+                      },
+                      "intent": "select"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarContent",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarContent"
+      },
+      "purpose": "The row of a Toolbar.",
+      "useWhen": [
+        "Every Toolbar"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "ToolbarGroup",
+          "ToolbarItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Wraps at narrow widths.",
+      "accessibility": [
+        "Holds the toolbar's groups and items in reading order"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "2 selected"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarGroup",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarGroup"
+      },
+      "purpose": "Related items of a Toolbar, kept together.",
+      "useWhen": [
+        "Batch actions together, or the view toggle at the end"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "align": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "default": {
+                "enum": [
+                  "alignStart",
+                  "alignEnd"
+                ]
+              }
+            },
+            "description": "Where the group sits; alignEnd pushes it to the end of the row"
+          },
+          "variant": {
+            "enum": [
+              "action-group",
+              "action-group-plain"
+            ],
+            "description": "A group of buttons"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToolbarItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Its items wrap together.",
+      "accessibility": [
+        "Order follows reading order, whatever the alignment"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarGroup",
+                  "props": {
+                    "align": {
+                      "default": "alignEnd"
+                    }
+                  },
+                  "children": [
+                    {
+                      "component": "ToolbarItem",
+                      "children": [
+                        {
+                          "component": "Content",
+                          "props": {
+                            "label": "Cards"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToolbarItem",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToolbarItem"
+      },
+      "purpose": "One control or piece of text in a Toolbar.",
+      "useWhen": [
+        "Every control in a Toolbar"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Keeps its size; the row wraps around it.",
+      "accessibility": [
+        "The control inside it is named on its own"
+      ],
+      "examples": [
+        {
+          "component": "Toolbar",
+          "children": [
+            {
+              "component": "ToolbarContent",
+              "children": [
+                {
+                  "component": "ToolbarItem",
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "label": "Clear",
+                        "variant": "link",
+                        "isInline": true
+                      },
+                      "intent": "clear-selection"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToggleGroup",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToggleGroup"
+      },
+      "purpose": "Chooses one of a few ways to show the same thing, such as cards or a list.",
+      "useWhen": [
+        "Switching an object list between Cards and List"
+      ],
+      "avoidWhen": [
+        "Choosing a value for a method: use Radio"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the group chooses, such as how objects are shown"
+          },
+          "isCompact": {
+            "type": "boolean",
+            "description": "Smaller buttons, for a low bar"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "ToggleGroupItem"
+        ],
+        "minItems": 2
+      },
+      "responsive": "Stays on one line.",
+      "accessibility": [
+        "Each item is a toggle button that says whether it is chosen"
+      ],
+      "examples": [
+        {
+          "component": "ToggleGroup",
+          "props": {
+            "aria-label": "Show objects as",
+            "isCompact": true
+          },
+          "children": [
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "cards",
+                "icon": "th-large",
+                "aria-label": "Cards"
+              },
+              "field": "listMode"
+            },
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "list",
+                "icon": "list",
+                "aria-label": "List"
+              },
+              "field": "listMode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ToggleGroupItem",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ToggleGroupItem"
+      },
+      "purpose": "One choice in a ToggleGroup. Bound to a field, it is chosen while the field has its value.",
+      "useWhen": [
+        "Every choice in a ToggleGroup"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value its field takes when it is chosen"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          },
+          "icon": {
+            "enum": [
+              "th-large",
+              "list"
+            ],
+            "description": "An icon from the catalog's Icon names"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Its name when it shows only an icon"
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "text": true
+            },
+            "required": [
+              "text"
+            ]
+          },
+          {
+            "properties": {
+              "icon": true,
+              "aria-label": true
+            },
+            "required": [
+              "icon",
+              "aria-label"
+            ]
+          }
+        ]
+      },
+      "children": null,
+      "responsive": "Keeps its size.",
+      "accessibility": [
+        "An icon-only item is named by aria-label, and says whether it is chosen"
+      ],
+      "examples": [
+        {
+          "component": "ToggleGroup",
+          "props": {
+            "aria-label": "Show objects as"
+          },
+          "children": [
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "cards",
+                "text": "Cards"
+              },
+              "field": "listMode"
+            },
+            {
+              "component": "ToggleGroupItem",
+              "props": {
+                "value": "list",
+                "text": "List"
+              },
+              "field": "listMode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DataList",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DataList"
+      },
+      "purpose": "Objects as rows: each with a checkbox, what it is, its state and its actions.",
+      "useWhen": [
+        "An object list in List view (design system 4.3)"
+      ],
+      "avoidWhen": [
+        "Comparing values column by column: use a table"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the list holds, such as the objects of a type"
+          },
+          "isCompact": {
+            "type": "boolean",
+            "description": "Less padding"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "DataListItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "A row's cells stack on phones; from md up they sit side by side.",
+      "accessibility": [
+        "Each row is named by its first cell",
+        "A row's checkbox and actions are named for the row's object"
+      ],
+      "examples": [
+        {
+          "component": "DataList",
+          "props": {
+            "aria-label": "Safety Cases"
+          },
+          "children": [
+            {
+              "component": "DataListItem",
+              "children": [
+                {
+                  "component": "DataListCell",
+                  "props": {
+                    "isFilled": true
+                  },
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "SC-004 · Safety Case"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "component": "DataListAction",
+                  "props": {
+                    "aria-label": "Actions for SC-004"
+                  },
+                  "children": [
+                    {
+                      "component": "Button",
+                      "props": {
+                        "label": "Triage",
+                        "variant": "secondary",
+                        "size": "sm"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DataListItem",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DataListItem"
+      },
+      "purpose": "One row of a DataList: its cells, then its actions. With selects, a checkbox at its start chooses its object.",
+      "useWhen": [
+        "Every row of a DataList"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "children": {
+        "accepts": [
+          "DataListCell",
+          "DataListAction"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Its cells stack on phones.",
+      "accessibility": [
+        "Named by its first cell; its checkbox is named \"Select\" and that cell's text"
+      ],
+      "examples": [
+        {
+          "component": "DataList",
+          "props": {
+            "aria-label": "Patients"
+          },
+          "children": [
+            {
+              "component": "DataListItem",
+              "children": [
+                {
+                  "component": "DataListCell",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "PT-03 · Patient"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DataListCell",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DataListCell"
+      },
+      "purpose": "One part of a DataList row.",
+      "useWhen": [
+        "What the object is, its labels, or its raised method"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isFilled": {
+            "type": "boolean",
+            "description": "Takes the room left in the row"
+          },
+          "width": {
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Its share of the row, from 1 to 5"
+          },
+          "alignRight": {
+            "type": "boolean",
+            "description": "Sits at the end of the row"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "level:atom",
+          "level:molecule",
+          "level:organism",
+          "level:layout"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Full width on phones.",
+      "accessibility": [
+        "The first cell names the row"
+      ],
+      "examples": [
+        {
+          "component": "DataList",
+          "props": {
+            "aria-label": "Visits"
+          },
+          "children": [
+            {
+              "component": "DataListItem",
+              "children": [
+                {
+                  "component": "DataListCell",
+                  "props": {
+                    "width": 2
+                  },
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "V-03-1 · Visit"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DataListAction",
+      "level": "organism",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DataListAction"
+      },
+      "purpose": "The actions at the end of a DataList row: one raised method and a menu for the rest.",
+      "useWhen": [
+        "A row's methods"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Names the actions for the row's object"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "Button",
+          "Dropdown"
+        ],
+        "minItems": 1
+      },
+      "responsive": "Stays at the end of the row; wraps under it on phones.",
+      "accessibility": [
+        "Each action is named for what it does"
+      ],
+      "examples": [
+        {
+          "component": "DataList",
+          "props": {
+            "aria-label": "Queries"
+          },
+          "children": [
+            {
+              "component": "DataListItem",
+              "children": [
+                {
+                  "component": "DataListCell",
+                  "children": [
+                    {
+                      "component": "Content",
+                      "props": {
+                        "label": "Q-04 · Data Query"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "component": "DataListAction",
+                  "props": {
+                    "aria-label": "Actions for Q-04"
+                  },
+                  "children": [
+                    {
+                      "component": "Dropdown",
+                      "props": {
+                        "aria-label": "More actions for Q-04"
+                      },
+                      "children": [
+                        {
+                          "component": "DropdownItem",
+                          "props": {
+                            "label": "Close query"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Dropdown",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "Dropdown"
+      },
+      "purpose": "More actions behind a … button, when there is no room to show them all.",
+      "useWhen": [
+        "A list row's methods beyond the one raised"
+      ],
+      "avoidWhen": [
+        "One or two actions: show them as buttons"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aria-label"
+        ],
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The … button's name, such as More actions for SC-004"
+          }
+        }
+      },
+      "children": {
+        "accepts": [
+          "DropdownItem"
+        ],
+        "minItems": 1
+      },
+      "responsive": "The menu opens toward the space available.",
+      "accessibility": [
+        "The … button says whether its menu is open; arrow keys move through the items and Escape closes it"
+      ],
+      "examples": [
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "More actions for SC-004"
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Flag duplicate"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DropdownItem",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "DropdownItem"
+      },
+      "purpose": "One action in a Dropdown, usually an ontology method.",
+      "useWhen": [
+        "Every action in a Dropdown"
+      ],
+      "avoidWhen": [],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Visible text"
+          }
+        }
+      },
+      "children": null,
+      "responsive": "Wraps in narrow menus.",
+      "accessibility": [
+        "A menu item named by its text"
+      ],
+      "examples": [
+        {
+          "component": "Dropdown",
+          "props": {
+            "aria-label": "More actions for Q-04"
+          },
+          "children": [
+            {
+              "component": "DropdownItem",
+              "props": {
+                "label": "Close query"
+              }
             }
           ]
         }

@@ -20,3 +20,9 @@
   --pf-v6-c-button--m-link--m-inline--LineHeight: inherit;
   text-align: start;
 }
+
+/* A chosen card shows it by its border as well as its check (design system spec 4.3). */
+.app-openable-card.app-card-chosen {
+  outline: var(--pf-t--global--border--width--strong) solid var(--pf-t--global--border--color--status--success--default);
+  outline-offset: calc(var(--pf-t--global--border--width--strong) * -1);
+}

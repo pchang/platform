@@ -47,7 +47,7 @@ function names(ends: RelationshipEnd[], own: string, name: (end: RelationshipEnd
 
 const dl = (rows: [string, ViewNode[]][]): ViewNode => ({
   component: 'DescriptionList',
-  props: { isCompact: true, isHorizontal: true },
+  props: { isCompact: true, isHorizontal: true, termWidth: '16ch' },
   children: rows.map(([term, description]) => ({
     component: 'DescriptionListGroup',
     children: [
