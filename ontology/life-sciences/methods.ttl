@@ -88,7 +88,8 @@ ls:PromoteToCandidate-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:PromoteToCandidate-effect1 a p:StateChange ;
   p:dimension ls:compoundStage ;
@@ -127,7 +128,8 @@ ls:InvalidateResult-reason a p:Input ;
   p:inputName "reason" ;
   rdfs:label "Reason" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:InvalidateResult-effect1 a p:StateChange ;
   p:dimension ls:assayResultValidity ;
@@ -170,7 +172,8 @@ ls:QuarantineBatch-reason a p:Input ;
   p:inputName "reason" ;
   rdfs:label "Reason" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:QuarantineBatch-effect1 a p:StateChange ;
   p:dimension ls:batchQuality ;
@@ -189,7 +192,8 @@ ls:Consent-eConsentRecord a p:Input ;
   p:inputName "eConsentRecord" ;
   rdfs:label "eConsent record" ;
   p:order 1 ;
-  p:datatype xsd:anyURI .
+  p:datatype xsd:anyURI ;
+  p:perObject true .
 
 ls:Consent-effect1 a p:StateChange ;
   p:dimension ls:patientEnrollment ;
@@ -240,7 +244,8 @@ ls:RecordMissedVisit-reason a p:Input ;
   rdfs:label "Reason" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:missedReason .
+  p:recordedAs ls:missedReason ;
+  p:perObject true .
 
 ls:RecordMissedVisit-effect1 a p:StateChange ;
   p:dimension ls:visitStatus ;
@@ -259,7 +264,8 @@ ls:RecordData-value a p:Input ;
   rdfs:label "Value" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:recordedValue .
+  p:recordedAs ls:recordedValue ;
+  p:perObject true .
 
 ls:RecordData-source a p:Input ;
   p:inputName "source" ;
@@ -288,7 +294,8 @@ ls:RecordAdverseEvent-verbatimTerm a p:Input ;
   rdfs:label "What happened" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:verbatimTerm .
+  p:recordedAs ls:verbatimTerm ;
+  p:perObject true .
 
 ls:RecordAdverseEvent-seriousness a p:Input ;
   p:inputName "seriousness" ;
@@ -377,7 +384,8 @@ ls:AmendProtocol-summary a p:Input ;
   rdfs:label "What the amendment changes" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:amendmentSummary .
+  p:recordedAs ls:amendmentSummary ;
+  p:perObject true .
 
 ls:AmendProtocol-effect1 a p:Creation ;
   p:createsType ls:Protocol ;
@@ -398,7 +406,8 @@ ls:RaiseQuery-question a p:Input ;
   rdfs:label "Question" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:queryText .
+  p:recordedAs ls:queryText ;
+  p:perObject true .
 
 ls:RaiseQuery-effect1 a p:Creation ;
   p:createsType ls:DataQuery ;
@@ -418,7 +427,8 @@ ls:AnswerQuery-answer a p:Input ;
   p:inputName "answer" ;
   rdfs:label "Answer" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:AnswerQuery-effect1 a p:StateChange ;
   p:dimension ls:dataQueryStatus ;
@@ -447,7 +457,8 @@ ls:Requery-reason a p:Input ;
   p:inputName "reason" ;
   rdfs:label "Why the answer does not resolve it" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:Requery-effect1 a p:StateChange ;
   p:dimension ls:dataQueryStatus ;
@@ -472,6 +483,14 @@ ls:ReconcileAdverseEvent a p:Method ;
   p:precondition lsh:ReconcileAdverseEvent-pre, lsh:ReconcileAdverseEvent-pre-hasCase ;
   p:effect ls:ReconcileAdverseEvent-effect1 .
 
+ls:ReportToSafety-note a p:Input ;
+  p:inputName "note" ;
+  rdfs:label "Note to safety" ;
+  p:order 1 ;
+  p:datatype xsd:string ;
+  p:recordedAs ls:reporterNote ;
+  p:perObject true .
+
 ls:ReportToSafety-effect1 a p:Creation ;
   p:createsType ls:SafetyCase ;
   p:linkedBy ls:originatesFrom ;
@@ -485,8 +504,9 @@ ls:ReportToSafety-effect2 a p:StateChange ;
 
 ls:ReportToSafety a p:Method ;
   rdfs:label "Report to safety" ;
-  rdfs:comment "Sends an adverse event to safety as a new safety case." ;
+  rdfs:comment "Sends an adverse event to safety as a new safety case, with a note for the safety team." ;
   p:appliesTo ls:AdverseEvent ;
+  p:input ls:ReportToSafety-note ;
   p:precondition lsh:ReportToSafety-pre ;
   p:effect ls:ReportToSafety-effect1 ;
   p:effect ls:ReportToSafety-effect2 .
@@ -495,7 +515,8 @@ ls:UnblindPatient-justification a p:Input ;
   p:inputName "justification" ;
   rdfs:label "Justification" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:UnblindPatient-effect1 a p:StateChange ;
   p:dimension ls:patientArmVisibility ;
@@ -759,7 +780,8 @@ ls:ConfirmSignal-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:ConfirmSignal-effect1 a p:StateChange ;
   p:dimension ls:signalStatus ;
@@ -781,7 +803,8 @@ ls:RefuteSignal-rationale a p:Input ;
   p:inputName "rationale" ;
   rdfs:label "Rationale" ;
   p:order 1 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:RefuteSignal-effect1 a p:StateChange ;
   p:dimension ls:signalStatus ;
@@ -800,7 +823,8 @@ ls:OpenQualityEvent-description a p:Input ;
   rdfs:label "Description" ;
   p:order 1 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:eventDescription .
+  p:recordedAs ls:eventDescription ;
+  p:perObject true .
 
 ls:OpenQualityEvent-severity a p:Input ;
   p:inputName "severity" ;
@@ -852,7 +876,8 @@ ls:AssignCAPA-action a p:Input ;
   rdfs:label "Action" ;
   p:order 2 ;
   p:datatype xsd:string ;
-  p:recordedAs ls:capaAction .
+  p:recordedAs ls:capaAction ;
+  p:perObject true .
 
 ls:AssignCAPA-effect1 a p:Creation ;
   p:createsType ls:CAPA ;
@@ -895,7 +920,8 @@ ls:RecordCAPAOutcome-evidence a p:Input ;
   p:inputName "evidence" ;
   rdfs:label "Evidence" ;
   p:order 2 ;
-  p:datatype xsd:string .
+  p:datatype xsd:string ;
+  p:perObject true .
 
 ls:RecordCAPAOutcome-effect1 a p:StateChange ;
   p:dimension ls:capaStatus ;

@@ -34,6 +34,14 @@ describe('Compose a method (spec 3.4 and 5.4)', () => {
     expect(review.inputs[0].choices?.map((c) => c.label)).toEqual(['Chloé Martin', 'Dev Raman']);
   });
 
+  it('marks an input about each object, such as a note to safety, and leaves choices shared (spec 5.4)', async () => {
+    const ben = { person: `${NS.d}person-ben`, role: ls('ClinicalDataManager') };
+    const report = await gateway.compose(ben, 'AE-003', ls('ReportToSafety'));
+    expect(report).toMatchObject({ archetype: { label: 'Fill in' }, inputs: [{ name: 'note', label: 'Note to safety', kind: 'text', perObject: true }] });
+    const triage = await gateway.compose(chloe, 'SC-004', ls('Triage'));
+    expect(triage.inputs.every((i) => !i.perObject)).toBe(true);
+  });
+
   it('describes a method with no inputs as Confirm', async () => {
     expect(await gateway.compose(chloe, 'SIG-1', ls('EvaluateSignal'))).toMatchObject({ archetype: { label: 'Confirm' }, inputs: [] });
   });
@@ -81,6 +89,6 @@ describe('Preview a method (spec 3.4)', () => {
     const preview = await withSeed().preview(elena, 'QE-1', ls('StartInvestigation'), { investigator: elena.person });
     expect(preview.created).toEqual([]);
     const ben = { person: `${NS.d}person-ben`, role: ls('ClinicalDataManager') };
-    expect((await withSeed().preview(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-27`]);
+    expect((await withSeed().preview(ben, 'AE-003', ls('ReportToSafety'), { note: 'Seen at the week 4 visit.' })).created).toEqual([`${NS.d}SafetyCase-27`]);
   });
 });

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.29. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.24, sections 3.6, 5.1, 5.4 and 7.
+Version 0.30. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.25, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -152,7 +152,10 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Actions: a column pinned to the end of the row, behind a thin border, so it stays in view while a wide table scrolls under it; on phones, below md, it scrolls with the row, since pinned it would hide most of it. One method raised to the row, the first task waiting or else the first method available, and the rest in a "…" menu, named "More actions for" the object's identifier.
   - Cells keep their content on one line, with PatternFly's default, roomy cell padding, on the content area's white table surface. When the table is wider than the content area, it scrolls sideways inside itself; the page never does. It stays a table on phones.
 - **Batch actions.** Once one or more objects are chosen, in either view, a thin divider follows the selection control, then the methods every chosen object has available that run for many (platform spec 5.4), as plain text buttons. The first three are shown; the rest are in a "…" menu named "More actions for the selected". When none applies to all of them, it says so, quietly.
-  - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects, gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons.
+  - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects.
+  - **Together** (every input shared, platform spec 5.4): the modal gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons. Objects whose changes are the same are shown once, under all their identifiers.
+  - **One after another** (some input about each object): a Wizard in the modal, one step per object named by its identifier, then Review. A step called "For all of them" comes first when there are shared inputs. Each object's step shows its title, its own inputs and its own preview, or why the gateway would refuse it; Next is enabled once its inputs are given, or straight away when it will be left out. Review lists every object with its own changes and the ones left out, and its button commits them, in order.
+  - In either way, a new object a batch will create is named by its type, such as "a new Safety Case": each object is previewed alone, so its identifier is given only at commit.
   - Commit runs only the objects that would succeed, one commit each.
   - The outcome names each object, those changed and those refused, and the choice is cleared.
   - A batch is not set aside in the dock.
@@ -404,3 +407,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.27 | 2026-11-14 | The list bar follows Gmail's: PatternFly's bulk select checkbox with its menu and count at the start, the chosen objects' actions as plain buttons after a divider, extras in a … menu, and the view toggle at the end. Select and Done selecting are icon buttons. |
 | 0.28 | 2026-11-14 | The list view is a table: checkbox, identifier, title, type when mixed, status labels, one column per state dimension with plain values, and actions. Wide tables scroll sideways inside themselves. |
 | 0.29 | 2026-11-14 | Card view's select mode starts from a Select link and ends with a Done link; between them the bar is the same as List's. |
+| 0.30 | 2026-11-14 | A batch runs together, or one after another as a Wizard with a step per object and a Review, when some input is about each object. |

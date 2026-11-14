@@ -702,6 +702,10 @@ ls:effectiveOn a owl:DatatypeProperty ;
   rdfs:label "effective on" ;
   rdfs:comment "The date the version came into force." .
 
+ls:reporterNote a owl:DatatypeProperty ;
+  rdfs:label "note from the reporter" ;
+  rdfs:comment "What the clinical team told safety when it reported the event." .
+
 ls:amendmentSummary a owl:DatatypeProperty ;
   rdfs:label "amendment summary" ;
   rdfs:comment "What an amendment changes, and why." .
@@ -1363,6 +1367,12 @@ lsh:SafetyCase-reaction a sh:PropertyShape ;
   sh:in ( lst:Reaction-drugInducedLiverInjury lst:Reaction-skinRash lst:Reaction-nausea lst:Reaction-headache lst:Reaction-fatigue lst:Reaction-dizziness lst:Reaction-diarrhea ) ;
   sh:name "reaction" .
 
+lsh:SafetyCase-reporterNote a sh:PropertyShape ;
+  sh:path ls:reporterNote ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "note from the reporter" .
+
 lsh:SafetyCase-receivedOn a sh:PropertyShape ;
   sh:path ls:receivedOn ;
   sh:datatype xsd:date ;
@@ -1377,7 +1387,7 @@ lsh:SafetyCase-narrative a sh:PropertyShape ;
 
 lsh:SafetyCase a sh:NodeShape ;
   sh:targetClass ls:SafetyCase ;
-  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-receivedOn, lsh:SafetyCase-narrative .
+  sh:property lsh:SafetyCase-identifier, lsh:SafetyCase-workflow, lsh:SafetyCase-seriousness, lsh:SafetyCase-expectedness, lsh:SafetyCase-causality, lsh:SafetyCase-originatesFrom, lsh:SafetyCase-concerns, lsh:SafetyCase-mayInvolve, lsh:SafetyCase-duplicateOf, lsh:SafetyCase-reaction, lsh:SafetyCase-reporterNote, lsh:SafetyCase-receivedOn, lsh:SafetyCase-narrative .
 
 lsh:Product-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;

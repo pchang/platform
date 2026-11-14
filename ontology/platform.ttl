@@ -180,6 +180,12 @@ p:datatype a rdf:Property ;
   rdfs:comment "The datatype of a literal input." ;
   rdfs:domain p:Input .
 
+p:perObject a rdf:Property ;
+  rdfs:label "per object" ;
+  rdfs:comment "True when the input is about the object it is given for, such as a note or a reason, so a batch asks for it object by object. Otherwise one value holds for every object." ;
+  rdfs:domain p:Input ;
+  rdfs:range xsd:boolean .
+
 p:objectOf a rdf:Property ;
   rdfs:label "object of" ;
   rdfs:comment "The object type an input must be an instance of." ;

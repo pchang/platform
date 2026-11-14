@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.24. November 14, 2026. Author: Paul Chang.
+Version 0.25. November 14, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -325,7 +325,10 @@ Every method has exactly one **interaction archetype**, derived from what the on
 - **Acting on many objects** is a mode, not an archetype: the person selects several objects, then runs the method's archetype once for all of them.
   - The methods offered are those every selected object has available to the person now.
   - For now, only Confirm and Fill in run for many. A signature, a draft, a comparison and a background run each stay with one object at a time.
-  - The inputs are given once. Each object is previewed and committed in its own commit, so each is checked, recorded and atomic on its own. An object whose preview is refused is named with the gateway's reasons and left out, never skipped silently.
+  - **Together or one after another.** The ontology says which, never the method's name or a screen. An input is shared unless the ontology marks it as about each object (`p:perObject`): a note, a reason or a description belongs to one object and means nothing copied to another, where a choice such as seriousness can hold for all.
+    - **Together** (aggregated): every input is shared. The inputs are given once for all the objects.
+    - **One after another** (sequential): some input is about each object. The shared inputs are given once, then the person goes through the objects in order, giving each its own inputs and seeing its own preview, and reviews them all before anything is committed.
+  - Either way, each object is previewed and committed in its own commit, so each is checked, recorded and atomic on its own. An object whose preview is refused is named with the gateway's reasons and left out, never skipped silently.
   - The outcome names every object: what changed, and what was refused and why.
 - Agents use AI to fill the pattern, never to choose it: the wording, sensible defaults, the context worth showing, and the explanation of a block.
 - **Several at once.** A person can set a method they are running aside and come back to it: the process is minimized, keeping everything given so far, and another can be started. One process is in front at a time; restoring one sets the one in front aside. Each set-aside process shows how far along it is, in terms of its archetype, so the measure is the same for every method of that archetype. Nothing is committed until the person finishes the process.
@@ -441,3 +444,4 @@ To resolve in future versions of this spec.
 | 0.22 | 2026-11-13 | Search understood by a connected model (section 5.2): the model turns a query into a search plan from the vocabulary the principal may read, never a record; the gateway checks and runs the plan, and falls back to the ontology reading. "My" and "mine" mean the principal's own objects. One open question. |
 | 0.23 | 2026-11-14 | Relationships read both ways, with containment and cardinality where certain (section 3.1). Added Within an object (section 5.1): every object opens with its header, an overview and one section per many-valued relationship end, contained objects first, generated from the ontology. Read an object answers relationship ends and the last change. |
 | 0.24 | 2026-11-14 | The To do summary is its counts only. Acting on many objects (section 5.4): the methods every selected object has available, Confirm and Fill in for now, inputs given once, one commit per object, refused objects named with their reasons. Two open questions. |
+| 0.25 | 2026-11-14 | Acting on many objects runs together or one after another (section 5.4), decided by the ontology: an input marked as about each object (`p:perObject`) is given for each object in turn, with its own preview, and all are reviewed before commit. |

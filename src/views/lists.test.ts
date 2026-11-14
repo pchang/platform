@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import type { CommitResult, MethodComposition, MethodOption, ObjectSummary } from '../data/client';
-import { batchNotice, buildBatchView, countOf } from './batchView';
+import { batchModeOf, batchNotice, buildBatchView, buildSequentialBatchView, countOf, inputsFor, isComplete, type ObjectPreview } from './batchView';
 import { buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientViews';
 
 // Object lists in cards or a list, the list bar, and batch actions (design system spec 4.3; platform spec 5.4).
@@ -225,5 +225,89 @@ describe('a batch action (platform spec 5.4, Acting on many objects)', () => {
     expect(countOf(cases.slice(0, 1))).toBe('1 safety case');
     expect(countOf([cases[0], { ...summary('Q-1'), type: 'urn:Query', typeLabel: 'Data Query', pluralLabel: 'Data Queries' }])).toBe('2 objects');
     expect(countOf([{ ...summary('C-1'), typeLabel: 'CAPA', pluralLabel: 'CAPAs' }, { ...summary('C-2'), typeLabel: 'CAPA', pluralLabel: 'CAPAs' }])).toBe('2 CAPAs');
+  });
+});
+
+describe('a batch that runs one after another (platform spec 5.4; design system spec 4.3)', () => {
+  const events = ['AE-3', 'AE-5'].map((id) => ({ ...summary(id), type: 'urn:AdverseEvent', typeLabel: 'Adverse Event', pluralLabel: 'Adverse Events', title: `Event ${id}` }));
+  const report: MethodComposition = {
+    method: 'urn:ReportToSafety',
+    label: 'Report to safety',
+    archetype: { archetype: 'urn:FillIn', label: 'Fill in' },
+    object: events[0],
+    inputs: [
+      { name: 'reporter', label: 'Reporter', kind: 'person', choices: [{ value: 'urn:ben', label: 'Ben' }] },
+      { name: 'note', label: 'Note to safety', kind: 'text', perObject: true },
+    ],
+  };
+  const created = (id: string): Omit<CommitResult, 'commit'> => ({
+    changes: [{ subject: `urn:${id}`, subjectLabel: id, property: 'urn:rep', propertyLabel: 'Reporting', oldValue: 'urn:n', oldLabel: 'not reported', newValue: 'urn:r', newLabel: 'reported to safety' }],
+    created: [],
+    pending: [],
+    pendingDescriptions: [],
+    background: [],
+  });
+  const stepsOf = (view: ReturnType<typeof buildSequentialBatchView>) => find(view.root, (n) => n.component === 'WizardStep').map((n) => n.props as { name: string; footer: { isNextDisabled?: boolean; nextButtonText?: string } });
+
+  it('runs together when every input is shared, and one after another when the ontology marks one as about each object', () => {
+    expect(batchModeOf({ ...report, inputs: [report.inputs[0]] })).toBe('together');
+    expect(batchModeOf({ ...report, inputs: [] })).toBe('together');
+    expect(batchModeOf(report)).toBe('one after another');
+  });
+
+  it('keeps each object’s own inputs apart, and shares the rest', () => {
+    const values = { reporter: 'urn:ben', noteForAE3: 'Rash after dose 2', noteForAE5: '' };
+    expect(inputsFor(report, values, events[0])).toEqual({ reporter: 'urn:ben', note: 'Rash after dose 2' });
+    expect(isComplete(report, values, events[0])).toBe(true);
+    expect(isComplete(report, values, events[1])).toBe(false);
+  });
+
+  it('is a Wizard: the shared inputs, a step per object with its own field, then Review', () => {
+    const view = buildSequentialBatchView(report, events, new Map(), {});
+    expect(validateView(view).errors).toEqual([]);
+    expect(stepsOf(view).map((s) => s.name)).toEqual(['For all of them', 'AE-3', 'AE-5', 'Review']);
+    expect(stepsOf(view).map((s) => s.footer.isNextDisabled)).toEqual([true, true, true, true]);
+    const json = JSON.stringify(view);
+    expect(json).toContain('"title":"Report to safety 2 adverse events","description":"AE-3, AE-5"');
+    expect(json).toContain('"field":"noteForAE3"');
+    expect(json).toContain('"field":"noteForAE5"');
+    expect(json).toContain('"isVisitRequired":true');
+    // No shared inputs, no shared step.
+    expect(stepsOf(buildSequentialBatchView({ ...report, inputs: [report.inputs[1]] }, events, new Map(), {})).map((s) => s.name)).toEqual(['AE-3', 'AE-5', 'Review']);
+  });
+
+  it('moves on from an object once its own preview is in, and reviews every object before committing them', () => {
+    const states = new Map<string, ObjectPreview>([
+      [events[0].iri, { status: 'ready', preview: created('AE-3') }],
+      [events[1].iri, { status: 'ready', reasons: ['The event was already reported to safety'] }],
+    ]);
+    const view = buildSequentialBatchView(report, events, states, { reporter: 'urn:ben' });
+    const steps = stepsOf(view);
+    expect(steps.map((s) => s.footer.isNextDisabled)).toEqual([false, false, false, false]);
+    expect(steps[3].footer.nextButtonText).toBe('Report to safety 1 of 2');
+    const json = JSON.stringify(view);
+    expect(json.match(/"label":"not reported → reported to safety"/g)).toHaveLength(2);
+    expect(json).toContain('"title":"AE-5 will be left out"');
+    expect(json).toContain('"label":"AE-3 · Event AE-3","headingLevel":"h4"');
+  });
+
+  it('names an object the batch will create by its type, since its identifier is given only at commit', () => {
+    const preview: Omit<CommitResult, 'commit'> = {
+      ...created('AE-3'),
+      created: ['urn:SC-27'],
+      changes: [
+        ...created('AE-3').changes,
+        { subject: 'urn:SC-27', subjectLabel: 'SafetyCase-27', property: 'urn:type', propertyLabel: 'type', newValue: 'urn:SafetyCase', newLabel: 'Safety Case' },
+        { subject: 'urn:SC-27', subjectLabel: 'SafetyCase-27', property: 'urn:note', propertyLabel: 'note from the reporter', newValue: 'Rash', newLabel: 'Rash' },
+      ],
+    };
+    const json = JSON.stringify(buildSequentialBatchView(report, events.slice(0, 1), new Map([[events[0].iri, { status: 'ready', preview }]]), {}));
+    expect(json).toContain('"label":"a new Safety Case, note from the reporter: Rash"');
+    expect(json).not.toContain('SafetyCase-27');
+  });
+
+  it('cannot commit until every object has been checked', () => {
+    const states = new Map<string, ObjectPreview>([[events[0].iri, { status: 'ready', preview: created('AE-3') }]]);
+    expect(stepsOf(buildSequentialBatchView(report, events, states, { reporter: 'urn:ben' }))[3].footer.isNextDisabled).toBe(true);
   });
 });

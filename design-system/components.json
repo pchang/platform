@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.12",
+  "version": "0.13",
   "components": [
     {
       "id": "Button",
@@ -2716,6 +2716,10 @@
             "type": "string",
             "minLength": 1,
             "description": "Names the list of steps"
+          },
+          "isVisitRequired": {
+            "type": "boolean",
+            "description": "A step in the list can be chosen only once it has been reached, so no step is skipped"
           }
         },
         "required": [

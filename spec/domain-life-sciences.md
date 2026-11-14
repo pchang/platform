@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.16. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.23.
+Version 0.17. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.25.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -115,7 +115,7 @@ Covers a clinical trial from design to locked data.
 | Answer query | Data Query | Answer | Status is open | Status: answered |
 | Close query | Data Query | None | Status is answered | Status: closed |
 | Re-query | Data Query | Why the answer does not resolve it | Status is answered | Status: open |
-| Report to safety | Adverse Event | None | Not reported | Creates a Safety Case (cross-domain). Reporting: reported to safety |
+| Report to safety | Adverse Event | A note to safety, about this event | Not reported | Creates a Safety Case (cross-domain), with the note. Reporting: reported to safety |
 | Reconcile adverse event | Adverse Event | None | Reported to safety, and a Safety Case originates from it | Reporting: reconciled. The person confirms the event and its case agree: seriousness, dates and outcome (SAE reconciliation) |
 | Unblind patient | Patient | Justification | Study is blinded, arm is hidden, and rule 2 allows it | Arm visibility: revealed, for this patient only. Logged with its justification |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
@@ -254,6 +254,7 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Record CAPA outcome | CAPA | Fill in |
 | Refute signal | Signal | Fill in |
 | Release batch | Batch | Fill in |
+| Report to safety | Adverse Event | Fill in |
 | Send for review | Submission | Fill in |
 | Start investigation | Quality Event | Fill in |
 | Triage | Safety Case | Fill in |
@@ -272,10 +273,11 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Prepare expedited report | Safety Case | Confirm |
 | Randomize | Patient | Confirm |
 | Register | Compound | Confirm |
-| Report to safety | Adverse Event | Confirm |
 | Start CAPA | CAPA | Confirm |
 
 No method in this domain needs Choose an object or Step by step yet.
+
+**Run for many objects.** Free text and links describe one object, so every such input is marked as about each object (platform spec 5.4) and a batch of its method runs one after another: a note to safety, a reason, a justification, a question, an answer or a summary is given for each object in turn. The exceptions are a simulation's model type and analogs' target property, settings that hold for every compound. Choices, such as seriousness or causality, and people are shared, so Triage or Assess runs together. Reporting two adverse events to safety therefore goes through each event in turn for its note.
 
 The two signed methods carry these meanings (platform spec section 3.4, Electronic signatures):
 
@@ -521,3 +523,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.14 | 2026-11-13 | Every type titles its objects from a template (section 9), and the seed carries the names they need: compounds, products, the study, sites, lots, visits, queries and inquiries. Methods that create objects record the text their titles use. |
 | 0.15 | 2026-11-14 | Relationships read both ways, with containment and at-most-one ends where the domain is certain (section 9), so every object opens with its overview and tabs. |
 | 0.16 | 2026-11-14 | Added Protocol to Clinical Development, mapped to NCIt Study Protocol (C70817): versions with a status lifecycle, conducted under by a study and amended by the next version, with Send protocol for review, Approve protocol (signed) and Amend protocol (on demand), run by the Clinical Data Manager. The seed carries VELOCITY-2's protocol in three versions. Added by ontology and seed alone. |
+| 0.17 | 2026-11-14 | Report to safety takes a note to safety, recorded on the new Safety Case. Free-text and link inputs are marked as about each object, except a simulation's model type and analogs' target property, so a batch of their method runs one after another (Interaction archetypes, Run for many objects). |

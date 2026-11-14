@@ -135,10 +135,10 @@ describe('J1 through the gateway: from trial adverse event to expedited report',
     const gateway = withSeed([], { now: fixedClock, developmentSignatures: true });
 
     // Clinical Data Manager: report the serious event to safety.
-    const reported = await gateway.commit(ben, 'AE-003', ls('ReportToSafety'));
+    const reported = await gateway.commit(ben, 'AE-003', ls('ReportToSafety'), { note: 'Seen at the week 4 visit.' });
     expect(reported.created).toHaveLength(1);
     const caseId = gateway.read(chloe, reported.created[0]).identifier;
-    expect(gateway.read(chloe, caseId)).toMatchObject({ state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-09' } });
+    expect(gateway.read(chloe, caseId)).toMatchObject({ state: { Workflow: 'received', Causality: 'unassessed' }, properties: { 'received on': '2026-11-09', 'note from the reporter': 'Seen at the week 4 visit.' } });
     expect(gateway.read(ben, 'AE-003').state.Reporting).toBe('reported to safety');
 
     // Drug Safety Physician: unblinding is blocked until the case is triaged as serious and unexpected.
@@ -219,14 +219,14 @@ describe('commits', () => {
       <urn:test:p> sh:path ls:mayInvolve ; sh:minCount 1 ; sh:message "Every case must name a batch" .`]);
     // The shape targets only the case this commit creates, so the seed itself conforms.
     const before = scoped.find(chloe, ls('SafetyCase')).length;
-    const reasons = await rejected(scoped.commit(ben, 'AE-003', ls('ReportToSafety')));
+    const reasons = await rejected(scoped.commit(ben, 'AE-003', ls('ReportToSafety'), { note: 'Seen at the week 4 visit.' }));
     expect(reasons.join()).toContain('Every case must name a batch');
     expect(scoped.read(ben, 'AE-003').state.Reporting).toBe('not reported');
     expect(scoped.find(chloe, ls('SafetyCase'))).toHaveLength(before);
     expect(scoped.commits()).toEqual([]);
 
     // Control: without the stricter rule, the same commit succeeds and creates exactly that case.
-    expect((await withSeed().commit(ben, 'AE-003', ls('ReportToSafety'))).created).toEqual([`${NS.d}SafetyCase-27`]);
+    expect((await withSeed().commit(ben, 'AE-003', ls('ReportToSafety'), { note: 'Seen at the week 4 visit.' })).created).toEqual([`${NS.d}SafetyCase-27`]);
   });
 
   it('record described effects as pending work', async () => {

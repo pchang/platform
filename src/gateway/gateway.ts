@@ -120,6 +120,8 @@ export interface ComposedInput {
   /** The values the person may choose from, with their labels. */
   choices?: { value: string; label: string }[];
   default?: string;
+  /** True when the input is about the object it is given for, so a batch asks for it object by object (spec 5.4). */
+  perObject?: boolean;
 }
 
 /** What a signed method asks the signer to agree to (spec 3.4, Electronic signatures). */
@@ -434,10 +436,10 @@ export class Gateway {
   }
 
   private inputs(method: string) {
-    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong WHERE {
+    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong ?perObject WHERE {
         <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label ; p:order ?order .
         OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
-        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } } ORDER BY ?order`);
+        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } OPTIONAL { ?input p:perObject ?perObject } } ORDER BY ?order`);
   }
 
   // ---------------------------------------------------------------- people (development)
@@ -1170,7 +1172,7 @@ export class Gateway {
     const validator = validatorFor(this.graph);
     const signature = this.signatureRequest(principal, method);
     const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
-      const base = { name: input.name, label: input.label };
+      const base = { name: input.name, label: input.label, ...(input.perObject === 'true' ? { perObject: true } : {}) };
       if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
       if (input.valuesFrom) {
         // The input's shape may narrow the scheme, such as causality without "unassessed".
