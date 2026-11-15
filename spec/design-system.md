@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.31. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
+Version 0.32. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -107,6 +107,7 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 **Search.** The search field sits in the masthead, immediately left of the icon buttons, so it is in the same place on every page. It takes a search or a question (platform spec 5.2, Asking a question), so its placeholder reads "Search or ask".
 
 - From md up it is a field. Below md there is no room for a field beside the logo and the icons, so it is a Search icon button; choosing it opens the field in a row across the page under the masthead, with focus in it. That row closes when a search opens, on Escape, or on the button again.
+- **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, this one and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
 
 - As the person types, the best five matches appear in a raised panel under the field, over the page, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
 - Choosing a match, or pressing Enter, opens the search page; a match opens it at that object. Escape, or a click outside, closes the panel.
@@ -410,3 +411,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.29 | 2026-11-14 | Card view's select mode starts from a Select link and ends with a Done link; between them the bar is the same as List's. |
 | 0.30 | 2026-11-14 | A batch runs together, or one after another as a Wizard with a step per object and a Review, when some input is about each object. |
 | 0.31 | 2026-11-15 | The search field takes a search or a question, "Search or ask". The search page leads with the model's answer in a card, with the objects it cites as links and then as an object list; an answer that asks for more, or cannot be given, is an info alert. |
+| 0.32 | 2026-11-15 | On touch screens, text fields use the large body size, 16px, so phones do not zoom in when one takes focus. Pinch zoom stays. |

@@ -58,3 +58,16 @@ html body .pf-v6-c-card:not(.pf-m-plain) {
   box-shadow: 0 var(--pf-t--global--box-shadow--Y--500) calc(var(--pf-t--global--box-shadow--blur--sm) / 2) 0
     color-mix(in srgb, var(--pf-t--global--box-shadow--color--sm--default) 50%, transparent);
 }
+
+/*
+ * No zoom on focus (design system spec 4.1, Search). Phones zoom the page in when a field whose text is under 16px
+ * takes focus, and the page then runs wider than the screen. On touch screens every text field uses the large body
+ * size. Pinch zoom stays: the viewport never blocks it.
+ */
+@media (pointer: coarse) {
+  html .pf-v6-c-text-input-group,
+  html .pf-v6-c-form-control {
+    --pf-v6-c-text-input-group__FontSize: var(--pf-t--global--font--size--body--lg);
+    --pf-v6-c-form-control--FontSize: var(--pf-t--global--font--size--body--lg);
+  }
+}
