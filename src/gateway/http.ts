@@ -2,6 +2,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { NS } from '../ontology/ontology';
 import { Gateway, GatewayError, type Principal } from './gateway';
+import { checkTurns } from './ask';
 import { createMcpServer } from './mcp';
 
 /**
@@ -12,7 +13,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
  *   GET  /api/search?q=list+my+queries      search: who understood the query and how, and what it found; &understand=ontology skips the model
- *   POST /api/ask                            ask a question; body { "question": "..." }: an answer with the objects it cites, or the search it fell back to
+ *   POST /api/ask                            ask a question; body { "question": "...", "earlier": [{ "question", "answer" }] }: an answer with the objects it cites, or the search it fell back to
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
@@ -91,8 +92,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.find(principal, expand(type, NS.ls), state));
       }
       case 'POST ask': {
-        const { question } = (await body(req)) as { question?: unknown };
-        return send(res, 200, await gateway.ask(principal, typeof question === 'string' ? question : ''));
+        const { question, earlier } = (await body(req)) as { question?: unknown; earlier?: unknown };
+        return send(res, 200, await gateway.ask(principal, typeof question === 'string' ? question : '', checkTurns(earlier)));
       }
       case 'GET search':
         return send(res, 200, await gateway.search(principal, url.searchParams.get('q') ?? '', { understand: url.searchParams.get('understand') === 'ontology' ? 'ontology' : 'model' }));

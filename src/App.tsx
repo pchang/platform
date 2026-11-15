@@ -7,6 +7,8 @@ import { NotificationsDrawer } from './chrome/NotificationsDrawer';
 import { NotificationsProvider, useNotifications } from './notifications/NotificationsProvider';
 import { ObjectDrawer } from './objects/ObjectPanel';
 import { ObjectPanelProvider } from './objects/ObjectPanelProvider';
+import { ChatPanel } from './chat/ChatPanel';
+import { ChatProvider, useChat } from './chat/ChatProvider';
 import { ProcessDock } from './chrome/ProcessDock';
 import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
 import { ProcessProvider } from './processes/ProcessProvider';
@@ -22,7 +24,10 @@ export function App() {
     <NotificationsProvider>
       <ProcessProvider>
         <ObjectPanelProvider>
-          <AppPage />
+          <ChatProvider>
+            <AppPage />
+            <ChatPanel />
+          </ChatProvider>
         </ObjectPanelProvider>
       </ProcessProvider>
     </NotificationsProvider>
@@ -37,16 +42,17 @@ function AppPage() {
   const { unread } = useNotifications();
   // A page pattern, such as Compare and decide, takes the view's place while it is in front (design system spec 5.1).
   const frontIsPage = useFrontIsPage();
+  const chat = useChat();
 
   return (
     <Page
-      className="app-page"
+      // With the chat open, the page makes room for it from lg up (design system spec 4.1, Ask).
+      className={chat.isOpen ? 'app-page app-page--chat-open' : 'app-page'}
       masthead={
         <AppMasthead
           isSidebarOpen={isSidebarOpen}
           onSidebarToggle={() => setSidebarOpen((open) => !open)}
           notifications={{ unread, isExpanded: isDrawerOpen, onToggle: () => setDrawerOpen((open) => !open) }}
-          searchQuery={route.name === 'search' ? route.query : undefined}
         />
       }
       notificationDrawer={<NotificationsDrawer onClose={() => setDrawerOpen(false)} />}

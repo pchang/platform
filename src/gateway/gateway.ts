@@ -2,7 +2,7 @@ import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
-import { ANSWER_TOOL, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput } from './ask';
+import { ANSWER_TOOL, checkTurns, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -835,7 +835,7 @@ export class Gateway {
    * gateway tools run as the principal. The answer cites only objects the model read here. Without a model, or when it
    * fails or declines, the question is searched, and the result says why.
    */
-  async ask(principal: Principal, question: string): Promise<AskResult> {
+  async ask(principal: Principal, question: string, earlier: AskTurn[] = []): Promise<AskResult> {
     this.authorize(principal);
     const model = this.options.askModel;
     const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, question), ...(reason ? { searched: reason } : {}) });
@@ -849,7 +849,7 @@ export class Gateway {
       run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
     };
     try {
-      const answer = await model.answer({ question, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
+      const answer = await model.answer({ question, earlier: checkTurns(earlier), context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
       const cited: ObjectSummary[] = [];
       for (const identifier of answer.cited) {
         const iri = seen.get(normalize(identifier));

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.33. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
+Version 0.34. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.27, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -95,7 +95,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Position | Content |
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
-| Masthead, right | The search field, then notifications, settings and profile, as icon buttons with accessible names |
+| Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
@@ -104,16 +104,19 @@ All masthead items stay visible at every width, on one row with the logo, center
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
-**Search.** The search field sits in the masthead, immediately left of the icon buttons, so it is in the same place on every page. It takes a search or a question (platform spec 5.2, Asking a question), so its placeholder reads "Search or ask".
+**Ask.** A chat button, a pair of speech bubbles (PatternFly's comments icon) named "Ask", sits in the masthead immediately left of the icon buttons, at every width. It opens the chat panel: a conversation with the platform, for a search or a question (platform spec 5.2, Asking a question). It replaces a search field in the masthead, and in time it is where agentic sessions start.
 
-- From md up it is a field. Below md there is no room for a field beside the logo and the icons, so it is a Search icon button; choosing it opens the field in a row across the page under the masthead, with focus in it. That row closes when a search opens, on Escape, or on the button again.
-- **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, this one and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
-
-- As the person types, the best five matches appear in a raised panel under the field, over the page, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
-- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object. Escape, or a click outside, closes the panel.
-- The best matches under the field come from the ontology reading, so they appear as fast as the person types. The search page asks the connected model, if there is one, and says while it is working on the answer.
-- **An answer.** When a model answers, the search page leads with it in a card headed "Answer": the model's text in short paragraphs, then "Based on" and the identifiers it cites as inline links that open each object, and, in small text, which model answered and how many objects it looked at. The cited objects follow as an object list with its bar, like any other. An answer that needs the person to say more, or that cannot be given from what they may read, is an inline info alert with the model's words instead of the card. Without a model, or when it fails, the page is the search as below, with a quiet line saying the question was searched rather than answered.
-- The search page (`#/search/…`) shows who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
+- **The panel** is PatternFly's chatbot (`@patternfly/chatbot`). From lg up it is docked at the right, the full height of the window, and the page moves left to make room, so the person works beside it: an object opened from the chat opens in the object panel next to it. Below lg it is docked over the page, and below md it fills the screen; there, opening an object closes the chat, keeping the conversation, so the object can be read.
+- **Header:** the title "Ask", a New conversation button and Close. Escape closes it too, and focus returns to the Ask button.
+- **Before the first message,** a welcome: the greeting of To do (4.3) and "Ask about the work you may see, or search for it.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
+- **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
+- **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
+  - **An answer:** the model's text, then the objects it cites as sources, each its identifier and type with its title, which open the object; and in small text which model answered and how many objects it looked at.
+  - **A question searched instead:** why, in the model's place ("No model is connected to answer questions, so the question was searched."), then the best matches as sources, and "See all N on the search page", which opens the search page. With no match, it says so and suggests fewer words.
+  - **A refusal or failure:** an inline danger alert with the gateway's reasons.
+- **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, the message bar and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
+- **One conversation per person.** It lasts until New conversation or until another person is chosen in Profile, which starts a new one: one person never sees another's conversation. The earlier turns go with each question, so a follow-up such as "and which of those are overdue?" is understood (platform spec 5.2).
+- **The search page** (`#/search/…`), opened from the chat, asks the gateway the same way and shows the answer, or who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
@@ -420,3 +423,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.31 | 2026-11-15 | The search field takes a search or a question, "Search or ask". The search page leads with the model's answer in a card, with the objects it cites as links and then as an object list; an answer that asks for more, or cannot be given, is an info alert. |
 | 0.32 | 2026-11-15 | On touch screens, text fields use the large body size, 16px, so phones do not zoom in when one takes focus. Pinch zoom stays. |
 | 0.33 | 2026-11-15 | To do opens with a greeting for the person chosen in Profile, by time of day and first name, chosen by the date so it holds all day, with a line saying how much waits for them and in which role. |
+| 0.34 | 2026-11-15 | The masthead's search field becomes an Ask button, a pair of speech bubbles, that opens a chat panel built from PatternFly's chatbot: docked at the right beside the page from lg up, over it below lg and full screen on phones. It holds one conversation per person, answers with the objects cited as sources, falls back to search with a link to the search page, and starts agentic sessions in time. |

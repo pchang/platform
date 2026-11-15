@@ -60,7 +60,7 @@ html body .pf-v6-c-card:not(.pf-m-plain) {
 }
 
 /*
- * No zoom on focus (design system spec 4.1, Search). Phones zoom the page in when a field whose text is under 16px
+ * No zoom on focus (design system spec 4.1). Phones zoom the page in when a field whose text is under 16px
  * takes focus, and the page then runs wider than the screen. On touch screens every text field uses the large body
  * size. Pinch zoom stays: the viewport never blocks it.
  */

@@ -12,6 +12,8 @@ import '@fontsource/inter/latin-600.css';
 import '@fontsource/inter/latin-ext-600.css';
 import '@fontsource/inter/latin-700.css';
 import '@fontsource/inter/latin-ext-700.css';
+// PatternFly's chatbot extension, for the chat panel (design system spec 4.1, Ask).
+import '@patternfly/chatbot/dist/css/main.css';
 // The page's own base colors and font, after PatternFly's (design system spec 4.2).
 import './app.css';
 import { App } from './App';

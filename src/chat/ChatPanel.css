@@ -1,0 +1,26 @@
+/* The chat panel (design system spec 4.1, Ask). Tokens only, no raw colors (design system spec, rule 2). */
+
+/* The chatbot's own layout, inside the element that closes it on Escape. */
+.app-chat__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-chat__title {
+  font-size: var(--pf-t--global--font--size--heading--h3);
+  font-weight: var(--pf-t--global--font--weight--heading--default);
+  margin: 0;
+}
+
+.app-chat__note {
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+/* From lg up the page moves left to make room for the docked panel, so the person works beside it. */
+@media (min-width: 992px) {
+  .app-page.app-page--chat-open {
+    padding-inline-end: 30rem;
+  }
+}

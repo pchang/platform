@@ -1,4 +1,5 @@
 import type { MethodOption } from '../ontology/methods';
+import type { AskTurn } from '../gateway/ask';
 import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
 
 /**
@@ -7,7 +8,7 @@ import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationD
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -32,7 +33,8 @@ export interface GatewayClient {
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
   search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;
   /** Ask (platform spec 5.2, Asking a question): a connected model's answer and the objects it cites, or the search it fell back to. */
-  ask(principal: Principal, question: string): Promise<AskResult>;
+  /** Earlier turns of the conversation go with the question, so a follow-up is understood. */
+  ask(principal: Principal, question: string, earlier?: AskTurn[]): Promise<AskResult>;
   /** Rejects with RefusedError when the principal may not read the object. */
   read(principal: Principal, object: string): Promise<ObjectView>;
   /** The methods on an object, each available or blocked with its reasons. */
