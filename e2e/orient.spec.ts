@@ -13,7 +13,8 @@ async function actAs(page: Page, name: string) {
 }
 
 async function todoCards(page: Page) {
-  await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
+  // To do's main heading is the greeting, for whoever is chosen in Profile (design system spec 4.3).
+  await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 30_000 });
   return cardIds(page.getByRole('main').locator('.pf-v6-l-gallery'));
 }
@@ -32,6 +33,8 @@ test('gives each person the navigation and To do of their own work', async ({ pa
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
 
   await actAs(page, 'Ben Okafor');
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Ben\b/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('items need you as Clinical Data Manager.', { exact: false })).toBeVisible();
   expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'PROT-3', 'Q-04', 'Q-05', 'Q-06']);
   await expect(nav.getByText('Clinical Development')).toBeVisible();
   await expect(nav.getByText('Safety and Regulatory')).toHaveCount(0);

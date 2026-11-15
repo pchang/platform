@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.32. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
+Version 0.33. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -161,6 +161,13 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Commit runs only the objects that would succeed, one commit each.
   - The outcome names each object, those changed and those refused, and the choice is cleared.
   - A batch is not set aside in the dock.
+
+**The greeting.** To do opens with a greeting as its main heading, in place of the words "To do": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page To do. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
+
+- The time of day comes from the person's own clock: morning from 5:00, afternoon from 12:00, evening from 17:00, and late night from 22:00.
+- Each part of the day has a few greetings, plain or playful, such as "Good evening, Chloé", "Winding down, Chloé?" or "Burning the midnight oil, Chloé?". Some fit a day of the week: "Happy Monday" on a Monday morning, "Happy Friday" on a Friday afternoon, "Weekend shift" on a Saturday or Sunday.
+- Which one shows is chosen by the date, so a part of the day keeps the same greeting all day, and the next day may bring another. It changes only when the part of the day does, never at random while the person works.
+- The greeting is the same in every domain: it names no object or domain.
 
 **The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 
@@ -412,3 +419,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.30 | 2026-11-14 | A batch runs together, or one after another as a Wizard with a step per object and a Review, when some input is about each object. |
 | 0.31 | 2026-11-15 | The search field takes a search or a question, "Search or ask". The search page leads with the model's answer in a card, with the objects it cites as links and then as an object list; an answer that asks for more, or cannot be given, is an info alert. |
 | 0.32 | 2026-11-15 | On touch screens, text fields use the large body size, 16px, so phones do not zoom in when one takes focus. Pinch zoom stays. |
+| 0.33 | 2026-11-15 | To do opens with a greeting for the person chosen in Profile, by time of day and first name, chosen by the date so it holds all day, with a line saying how much waits for them and in which role. |

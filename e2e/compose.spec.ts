@@ -9,7 +9,7 @@ const axePath = require.resolve('axe-core/axe.min.js');
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Chloé/ })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('main').getByRole('heading', { level: 2 }).first()).toBeVisible({ timeout: 30_000 });
 }
 const card = cardFor;

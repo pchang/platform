@@ -4,6 +4,8 @@ import type { AskResult, MethodOption, RunView, SearchResult, ToDoItem } from '.
 import { answeringView, buildAnswerView, buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter } from './orientViews';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
+const chloe = { name: 'Chloé Martin', role: 'Drug Safety Physician' };
+const ben = { name: 'Ben Okafor', role: 'Clinical Data Manager' };
 const items: ToDoItem[] = [
   { object, tasks: [{ method: 'urn:m', label: 'Send for review', archetype: { archetype: 'urn:a', label: 'Fill in' } }], actions: [], urgency: 0, deadline: '2026-11-17' },
   { object: { ...object, identifier: 'B-002', typeLabel: 'Batch', state: { Quality: 'pending' } }, tasks: [], actions: [{ method: 'urn:q', label: 'Quarantine batch', archetype: { archetype: 'urn:a', label: 'Fill in' } }], urgency: 3 },
@@ -11,8 +13,8 @@ const items: ToDoItem[] = [
 
 describe('Orient views are valid view specs drawn only from the catalog (design system 4.3)', () => {
   it.each([
-    ['To do', buildTodoView(items, 'Chloé Martin, Drug Safety Physician')],
-    ['an empty To do', buildTodoView([], 'Ben Okafor, Clinical Data Manager')],
+    ['To do', buildTodoView(items, chloe)],
+    ['an empty To do', buildTodoView([], ben)],
     ['a list of objects', buildTypeView('Submissions', [object])],
     ['an empty list', buildTypeView('CAPAs', [])],
     ['loading', loadingView],
@@ -24,14 +26,14 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
   it('shows tasks whose pattern is not built yet as text, not as buttons', () => {
     // No method in the life sciences domain uses Choose an object yet, so its pattern is not built.
     const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
-    const json = JSON.stringify(buildTodoView(choose, 'Dev Raman, Drug Safety Physician'));
+    const json = JSON.stringify(buildTodoView(choose, { name: 'Dev Raman', role: 'Drug Safety Physician' }));
     expect(json).toContain('Link a record (Choose an object, coming soon)');
     // No method button: only the list bar's own controls.
     expect(json).not.toContain('"action":');
   });
 
   it('says what is waiting, and what can be done on an urgent object', () => {
-    const json = JSON.stringify(buildTodoView(items, 'Chloé Martin, Drug Safety Physician'));
+    const json = JSON.stringify(buildTodoView(items, chloe));
     expect(json).toContain('"label":"Waiting for you:"');
     expect(json).toContain('{"component":"Button","props":{"label":"Send for review","variant":"primary","size":"sm"},"action":{"method":"urn:m","target":"urn:x"}}');
     expect(json).toContain('"label":"You can:"');
@@ -58,7 +60,7 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
   });
 
   it('shows no run label once the run has ended', () => {
-    const json = JSON.stringify(buildTodoView([{ ...items[0], object: product }], 'Chloé Martin', undefined, [{ ...run, status: 'succeeded' }]));
+    const json = JSON.stringify(buildTodoView([{ ...items[0], object: product }], chloe, undefined, [{ ...run, status: 'succeeded' }]));
     expect(json).not.toContain('Run signal detection: running');
   });
 });
@@ -92,7 +94,7 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
 
   it('is a valid view spec with four selectable count tiles bound to the filter', () => {
-    const view = buildTodoView(items, 'Chloé Martin', undefined, [], { today });
+    const view = buildTodoView(items, chloe, undefined, [], { today });
     expect(validateView(view).errors).toEqual([]);
     const json = JSON.stringify(view);
     for (const [value, title, count] of [['all', 'Waiting', 5], ['urgent', 'Urgent', 1], ['due', 'Due within 7 days', 1], ['overdue', 'Overdue', 1]]) {
@@ -101,12 +103,12 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
 
   it('narrows the cards to the chosen count, and says so when nothing matches', () => {
-    const urgent = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today, filter: 'urgent' }));
+    const urgent = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today, filter: 'urgent' }));
     expect(urgent).toContain(`"label":"SC-2 · Safety Case"`);
     expect(urgent).not.toContain(`"label":"SC-1 · Safety Case"`);
     // The counts stay those of every item.
     expect(urgent).toContain('"label":"Waiting","component":"h3"}},{"component":"CardBody","children":[{"component":"Content","props":{"label":"5"');
-    const none = JSON.stringify(buildTodoView([caseItem('SC-1', 0)], 'Chloé Martin', undefined, [], { today, filter: 'overdue' }));
+    const none = JSON.stringify(buildTodoView([caseItem('SC-1', 0)], chloe, undefined, [], { today, filter: 'overdue' }));
     expect(none).toContain('Nothing matches. Choose Waiting to see every item.');
   });
 
@@ -117,18 +119,18 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
 
   it('labels a deadline already past as overdue, a danger, and one to come as due, a warning', () => {
-    const json = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today }));
+    const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
     expect(json).toContain('{"component":"Label","props":{"label":"Overdue since Nov 10, 2026","status":"danger"}}');
     expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
   });
 
   it('leads each card with the identifier and type in small text, then the title as its heading', () => {
-    const json = JSON.stringify(buildTodoView(items, 'Chloé Martin', undefined, [], { today }));
+    const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
     expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
   });
 
   it('has no summary when nothing is waiting', () => {
-    expect(JSON.stringify(buildTodoView([], 'Ben Okafor'))).not.toContain('At a glance');
+    expect(JSON.stringify(buildTodoView([], ben))).not.toContain('At a glance');
   });
 });
 

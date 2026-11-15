@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { greeting } from './greeting';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -359,7 +360,7 @@ export function todoEntries(items: ToDoItem[], runs: RunView[], today: Date): Li
 
 export function buildTodoView(
   allItems: ToDoItem[],
-  who: string,
+  who: { name: string; role: string },
   notice?: ViewNode,
   runs: RunView[] = [],
   options: { filter?: TodoFilter; today?: Date; controls?: ListControls } = {},
@@ -369,15 +370,16 @@ export function buildTodoView(
   const items = allItems.filter((i) => matchesFilter(i, filter, today));
   const entries = todoEntries(items, runs, today);
   const summary = allItems.length
-    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} ${who}. Nearest deadline first, then the most urgent.`
-    : `Nothing needs ${who} right now.`;
+    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} you as ${who.role}. Nearest deadline first, then the most urgent.`
+    : `Nothing needs you as ${who.role} right now.`;
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
-    because: `To do for ${who}: objects with a task they can run now, or urgent objects they can act on`,
+    because: `To do for ${who.name}, ${who.role}: objects with a task they can run now, or urgent objects they can act on`,
     root: stack([
       ...(notice ? [[notice]] : []),
-      header('To do', summary),
+      // The greeting is the page's main heading (design system spec 4.3, The greeting).
+      header(greeting(who.name, today), summary),
       // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
       ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),

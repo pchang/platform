@@ -166,7 +166,7 @@ export function TodoView() {
   const today = useMemo(() => new Date(), [items]);
   const shown = useMemo(() => (items ?? []).filter((i) => matchesFilter(i, filter, today)).map((i) => i.object), [items, filter, today]);
   const list = useObjectList(shown);
-  const view = items ? buildTodoView(items, `${name}, ${roleLabel}`, processes.notice, runs, { filter, today, controls: list.controls }) : loadingView;
+  const view = items ? buildTodoView(items, { name, role: roleLabel }, processes.notice, runs, { filter, today, controls: list.controls }) : loadingView;
   return (
     <>
       <ViewRenderer
