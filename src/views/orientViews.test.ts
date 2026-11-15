@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
-import type { MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
-import { buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter, stageColor } from './orientViews';
+import type { AskResult, MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
+import { answeringView, buildAnswerView, buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter } from './orientViews';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [
@@ -16,6 +16,7 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
     ['a list of objects', buildTypeView('Submissions', [object])],
     ['an empty list', buildTypeView('CAPAs', [])],
     ['loading', loadingView],
+    ['working on an answer', answeringView('why is AE-003 not reported?')],
   ])('%s', (_name, view) => {
     expect(validateView(view).errors).toEqual([]);
   });
@@ -25,7 +26,8 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
     const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
     const json = JSON.stringify(buildTodoView(choose, 'Dev Raman, Drug Safety Physician'));
     expect(json).toContain('Link a record (Choose an object, coming soon)');
-    expect(json).not.toContain('"component":"Button"');
+    // No method button: only the list bar's own controls.
+    expect(json).not.toContain('"action":');
   });
 
   it('says what is waiting, and what can be done on an urgent object', () => {
@@ -108,21 +110,10 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(none).toContain('Nothing matches. Choose Waiting to see every item.');
   });
 
-  it('shows work by type, most first, as thin segmented bars by stage on one shared scale', () => {
-    const [, card] = buildSummary(items, today);
-    const json = JSON.stringify(card);
-    const charts = [...json.matchAll(/"ariaTitle":"([^"]+)","ariaDesc":"([^"]+)"/g)].map((m) => [m[1], m[2]]);
-    expect(charts).toEqual([
-      ['Safety Cases by stage', '4 safety cases: 2 received, 1 triaged, 1 assessed.'],
-      ['Submissions by stage', '1 submission: 1 draft.'],
-    ]);
-    expect(json.match(/"domain":\{"y":\[0,4\]\}/g)).toHaveLength(2);
-    expect(json).toContain('{"name":"received 2","symbol":{"fill":"var(--pf-t--chart--color--blue--100)","type":"square"}}');
-    expect(json).toContain('{"name":"assessed 1","symbol":{"fill":"var(--pf-t--chart--color--blue--300)","type":"square"}}');
-  });
-
-  it('colors stages by their place in the lifecycle, five steps from PatternFly tokens', () => {
-    expect([0, 1, 2, 3, 4, 7].map(stageColor)).toEqual([1, 2, 3, 4, 5, 5].map((n) => `var(--pf-t--chart--color--blue--${n}00)`));
+  it('is only the count tiles: no chart of work by type and stage', () => {
+    const summary = buildSummary(items, today);
+    expect(summary).toHaveLength(1);
+    expect(JSON.stringify(summary)).not.toContain('"component":"Chart"');
   });
 
   it('labels a deadline already past as overdue, a danger, and one to come as due, a warning', () => {
@@ -181,5 +172,49 @@ describe('the search page (design system spec 4.1, Search)', () => {
     expect(none).toContain('Try fewer words');
     expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown.');
     expect(JSON.stringify(buildSearchView({ ...result, interpretation: { ...result.interpretation, types: [] } }))).toContain('"label":"Identifier: PT-09"');
+  });
+});
+
+describe('an answer (platform spec 5.2, Asking a question; design system spec 4.1, Search)', () => {
+  const ae = { iri: 'urn:AE-003', identifier: 'AE-003', type: 'urn:AE', typeLabel: 'Adverse Event', title: 'Jaundice', pluralLabel: 'Adverse Events', state: { Reporting: 'not reported' } };
+  const report: MethodOption = { method: 'urn:report', label: 'Report to safety', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Fill in' } };
+  const asked = (answer: NonNullable<AskResult['answer']>) => ({ question: 'which serious events are not reported?', answer });
+
+  it('leads with the answer in a card, with the identifiers it rests on as links, then those objects with their methods', () => {
+    const view = buildAnswerView(asked({ status: 'answered', text: 'One: AE-003.\n\nIt waits for you to report it.', cited: [ae], model: 'claude-opus-5-5', lookedAt: 3 }), {
+      methods: new Map([['urn:AE-003', [report]]]),
+    });
+    expect(validateView(view).errors).toEqual([]);
+    const json = JSON.stringify(view);
+    expect(json).toContain('"label":"“which serious events are not reported?”"');
+    expect(json).toContain('{"component":"CardTitle","props":{"label":"Answer","component":"h2"}}');
+    expect(json).toContain('"label":"One: AE-003.","component":"p"');
+    expect(json).toContain('"label":"It waits for you to report it.","component":"p"');
+    expect(json).toContain('{"component":"Button","props":{"label":"AE-003","variant":"link","isInline":true},"opens":"urn:AE-003"}');
+    expect(json).toContain('Answered by claude-opus-5-5, after looking at 3 objects.');
+    expect(json).toContain('"label":"Report to safety"');
+  });
+
+  it('shows an answer that asks for more, or cannot be given, as an info alert, with no objects', () => {
+    const more = buildAnswerView(asked({ status: 'needs more', text: 'Which study do you mean?', cited: [], model: 'm', lookedAt: 0 }));
+    expect(validateView(more).errors).toEqual([]);
+    expect(JSON.stringify(more)).toContain('"variant":"info","title":"Say a little more"');
+    expect(JSON.stringify(buildAnswerView(asked({ status: 'cannot answer', text: 'No.', cited: [], model: 'm', lookedAt: 1 })))).toContain(
+      '"title":"This cannot be answered from what you may read"',
+    );
+    expect(JSON.stringify(more)).not.toContain('Objects in the answer');
+  });
+
+  it('says quietly when the question was searched rather than answered', () => {
+    const result: SearchResult = {
+      query: 'serious adverse events',
+      interpretation: { types: [], states: [], identifiers: [], words: ['x'], mine: false },
+      results: [{ object: ae, matched: [] }],
+      total: 1,
+      understoodBy: { ontology: true },
+    };
+    expect(JSON.stringify(buildSearchView(result, { searched: 'No model is connected to answer questions, so the question was searched.' }))).toContain(
+      '"label":"No model is connected to answer questions, so the question was searched.","component":"small"',
+    );
   });
 });

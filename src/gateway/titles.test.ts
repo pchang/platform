@@ -53,7 +53,7 @@ describe('titles from the ontology', () => {
 
   it('titles objects people create, by the next alternative when the first lacks values', async () => {
     const fresh = withSeed();
-    const reported = await fresh.commit(as('person-ben', 'ClinicalDataManager'), 'AE-003', ls('ReportToSafety'));
+    const reported = await fresh.commit(as('person-ben', 'ClinicalDataManager'), 'AE-003', ls('ReportToSafety'), { note: 'Seen at the week 4 visit.' });
     expect(fresh.read(dsp, reported.created[0]).title).toBe('Case from AE-003');
     const raised = await fresh.commit(as('person-priya', 'ClinicalResearchAssociate'), 'DR-028', ls('RaiseQuery'), { question: 'Please confirm the units' });
     expect(fresh.read(cdm, raised.created[0]).title).toBe('Please confirm the units');

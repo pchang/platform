@@ -162,8 +162,41 @@ d:B-003 a ls:Batch ;
 
 # Clinical Development: 1 blinded Phase II study at 3 sites, 12 patients, 2 arms
 
+# VELOCITY-2's protocol in three versions: 1.0 superseded, 2.0 approved and in force, 3.0 a draft amendment.
+
+d:PROT-1 a ls:Protocol ;
+  ls:identifier "PROT-1" ;
+  ls:protocolStatus lst:ProtocolStatus-superseded ;
+  ls:protocolVersion "1.0" ;
+  ls:primaryObjective "Compare ACR20 response at Week 12 between Velcorin 25 mg once daily and placebo" ;
+  ls:plannedEnrollment "180"^^xsd:integer ;
+  ls:effectiveOn "2025-09-01"^^xsd:date ;
+  ls:protocolName "VELOCITY-2 protocol" .
+
+d:PROT-2 a ls:Protocol ;
+  ls:identifier "PROT-2" ;
+  ls:protocolStatus lst:ProtocolStatus-approved ;
+  ls:amends d:PROT-1 ;
+  ls:protocolVersion "2.0" ;
+  ls:primaryObjective "Compare ACR20 response at Week 12 between Velcorin 25 mg once daily and placebo" ;
+  ls:plannedEnrollment "240"^^xsd:integer ;
+  ls:effectiveOn "2026-03-15"^^xsd:date ;
+  ls:amendmentSummary "Raises planned enrollment to 240 and adds a Week 8 visit" ;
+  ls:protocolName "VELOCITY-2 protocol" .
+
+d:PROT-3 a ls:Protocol ;
+  ls:identifier "PROT-3" ;
+  ls:protocolStatus lst:ProtocolStatus-draft ;
+  ls:amends d:PROT-2 ;
+  ls:protocolVersion "3.0" ;
+  ls:primaryObjective "Compare ACR20 response at Week 12 between Velcorin 25 mg once daily and placebo" ;
+  ls:plannedEnrollment "240"^^xsd:integer ;
+  ls:amendmentSummary "Adds a Week 16 safety visit and widens the age range to 18 to 80" ;
+  ls:protocolName "VELOCITY-2 protocol" .
+
 d:ST-01 a ls:Study ;
   ls:identifier "ST-01" ;
+  ls:conductedUnder d:PROT-2 ;
   ls:tests d:F-101 ;
   ls:runsAt d:SITE-1, d:SITE-2, d:SITE-3 ;
   ls:studyPhase lst:StudyPhase-ii ;

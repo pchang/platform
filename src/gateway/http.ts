@@ -12,6 +12,7 @@ import { createMcpServer } from './mcp';
  *   GET  /api/todo                           objects with work waiting for the principal
  *   GET  /api/objects?type=Batch             find objects, optionally &<dimension>=<value>
  *   GET  /api/search?q=list+my+queries      search: who understood the query and how, and what it found; &understand=ontology skips the model
+ *   POST /api/ask                            ask a question; body { "question": "..." }: an answer with the objects it cites, or the search it fell back to
  *   GET  /api/objects/:id                    read an object
  *   GET  /api/objects/:id/methods            offer methods
  *   GET  /api/objects/:id/methods/:method    compose a method: its inputs, choices, defaults and archetype
@@ -88,6 +89,10 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         if (!type) throw new GatewayError(400, ['Give a type, such as ?type=Batch']);
         const state = Object.fromEntries([...url.searchParams].filter(([k]) => k !== 'type').map(([k, v]) => [expand(k, NS.ls), expand(v, NS.lst)]));
         return send(res, 200, gateway.find(principal, expand(type, NS.ls), state));
+      }
+      case 'POST ask': {
+        const { question } = (await body(req)) as { question?: unknown };
+        return send(res, 200, await gateway.ask(principal, typeof question === 'string' ? question : ''));
       }
       case 'GET search':
         return send(res, 200, await gateway.search(principal, url.searchParams.get('q') ?? '', { understand: url.searchParams.get('understand') === 'ontology' ? 'ontology' : 'model' }));

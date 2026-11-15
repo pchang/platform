@@ -89,8 +89,8 @@ export function SearchField({ query: routeQuery, onNavigate, onEscape, autoFocus
       onFocus={() => result && setPanelOpen(true)}
     >
       <SearchInput
-        aria-label="Search objects"
-        placeholder="Search, such as open queries"
+        aria-label="Search or ask"
+        placeholder="Search or ask"
         value={value}
         onChange={(_event, v) => setValue(v)}
         onSearch={(_event, v) => go(v)}

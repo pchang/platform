@@ -87,9 +87,27 @@
             "cancel",
             "edit",
             "discard",
-            "minimize"
+            "minimize",
+            "select",
+            "select-all",
+            "clear-selection"
           ],
-          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, discard records a draft as discarded, and minimize sets the process aside in the dock."
+          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, discard records a draft as discarded, and minimize sets the process aside in the dock. Select starts or ends select mode on an object list, select-all chooses every object listed, and clear-selection chooses none."
+        },
+        "opens": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A graph object the node opens in the object panel when chosen (design system 4.4). Only a Card, anywhere but its buttons, or a Button."
+        },
+        "selects": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A graph object the node chooses for a batch action (design system 4.3): a Card in select mode, or a table row's checkbox."
+        },
+        "batch": {
+          "type": "string",
+          "minLength": 1,
+          "description": "An ontology method a Button or a DropdownItem runs on every chosen object (design system 4.3). The gateway checks each object again."
         }
       }
     }

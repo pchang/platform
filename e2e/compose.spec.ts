@@ -84,14 +84,15 @@ test('Compare and decide: flag a duplicate side by side, then merge it', async (
   await expect(page.getByText('set to SC-006')).toBeVisible();
   await page.getByRole('button', { name: 'Flag duplicate' }).click();
 
-  await expect(page.getByText('Flag duplicate done on SC-003')).toBeVisible();
+  // The commit and To do's reload take about five seconds on the development server.
+  await expect(page.getByText('Flag duplicate done on SC-003')).toBeVisible({ timeout: 20_000 });
   await card(page, 'SC-003').getByRole('button', { name: 'Merge duplicate' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Merge duplicate SC-003' })).toBeVisible();
   await page.getByLabel('Target case').selectOption({ label: 'SC-006' });
   await expect(page.getByText('assessed → closed')).toBeVisible();
   await expect(page.getByText("Moves this case's information into the target case and links them.")).toBeVisible();
   await page.getByRole('button', { name: 'Merge duplicate' }).click();
-  await expect(page.getByText('Merge duplicate done on SC-003')).toBeVisible();
+  await expect(page.getByText('Merge duplicate done on SC-003')).toBeVisible({ timeout: 20_000 });
 });
 
 test('Compare and decide stacks the cards on a phone, with no accessibility violations', async ({ page }) => {

@@ -2,6 +2,7 @@ import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
+import { ANSWER_TOOL, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -43,10 +44,45 @@ export interface ObjectSummary {
   lifecycle?: { dimension: string; stage: string; position: number; stages: string[] };
 }
 
+/**
+ * One end of a relationship, as seen from an object of a type (spec 3.1 and 5.1, Within an object): the relationship read
+ * from this side, whether the objects at the other end are contained here, contain this object, or are only related, and
+ * whether this end holds at most one object.
+ */
+export interface RelationshipEndDescription {
+  relationship: string;
+  /** The relationship's label going out, its inverse label coming in: a study "enrolls" patients. */
+  label: string;
+  direction: 'out' | 'in';
+  kind: 'contains' | 'partOf' | 'related';
+  /** True when this end holds at most one object. */
+  one: boolean;
+  /** The type at the other end. */
+  type: string;
+  typeLabel: string;
+  pluralLabel: string;
+}
+
+/** A relationship end of one object, with the objects at its other end that the principal may read. */
+export interface RelationshipEnd extends RelationshipEndDescription {
+  objects: ObjectSummary[];
+}
+
 export interface ObjectView extends ObjectSummary {
-  /** Outgoing and incoming links the principal may see, by relationship label. */
-  links: { relationship: string; label: string; direction: 'out' | 'in'; objects: { iri: string; identifier: string }[] }[];
+  /**
+   * Every relationship end the object's type has in the ontology, in both directions, that reaches a type the principal
+   * may read: contained objects first, then in the ontology's order (spec 5.1, Within an object). Empty ends are kept.
+   */
+  links: RelationshipEnd[];
   properties: Record<string, string>;
+  /** The domain the object's type belongs to. */
+  domainLabel: string;
+  /** Highest urgency of its state values; 0 when none is urgent. */
+  urgency: number;
+  /** Its earliest deadline, as an ISO date. */
+  deadline?: string;
+  /** The latest commit on the object: which method, who ran it and when. Absent when nothing has changed it. */
+  lastChange?: { commit: string; method: string; methodLabel: string; person: string; personName: string; at: string };
 }
 
 export interface TypeDescription {
@@ -56,6 +92,8 @@ export interface TypeDescription {
   domain: string;
   dimensions: Record<string, unknown>[];
   methods: Record<string, unknown>[];
+  /** The type's relationship ends, both ways (spec 3.1). */
+  relationships: RelationshipEndDescription[];
 }
 
 export interface NavigationDomain {
@@ -83,6 +121,8 @@ export interface ComposedInput {
   /** The values the person may choose from, with their labels. */
   choices?: { value: string; label: string }[];
   default?: string;
+  /** True when the input is about the object it is given for, so a batch asks for it object by object (spec 5.4). */
+  perObject?: boolean;
 }
 
 /** What a signed method asks the signer to agree to (spec 3.4, Electronic signatures). */
@@ -136,6 +176,25 @@ export interface SearchResult {
   total: number;
   /** Who understood the query: the connected model, by its name, or the ontology reading (spec 5.2). */
   understoodBy: { model: string } | { ontology: true };
+}
+
+/** An answer to a question (spec 5.2, Asking a question), or the search it fell back to, and why. */
+export interface AskResult {
+  question: string;
+  answer?: {
+    status: AnswerStatus;
+    text: string;
+    /** The objects the answer rests on: only those the model read in this question, as the principal may see them. */
+    cited: ObjectSummary[];
+    /** The model that answered, as the provider reports it. */
+    model: string;
+    /** How many objects the tools showed the model while it answered. */
+    lookedAt: number;
+  };
+  /** The question searched instead, when no model answered it. */
+  search?: SearchResult;
+  /** Why the question was searched rather than answered. */
+  searched?: string;
 }
 
 export type DraftStatus = 'undecided' | 'accepted' | 'discarded';
@@ -252,7 +311,55 @@ export interface GatewayOptions {
   drafter?: Drafter;
   /** The model connected to understand search queries (spec 5.2). Without one, queries are read against the ontology. */
   searchModel?: SearchModel;
+  /** The model connected to answer questions (spec 5.2, Asking a question). Without one, questions are searched. */
+  askModel?: AskModel;
 }
+
+/** The read-only tools a model answering a question may call (spec 5.2, Asking a question). Domain-free: names come from the ontology. */
+const ASK_TOOLS: AskTool[] = [
+  {
+    name: 'find_objects',
+    description:
+      'Finds objects the person may read, best first, up to 50, with the total. Give types by name, states by value (or "Dimension: value"), linked_to as identifiers of objects the results must be linked to (give types too, or you get those objects themselves), words to find in what the person may read, and mine for the person\'s own work. Leave a list empty when it does not apply. Names not understood are returned so you can correct them.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        types: { type: 'array', items: { type: 'string' }, description: 'Type names, such as Safety Case.' },
+        states: { type: 'array', items: { type: 'string' }, description: 'State values, such as serious, or Seriousness: serious.' },
+        linked_to: { type: 'array', items: { type: 'string' }, description: 'Identifiers, such as SITE-2.' },
+        words: { type: 'array', items: { type: 'string' }, description: 'Single words to find in the records, such as rash.' },
+        mine: { type: 'boolean', description: 'True for the person\'s own work: waiting for them, or naming them.' },
+      },
+      required: ['types', 'states', 'linked_to', 'words', 'mine'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'read_object',
+    description: 'Reads one object as the person may see it: its type, title, state, properties, links to other objects, deadline, urgency and last change.',
+    input_schema: { type: 'object', properties: { identifier: { type: 'string', description: 'Such as AE-003.' } }, required: ['identifier'], additionalProperties: false },
+  },
+  {
+    name: 'count_objects',
+    description:
+      'Counts the objects of one type the person may read, optionally only those in the given states, and optionally grouped by one of the type\'s state dimensions or links (by name). Grouped by a link, each group is a linked object\'s identifier.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', description: 'A type name, such as Adverse Event.' },
+        states: { type: 'array', items: { type: 'string' }, description: 'State values to count only, such as serious. Empty for all.' },
+        group_by: { type: 'string', description: 'A state dimension, such as Workflow, or a link, such as runs at. Empty for a total only.' },
+      },
+      required: ['type', 'states', 'group_by'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'methods_for',
+    description: 'Lists the methods the person could run on an object, each available now or blocked with the reasons. Use it for why something cannot be done, or what to do next. It never runs one.',
+    input_schema: { type: 'object', properties: { identifier: { type: 'string', description: 'Such as PT-03.' } }, required: ['identifier'], additionalProperties: false },
+  },
+];
 
 export class Gateway {
   private commitCount = 0;
@@ -337,14 +444,70 @@ export class Gateway {
       methods: this.q(`SELECT ?method ?label ?comment WHERE { ?method p:appliesTo <${t.type}> ; rdfs:label ?label ; rdfs:comment ?comment } ORDER BY ?label`).map(
         (m) => ({ ...m, archetype: archetypeOf(this.graph.store, m.method), inputs: this.inputs(m.method) }),
       ),
+      relationships: this.ends(t.type).filter((e) => !hidden.has(e.type)),
     }));
   }
 
+  private endsCache = new Map<string, RelationshipEndDescription[]>();
+
+  /**
+   * A type's relationship ends, from its shapes and the shapes that point at it (spec 3.1): each relationship read from
+   * this side, with its containment and whether it holds at most one object. The ontology does not change while the
+   * gateway runs, so the answer is kept.
+   */
+  private ends(type: string): RelationshipEndDescription[] {
+    const cached = this.endsCache.get(type);
+    if (cached) return cached;
+    const target = (ps: string, cls: string) => `{ ${ps} sh:class ${cls} } UNION { ${ps} sh:or/rdf:rest*/rdf:first/sh:class ${cls} }`;
+    type EndRow = { rel: string; label: string; order: string; partOf?: string; hasPart?: string; max?: string; other: string; direction: 'out' | 'in' };
+    const rows: EndRow[] = [
+      ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?max ?other WHERE {
+          ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; rdfs:label ?label ; p:order ?order .
+          OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart } OPTIONAL { ?ps sh:maxCount ?max }
+          ${target('?ps', '?other')} }`).map((r) => ({ ...r, direction: 'out' }) as EndRow),
+      ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?other WHERE {
+          ?shape sh:targetClass ?other ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; p:inverseLabel ?label ; p:order ?order .
+          OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart }
+          ${target('?ps', `<${type}>`)} }`).map((r) => ({ ...r, direction: 'in' }) as EndRow),
+    ];
+    const kindOf = (r: EndRow): RelationshipEndDescription['kind'] => {
+      const subjectIsPart = r.partOf === 'true';
+      const objectIsPart = r.hasPart === 'true';
+      if (r.direction === 'out') return subjectIsPart ? 'partOf' : objectIsPart ? 'contains' : 'related';
+      return subjectIsPart ? 'contains' : objectIsPart ? 'partOf' : 'related';
+    };
+    const rank = { contains: 0, partOf: 1, related: 2 };
+    const ends = rows
+      .map((r) => {
+        const other = this.typeLabels(r.other);
+        return { relationship: r.rel, label: r.label, direction: r.direction, kind: kindOf(r), one: r.direction === 'out' && r.max === '1', type: r.other, ...other, order: Number(r.order) };
+      })
+      .sort((a, b) => rank[a.kind] - rank[b.kind] || a.order - b.order || (a.direction === b.direction ? 0 : a.direction === 'out' ? -1 : 1) || a.typeLabel.localeCompare(b.typeLabel))
+      .map(({ order: _order, ...end }) => end);
+    this.endsCache.set(type, ends);
+    return ends;
+  }
+
+  /** Highest urgency of the object's state values; 0 when none is urgent (spec 5.1). */
+  private urgencyOf(object: string): number {
+    return Number(this.q(`SELECT (MAX(?u) AS ?max) WHERE { <${object}> ?d ?v . ?d a p:StateDimension . ?v p:urgency ?u }`)[0]?.max ?? 0);
+  }
+
+  /** The object's earliest deadline, as an ISO date (spec 5.1). */
+  private deadlineOf(object: string): string | undefined {
+    return this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${object}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+  }
+
+  private typeLabels(type: string): { typeLabel: string; pluralLabel: string } {
+    const row = this.q(`SELECT ?label ?plural WHERE { <${type}> rdfs:label ?label . OPTIONAL { <${type}> p:pluralLabel ?plural } }`)[0];
+    return { typeLabel: row?.label ?? type, pluralLabel: row?.plural ?? row?.label ?? type };
+  }
+
   private inputs(method: string) {
-    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong WHERE {
+    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong ?perObject WHERE {
         <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label ; p:order ?order .
         OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
-        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } } ORDER BY ?order`);
+        OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } OPTIONAL { ?input p:perObject ?perObject } } ORDER BY ?order`);
   }
 
   // ---------------------------------------------------------------- people (development)
@@ -399,7 +562,7 @@ export class Gateway {
     const items: ToDoItem[] = [];
     for (const type of new Set(methods.map((m) => m.type))) {
       for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> }`)) {
-        const urgency = Number(this.q(`SELECT (MAX(?u) AS ?max) WHERE { <${o}> ?d ?v . ?d a p:StateDimension . ?v p:urgency ?u }`)[0]?.max ?? 0);
+        const urgency = this.urgencyOf(o);
         const tasks: ToDoItem['tasks'] = [];
         const actions: ToDoItem['actions'] = [];
         for (const m of methods.filter((m) => m.type === type)) {
@@ -410,7 +573,7 @@ export class Gateway {
           (isTask ? tasks : actions).push({ method: m.method, label: m.label, archetype: archetypeOf(this.graph.store, m.method) });
         }
         if (!tasks.length && !(urgency >= 3 && actions.length)) continue;
-        const deadline = this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${o}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+        const deadline = this.deadlineOf(o);
         items.push({ object: this.summary(o), tasks, actions, urgency, ...(deadline ? { deadline } : {}) });
       }
     }
@@ -487,31 +650,30 @@ export class Gateway {
     for (const { prop, shape } of this.q(`SELECT ?prop ?shape WHERE { ?rule p:hides ?prop ; p:hiddenWhen ?shape }`)) {
       if (this.conformsSync(object, shape)) hidden.add(prop);
     }
-    const visible = (o: string) => {
-      const t = this.q(`SELECT ?t WHERE { <${o}> a ?t . ?t a p:ObjectType }`)[0]?.t;
-      return !t || !hidden.has(t);
-    };
-    const links: ObjectView['links'] = [];
-    for (const direction of ['out', 'in'] as const) {
-      const pattern = direction === 'out' ? `<${object}> ?rel ?o` : `?o ?rel <${object}>`;
-      const rows = this.q(`SELECT ?rel ?label ?o ?id WHERE { ${pattern} . ?rel a p:Relationship ; rdfs:label ?label . OPTIONAL { ?o ls:identifier ?id } } ORDER BY ?label ?id`);
-      for (const r of rows) {
-        if (!visible(r.o)) continue;
-        let entry = links.find((l) => l.relationship === r.rel && l.direction === direction);
-        if (!entry) links.push((entry = { relationship: r.rel, label: r.label, direction, objects: [] }));
-        entry.objects.push({ iri: r.o, identifier: r.id ?? r.o });
-      }
-    }
-    // Coded values show their labels; a property with several values shows them all, in order.
+    const unreadableTypes = this.unreadable(principal.role);
+    const links: RelationshipEnd[] = this.ends(summary.type)
+      .filter((end) => !unreadableTypes.has(end.type))
+      .map((end) => {
+        const pattern = end.direction === 'out' ? `<${object}> <${end.relationship}> ?o` : `?o <${end.relationship}> <${object}>`;
+        const objects = this.q(`SELECT ?o WHERE { ${pattern} . ?o a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+        return { ...end, objects };
+      });
+    // Coded values show their labels, people their names; a property with several values shows them all, in order.
     const properties: Record<string, string> = {};
     for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value . ?prop rdfs:label ?label .
-          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value p:order ?order }
+          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value p:order ?order }
           FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
       if (hidden.has(r.prop)) continue;
       const value = r.valueLabel ?? r.value;
       properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
     }
-    return { ...summary, links, properties };
+    const last = this.q(`SELECT ?commit ?method ?methodLabel ?person ?personName ?at WHERE { GRAPH ?commit {
+        ?commit a p:Commit ; p:method ?method ; p:target <${object}> ; prov:wasAssociatedWith ?person ; prov:startedAtTime ?at } .
+        OPTIONAL { ?method rdfs:label ?methodLabel } OPTIONAL { ?person rdfs:label ?personName } } ORDER BY DESC(?at) DESC(STRLEN(STR(?commit))) DESC(?commit) LIMIT 1`)[0];
+    const lastChange = last && { commit: last.commit, method: last.method, methodLabel: last.methodLabel ?? last.method, person: last.person, personName: last.personName ?? last.person, at: last.at };
+    const domainLabel = this.q(`SELECT ?label WHERE { <${summary.type}> p:inDomain/rdfs:label ?label }`)[0]?.label ?? '';
+    const deadline = this.deadlineOf(object);
+    return { ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(lastChange ? { lastChange } : {}) };
   }
 
   // ---------------------------------------------------------------- search (spec 5.2)
@@ -566,6 +728,18 @@ export class Gateway {
         console.warn('The search model could not understand the query; reading it against the ontology instead.', error instanceof Error ? error.message : error);
       }
     }
+    return this.match(principal, query, interpretation, understoodBy, limit, readable);
+  }
+
+  /** Applies an understood query to what the principal may read (spec 5.2): the core of search, shared with Ask. */
+  private async match(
+    principal: Principal,
+    query: string,
+    interpretation: Interpretation,
+    understoodBy: SearchResult['understoodBy'],
+    limit: number,
+    readable: Set<string>,
+  ): Promise<SearchResult> {
     const empty = { query, interpretation, results: [], total: 0, understoodBy };
     const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length + (interpretation.mine ? 1 : 0);
     if (!understood) return empty;
@@ -648,6 +822,192 @@ export class Gateway {
       })),
       total: matches.length,
       understoodBy,
+    };
+  }
+
+  // ---------------------------------------------------------------- ask (spec 5.2, Asking a question)
+
+  /** How many turns a question may take, tool calls included (spec 5.2: bounded). */
+  static readonly ASK_STEPS = 12;
+
+  /**
+   * Ask (spec 5.2, Asking a question): a connected model answers from what the principal may read, through read-only
+   * gateway tools run as the principal. The answer cites only objects the model read here. Without a model, or when it
+   * fails or declines, the question is searched, and the result says why.
+   */
+  async ask(principal: Principal, question: string): Promise<AskResult> {
+    this.authorize(principal);
+    const model = this.options.askModel;
+    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, question), ...(reason ? { searched: reason } : {}) });
+    if (!normalize(question)) return searched();
+    if (!model) return searched('No model is connected to answer questions, so the question was searched.');
+
+    // What the model met through the tools in this question: only these may be cited.
+    const seen = new Map<string, string>();
+    const toolbox = {
+      tools: [...ASK_TOOLS, ANSWER_TOOL],
+      run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
+    };
+    try {
+      const answer = await model.answer({ question, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
+      const cited: ObjectSummary[] = [];
+      for (const identifier of answer.cited) {
+        const iri = seen.get(normalize(identifier));
+        if (iri && !cited.some((c) => c.iri === iri)) cited.push(this.summary(iri));
+      }
+      return { question, answer: { status: answer.status, text: answer.text, cited, model: answer.model, lookedAt: seen.size } };
+    } catch (error) {
+      console.warn('The ask model could not answer; searching the question instead.', error instanceof Error ? error.message : error);
+      return searched('The model could not answer, so the question was searched.');
+    }
+  }
+
+  /** Who is asking, today, and the vocabulary they may read, as text for the model. Never a record (spec 5.2). */
+  private askContext(principal: Principal): string {
+    const person = this.q(`SELECT ?name ?role WHERE { <${principal.person}> rdfs:label ?name . <${principal.role}> rdfs:label ?role }`)[0];
+    const hidden = this.unreadable(principal.role);
+    const lines = [
+      `The person asking: ${person?.name ?? 'unknown'}, acting as ${person?.role ?? 'unknown'}.`,
+      `Today: ${this.now().toISOString().slice(0, 10)}.`,
+      'The kinds of object they may read, with their states, other properties and links:',
+    ];
+    for (const t of this.q(`SELECT ?type ?label ?plural ?domain WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?plural . OPTIONAL { ?type p:inDomain/rdfs:label ?domain } } ORDER BY ?label`)) {
+      if (hidden.has(t.type)) continue;
+      const states = this.q(`SELECT ?d ?dim ?value WHERE { ?d p:dimensionOf <${t.type}> ; rdfs:label ?dim ; p:order ?o ; p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?value ; p:order ?vo } ORDER BY ?o ?vo`).filter((r) => !hidden.has(r.d));
+      const dims = new Map<string, string[]>();
+      for (const r of states) dims.set(r.dim, [...(dims.get(r.dim) ?? []), r.value]);
+      // Names only, and only of properties the role may read: an unreadable property is not even named.
+      const properties = this.q(`SELECT DISTINCT ?prop ?label WHERE { ?shape sh:targetClass <${t.type}> ; sh:property/sh:path ?prop . ?prop rdfs:label ?label .
+          FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label`)
+        .filter((r) => !hidden.has(r.prop))
+        .map((r) => r.label);
+      const links = this.ends(t.type)
+        .filter((end) => !hidden.has(end.type))
+        .map((end) => `${end.label} ${end.one ? `one ${end.typeLabel}` : end.pluralLabel}`);
+      lines.push(
+        `- ${t.label} (plural ${t.plural})${t.domain ? `, in ${t.domain}` : ''}.` +
+          (dims.size ? ` States: ${[...dims].map(([d, v]) => `${d} (${v.join(', ')})`).join('; ')}.` : '') +
+          (properties.length ? ` Properties: ${properties.join(', ')}.` : '') +
+          (links.length ? ` Links: ${links.join('; ')}.` : ''),
+      );
+    }
+    return lines.join('\n');
+  }
+
+  /** Runs one of the model's tools as the principal. A refusal or a mistake goes back to the model to correct. */
+  private async runAskTool(principal: Principal, name: string, input: unknown, seen: Map<string, string>): Promise<AskToolOutput> {
+    const meet = (o: { iri: string; identifier: string }) => seen.set(normalize(o.identifier), o.iri);
+    const brief = (o: ObjectSummary) => ({ identifier: o.identifier, type: o.typeLabel, title: o.title, state: o.state });
+    const args = (input ?? {}) as Record<string, unknown>;
+    const strings = (key: string) => (Array.isArray(args[key]) ? (args[key] as unknown[]).filter((v): v is string => typeof v === 'string') : []);
+    const text = (key: string) => (typeof args[key] === 'string' ? (args[key] as string) : '');
+    const out = (value: unknown): AskToolOutput => ({ content: JSON.stringify(value) });
+    try {
+      const vocabulary = this.askVocabulary(principal);
+      switch (name) {
+        case 'find_objects': {
+          const types = strings('types').map((n) => ({ n, t: vocabulary.type(n) }));
+          const chosen = types.filter((x) => x.t).map((x) => x.t!);
+          const states = strings('states').map((n) => ({ n, s: vocabulary.states(n, chosen.map((t) => t.type)) }));
+          const linked = strings('linked_to').map((n) => ({ n, o: vocabulary.identifier(n) }));
+          const notUnderstood = [...types.filter((x) => !x.t), ...states.filter((x) => !x.s.length), ...linked.filter((x) => !x.o)].map((x) => x.n);
+          const interpretation: Interpretation = {
+            types: chosen.map((t) => ({ type: t.type, label: t.label })),
+            states: states.flatMap((x) => x.s),
+            identifiers: linked.filter((x) => x.o).map((x) => x.o!),
+            words: strings('words').map(normalize).filter((w) => w && !w.includes(' ')).slice(0, 8),
+            mine: args.mine === true,
+          };
+          const result = await this.match(principal, '', interpretation, { ontology: true }, 50, vocabulary.readable);
+          for (const r of result.results) meet(r.object);
+          return out({ total: result.total, shown: result.results.length, objects: result.results.map((r) => ({ ...brief(r.object), matched: r.matched })), ...(notUnderstood.length ? { notUnderstood } : {}) });
+        }
+        case 'read_object': {
+          const view = this.read(principal, vocabulary.identifier(text('identifier'))?.iri ?? text('identifier'));
+          meet(view);
+          // Properties that identify a person directly reach the model withheld (spec 5.2).
+          const withheld = new Set(this.q(`SELECT ?label WHERE { ?prop p:identifiesPerson true ; rdfs:label ?label }`).map((r) => r.label));
+          const properties = Object.fromEntries(Object.entries(view.properties).map(([k, v]) => [k, withheld.has(k) ? 'withheld' : v]));
+          for (const end of view.links) for (const o of end.objects) meet(o);
+          return out({
+            ...brief(view),
+            domain: view.domainLabel,
+            properties,
+            links: view.links.filter((end) => end.objects.length).map((end) => ({ link: end.label, objects: end.objects.map(brief) })),
+            ...(view.deadline ? { deadline: view.deadline } : {}),
+            urgency: view.urgency,
+            ...(view.lastChange ? { lastChange: { method: view.lastChange.methodLabel, by: view.lastChange.personName, at: view.lastChange.at } } : {}),
+          });
+        }
+        case 'count_objects': {
+          const type = vocabulary.type(text('type'));
+          if (!type) return { content: `There is no type you may read called "${text('type')}". Use a name from the list you were given.`, isError: true };
+          const states = strings('states').flatMap((n) => vocabulary.states(n, [type.type]));
+          let objects = this.q(`SELECT ?o WHERE { ?o a <${type.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+          const byDimension = new Map<string, Set<string>>();
+          for (const s of states) byDimension.set(s.dimensionLabel, (byDimension.get(s.dimensionLabel) ?? new Set()).add(s.label));
+          objects = objects.filter((o) => [...byDimension].every(([d, values]) => values.has(o.state[d])));
+          const by = normalize(text('group_by'));
+          if (!by) return out({ type: type.label, total: objects.length });
+          const dimension = Object.keys(objects[0]?.state ?? {}).find((d) => normalize(d) === by) ?? this.q(`SELECT ?l WHERE { ?d p:dimensionOf <${type.type}> ; rdfs:label ?l }`).map((r) => r.l).find((l) => normalize(l) === by);
+          const groups = new Map<string, number>();
+          if (dimension) {
+            for (const o of objects) groups.set(o.state[dimension] ?? 'none', (groups.get(o.state[dimension] ?? 'none') ?? 0) + 1);
+          } else {
+            const end = this.ends(type.type).find((e) => !vocabulary.hidden.has(e.type) && [e.label, e.typeLabel, e.pluralLabel, `${e.label} ${e.typeLabel}`].some((n) => normalize(n) === by));
+            if (!end) return { content: `"${text('group_by')}" is neither a state nor a link of ${type.label}. Use one from the list you were given.`, isError: true };
+            for (const o of objects) {
+              const pattern = end.direction === 'out' ? `<${o.iri}> <${end.relationship}> ?x` : `?x <${end.relationship}> <${o.iri}>`;
+              const others = this.q(`SELECT ?x ?id WHERE { ${pattern} . ?x a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`);
+              if (!others.length) groups.set('none', (groups.get('none') ?? 0) + 1);
+              for (const x of others) {
+                meet({ iri: x.x, identifier: x.id });
+                groups.set(x.id, (groups.get(x.id) ?? 0) + 1);
+              }
+            }
+          }
+          return out({ type: type.label, total: objects.length, groupedBy: dimension ?? text('group_by'), groups: [...groups].sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count })) });
+        }
+        case 'methods_for': {
+          const object = vocabulary.identifier(text('identifier'));
+          if (!object) return { content: `There is no object you may read with the identifier "${text('identifier')}".`, isError: true };
+          meet(object);
+          const methods = await this.methods(principal, object.iri);
+          return out({ identifier: object.identifier, methods: methods.map((m) => ({ method: m.label, available: m.available, ...(m.blocks.length ? { blockedBecause: m.blocks } : {}) })) });
+        }
+        default:
+          return { content: `There is no tool called ${name}.`, isError: true };
+      }
+    } catch (error) {
+      if (error instanceof GatewayError) return { content: error.reasons.join(' '), isError: true };
+      throw error;
+    }
+  }
+
+  /** Names the model may use, resolved to what the principal may read: types, state values and identifiers. */
+  private askVocabulary(principal: Principal) {
+    const hidden = this.unreadable(principal.role);
+    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel }`).filter((t) => !hidden.has(t.type));
+    const readable = new Set(types.map((t) => t.type));
+    const allStates = this.q(`SELECT ?dimension ?dimensionLabel ?type ?value ?label WHERE { ?dimension p:dimensionOf ?type ; rdfs:label ?dimensionLabel ; p:valuesFrom ?scheme .
+        ?value skos:inScheme ?scheme ; skos:prefLabel ?label }`).filter((v) => readable.has(v.type)) as Interpretation['states'];
+    return {
+      hidden,
+      readable,
+      type: (name: string) => {
+        const n = normalize(name);
+        const t = types.find((x) => normalize(x.label) === n || normalize(x.pluralLabel) === n);
+        return t && { type: t.type, label: t.label };
+      },
+      /** A state value, as "value" or "Dimension: value", of the given types or of any type when none is given. */
+      states: (phrase: string, of: string[]) => {
+        const [dim, value] = phrase.includes(':') ? phrase.split(':').map(normalize) : ['', normalize(phrase)];
+        return allStates.filter((s) => normalize(s.label) === value && (!dim || normalize(s.dimensionLabel) === dim) && (!of.length || of.includes(s.type)));
+      },
+      identifier: (id: string) => {
+        const r = this.q(`SELECT ?o ?id ?type WHERE { ?o ls:identifier ?id ; a ?type . ?type a p:ObjectType FILTER(LCASE(STR(?id)) = ${JSON.stringify(normalize(id))}) }`)[0];
+        return r && readable.has(r.type) ? { iri: r.o, identifier: r.id } : undefined;
+      },
     };
   }
 
@@ -1078,7 +1438,7 @@ export class Gateway {
     const validator = validatorFor(this.graph);
     const signature = this.signatureRequest(principal, method);
     const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
-      const base = { name: input.name, label: input.label };
+      const base = { name: input.name, label: input.label, ...(input.perObject === 'true' ? { perObject: true } : {}) };
       if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
       if (input.valuesFrom) {
         // The input's shape may narrow the scheme, such as causality without "unassessed".

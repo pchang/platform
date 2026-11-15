@@ -39,13 +39,11 @@ test('the count tiles narrow the cards, and Waiting shows them all again', async
   await expect(cards(page)).toHaveCount(all);
 });
 
-test('work by type and stage says its figures in words as well as in the chart', async ({ page }) => {
+test('the summary is its count tiles only, with no chart of work by type and stage', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
-  const chart = page.getByRole('img', { name: 'Safety Cases by stage' });
-  await expect(chart).toBeVisible();
-  await expect(page.getByText('received 3')).toBeVisible();
-  await expect(page.getByText('assessed 2')).toBeVisible();
+  await expect(page.getByText('Work by type and stage')).toHaveCount(0);
+  await expect(page.getByRole('img', { name: /by stage$/ })).toHaveCount(0);
 });
 
 for (const mode of ['light', 'dark'] as const) {
@@ -54,7 +52,7 @@ for (const mode of ['light', 'dark'] as const) {
       await page.addInitScript((m) => localStorage.setItem('lsh.appearance', m), mode);
       await page.setViewportSize({ width, height: 900 });
       await openTodo(page);
-      await expect(page.getByText('assessed 2')).toBeVisible();
+      await expect(page.getByRole('radio', { name: 'Waiting' })).toBeVisible();
       await page.addScriptTag({ path: axePath });
       const violations = await page.evaluate(async () => {
         const axe = (window as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;

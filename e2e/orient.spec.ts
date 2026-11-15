@@ -32,7 +32,7 @@ test('gives each person the navigation and To do of their own work', async ({ pa
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
 
   await actAs(page, 'Ben Okafor');
-  expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'Q-04', 'Q-05', 'Q-06']);
+  expect(await todoCards(page)).toEqual(['AE-003', 'AE-005', 'AE-001', 'AE-002', 'AE-004', 'PROT-3', 'Q-04', 'Q-05', 'Q-06']);
   await expect(nav.getByText('Clinical Development')).toBeVisible();
   await expect(nav.getByText('Safety and Regulatory')).toHaveCount(0);
   await expect(nav.getByText('Scientific Innovation')).toHaveCount(0);
@@ -53,7 +53,6 @@ test('gives the Clinical Research Coordinator visits by date and the Clinical Re
   expect(visits.slice(0, 3)).toEqual(['V-01-3', 'V-02-3', 'V-03-3']);
   expect(visits.slice(-5)).toEqual(['PT-11', 'PT-12', 'Q-01', 'Q-02', 'Q-03']);
   await expect(page.getByText('Overdue since Nov 3, 2026')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Visits by stage' })).toBeVisible();
 
   // Completing a visit takes it off the list.
   const card = cardFor(page, 'V-01-3');

@@ -29,7 +29,8 @@ ls:ClinicalDataManager a p:Role ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
   rdfs:comment "Gets clean data to study lock." ;
-  p:mayRun ls:RaiseQuery, ls:CloseQuery, ls:Requery, ls:ReportToSafety, ls:ReconcileAdverseEvent, ls:LockStudy ;
+  p:mayRun ls:RaiseQuery, ls:CloseQuery, ls:Requery, ls:ReportToSafety, ls:ReconcileAdverseEvent, ls:LockStudy,
+    ls:SendProtocolForReview, ls:ApproveProtocol, ls:AmendProtocol ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchAssociate a p:Role ;

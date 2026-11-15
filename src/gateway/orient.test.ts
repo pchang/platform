@@ -21,7 +21,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
 
   it('gives the Clinical Data Manager only Clinical Development', () => {
     expect(nav(dataManager)).toEqual([
-      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Patients', 'Sites', 'Studies', 'Visits']],
+      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Patients', 'Protocols', 'Sites', 'Studies', 'Visits']],
     ]);
   });
 
@@ -72,6 +72,8 @@ describe('To do (spec 5.1)', () => {
       ['AE-001', 'Reconcile adverse event'],
       ['AE-002', 'Reconcile adverse event'],
       ['AE-004', 'Report to safety'],
+      // A protocol type added by ontology and seed alone puts its draft amendment here (domain spec 3.3).
+      ['PROT-3', 'Send protocol for review'],
       ['Q-04', 'Close query, Re-query'],
       ['Q-05', 'Close query, Re-query'],
       ['Q-06', 'Close query, Re-query'],

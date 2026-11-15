@@ -26,10 +26,10 @@ beforeEach(() => {
   })) as unknown as typeof window.matchMedia;
 });
 
-const Masthead = () => (
+const Masthead = ({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) => (
   <AppearanceProvider>
     <PrincipalProvider fallback={null}>
-      <AppMasthead isSidebarOpen={false} onSidebarToggle={() => {}} />
+      <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
     </PrincipalProvider>
   </AppearanceProvider>
 );
@@ -41,6 +41,15 @@ describe('AppMasthead', () => {
     expect(logo).toHaveAttribute('href', product.homeHref);
   });
 
+  it('draws the menu button as two lines, and says whether the sidebar is open', async () => {
+    const { rerender } = render(<Masthead />);
+    const button = await screen.findByRole('button', { name: 'Navigation' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button.querySelectorAll('svg.app-menu-icon line')).toHaveLength(2);
+    rerender(<Masthead isSidebarOpen />);
+    expect(screen.getByRole('button', { name: 'Navigation' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('offers navigation, notifications, settings and profile by accessible name', async () => {
     render(<Masthead />);
     for (const name of ['Navigation', 'Notifications', 'Settings', 'Profile: Chloé Martin, Drug Safety Physician']) {
@@ -50,7 +59,7 @@ describe('AppMasthead', () => {
 
   it('has the search field left of the icon buttons from md up', async () => {
     render(<Masthead />);
-    const field = await screen.findByRole('textbox', { name: 'Search objects' });
+    const field = await screen.findByRole('textbox', { name: 'Search or ask' });
     const notifications = screen.getByRole('button', { name: 'Notifications' });
     expect(field.compareDocumentPosition(notifications) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open search' })).not.toBeInTheDocument();
@@ -61,12 +70,12 @@ describe('AppMasthead', () => {
     render(<Masthead />);
     const button = await screen.findByRole('button', { name: 'Open search' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
     await userEvent.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('textbox', { name: 'Search objects' })).toHaveFocus();
+    expect(screen.getByRole('textbox', { name: 'Search or ask' })).toHaveFocus();
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
     expect(button).toHaveFocus();
   });
 

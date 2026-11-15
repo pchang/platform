@@ -1,0 +1,105 @@
+/* The object panel (design system spec 4.4). Tokens only, no raw colors (design system spec, rule 2). */
+
+/*
+ * The drawer fills the content area, never more, so its content and its panel each scroll inside themselves and the
+ * panel stays in place while the list behind it scrolls (PatternFly's primary-detail pattern).
+ */
+.pf-v6-c-page__main-section.app-content {
+  flex: 1 1 0;
+  min-block-size: 0;
+}
+
+.app-object-drawer {
+  block-size: 100%;
+}
+
+/* The top bar: Back at the start, Expand and Close at the end. */
+.app-object-panel__head .pf-v6-c-drawer__head {
+  align-items: center;
+}
+
+/* A tab's content starts a gutter below the tabs. */
+.app-object-panel .pf-v6-c-tab-content {
+  padding-block-start: var(--pf-t--global--spacer--md);
+}
+
+/* The object moving out and the object moving in share one stage, side by side as they slide. */
+.app-object-stage {
+  position: relative;
+  overflow-x: clip;
+}
+
+/* Each object has the panel's surface, and the one moving in passes over the one moving out. */
+.app-object-layer {
+  position: relative;
+  z-index: 1;
+  background-color: var(--pf-t--global--background--color--floating--default);
+}
+
+.app-object-layer--leaving {
+  z-index: 0;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  pointer-events: none;
+}
+
+.app-slide-in-from-end {
+  animation: app-object-in-from-end var(--pf-t--global--motion--duration--slide-in--default) var(--pf-t--global--motion--timing-function--decelerate);
+}
+
+.app-slide-in-from-start {
+  animation: app-object-in-from-start var(--pf-t--global--motion--duration--slide-in--default) var(--pf-t--global--motion--timing-function--decelerate);
+}
+
+.app-slide-out-to-start {
+  animation: app-object-out-to-start var(--pf-t--global--motion--duration--slide-out--default) var(--pf-t--global--motion--timing-function--accelerate) forwards;
+}
+
+.app-slide-out-to-end {
+  animation: app-object-out-to-end var(--pf-t--global--motion--duration--slide-out--default) var(--pf-t--global--motion--timing-function--accelerate) forwards;
+}
+
+@keyframes app-object-in-from-end {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes app-object-in-from-start {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes app-object-out-to-start {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes app-object-out-to-end {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* With reduced motion asked for, the content changes without moving. */
+@media (prefers-reduced-motion: reduce) {
+  .app-slide-in-from-end,
+  .app-slide-in-from-start {
+    animation: none;
+  }
+
+  .app-object-layer--leaving {
+    display: none;
+  }
+}
+
+/*
+ * The list bar sticks to the top of the content as it scrolls, so whatever is scrolled into view, such as a card whose
+ * select control takes focus, lands below it rather than under it (WCAG 2.4.11, focus not obscured).
+ */
+.app-object-drawer > .pf-v6-c-drawer__main > .pf-v6-c-drawer__content {
+  scroll-padding-block-start: var(--pf-t--global--spacer--3xl);
+}

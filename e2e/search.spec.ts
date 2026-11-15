@@ -7,7 +7,7 @@ test.setTimeout(60_000);
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
-const field = (page: Page) => page.getByRole('search').getByRole('textbox', { name: 'Search objects' });
+const field = (page: Page) => page.getByRole('search').getByRole('textbox', { name: 'Search or ask' });
 const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card__header').getByText(/ · /);
 
 async function openTodo(page: Page) {
@@ -55,6 +55,8 @@ test('“list all of my queries” finds the person’s own queries, and says th
   await field(page).press('Enter');
   await expect(page.getByText('3 matches for “list all of my queries”.')).toBeVisible();
   await expect(page.getByText('Understood from the ontology')).toBeVisible();
+  // The in-page gateway holds no credential, so the question is searched, and the page says so.
+  await expect(page.getByText('No model is connected to answer questions, so the question was searched.')).toBeVisible();
   await expect(page.getByText('Yours', { exact: true })).toBeVisible();
   await expect(results(page)).toHaveText(['Q-01 · Data Query', 'Q-02 · Data Query', 'Q-03 · Data Query']);
 });

@@ -59,3 +59,29 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/*
+ * The menu button's two lines, which turn into an X while the sidebar is open (design system spec 4.1). Each line moves
+ * to the middle, then turns about the icon's center. Timed by PatternFly's motion tokens for icons.
+ */
+.app-menu-icon__line {
+  stroke: currentcolor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transform-origin: 8px 8px;
+  transition: transform var(--pf-t--global--motion--duration--icon--long) var(--pf-t--global--motion--timing-function--default);
+}
+
+.app-menu-toggle[aria-expanded='true'] .app-menu-icon__line--top {
+  transform: rotate(45deg) translateY(3px);
+}
+
+.app-menu-toggle[aria-expanded='true'] .app-menu-icon__line--bottom {
+  transform: rotate(-45deg) translateY(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-menu-icon__line {
+    transition: none;
+  }
+}

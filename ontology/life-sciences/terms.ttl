@@ -329,6 +329,30 @@ lst:StudyBlinding-unblinded a skos:Concept ;
   skos:prefLabel "unblinded" ;
   p:order 2 .
 
+lst:ProtocolStatus a skos:ConceptScheme ;
+  skos:prefLabel "Protocol status" ;
+  skos:definition "The values of the status dimension of a protocol." .
+
+lst:ProtocolStatus-draft a skos:Concept ;
+  skos:inScheme lst:ProtocolStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:ProtocolStatus-inReview a skos:Concept ;
+  skos:inScheme lst:ProtocolStatus ;
+  skos:prefLabel "in review" ;
+  p:order 2 .
+
+lst:ProtocolStatus-approved a skos:Concept ;
+  skos:inScheme lst:ProtocolStatus ;
+  skos:prefLabel "approved" ;
+  p:order 3 .
+
+lst:ProtocolStatus-superseded a skos:Concept ;
+  skos:inScheme lst:ProtocolStatus ;
+  skos:prefLabel "superseded" ;
+  p:order 4 .
+
 lst:SiteStatus a skos:ConceptScheme ;
   skos:prefLabel "Site status" ;
   skos:definition "The values of the status dimension of a site." .

@@ -31,7 +31,7 @@ const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: {
 /** Up to this many values show as radio buttons; more as a select (design system spec 5.1). */
 const MAX_RADIOS = 5;
 
-function fieldFor(input: ComposedInput): ViewNode {
+export function fieldFor(input: ComposedInput): ViewNode {
   const group = (children: ViewNode[], role?: 'radiogroup'): ViewNode => ({
     component: 'FormGroup',
     // Radio buttons sit side by side, so each has room to be tapped (WCAG 2.2 target size).
@@ -62,7 +62,12 @@ function fieldFor(input: ComposedInput): ViewNode {
 }
 
 /** One line per change the person will recognize: the object's own values, related objects, and new objects. */
-export function changeLines(composition: MethodComposition, preview: Omit<CommitResult, 'commit'>): { term: string; value: string }[] {
+export function changeLines(
+  composition: MethodComposition,
+  preview: Omit<CommitResult, 'commit'>,
+  // In a batch each object is previewed alone, so a new object's identifier is not yet known: it is named by its type.
+  options: { unnumbered?: boolean } = {},
+): { term: string; value: string }[] {
   const created = new Set(preview.created);
   const lines: { term: string; value: string }[] = [];
   for (const c of preview.changes) {
@@ -74,7 +79,8 @@ export function changeLines(composition: MethodComposition, preview: Omit<Commit
   for (const description of preview.background ?? []) lines.push({ term: 'In the background', value: description });
   for (const iri of preview.created) {
     const own = preview.changes.filter((c) => c.subject === iri);
-    const identifier = own[0]?.subjectLabel ?? iri;
+    const typeLabel = own.find((c) => c.propertyLabel === 'type')?.newLabel;
+    const identifier = options.unnumbered && typeLabel ? `a new ${typeLabel}` : (own[0]?.subjectLabel ?? iri);
     const details = own.filter((c) => !['type', 'identifier'].includes(c.propertyLabel) && c.newLabel).map((c) => `${c.propertyLabel}: ${c.newLabel}`);
     lines.push({ term: 'Creates', value: [identifier, ...details].join(', ') });
   }
@@ -328,7 +334,8 @@ function compareRows(view: ObjectView): Map<string, string> {
   const rows = new Map<string, string>();
   for (const [k, v] of Object.entries(view.state).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
   for (const [k, v] of Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b))) rows.set(k, v);
-  for (const l of view.links.filter((l) => l.direction === 'out')) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
+  // Ends with nothing at the other end add no row, so only what the objects record is compared.
+  for (const l of view.links.filter((l) => l.direction === 'out' && l.objects.length)) rows.set(l.label, l.objects.map((o) => o.identifier).join(', '));
   return rows;
 }
 

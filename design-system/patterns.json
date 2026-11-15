@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.7",
+  "version": "0.8",
   "patterns": [
     {
       "id": "card-view",
@@ -175,6 +175,33 @@
         }
       ],
       "responsive": "Takes the place of the view at every width. The draft's text wraps; on phones the actions wrap onto as many rows as they need."
+    },
+    {
+      "id": "object",
+      "purpose": "One object in the object panel: its identity, state and methods, then tabs for its overview and each relationship end that holds many objects (design system 4.4).",
+      "template": "panel",
+      "coreLoopSteps": [
+        "find",
+        "choose"
+      ],
+      "fitsWhen": [
+        "A person opens an object from a card, a link or a search result"
+      ],
+      "slots": [
+        {
+          "name": "header",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "sections",
+          "accepts": [
+            "Tabs"
+          ]
+        }
+      ],
+      "responsive": "Three quarters of the content area from lg up and all of it below, or all of it when expanded. Tabs scroll sideways on phones; cards in a tab stack."
     }
   ]
 }
