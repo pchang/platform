@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.34. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.27, sections 3.6, 5.1, 5.4 and 7.
+Version 0.35. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.27, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -26,6 +26,7 @@ The platform uses PatternFly's default visual style, with two changes: the typef
 - **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
 - Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
 - **Card surface.** Three surfaces step evenly: the outer chrome (masthead and sidebar) on PatternFly's secondary background, the content area halfway between secondary and primary, and cards on primary. The content area has no border of its own. Cards carry a shadow subtler than PatternFly's small one: its 1px offset, half its blur, and its color at half the opacity. Every value is a PatternFly token or mixed from tokens, so dark mode follows: there the chrome is darkest and cards lightest.
+- **The chat panel follows the same style** (4.1, Ask), so chat reads as a mode of the same product, not a separate one. The panel is chrome. Its header lines up with the masthead: the same height and padding, the title in the logo's size and weight, and plain icon buttons like the masthead's, with no divider. The conversation and the message bar sit on the content surface, inset from the panel's edges as the content area is from the page's, with the same rounding; on phones, as the content area does there, it runs to the edges. Cards, such as prompts and cited objects, are on the card surface with the card shadow, and so are the person's own messages: no brand-colored fills. The welcome's greeting is set as a page's main heading and its line as body text, as on To do. The message bar is a field like any other, with PatternFly's small rounding and default border, and the footnote is small, subtle text. The panel has no border or shadow of its own: the surfaces set it apart.
 
 ### Packages
 
@@ -111,7 +112,7 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 - **Before the first message,** a welcome: the greeting of To do (4.3) and "Ask about the work you may see, or search for it.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
 - **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
 - **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
-  - **An answer:** the model's text, then the objects it cites as sources, each its identifier and type with its title, which open the object; and in small text which model answered and how many objects it looked at.
+  - **An answer:** the model's text, then the objects it cites as sources, one under another with an object list's gutter, each like an object list's card: its identifier and type in small text, then its title, which opens the object; and in small text which model answered and how many objects it looked at.
   - **A question searched instead:** why, in the model's place ("No model is connected to answer questions, so the question was searched."), then the best matches as sources, and "See all N on the search page", which opens the search page. With no match, it says so and suggests fewer words.
   - **A refusal or failure:** an inline danger alert with the gateway's reasons.
 - **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, the message bar and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
@@ -424,3 +425,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.32 | 2026-11-15 | On touch screens, text fields use the large body size, 16px, so phones do not zoom in when one takes focus. Pinch zoom stays. |
 | 0.33 | 2026-11-15 | To do opens with a greeting for the person chosen in Profile, by time of day and first name, chosen by the date so it holds all day, with a line saying how much waits for them and in which role. |
 | 0.34 | 2026-11-15 | The masthead's search field becomes an Ask button, a pair of speech bubbles, that opens a chat panel built from PatternFly's chatbot: docked at the right beside the page from lg up, over it below lg and full screen on phones. It holds one conversation per person, answers with the objects cited as sources, falls back to search with a link to the search page, and starts agentic sessions in time. |
+| 0.35 | 2026-11-15 | The chat panel follows the visual style: a chrome panel with a header lined up with the masthead, the conversation on the inset content surface, the person's messages and cards on the card surface with the card shadow, the welcome set as To do's heading, and the message bar as a standard field. No brand-colored fills, borders or floating shadow. |

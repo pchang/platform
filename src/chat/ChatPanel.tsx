@@ -1,8 +1,10 @@
 import { Button } from '@patternfly/react-core';
+import PenToSquareIcon from '@patternfly/react-icons/dist/esm/icons/pen-to-square-icon';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import Chatbot, { ChatbotDisplayMode } from '@patternfly/chatbot/dist/dynamic/Chatbot';
 import ChatbotContent from '@patternfly/chatbot/dist/dynamic/ChatbotContent';
 import ChatbotFooter, { ChatbotFootnote } from '@patternfly/chatbot/dist/dynamic/ChatbotFooter';
-import ChatbotHeader, { ChatbotHeaderActions, ChatbotHeaderCloseButton, ChatbotHeaderMain, ChatbotHeaderNewChatButton, ChatbotHeaderTitle } from '@patternfly/chatbot/dist/dynamic/ChatbotHeader';
+import ChatbotHeader, { ChatbotHeaderActions, ChatbotHeaderMain, ChatbotHeaderTitle } from '@patternfly/chatbot/dist/dynamic/ChatbotHeader';
 import ChatbotWelcomePrompt from '@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt';
 import Message from '@patternfly/chatbot/dist/dynamic/Message';
 import MessageBar from '@patternfly/chatbot/dist/dynamic/MessageBar';
@@ -55,7 +57,16 @@ export function ChatPanel() {
     objects.length
       ? {
           sources: {
-            sources: objects.map((o) => ({ title: `${o.identifier} · ${o.typeLabel}`, body: o.title, link: '#', onClick: open(o) })),
+            // Like an object list's cards: the identifier and type in small text, then the title (design system spec 4.3).
+            sources: objects.map((o) => ({
+              headerContent: <small className="app-chat__eyebrow">{`${o.identifier} · ${o.typeLabel}`}</small>,
+              title: o.title,
+              link: '#',
+              onClick: open(o),
+            })),
+            // Every cited object at once, one card under another and as wide as the conversation, like an object list.
+            layout: 'wrap' as const,
+            cardMaxWidth: '100%',
             sourceWord: 'object',
             sourceWordPlural: 'objects',
           },
@@ -63,10 +74,25 @@ export function ChatPanel() {
       : {};
 
   const reply = (turn: ChatTurn) => {
-    const common = { role: 'bot' as const, name: product.name, isAvatarHidden: true };
+    const common = {
+      role: 'bot' as const,
+      name: product.name,
+      isAvatarHidden: true,
+    };
     if (turn.status === 'waiting') return <Message key={`r${turn.id}`} {...common} isLoading content="" loadingWord="Working on it" />;
     if (turn.status === 'failed') {
-      return <Message key={`r${turn.id}`} {...common} content="" error={{ title: 'This could not be answered', children: turn.reasons?.join(' '), variant: 'danger' }} />;
+      return (
+        <Message
+          key={`r${turn.id}`}
+          {...common}
+          content=""
+          error={{
+            title: 'This could not be answered',
+            children: turn.reasons?.join(' '),
+            variant: 'danger',
+          }}
+        />
+      );
     }
     const result = turn.result as AskResult;
     if (result.answer) {
@@ -77,7 +103,11 @@ export function ChatPanel() {
           {...common}
           content={answer.text}
           {...sources(answer.cited)}
-          extraContent={{ afterMainContent: <small className="app-chat__note">{`Answered by ${answer.model}, after looking at ${answer.lookedAt} ${answer.lookedAt === 1 ? 'object' : 'objects'}.`}</small> }}
+          extraContent={{
+            afterMainContent: (
+              <small className="app-chat__note">{`Answered by ${answer.model}, after looking at ${answer.lookedAt} ${answer.lookedAt === 1 ? 'object' : 'objects'}.`}</small>
+            ),
+          }}
         />
       );
     }
@@ -107,12 +137,7 @@ export function ChatPanel() {
   };
 
   return (
-    <Chatbot
-      displayMode={roomy ? ChatbotDisplayMode.docked : ChatbotDisplayMode.fullscreen}
-      isVisible={chat.isOpen}
-      ariaLabel="Ask"
-      className="app-chat"
-    >
+    <Chatbot displayMode={roomy ? ChatbotDisplayMode.docked : ChatbotDisplayMode.fullscreen} isVisible={chat.isOpen} ariaLabel="Ask" className="app-chat">
       {chat.isOpen && (
         <div
           id="app-chat"
@@ -128,30 +153,34 @@ export function ChatPanel() {
               </ChatbotHeaderTitle>
             </ChatbotHeaderMain>
             <ChatbotHeaderActions>
-              <ChatbotHeaderNewChatButton onClick={chat.newConversation} tooltipContent="New conversation" aria-label="New conversation" />
-              <ChatbotHeaderCloseButton onClick={chat.close} tooltipContent="Close" aria-label="Close" />
+              {/* Plain icon buttons, like the masthead's (design system spec 1, Visual style). */}
+              <Button variant="plain" icon={<PenToSquareIcon />} aria-label="New conversation" onClick={chat.newConversation} />
+              <Button variant="plain" icon={<TimesIcon />} aria-label="Close" onClick={chat.close} />
             </ChatbotHeaderActions>
           </ChatbotHeader>
-          <ChatbotContent>
-            <MessageBox ariaLabel="Conversation">
-              {chat.turns.length === 0 && (
-                <ChatbotWelcomePrompt
-                  title={greeting(name, new Date())}
-                  description="Ask about the work you may see, or search for it."
-                  prompts={PROMPTS.map((p) => ({ title: p, onClick: () => chat.send(p) }))}
-                />
-              )}
-              {chat.turns.flatMap((turn) => [
-                <Message key={`q${turn.id}`} role="user" name={firstName} isAvatarHidden content={turn.question} />,
-                reply(turn),
-              ])}
-              <div ref={end} />
-            </MessageBox>
-          </ChatbotContent>
-          <ChatbotFooter>
-            <MessageBar onSendMessage={(m) => chat.send(String(m))} placeholder="Search or ask" hasAttachButton={false} alwayShowSendButton />
-            <ChatbotFootnote label="Answers come from what you may read. Check them before you act." />
-          </ChatbotFooter>
+          {/* The conversation and the message bar on the content surface, inset like the content area. */}
+          <div className="app-chat__surface">
+            <ChatbotContent>
+              <MessageBox ariaLabel="Conversation">
+                {chat.turns.length === 0 && (
+                  <ChatbotWelcomePrompt
+                    title={greeting(name, new Date())}
+                    description="Ask about the work you may see, or search for it."
+                    prompts={PROMPTS.map((p) => ({
+                      title: p,
+                      onClick: () => chat.send(p),
+                    }))}
+                  />
+                )}
+                {chat.turns.flatMap((turn) => [<Message key={`q${turn.id}`} role="user" name={firstName} isAvatarHidden content={turn.question} />, reply(turn)])}
+                <div ref={end} />
+              </MessageBox>
+            </ChatbotContent>
+            <ChatbotFooter>
+              <MessageBar onSendMessage={(m) => chat.send(String(m))} placeholder="Search or ask" hasAttachButton={false} alwayShowSendButton />
+              <ChatbotFootnote label="Answers come from what you may read. Check them before you act." />
+            </ChatbotFooter>
+          </div>
         </div>
       )}
     </Chatbot>

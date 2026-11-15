@@ -27,12 +27,18 @@ html body {
  * follows. The chrome keeps PatternFly's secondary background; the content area is halfway between it and the card
  * surface, with no border; cards carry a shadow subtler than PatternFly's small one.
  */
-.pf-v6-c-page.app-page {
+html:root {
   --app-content--BackgroundColor: color-mix(
     in srgb,
     var(--pf-t--global--background--color--secondary--default),
     var(--pf-t--global--background--color--primary--default)
   );
+  /* PatternFly's small shadow at half the blur and half the opacity, for cards and other things on the card surface. */
+  --app-card--BoxShadow: 0 var(--pf-t--global--box-shadow--Y--500) calc(var(--pf-t--global--box-shadow--blur--sm) / 2) 0
+    color-mix(in srgb, var(--pf-t--global--box-shadow--color--sm--default) 50%, transparent);
+}
+
+.pf-v6-c-page.app-page {
   --pf-v6-c-page__main-container--BackgroundColor: var(--app-content--BackgroundColor);
 }
 
@@ -55,8 +61,7 @@ html body {
 
 /* PatternFly's small shadow at half the blur and half the opacity. Plain cards have no surface, so no shadow. */
 html body .pf-v6-c-card:not(.pf-m-plain) {
-  box-shadow: 0 var(--pf-t--global--box-shadow--Y--500) calc(var(--pf-t--global--box-shadow--blur--sm) / 2) 0
-    color-mix(in srgb, var(--pf-t--global--box-shadow--color--sm--default) 50%, transparent);
+  box-shadow: var(--app-card--BoxShadow);
 }
 
 /*

@@ -1,4 +1,14 @@
-/* The chat panel (design system spec 4.1, Ask). Tokens only, no raw colors (design system spec, rule 2). */
+/*
+ * The chat panel (design system spec 4.1, Ask) in the platform's visual style (spec 1, Visual style): the same three
+ * surfaces as the page. Tokens only, no raw colors (design system spec, rule 2).
+ */
+
+/* The panel is chrome. The surfaces set it apart, so it has no border or floating shadow of its own. */
+.pf-chatbot.app-chat {
+  background-color: var(--pf-t--global--background--color--secondary--default);
+  border: 0;
+  box-shadow: none;
+}
 
 /* The chatbot's own layout, inside the element that closes it on Escape. */
 .app-chat__body {
@@ -8,14 +18,103 @@
   min-height: 0;
 }
 
+/* The header lines up with the masthead: its padding and plain icon buttons, the title as the logo, no divider. */
+.app-chat .pf-chatbot__header {
+  background-color: transparent;
+  padding-block: var(--pf-t--global--spacer--md);
+  padding-inline: var(--pf-t--global--spacer--lg);
+  align-items: center;
+}
+.app-chat .pf-chatbot__header__divider,
+.app-chat .pf-chatbot__footer > .pf-v6-c-divider {
+  display: none;
+}
+
 .app-chat__title {
   font-size: var(--pf-t--global--font--size--heading--h3);
   font-weight: var(--pf-t--global--font--weight--heading--default);
   margin: 0;
 }
 
+/* The conversation and the message bar on the content surface, inset as the content area is, with its rounding. */
+.app-chat__surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  margin-block-end: var(--pf-t--global--spacer--lg);
+  margin-inline-end: var(--pf-t--global--spacer--lg);
+  border-radius: var(--pf-t--global--border--radius--medium);
+  background-color: var(--app-content--BackgroundColor);
+  overflow: hidden;
+}
+html .pf-chatbot.app-chat:not(.pf-chatbot--default) .pf-chatbot__content:not(.pf-m-primary),
+html .pf-chatbot.app-chat:not(.pf-chatbot--default) .pf-chatbot__footer:not(.pf-m-primary) {
+  background-color: transparent;
+}
+
+/* On phones the surface runs to the edges, as the content area does there. */
+@media (max-width: 767px) {
+  .app-chat__surface {
+    margin: 0;
+    border-radius: 0;
+  }
+}
+
+/* The welcome as To do's heading and its summary line. */
+.app-chat .pf-chatbot__hello {
+  color: var(--pf-t--global--text--color--regular);
+  font-size: var(--pf-t--global--font--size--heading--h1);
+  font-weight: var(--pf-t--global--font--weight--heading--default);
+}
+.app-chat .pf-chatbot__question {
+  color: var(--pf-t--global--text--color--regular);
+  font-size: var(--pf-t--global--font--size--body--default);
+  font-weight: var(--pf-t--global--font--weight--body--default);
+}
+
+/* The person's own messages on the card surface with the card shadow: no brand-colored fills. */
+.app-chat .pf-chatbot__message--user .pf-chatbot__message-text {
+  background-color: var(--pf-t--global--background--color--primary--default);
+  color: var(--pf-t--global--text--color--regular);
+  border-radius: var(--pf-t--global--border--radius--medium);
+  box-shadow: var(--app-card--BoxShadow);
+  padding-block: var(--pf-t--global--spacer--sm);
+  padding-inline: var(--pf-t--global--spacer--md);
+}
+.app-chat .pf-chatbot__message--user .pf-chatbot__message-text :is(p, a, .pf-v6-c-content) {
+  color: var(--pf-t--global--text--color--regular);
+}
+
+/* The message bar is a field like any other: PatternFly's small rounding and default border. */
+.app-chat .pf-chatbot__message-bar {
+  border-radius: var(--pf-t--global--border--radius--small);
+  border-color: var(--pf-t--global--border--color--default);
+}
+
+/* The footnote is small, subtle text. */
+html .app-chat .pf-chatbot__footnote,
+html .app-chat .pf-chatbot__footnote .pf-v6-c-button {
+  --pf-v6-c-button--FontSize: var(--pf-t--global--font--size--sm);
+  font-size: var(--pf-t--global--font--size--sm);
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+/* Cited objects one under another, with an object list's gutter between them. */
+html .app-chat .pf-chatbot__sources-card-base.pf-m-wrap .pf-chatbot__sources-list {
+  gap: var(--pf-t--global--spacer--md);
+}
+
+.app-chat__eyebrow {
+  display: block;
+  font-size: var(--pf-t--global--font--size--sm);
+  font-weight: var(--pf-t--global--font--weight--body--default);
+  color: var(--pf-t--global--text--color--regular);
+}
+
 .app-chat__note {
   color: var(--pf-t--global--text--color--subtle);
+  font-size: var(--pf-t--global--font--size--sm);
 }
 
 /* From lg up the page moves left to make room for the docked panel, so the person works beside it. */

@@ -82,6 +82,7 @@ describe('the chat panel', () => {
     expect(await screen.findByText('AE-003 waits for you to report it.')).toBeInTheDocument();
     expect(screen.getByText('What needs me first today?')).toBeInTheDocument();
     expect(screen.getByText('AE-003 · Adverse Event')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Jaundice and raised liver enzymes' })).toBeInTheDocument();
     expect(screen.getByText('Answered by claude-opus-5-5, after looking at 4 objects.')).toBeInTheDocument();
     const results = await axe.run(container, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);

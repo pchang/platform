@@ -42,7 +42,7 @@ test('Ask opens the chat docked beside the page; a reply cites objects that open
 
   await ask(page, 'serious adverse events');
   await expect(chat(page).getByText(/No model is connected to answer questions, so the question was searched\. Here is what a search found for “serious adverse events”: 2 matches\./)).toBeVisible();
-  await chat(page).getByRole('link', { name: 'AE-003 · Adverse Event' }).click();
+  await chat(page).getByRole('link', { name: /^Jaundice/ }).click();
   await expect(page.locator('.app-object-panel').getByRole('heading', { level: 2, name: /Jaundice/ })).toBeVisible();
   await expect(chat(page)).toBeVisible();
 
@@ -85,7 +85,7 @@ test('on a phone the chat fills the screen, and opening an object closes it, kee
   expect(box.width).toBeCloseTo(390, 0);
   expect(box.height).toBeCloseTo(844, 0);
   await ask(page, 'pneumonia');
-  await chat(page).getByRole('link', { name: 'AE-005 · Adverse Event' }).click();
+  await chat(page).getByRole('link', { name: /pneumonia/ }).click();
   await expect(page.locator('.app-object-panel').getByRole('heading', { level: 2, name: /pneumonia/ })).toBeVisible();
   await expect(chat(page).getByRole('heading', { level: 2, name: 'Ask' })).toHaveCount(0);
   await page.keyboard.press('Escape');
