@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.29. November 15, 2026. Author: Paul Chang.
+Version 0.30. November 15, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -167,7 +167,7 @@ A database server can later hold the current state for larger data or several ga
 
 - The signer is the principal: a person, never an agent. Any person input of a signed method is the principal; nobody signs for someone else.
 - The signature records the signer's name, the date and time of signing, and the meaning of the signature, such as approval or authorship. The meaning comes from the method in the ontology. All three are bound to the commit's provenance record, so they cannot be separated from what was signed.
-- Signing authenticates the person at the moment of signing, through the identity provider. Until one is connected, development mode accepts the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Outside development mode, the gateway refuses to sign.
+- Signing authenticates the person at the moment of signing, through the identity provider. Until the identity provider can do that, development mode, and a demo deployment holding synthetic data only, accept the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Otherwise, the gateway refuses to sign.
 
 **Background runs.** A method that runs in the background, such as a computation over many objects, is started by a commit and finished by a worker.
 
@@ -190,7 +190,14 @@ A database server can later hold the current state for larger data or several ga
 
 **Previews.** For reviewing the experience on any device without a server, the same gateway code can run inside the page, with the seed graph, in development mode and without a journal. Nothing a preview does is saved.
 
-**Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
+**Identity.** People sign in through an OpenID Connect provider the deployment connects; the first is Google.
+
+- **The gateway runs the sign-in.** It uses the authorization code flow with PKCE, and verifies the provider's ID token: its signature against the provider's published keys, the issuer, the audience, the nonce, the expiry, and a verified email. It then keeps a session in a signed, HttpOnly, Secure cookie for at most eight hours. The page never holds a token or a credential.
+- **Access** is limited to the email addresses and email domains the deployment allows. Anyone else is refused after signing in, with that reason.
+- **Who an account acts as.** Normally, the person in the graph with that email, in one of their own roles, which the page chooses per request; an account with no person is refused. A demo deployment, holding synthetic data only, may instead let any allowed account act as any person in the graph, to show the personas. Every commit and audited read then records the signed-in account beside the person it acted as.
+- **Forgery.** Requests that change anything must be JSON, so another site cannot forge one with the person's cookie.
+- **Development mode,** for work on one's own machine only, accepts the principal from request headers with no sign-in. Without sign-in or development mode, the gateway refuses every request it cannot authenticate.
+- **Agents** over the Model Context Protocol need the same session until agent identity is decided (section 9).
 
 ### 3.5 Agent Layer
 Agents do the work. The roles below are illustrative. The platform may split or combine them.
@@ -410,7 +417,7 @@ To resolve in future versions of this spec.
 - How is the generated UI tested for consistency and accessibility at scale?
 - Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
 - Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
-- Which identity provider authenticates people and agents, and how does it authenticate a person at the moment of signing?
+- How does the identity provider authenticate a person again at the moment of signing, and how do agents authenticate over the Model Context Protocol?
 - How are background runs scheduled, as well as started by a person, and who is notified of a scheduled run's outcome?
 - Should workers run outside the gateway process, so long computations never delay commits?
 - How is a drafting model validated for its intended use, and how are its instructions changed under change control?
@@ -425,7 +432,7 @@ To resolve in future versions of this spec.
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
 - When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
-- What are the deployment model and hosting targets?
+- Where does the journal live on a hosting target whose disk is not kept, such as Cloud Run, so that history survives a restart (`deployment.md`)?
 - What are the performance and scale targets for the first release?
 - May one signature cover many records at once, and how would each record carry it, so methods that need a signature can run for many?
 - Should a run for many objects be one transaction, all or nothing, where a domain needs it?
@@ -465,3 +472,4 @@ To resolve in future versions of this spec.
 | 0.27 | 2026-11-15 | Questions are asked in a conversation (section 5.2): earlier turns go with each question as what was said, never as records; the model reads again and cites only what it read for this question. One open question replaced: how long a conversation is kept. |
 | 0.28 | 2026-11-15 | Asking about an object (section 5.2): the gateway reads the objects a question is asked from as the principal, audited, and gives them to the model as data, citable; an unreadable object is refused. |
 | 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
+| 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |

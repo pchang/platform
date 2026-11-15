@@ -12,10 +12,23 @@ export type { AskResult, AskTurn, CommitResult, DraftView, SearchResult, MethodC
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
-  constructor(readonly reasons: string[]) {
+  /** The HTTP status, over HTTP: 401 means the person must sign in (platform spec 3.4, Identity). */
+  constructor(
+    readonly reasons: string[],
+    readonly status?: number,
+  ) {
     super(reasons.join('; '));
   }
 }
+
+/**
+ * Who the page is acting for (design system spec 4.1, Signing in): a preview or development, where anyone may be acted
+ * as; a demo deployment, signed in and acting as any person; or a signed-in account acting as its own person.
+ */
+export type Me =
+  | { mode: 'preview' | 'development' }
+  | { mode: 'demo'; account: { email: string; name: string } }
+  | { mode: 'signed-in'; account: { email: string; name: string }; person: Person };
 
 export interface Person {
   person: string;
@@ -24,7 +37,9 @@ export interface Person {
 }
 
 export interface GatewayClient {
-  /** The people to act as, for the development persona switcher. */
+  /** Who the page acts for. Rejects with RefusedError, status 401, when the person must sign in. */
+  me(): Promise<Me>;
+  /** The people to act as, for the persona switcher in development, previews and demo deployments. */
   people(): Promise<Person[]>;
   navigation(principal: Principal): Promise<NavigationDomain[]>;
   todo(principal: Principal): Promise<ToDoItem[]>;

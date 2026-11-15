@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.37. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.29, sections 3.6, 5.1, 5.4 and 7.
+Version 0.38. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -137,7 +137,9 @@ Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
 Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its button is a plain icon button like Settings and Profile, with no frame; a badge on it shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
 
-Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
+Profile opens a menu showing who the person is and the role they act in, and, where people sign in, the signed-in account and Sign out. In development, in previews and in a demo deployment it also lists the graph's people, to act as any of them, labeled as a development or demo tool; elsewhere it lists only the person's own roles.
+
+**Signing in.** Where the deployment connects sign-in (platform spec 3.4, Identity), a person who is not signed in sees PatternFly's Login page instead of the chrome: the product name, "Sign in to continue", and a primary button, "Sign in with Google", which goes to the provider. A refusal after signing in, such as an account the deployment does not allow, is an inline danger alert on the same page with the gateway's reason, and a Sign out link. When a session ends, the next request brings the person back to it.
 
 ### 4.3 To do and object lists
 
@@ -434,3 +436,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.35 | 2026-11-15 | The chat panel follows the visual style: a chrome panel with a header lined up with the masthead, the conversation on the inset content surface, the person's messages and cards on the card surface with the card shadow, the welcome set as To do's heading, and the message bar as a standard field. No brand-colored fills, borders or floating shadow. |
 | 0.36 | 2026-11-15 | The chat's welcome is its own, "Search or ask anything", not To do's greeting. Ask about this: a speech-bubble button on every card, list row and object panel starts a conversation about that object, led by its card with its methods, with prompts and a message bar about it. The view spec gains `asks`. |
 | 0.37 | 2026-11-15 | Every Ask about this, and New conversation, starts a new conversation; earlier ones are kept, newest first, in the chat's conversation history drawer, named for their object or first question, searchable, and restored when chosen. The history is the person's own and kept for the session only. |
+| 0.38 | 2026-11-15 | Signing in: PatternFly's Login page with Sign in with Google, a refusal shown on it; Profile shows the signed-in account and Sign out, and the persona switcher only in development, previews and demo deployments. |

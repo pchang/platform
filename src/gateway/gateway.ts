@@ -19,11 +19,13 @@ export interface Principal {
   person: string;
   /** IRI of the role they act in. */
   role: string;
+  /** The signed-in account that made the request, when the deployment has sign-in (spec 3.4, Identity). Recorded, never trusted for access. */
+  account?: string;
 }
 
 export class GatewayError extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 415 | 502,
     readonly reasons: string[],
   ) {
     super(reasons.join('; '));
@@ -516,6 +518,15 @@ export class Gateway {
    * The people and agents in the graph, with the roles each may act in. For the development persona
    * switcher only (design system spec 4.1); the HTTP transport serves it in development mode only.
    */
+  /**
+   * The person a signed-in account acts as (spec 3.4, Identity): the person in the graph with that email, and their roles.
+   * Undefined when nobody has it.
+   */
+  personWithEmail(email: string): { person: string; name: string; roles: { role: string; label: string }[] } | undefined {
+    const found = this.q(`SELECT ?person WHERE { ?person a p:Person ; p:email ?email FILTER(LCASE(STR(?email)) = ${JSON.stringify(email.toLowerCase())}) }`)[0];
+    return found && this.people().find((p) => p.person === found.person);
+  }
+
   people(): { person: string; name: string; roles: { role: string; label: string }[] }[] {
     const rows = this.q(`SELECT ?person ?name ?role ?label WHERE { ?person a p:Person ; rdfs:label ?name ; p:actsAs ?role . ?role rdfs:label ?label } ORDER BY ?name ?label`);
     const people = new Map<string, { person: string; name: string; roles: { role: string; label: string }[] }>();
@@ -1056,6 +1067,7 @@ export class Gateway {
       quad(read, namedNode(RDF_TYPE), namedNode(`${NS.p}Read`), g),
       quad(read, namedNode(`${NS.prov}wasAssociatedWith`), namedNode(principal.person), g),
       quad(read, namedNode(`${NS.p}actedAs`), namedNode(principal.role), g),
+      ...(principal.account ? [quad(read, namedNode(`${NS.p}signedInAs`), literal(principal.account), g)] : []),
       quad(read, namedNode(`${NS.p}target`), namedNode(object), g),
       quad(read, namedNode(`${NS.prov}startedAtTime`), literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)), g),
     ];
@@ -1066,9 +1078,10 @@ export class Gateway {
   }
 
   /** The audit trail of personal-data reads, newest last. */
-  reads(): { person: string; role: string; object: string; at: string }[] {
-    return this.q(`SELECT ?person ?role ?object ?at WHERE { GRAPH <${this.dataNamespace}audit> {
-        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at } } ORDER BY ?at STRLEN(STR(?r)) ?r`) as never;
+  reads(): { person: string; role: string; object: string; at: string; account?: string }[] {
+    return this.q(`SELECT ?person ?role ?object ?at ?account WHERE { GRAPH <${this.dataNamespace}audit> {
+        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at .
+        OPTIONAL { ?r p:signedInAs ?account } } } ORDER BY ?at STRLEN(STR(?r)) ?r`) as never;
   }
 
   // ---------------------------------------------------------------- methods
@@ -1293,6 +1306,7 @@ export class Gateway {
         add(`${NS.p}draftOf`, namedNode(object)),
         add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
         add(`${NS.p}actedAs`, namedNode(principal.role)),
+        ...(principal.account ? [add(`${NS.p}signedInAs`, literal(principal.account))] : []),
         add(`${NS.p}modelId`, literal(reply.model)),
         add(`${NS.p}instructionsDigest`, literal(instructionsDigest)),
         add(`${NS.p}recordsDigest`, literal(recordsDigest)),
@@ -1607,6 +1621,7 @@ export class Gateway {
     add(id, `${NS.p}target`, namedNode(object));
     add(id, `${NS.prov}wasAssociatedWith`, namedNode(principal.person));
     add(id, `${NS.p}actedAs`, namedNode(principal.role));
+    if (principal.account) add(id, `${NS.p}signedInAs`, literal(principal.account));
     if (onBehalfOf) add(id, `${NS.p}onBehalfOf`, namedNode(onBehalfOf));
     add(id, `${NS.prov}startedAtTime`, literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)));
     let i = 0;
@@ -1653,6 +1668,7 @@ export class Gateway {
       add(`${NS.p}target`, namedNode(object)),
       add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
       add(`${NS.p}actedAs`, namedNode(principal.role)),
+      ...(principal.account ? [add(`${NS.p}signedInAs`, literal(principal.account))] : []),
       add(`${NS.p}startCommit`, namedNode(commit)),
       add(`${NS.prov}startedAtTime`, xsdDateTime(at)),
       add(`${NS.p}runStatus`, RUN_STATUS('queued')),
@@ -1863,9 +1879,10 @@ export class Gateway {
   }
 
   /** Every commit, oldest first. */
-  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string }[] {
-    return this.q(`SELECT ?commit ?method ?target ?person ?role ?at WHERE { GRAPH ?commit {
-        ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at } }
+  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string; account?: string }[] {
+    return this.q(`SELECT ?commit ?method ?target ?person ?role ?at ?account WHERE { GRAPH ?commit {
+        ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at .
+        OPTIONAL { ?commit p:signedInAs ?account } } }
         ORDER BY ?at STRLEN(STR(?commit)) ?commit`) as never;
   }
 }

@@ -12,6 +12,7 @@ import { AppMasthead } from './AppMasthead';
 // A fake gateway with one person, so the masthead test does not load the real gateway.
 vi.mock('../data/client', () => ({
   gatewayClient: async () => ({
+    me: async () => ({ mode: 'preview' as const }),
     people: async () => [{ person: 'urn:test:person-chloe', name: 'Chloé Martin', roles: [{ role: 'urn:test:dsp', label: 'Drug Safety Physician' }] }],
   }),
 }));

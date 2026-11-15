@@ -1,13 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { gatewayClient, type GatewayClient, type Person, type Principal } from '../data/client';
+import { gatewayClient, RefusedError, type GatewayClient, type Me, type Person, type Principal } from '../data/client';
+import { SignInPage } from './SignInPage';
 
 /**
- * Who the experience is acting as. Until an identity provider exists (platform spec 3.4), development
- * and previews pick a person and role from the seed graph with the persona switcher (design system 4.1).
+ * Who the experience is acting as (platform spec 3.4, Identity; design system spec 4.1). A signed-in account acts as its
+ * own person, in a role it chooses. Development, previews and demo deployments pick any person and role from the graph
+ * with the persona switcher. Where the person must sign in, the sign-in page takes the chrome's place.
  */
 
 interface PrincipalContext {
   client: GatewayClient;
+  /** Who the page acts for: preview, development, a demo deployment, or a signed-in person. */
+  me: Me;
   people: Person[];
   principal: Principal;
   name: string;
@@ -30,17 +34,28 @@ function stored(): Principal | undefined {
 }
 
 export function PrincipalProvider({ children, fallback }: { children: ReactNode; fallback: ReactNode }) {
-  const [state, setState] = useState<{ client: GatewayClient; people: Person[] } | { error: string }>();
+  const [state, setState] = useState<{ client: GatewayClient; people: Person[]; me: Me } | { error: string } | { signIn: string[] }>();
   const [principal, setPrincipalState] = useState<Principal>();
 
   useEffect(() => {
     let cancelled = false;
     gatewayClient()
-      .then(async (client) => ({ client, people: await client.people() }))
+      .then(async (client) => {
+        let me: Me;
+        try {
+          me = await client.me();
+        } catch (error) {
+          // Not signed in, or signed in as an account that may not act here: the sign-in page, with the reason.
+          if (error instanceof RefusedError && (error.status === 401 || error.status === 403)) return { signIn: error.status === 403 ? error.reasons : [] };
+          throw error;
+        }
+        return { client, me, people: me.mode === 'signed-in' ? [me.person] : await client.people() };
+      })
       .then(
         (loaded) => {
           if (cancelled) return;
           setState(loaded);
+          if ('signIn' in loaded) return;
           const saved = stored();
           const valid = saved && loaded.people.some((p) => p.person === saved.person && p.roles.some((r) => r.role === saved.role));
           const first = loaded.people.find((p) => p.person.endsWith(DEFAULT_PERSON_SUFFIX)) ?? loaded.people[0];
@@ -63,7 +78,7 @@ export function PrincipalProvider({ children, fallback }: { children: ReactNode;
   }, []);
 
   const value = useMemo(() => {
-    if (!state || 'error' in state || !principal) return null;
+    if (!state || 'error' in state || 'signIn' in state || !principal) return null;
     const person = state.people.find((p) => p.person === principal.person);
     return {
       ...state,
@@ -75,6 +90,7 @@ export function PrincipalProvider({ children, fallback }: { children: ReactNode;
   }, [state, principal, setPrincipal]);
 
   if (state && 'error' in state) return <>{`The gateway could not start: ${state.error}`}</>;
+  if (state && 'signIn' in state) return <SignInPage reasons={state.signIn} />;
   if (!value) return <>{fallback}</>;
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

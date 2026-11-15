@@ -45,6 +45,7 @@ function OpenButton() {
 function renderChat(ask: (question: string, earlier: AskTurn[]) => Promise<AskResult>) {
   const calls: { question: string; earlier: AskTurn[]; about: string[] }[] = [];
   current = {
+    me: async () => ({ mode: 'preview' as const }),
     people: async () => [{ person: 'urn:ben', name: 'Ben Okafor', roles: [{ role: 'urn:cdm', label: 'Clinical Data Manager' }] }],
     ask: vi.fn(async (_p: unknown, question: string, earlier: AskTurn[] = [], about: string[] = []) => {
       calls.push({ question, earlier, about });

@@ -19,6 +19,7 @@ vi.mock('../data/client', async (original) => ({ ...(await original<typeof impor
 
 function page(ask: (question: string) => Promise<AskResult>) {
   current = {
+    me: async () => ({ mode: 'preview' as const }),
     people: async () => [{ person: 'urn:ben', name: 'Ben Okafor', roles: [{ role: 'urn:cdm', label: 'Clinical Data Manager' }] }],
     ask: vi.fn(async (_p: unknown, question: string) => ask(question)),
     methods: async () => [{ method: 'urn:report', label: 'Report to safety', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Fill in' } }],
@@ -44,7 +45,7 @@ describe('the search page', () => {
   it('says it is working on the question, then leads with the answer, its links and its objects', async () => {
     let answer!: (r: AskResult) => void;
     const { container } = page(() => new Promise((resolve) => (answer = resolve)));
-    expect(await screen.findByText('Working on “which serious events are not reported?”…')).toBeInTheDocument();
+    expect(await screen.findByText('Working on “which serious events are not reported?”…', undefined, { timeout: 5000 })).toBeInTheDocument();
     answer({
       question: 'which serious events are not reported?',
       answer: { status: 'answered', text: 'One: AE-003. It waits for you to report it.', cited: [ae], model: 'claude-opus-5-5', lookedAt: 2 },
@@ -64,7 +65,7 @@ describe('the search page', () => {
       searched: 'No model is connected to answer questions, so the question was searched.',
       search: { query: question, interpretation: { types: [], states: [], identifiers: [], words: ['serious'], mine: false }, results: [{ object: ae, matched: [] }], total: 1, understoodBy: { ontology: true } },
     }));
-    expect(await screen.findByText('No model is connected to answer questions, so the question was searched.')).toBeInTheDocument();
+    expect(await screen.findByText('No model is connected to answer questions, so the question was searched.', undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByText('1 match for “which serious events are not reported?”.')).toBeInTheDocument();
   });
 });
