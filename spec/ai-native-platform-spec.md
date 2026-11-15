@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.27. November 15, 2026. Author: Paul Chang.
+Version 0.28. November 15, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -290,6 +290,7 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - **Grounded answers.** The model ends with its answer, whether it answered, needs the person to say more, or cannot answer from what the person may read, and the identifiers it rests on. The gateway keeps only identifiers the model read in this question through its tools, so an answer never cites an object the person may not read or the model did not see. An answer that needs the person to say more asks, as this section requires, rather than guessing.
 - **Bounded.** A question may take a limited number of steps; one that needs more is answered as unanswerable in its steps, never cut off silently. The answer says which model answered and how many objects it looked at.
 - **Shown with its objects.** The answer comes first, then the objects it cites as an object list, each actionable as any other.
+- **About an object.** A person can ask from an object, or several, so the question needs no description of them. The gateway reads each as the principal, with the same permissions and audit as any read, and gives the records to the model with the question, as data. The model may cite them, and reads anything else through its tools. An object the principal may not read is refused, not left out quietly. Without a model, the objects themselves are the result.
 - **In a conversation.** Questions are asked in a conversation, and the earlier turns, each question with the answer's text, go with the next question, so a follow-up such as "and which of those are overdue?" is understood. The earlier turns are what was said, not records: the model reads again through its tools before it answers, and cites only what it read for this question. A conversation belongs to one principal and is never shown to another.
 
 ### 5.3 Method Engine
@@ -462,3 +463,4 @@ To resolve in future versions of this spec.
 | 0.25 | 2026-11-14 | Acting on many objects runs together or one after another (section 5.4), decided by the ontology: an input marked as about each object (`p:perObject`) is given for each object in turn, with its own preview, and all are reviewed before commit. |
 | 0.26 | 2026-11-15 | Asking a question (section 5.2) and the Ask request (section 3.4): a connected model answers from what the principal may read through read-only gateway tools (search, read, count, methods), with reads audited, properties that identify a person withheld, answers grounded in the identifiers it read, and the search as fallback. Three open questions. |
 | 0.27 | 2026-11-15 | Questions are asked in a conversation (section 5.2): earlier turns go with each question as what was said, never as records; the model reads again and cites only what it read for this question. One open question replaced: how long a conversation is kept. |
+| 0.28 | 2026-11-15 | Asking about an object (section 5.2): the gateway reads the objects a question is asked from as the principal, audited, and gives them to the model as data, citable; an unreadable object is refused. |

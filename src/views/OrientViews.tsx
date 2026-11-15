@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
 import type { AskResult, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
+import { useChat } from '../chat/ChatProvider';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
@@ -141,6 +142,7 @@ export function useActiveRuns(deps: unknown[]): RunView[] {
 /** Orient's To do (platform spec 5.1). Each task runs through its archetype's pattern (platform spec 5.4). */
 export function TodoView() {
   const panel = useObjectPanel();
+  const chat = useChat();
   const { client, principal, name, roleLabel } = usePrincipal();
   const { changes } = useNotifications();
   const [items, setItems] = useState<ToDoItem[]>();
@@ -177,7 +179,7 @@ export function TodoView() {
           onField: (field, value) => list.onField(field, value) || (field === TODO_FILTER_FIELD && setFilter(value as TodoFilter)),
           onIntent: list.onIntent,
           onAction: (action) => openMethod(action.target, action.method),
-          onOpen: panel.open,
+          onOpen: panel.open, onAsk: chat.askAbout,
         }}
       />
       {list.dialog}
@@ -188,6 +190,7 @@ export function TodoView() {
 /** The objects of one type, from the navigation, each with the methods the person can run on it now (design system spec 4.3). */
 export function TypeView({ type }: { type: string }) {
   const panel = useObjectPanel();
+  const chat = useChat();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
   const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
@@ -219,7 +222,7 @@ export function TypeView({ type }: { type: string }) {
     <>
       <ViewRenderer
         view={view}
-        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
       />
       {list.dialog}
     </>
@@ -232,6 +235,7 @@ export function TypeView({ type }: { type: string }) {
  */
 export function SearchView({ query }: { query: string }) {
   const panel = useObjectPanel();
+  const chat = useChat();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
   const [loaded, setLoaded] = useState<{ result: AskResult; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
@@ -268,7 +272,7 @@ export function SearchView({ query }: { query: string }) {
     <>
       <ViewRenderer
         view={view}
-        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open }}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
       />
       {list.dialog}
     </>

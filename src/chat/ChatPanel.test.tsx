@@ -33,23 +33,28 @@ beforeEach(() => {
 function OpenButton() {
   const chat = useChat();
   return (
-    <button ref={chat.trigger} onClick={chat.open}>
-      Ask
-    </button>
+    <>
+      <button ref={chat.trigger} onClick={chat.open}>
+        Ask
+      </button>
+      <button onClick={() => chat.askAbout(ae.iri)}>From the card</button>
+    </>
   );
 }
 
 function renderChat(ask: (question: string, earlier: AskTurn[]) => Promise<AskResult>) {
-  const calls: { question: string; earlier: AskTurn[] }[] = [];
+  const calls: { question: string; earlier: AskTurn[]; about: string[] }[] = [];
   current = {
     people: async () => [{ person: 'urn:ben', name: 'Ben Okafor', roles: [{ role: 'urn:cdm', label: 'Clinical Data Manager' }] }],
-    ask: vi.fn(async (_p: unknown, question: string, earlier: AskTurn[] = []) => {
-      calls.push({ question, earlier });
+    ask: vi.fn(async (_p: unknown, question: string, earlier: AskTurn[] = [], about: string[] = []) => {
+      calls.push({ question, earlier, about });
       return ask(question, earlier);
     }),
-    read: async () => {
-      throw new Error('not read here');
-    },
+    read: async () => ({ ...ae, state: { Reporting: 'not reported' }, domainLabel: 'Clinical Development', urgency: 0, links: [], properties: {} }),
+    methods: async () => [
+      { method: 'urn:report', label: 'Report to safety', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Fill in' } },
+      { method: 'urn:lock', label: 'Reconcile', available: false, blocks: ['Not reported'], archetype: { archetype: 'urn:a', label: 'Confirm' } },
+    ],
     runs: async () => [],
     notifications: async () => [],
   } as unknown as GatewayClient;
@@ -70,14 +75,15 @@ function renderChat(ask: (question: string, earlier: AskTurn[]) => Promise<AskRe
   return { ...view, calls };
 }
 
-const bar = () => screen.getByRole('textbox', { name: /Search or ask|Send a message/ });
+const bar = () => screen.getByRole('textbox', { name: /Search or ask|Send a message|Ask about/ });
 
 describe('the chat panel', () => {
   it('opens with a greeting and prompts, and answers with the objects it cites and who answered', async () => {
     const { container } = renderChat(async (q) => answered(q));
     await userEvent.click(await screen.findByRole('button', { name: 'Ask' }));
     expect(screen.getByRole('heading', { level: 2, name: 'Ask' })).toBeInTheDocument();
-    expect(screen.getByText('Ask about the work you may see, or search for it.')).toBeInTheDocument();
+    expect(screen.getByText('Search or ask anything')).toBeInTheDocument();
+    expect(screen.getByText('Find objects, or ask about the work you may see.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /What needs me first today\?/ }));
     expect(await screen.findByText('AE-003 waits for you to report it.')).toBeInTheDocument();
     expect(screen.getByText('What needs me first today?')).toBeInTheDocument();
@@ -99,7 +105,8 @@ describe('the chat panel', () => {
     expect(calls[1].earlier).toEqual([{ question: 'which events are not reported?', answer: 'AE-003 waits for you to report it.' }]);
     await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
     expect(screen.queryByText('AE-003 waits for you to report it.')).not.toBeInTheDocument();
-    expect(screen.getByText('Ask about the work you may see, or search for it.')).toBeInTheDocument();
+    expect(screen.getByText('Search or ask anything')).toBeInTheDocument();
+    expect(screen.getByText('Find objects, or ask about the work you may see.')).toBeInTheDocument();
   });
 
   it('shows a question searched instead, with why, the matches and a way to the search page', async () => {
@@ -125,5 +132,22 @@ describe('the chat panel', () => {
     });
     expect(screen.queryByRole('heading', { level: 2, name: 'Ask' })).not.toBeInTheDocument();
     expect(ask).toHaveFocus();
+  });
+
+  it('asks about an object: it leads the conversation with its state and methods, and every question carries it', async () => {
+    const { calls } = renderChat(async (q) => answered(q));
+    await userEvent.click(await screen.findByRole('button', { name: 'From the card' }));
+    expect(await screen.findByText('Ask about AE-003')).toBeInTheDocument();
+    expect(screen.getByText('AE-003 · Adverse Event')).toBeInTheDocument();
+    expect(screen.getByText('Reporting: not reported')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Report to safety' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reconcile' })).not.toBeInTheDocument();
+    expect(bar()).toHaveAttribute('placeholder', 'Ask about AE-003');
+    await userEvent.click(screen.getByRole('button', { name: /What can I do next on AE-003, and why\?/ }));
+    await screen.findByText('AE-003 waits for you to report it.');
+    expect(calls).toEqual([{ question: 'What can I do next on AE-003, and why?', earlier: [], about: [ae.iri] }]);
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    expect(screen.getByText('Search or ask anything')).toBeInTheDocument();
+    expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
   });
 });

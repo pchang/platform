@@ -6,6 +6,7 @@ import { NotificationsProvider } from '../notifications/NotificationsProvider';
 import { ObjectPanelProvider } from '../objects/ObjectPanelProvider';
 import { PrincipalProvider } from '../principal/PrincipalProvider';
 import { ProcessProvider } from '../processes/ProcessProvider';
+import { ChatProvider } from '../chat/ChatProvider';
 import { SearchView } from './OrientViews';
 
 // The search page asks the gateway (platform spec 5.2, Asking a question; design system spec 4.1, Search). The client is
@@ -29,7 +30,9 @@ function page(ask: (question: string) => Promise<AskResult>) {
       <NotificationsProvider>
         <ProcessProvider>
           <ObjectPanelProvider>
-            <SearchView query="which serious events are not reported?" />
+            <ChatProvider>
+              <SearchView query="which serious events are not reported?" />
+            </ChatProvider>
           </ObjectPanelProvider>
         </ProcessProvider>
       </NotificationsProvider>

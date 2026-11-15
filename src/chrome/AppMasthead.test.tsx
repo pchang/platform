@@ -6,6 +6,7 @@ import { product } from '../config/product';
 import { AppearanceProvider } from '../appearance/AppearanceProvider';
 import { PrincipalProvider } from '../principal/PrincipalProvider';
 import { ChatProvider, useChat } from '../chat/ChatProvider';
+import { ProcessProvider } from '../processes/ProcessProvider';
 import { AppMasthead } from './AppMasthead';
 
 // A fake gateway with one person, so the masthead test does not load the real gateway.
@@ -35,10 +36,12 @@ function ChatState() {
 const Masthead = ({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) => (
   <AppearanceProvider>
     <PrincipalProvider fallback={null}>
-      <ChatProvider>
-        <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
-        <ChatState />
-      </ChatProvider>
+      <ProcessProvider>
+        <ChatProvider>
+          <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
+          <ChatState />
+        </ChatProvider>
+      </ProcessProvider>
     </PrincipalProvider>
   </AppearanceProvider>
 );

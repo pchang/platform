@@ -126,7 +126,7 @@ describe('the To do summary (design system spec 4.3)', () => {
 
   it('leads each card with the identifier and type in small text, then the title as its heading', () => {
     const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
-    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}},{"component":"Button","props":{"variant":"plain","icon":"comments","aria-label":"Ask about SC-2"},"asks":"urn:SC-2"}]}');
   });
 
   it('has no summary when nothing is waiting', () => {

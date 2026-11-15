@@ -28,6 +28,13 @@ export function stateLabels(object: ObjectSummary): ViewNode[] {
     .map(([dimension, value]) => ({ component: 'Label', props: { label: `${dimension}: ${value}`, color: 'grey', variant: 'outline', isCompact: true } }));
 }
 
+/** The speech bubbles that start a conversation about an object in the chat (design system spec 4.1, Ask about this). */
+export const askAbout = (object: ObjectSummary): ViewNode => ({
+  component: 'Button',
+  props: { variant: 'plain', icon: 'comments', 'aria-label': `Ask about ${object.identifier}` },
+  asks: object.iri,
+});
+
 /** An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4). */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
   return {
@@ -42,7 +49,12 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
           // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
           {
             component: 'CardHeader',
-            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: heading } }],
+            children: [
+              text(`${object.identifier} · ${object.typeLabel}`, 'small'),
+              { component: 'CardTitle', props: { label: object.title, component: heading } },
+              // Ask about this, in the header's actions (design system spec 4.1).
+              askAbout(object),
+            ],
           },
           { component: 'CardBody', children: [stack(body)] },
         ],
@@ -274,7 +286,7 @@ function rowActions(entry: ListEntry): ViewNode[] {
   const o = entry.object;
   const built = entry.methods.filter((m) => BUILT_ARCHETYPES.has(m.archetype.label));
   const [raised, ...rest] = built;
-  const actions: ViewNode[] = [];
+  const actions: ViewNode[] = [askAbout(o)];
   if (raised) actions.push({ component: 'Button', props: { label: raised.label, variant: entry.firstIsPrimary ? 'primary' : 'secondary', size: 'sm' }, action: { method: raised.method, target: o.iri } });
   if (rest.length) {
     actions.push({
@@ -283,8 +295,8 @@ function rowActions(entry: ListEntry): ViewNode[] {
       children: rest.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, action: { method: m.method, target: o.iri } })),
     });
   }
-  // The raised method and its … menu stay side by side.
-  return actions.length ? [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }] : [];
+  // Ask, the raised method and its … menu stay side by side.
+  return [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }];
 }
 
 /**

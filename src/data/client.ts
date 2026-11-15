@@ -34,7 +34,8 @@ export interface GatewayClient {
   search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;
   /** Ask (platform spec 5.2, Asking a question): a connected model's answer and the objects it cites, or the search it fell back to. */
   /** Earlier turns of the conversation go with the question, so a follow-up is understood. */
-  ask(principal: Principal, question: string, earlier?: AskTurn[]): Promise<AskResult>;
+  /** About: identifiers of the objects the question is asked from (platform spec 5.2, About an object). */
+  ask(principal: Principal, question: string, earlier?: AskTurn[], about?: string[]): Promise<AskResult>;
   /** Rejects with RefusedError when the principal may not read the object. */
   read(principal: Principal, object: string): Promise<ObjectView>;
   /** The methods on an object, each available or blocked with its reasons. */

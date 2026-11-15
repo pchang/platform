@@ -1,4 +1,4 @@
-import { Button } from '@patternfly/react-core';
+import { Button, Card, CardBody, CardHeader, CardTitle, Content, Flex, FlexItem, Label, Spinner } from '@patternfly/react-core';
 import PenToSquareIcon from '@patternfly/react-icons/dist/esm/icons/pen-to-square-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import Chatbot, { ChatbotDisplayMode } from '@patternfly/chatbot/dist/dynamic/Chatbot';
@@ -16,12 +16,16 @@ import type { AskResult, ObjectSummary } from '../data/client';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { routeHref } from '../routing';
-import { greeting } from '../views/greeting';
-import { useChat, type ChatTurn } from './ChatProvider';
+import { useProcesses } from '../processes/ProcessProvider';
+import { BUILT_ARCHETYPES } from '../views/composeView';
+import { useChat, type ChatAbout, type ChatTurn } from './ChatProvider';
 import './ChatPanel.css';
 
 /** Prompts that work in any domain (design system spec 4.1, Ask). */
 const PROMPTS = ['What needs me first today?', 'What is overdue or due this week?', 'Summarize the work waiting for me.'];
+
+/** Prompts about one object, in any domain (design system spec 4.1, Ask about this). */
+const promptsAbout = (identifier: string) => [`Summarize ${identifier}`, `What can I do next on ${identifier}, and why?`, `What is ${identifier} linked to?`];
 
 /** From PatternFly's lg breakpoint up, the panel sits beside the page; below it, over it. */
 export const SIDE_BY_SIDE = '(min-width: 992px)';
@@ -37,6 +41,7 @@ export function ChatPanel() {
   const sideBySide = useMediaQuery(SIDE_BY_SIDE);
   const roomy = useMediaQuery('(min-width: 768px)');
   const end = useRef<HTMLDivElement>(null);
+  const processes = useProcesses();
   const firstName = name.trim().split(/\s+/)[0];
 
   // The latest message stays in view as the conversation grows.
@@ -72,6 +77,60 @@ export function ChatPanel() {
           },
         }
       : {};
+
+  /**
+   * The object a conversation is about, leading it as an object list's card does: its identifier and type, its title,
+   * which opens it, its state, and the methods the person can run on it now, which run as they do anywhere.
+   */
+  const aboutCard = ({ object, methods }: ChatAbout) => {
+    const runnable = methods.filter((m) => m.available && BUILT_ARCHETYPES.has(m.archetype.label));
+    return (
+      <Card className="app-chat__about" isCompact>
+        <CardHeader>
+          <Content component="small">{`${object.identifier} · ${object.typeLabel}`}</Content>
+          <CardTitle component="h3">
+            <Button variant="link" isInline component="a" href="#" onClick={open(object)}>
+              {object.title}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
+            <Flex gap={{ default: 'gapSm' }}>
+              {Object.entries(object.state)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([dimension, value]) => (
+                  <FlexItem key={dimension}>
+                    <Label color="grey" variant="outline" isCompact>{`${dimension}: ${value}`}</Label>
+                  </FlexItem>
+                ))}
+            </Flex>
+            {runnable.length > 0 && (
+              <>
+                <Content component="small">You can:</Content>
+                <Flex gap={{ default: 'gapSm' }}>
+                  {runnable.map((m) => (
+                    <FlexItem key={m.method}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          processes.open({ object: object.iri, objectIdentifier: object.identifier, method: m.method, label: m.label, archetype: m.archetype.label });
+                          leave();
+                        }}
+                      >
+                        {m.label}
+                      </Button>
+                    </FlexItem>
+                  ))}
+                </Flex>
+              </>
+            )}
+          </Flex>
+        </CardBody>
+      </Card>
+    );
+  };
 
   const reply = (turn: ChatTurn) => {
     const common = {
@@ -162,11 +221,14 @@ export function ChatPanel() {
           <div className="app-chat__surface">
             <ChatbotContent>
               <MessageBox ariaLabel="Conversation">
-                {chat.turns.length === 0 && (
+                {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the object" />}
+                {chat.about && aboutCard(chat.about)}
+                {chat.turns.length === 0 && !chat.aboutLoading && (
+                  // The chat's own welcome, not To do's greeting; about an object, the object's (design system spec 4.1).
                   <ChatbotWelcomePrompt
-                    title={greeting(name, new Date())}
-                    description="Ask about the work you may see, or search for it."
-                    prompts={PROMPTS.map((p) => ({
+                    title={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask anything'}
+                    description={chat.about ? chat.about.object.title : 'Find objects, or ask about the work you may see.'}
+                    prompts={(chat.about ? promptsAbout(chat.about.object.identifier) : PROMPTS).map((p) => ({
                       title: p,
                       onClick: () => chat.send(p),
                     }))}
@@ -177,7 +239,8 @@ export function ChatPanel() {
               </MessageBox>
             </ChatbotContent>
             <ChatbotFooter>
-              <MessageBar onSendMessage={(m) => chat.send(String(m))} placeholder="Search or ask" hasAttachButton={false} alwayShowSendButton />
+              <MessageBar onSendMessage={(m) => chat.send(String(m))} placeholder={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask'}
+                hasAttachButton={false} alwayShowSendButton />
               <ChatbotFootnote label="Answers come from what you may read. Check them before you act." />
             </ChatbotFooter>
           </div>

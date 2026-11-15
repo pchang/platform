@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.35. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.27, sections 3.6, 5.1, 5.4 and 7.
+Version 0.36. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.28, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -109,7 +109,13 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
 - **The panel** is PatternFly's chatbot (`@patternfly/chatbot`). From lg up it is docked at the right, the full height of the window, and the page moves left to make room, so the person works beside it: an object opened from the chat opens in the object panel next to it. Below lg it is docked over the page, and below md it fills the screen; there, opening an object closes the chat, keeping the conversation, so the object can be read.
 - **Header:** the title "Ask", a New conversation button and Close. Escape closes it too, and focus returns to the Ask button.
-- **Before the first message,** a welcome: the greeting of To do (4.3) and "Ask about the work you may see, or search for it.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
+- **Before the first message,** a welcome of its own, not To do's greeting: the title "Search or ask anything" and the line "Find objects, or ask about the work you may see.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
+- **Ask about this.** Every object can start a conversation about itself, so the person never has to describe it (platform spec 5.2, About an object). The entry point is the same speech bubbles, named "Ask about" and the identifier:
+  - on an object's card, at the top right of its header (in select mode the card's select control takes its place);
+  - on a list's row, beside its actions;
+  - in the object panel's header, beside Expand and Close.
+
+  It opens the chat on a new conversation about the object. The object leads the conversation as a card like an object list's: its identifier and type in small text, its title, which opens it, its state, and the methods the person can run on it now as buttons, which run as they do anywhere. The welcome becomes "Ask about" and the identifier, with the title as its line, and three prompts about it: "Summarize" it, "What can I do next on" it, "and why?", and "What is" it "linked to?". The message bar reads "Ask about" and the identifier. Every question in the conversation is about it, until New conversation.
 - **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
 - **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
   - **An answer:** the model's text, then the objects it cites as sources, one under another with an object list's gutter, each like an object list's card: its identifier and type in small text, then its title, which opens the object; and in small text which model answered and how many objects it looked at.
@@ -426,3 +432,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.33 | 2026-11-15 | To do opens with a greeting for the person chosen in Profile, by time of day and first name, chosen by the date so it holds all day, with a line saying how much waits for them and in which role. |
 | 0.34 | 2026-11-15 | The masthead's search field becomes an Ask button, a pair of speech bubbles, that opens a chat panel built from PatternFly's chatbot: docked at the right beside the page from lg up, over it below lg and full screen on phones. It holds one conversation per person, answers with the objects cited as sources, falls back to search with a link to the search page, and starts agentic sessions in time. |
 | 0.35 | 2026-11-15 | The chat panel follows the visual style: a chrome panel with a header lined up with the masthead, the conversation on the inset content surface, the person's messages and cards on the card surface with the card shadow, the welcome set as To do's heading, and the message bar as a standard field. No brand-colored fills, borders or floating shadow. |
+| 0.36 | 2026-11-15 | The chat's welcome is its own, "Search or ask anything", not To do's greeting. Ask about this: a speech-bubble button on every card, list row and object panel starts a conversation about that object, led by its card with its methods, with prompts and a message bar about it. The view spec gains `asks`. |

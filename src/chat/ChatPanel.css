@@ -105,6 +105,11 @@ html .app-chat .pf-chatbot__sources-card-base.pf-m-wrap .pf-chatbot__sources-lis
   gap: var(--pf-t--global--spacer--md);
 }
 
+/* The object a conversation is about leads it, on the card surface. */
+.app-chat__about {
+  margin-block-end: var(--pf-t--global--spacer--md);
+}
+
 .app-chat__eyebrow {
   display: block;
   font-size: var(--pf-t--global--font--size--sm);

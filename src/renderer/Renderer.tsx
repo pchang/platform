@@ -35,6 +35,8 @@ export interface RenderHost {
   selection?: { selecting: boolean; selected: ReadonlySet<string>; onSelect: (object: string, chosen: boolean) => void };
   /** Runs a method on every chosen object (view spec `batch`). */
   onBatch?: (method: string) => void;
+  /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
+  onAsk?: (object: string) => void;
 }
 
 /** A card in select mode: whether it is chosen, how to change that, and its title for the control's name. */
@@ -435,7 +437,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     props.icon = <Svg />;
   }
   // A CardHeader in select mode carries the card's select control at its end.
+  // A card's header actions: its select control in select mode, otherwise its Ask button (design system spec 4.1 and 4.3).
+  const asking = entry.id === 'CardHeader' ? (node.children ?? []).filter((c) => c.asks) : [];
   if (entry.id === 'CardHeader' && select) props.actions = { actions: <SelectCircle />, hasNoOffset: true };
+  else if (asking.length) props.actions = { actions: asking.map((c, i) => <Node key={i} node={c} host={host} />), hasNoOffset: true };
   if (field && entry.id === 'Radio') {
     const value = props.value as string;
     props.isChecked = host.values?.[field] === value;
@@ -483,9 +488,11 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
         </Step>
       ));
   } else if (node.children?.length) {
+    // A card header's Ask buttons are drawn in its actions, not among its children.
+    const children = entry.id === 'CardHeader' ? node.children.filter((c) => !c.asks) : node.children;
     content = SINGLE_CHILD.has(entry.id)
-      ? <Node node={node.children[0]} host={host} />
-      : node.children.map((child, i) => <Node key={i} node={child} host={host} />);
+      ? <Node node={children[0]} host={host} />
+      : children.map((child, i) => <Node key={i} node={child} host={host} />);
   }
   if (ref) props.ref = ref;
   if (entry.id === 'Icon') {
@@ -507,6 +514,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Button' && node.batch) {
     const method = node.batch;
     props.onClick = () => host.onBatch?.(method);
+  }
+  if (entry.id === 'Button' && node.asks) {
+    const object = node.asks;
+    props.onClick = () => host.onAsk?.(object);
   }
   if (entry.id === 'Button' && node.opens) {
     const object = node.opens;

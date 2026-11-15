@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { RefusedError, type AskResult, type AskTurn } from '../data/client';
+import { RefusedError, type AskResult, type AskTurn, type MethodOption, type ObjectView } from '../data/client';
+import { useProcesses } from '../processes/ProcessProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 
 /**
@@ -15,6 +16,12 @@ export interface ChatTurn {
   reasons?: string[];
 }
 
+/** The object a conversation is about (design system spec 4.1, Ask about this): as the person may read it, with its methods. */
+export interface ChatAbout {
+  object: ObjectView;
+  methods: MethodOption[];
+}
+
 interface ChatContext {
   isOpen: boolean;
   open: () => void;
@@ -23,6 +30,12 @@ interface ChatContext {
   turns: ChatTurn[];
   send: (question: string) => void;
   newConversation: () => void;
+  /** Starts a conversation about an object, opening the chat (design system spec 4.1, Ask about this). */
+  askAbout: (object: string) => void;
+  /** The object the conversation is about, once read; undefined for a general conversation. */
+  about?: ChatAbout;
+  /** True while the object asked about is being read. */
+  aboutLoading: boolean;
   /** The Ask button, so closing the panel returns focus to it. */
   trigger: RefObject<HTMLButtonElement | null>;
 }
@@ -42,6 +55,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { client, principal } = usePrincipal();
   const [isOpen, setOpen] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [aboutIri, setAboutIri] = useState<string>();
+  const [about, setAbout] = useState<ChatAbout>();
+  const { changes } = useProcesses();
   const trigger = useRef<HTMLButtonElement | null>(null);
   const next = useRef(1);
   // The conversation belongs to the person asking: another person starts afresh, and late replies are dropped.
@@ -52,7 +68,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     ownerRef.current = owner;
     setTurns([]);
+    setAboutIri(undefined);
   }, [owner]);
+
+  // The object asked about, read as the person, and read again after any method runs, so its state and methods are current.
+  useEffect(() => {
+    if (!aboutIri) {
+      setAbout(undefined);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([client.read(principal, aboutIri), client.methods(principal, aboutIri)]).then(
+      ([object, methods]) => !cancelled && setAbout({ object, methods }),
+      () => !cancelled && setAboutIri(undefined),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, aboutIri, changes]);
+  const aboutRef = useRef(aboutIri);
+  aboutRef.current = aboutIri;
 
   const close = useCallback(() => {
     setOpen(false);
@@ -69,7 +104,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .filter((t) => t.status === 'answered' && t.result)
         .map((t) => ({ question: t.question, answer: saidIn(t.result!) }));
       setTurns((all) => [...all, { id, question: q, status: 'waiting' }]);
-      client.ask(principal, q, earlier).then(
+      // Every question in a conversation about an object is about it (platform spec 5.2, About an object).
+      client.ask(principal, q, earlier, aboutRef.current ? [aboutRef.current] : []).then(
         (result) => asker === ownerRef.current && setTurns((now) => now.map((t) => (t.id === id ? { ...t, status: 'answered', result } : t))),
         (e: unknown) =>
           asker === ownerRef.current &&
@@ -87,10 +123,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       toggle: () => (isOpen ? close() : setOpen(true)),
       turns,
       send,
-      newConversation: () => setTurns([]),
+      newConversation: () => {
+        setTurns([]);
+        setAboutIri(undefined);
+      },
+      askAbout: (object: string) => {
+        setTurns([]);
+        setAbout(undefined);
+        setAboutIri(object);
+        setOpen(true);
+      },
+      about: about && about.object.iri === aboutIri ? about : undefined,
+      aboutLoading: Boolean(aboutIri) && !(about && about.object.iri === aboutIri),
       trigger,
     }),
-    [isOpen, close, turns, send],
+    [isOpen, close, turns, send, about, aboutIri],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

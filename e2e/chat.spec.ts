@@ -27,13 +27,13 @@ async function ask(page: Page, question: string) {
 test('Ask opens the chat docked beside the page; a reply cites objects that open next to it', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openTodo(page, 'Ben Okafor');
-  const button = page.getByRole('banner').getByRole('button', { name: 'Ask' });
+  const button = page.getByRole('banner').getByRole('button', { name: 'Ask', exact: true });
   await expect(button).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByRole('banner').getByRole('textbox')).toHaveCount(0);
   await button.click();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
-  await expect(chat(page).getByRole('heading', { level: 2, name: 'Ask' })).toBeVisible();
-  await expect(chat(page).getByText('Ask about the work you may see, or search for it.')).toBeVisible();
+  await expect(chat(page).getByRole('heading', { level: 2, name: 'Ask', exact: true })).toBeVisible();
+  await expect(chat(page).getByText('Search or ask anything')).toBeVisible();
 
   // The page makes room: the content ends where the chat begins.
   const panel = (await chat(page).boundingBox())!;
@@ -53,7 +53,7 @@ test('Ask opens the chat docked beside the page; a reply cites objects that open
 test('the conversation holds until New conversation, and another person starts their own', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
-  await page.getByRole('button', { name: 'Ask' }).click();
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
   await chat(page).getByRole('button', { name: /What is overdue or due this week\?/ }).click();
   await expect(chat(page).getByText('What is overdue or due this week?')).toBeVisible();
   await expect(chat(page).getByText(/the question was searched/)).toBeVisible();
@@ -62,8 +62,8 @@ test('the conversation holds until New conversation, and another person starts t
 
   // Closing keeps it; Escape closes and gives focus back to Ask.
   await bar(page).press('Escape');
-  await expect(page.getByRole('button', { name: 'Ask' })).toBeFocused();
-  await page.getByRole('button', { name: 'Ask' }).click();
+  await expect(page.getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
   await expect(chat(page).getByText('serious cases', { exact: true })).toBeVisible();
 
   await chat(page).getByRole('button', { name: 'New conversation' }).click();
@@ -74,23 +74,59 @@ test('the conversation holds until New conversation, and another person starts t
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
   await expect(chat(page).getByText('serious cases', { exact: true })).toHaveCount(0);
-  await expect(chat(page).getByText(/Ben\b/).first()).toBeVisible();
+  await expect(chat(page).getByText('Search or ask anything')).toBeVisible();
 });
 
 test('on a phone the chat fills the screen, and opening an object closes it, keeping the conversation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openTodo(page, 'Ben Okafor');
-  await page.getByRole('button', { name: 'Ask' }).click();
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
   const box = (await chat(page).boundingBox())!;
   expect(box.width).toBeCloseTo(390, 0);
   expect(box.height).toBeCloseTo(844, 0);
   await ask(page, 'pneumonia');
   await chat(page).getByRole('link', { name: /pneumonia/ }).click();
   await expect(page.locator('.app-object-panel').getByRole('heading', { level: 2, name: /pneumonia/ })).toBeVisible();
-  await expect(chat(page).getByRole('heading', { level: 2, name: 'Ask' })).toHaveCount(0);
+  await expect(chat(page).getByRole('heading', { level: 2, name: 'Ask', exact: true })).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Ask' }).click();
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
   await expect(chat(page).getByText('pneumonia', { exact: true })).toBeVisible();
+});
+
+test('asking from a card loads the object into the chat, with its methods ready to run', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTodo(page, 'Ben Okafor');
+  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'AE-003 · Adverse Event' });
+  await card.getByRole('button', { name: 'Ask about AE-003' }).click();
+  await expect(chat(page).getByText('Ask about AE-003', { exact: true })).toBeVisible();
+  const about = chat(page).locator('.app-chat__about');
+  await expect(about.getByText('AE-003 · Adverse Event')).toBeVisible();
+  await expect(about.getByText('Reporting: not reported')).toBeVisible();
+  await expect(bar(page)).toHaveAttribute('placeholder', 'Ask about AE-003');
+
+  // A prompt about it needs no description; without a model, the reply is the object itself.
+  await chat(page).getByRole('button', { name: /Summarize AE-003/ }).click();
+  await expect(chat(page).getByText(/No model is connected to answer questions, so here is what you asked about\./)).toBeVisible();
+  await expect(chat(page).locator('.pf-chatbot__sources-card').getByRole('link', { name: /^Jaundice/ })).toBeVisible();
+
+  // Its methods run as they do anywhere.
+  await about.getByRole('button', { name: 'Report to safety' }).click();
+  await expect(page.getByRole('dialog', { name: /^Report to safety/ })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('asking from a list row or the object panel does the same', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTodo(page, 'Ben Okafor');
+  await page.goto('/#/type/AdverseEvent');
+  await page.getByRole('main').getByRole('button', { name: 'List' }).click();
+  await page.getByRole('button', { name: 'Ask about AE-005' }).click();
+  await expect(chat(page).locator('.app-chat__about').getByText('AE-005 · Adverse Event')).toBeVisible();
+
+  await page.getByRole('main').getByRole('button', { name: /^Jaundice/ }).click();
+  await page.locator('.app-object-panel').getByRole('button', { name: 'Ask about AE-003' }).click();
+  await expect(chat(page).locator('.app-chat__about').getByText('AE-003 · Adverse Event')).toBeVisible();
+  await expect(chat(page).getByText('AE-005 · Adverse Event')).toHaveCount(0);
 });
 
 for (const mode of ['light', 'dark'] as const) {
@@ -99,7 +135,7 @@ for (const mode of ['light', 'dark'] as const) {
       await page.addInitScript((m) => localStorage.setItem('lsh.appearance', m), mode);
       await page.setViewportSize({ width, height: 800 });
       await openTodo(page);
-      await page.getByRole('button', { name: 'Ask' }).click();
+      await page.getByRole('button', { name: 'Ask', exact: true }).click();
       await ask(page, 'serious cases');
       await expect(chat(page).getByText(/the question was searched/)).toBeVisible();
       await page.mouse.move(0, 0);

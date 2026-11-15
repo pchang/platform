@@ -2,7 +2,7 @@ import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
-import { ANSWER_TOOL, checkTurns, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
+import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -835,12 +835,20 @@ export class Gateway {
    * gateway tools run as the principal. The answer cites only objects the model read here. Without a model, or when it
    * fails or declines, the question is searched, and the result says why.
    */
-  async ask(principal: Principal, question: string, earlier: AskTurn[] = []): Promise<AskResult> {
+  async ask(principal: Principal, question: string, earlier: AskTurn[] = [], about: string[] = []): Promise<AskResult> {
     this.authorize(principal);
+    // The objects the question is asked from (spec 5.2, About an object): each must be one the principal may read.
+    const objects = [...new Set(about)].slice(0, MAX_ABOUT).map((id) => {
+      const object = this.resolve(id);
+      if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, [`You may not read ${id}`]);
+      return this.summary(object);
+    });
     const model = this.options.askModel;
-    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, question), ...(reason ? { searched: reason } : {}) });
+    // Without a model, a question about objects shows those objects; any other question is searched.
+    const searchFor = objects.length ? objects.map((o) => o.identifier).join(' ') : question;
+    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, searchFor), ...(reason ? { searched: reason } : {}) });
     if (!normalize(question)) return searched();
-    if (!model) return searched('No model is connected to answer questions, so the question was searched.');
+    if (!model) return searched(objects.length ? 'No model is connected to answer questions, so here is what you asked about.' : 'No model is connected to answer questions, so the question was searched.');
 
     // What the model met through the tools in this question: only these may be cited.
     const seen = new Map<string, string>();
@@ -849,7 +857,10 @@ export class Gateway {
       run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
     };
     try {
-      const answer = await model.answer({ question, earlier: checkTurns(earlier), context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
+      // The objects asked about are read now, as the principal and audited, and may be cited like anything read.
+      const records = [];
+      for (const o of objects) records.push((await this.runAskTool(principal, 'read_object', { identifier: o.identifier }, seen)).content);
+      const answer = await model.answer({ question, earlier: checkTurns(earlier), about: records, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
       const cited: ObjectSummary[] = [];
       for (const identifier of answer.cited) {
         const iri = seen.get(normalize(identifier));
