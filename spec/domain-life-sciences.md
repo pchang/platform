@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.17. November 14, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.25.
+Version 0.18. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -482,7 +482,7 @@ The seed graph is `data/life-sciences/seed.ttl`, under `https://example.org/lsh-
 | Duplicate edge case | Two cases for the same event, one from the trial and one from a medical inquiry |
 | Signal detection | Run signal detection on the investigational product finds one new signal, for skin rash, in 4 cases. Drug-induced liver injury already has SIG-1, so it is not detected again |
 
-Patients, visits, data records, adverse events, safety cases and medical inquiries hold personal health data. The ontology marks them, and the gateway records every read of them.
+Patients, visits, data records, adverse events, safety cases and medical inquiries hold personal health data. The ontology marks them, and the gateway records every read of them. No property in this ontology identifies a person directly: patients are known by study codes, such as PT-03, and staff by their names as users of the platform. So nothing is marked `p:identifiesPerson` yet; free text, such as a reporter's note or a medical inquiry, may still name someone (platform spec section 9).
 
 ---
 
@@ -524,3 +524,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.15 | 2026-11-14 | Relationships read both ways, with containment and at-most-one ends where the domain is certain (section 9), so every object opens with its overview and tabs. |
 | 0.16 | 2026-11-14 | Added Protocol to Clinical Development, mapped to NCIt Study Protocol (C70817): versions with a status lifecycle, conducted under by a study and amended by the next version, with Send protocol for review, Approve protocol (signed) and Amend protocol (on demand), run by the Clinical Data Manager. The seed carries VELOCITY-2's protocol in three versions. Added by ontology and seed alone. |
 | 0.17 | 2026-11-14 | Report to safety takes a note to safety, recorded on the new Safety Case. Free-text and link inputs are marked as about each object, except a simulation's model type and analogs' target property, so a batch of their method runs one after another (Interaction archetypes, Run for many objects). |
+| 0.18 | 2026-11-15 | No property identifies a person directly, so none is marked as identifying one for a model answering questions; free text may still name someone. |

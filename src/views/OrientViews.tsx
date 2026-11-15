@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
-import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
+import type { AskResult, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
-import { buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientViews';
+import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientViews';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
 const LIST_MODE_KEY = 'lsh.listMode';
@@ -226,35 +226,44 @@ export function TypeView({ type }: { type: string }) {
   );
 }
 
-/** The search page (design system spec 4.1, Search): the gateway's understanding of the query, and what it found. */
+/**
+ * The search page (design system spec 4.1, Search): a model's answer and the objects it rests on, or, without one, the
+ * gateway's understanding of the query and what it found (platform spec 5.2).
+ */
 export function SearchView({ query }: { query: string }) {
   const panel = useObjectPanel();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
-  const [loaded, setLoaded] = useState<{ result: SearchResult; methods: Map<string, MethodOption[]> }>();
+  const [loaded, setLoaded] = useState<{ result: AskResult; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
   const processes = useProcesses();
   const openMethod = useOpenMethod((object, method) => {
-    const found = loaded?.result.results.find((r) => r.object.iri === object);
+    const found = loaded?.objects.find((o) => o.iri === object);
     const option = loaded?.methods.get(object)?.find((m) => m.method === method);
-    return found && option && { object: found.object, method: option };
+    return found && option && { object: found, method: option };
   });
   const runs = useActiveRuns([query, processes.changes, changes]);
   useEffect(() => {
     let cancelled = false;
     setLoaded(undefined);
     (async () => {
-      const result = await client.search(principal, query);
-      const methods = new Map(await Promise.all(result.results.map(async (r) => [r.object.iri, await client.methods(principal, r.object.iri)] as const)));
-      if (!cancelled) setLoaded({ result, methods });
+      const result = await client.ask(principal, query);
+      const objects = result.answer ? result.answer.cited : (result.search?.results.map((r) => r.object) ?? []);
+      const methods = new Map(await Promise.all(objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
+      if (!cancelled) setLoaded({ result, objects, methods });
     })();
     return () => {
       cancelled = true;
     };
   }, [client, principal, query, processes.changes, changes]);
 
-  const found = useMemo(() => loaded?.result.results.map((r) => r.object) ?? NONE, [loaded]);
-  const list = useObjectList(found);
-  const view = loaded ? buildSearchView(loaded.result, { methods: loaded.methods, runs, notice: processes.notice, controls: list.controls }) : loadingView;
+  const list = useObjectList(loaded?.objects ?? NONE);
+  const options = { methods: loaded?.methods, runs, notice: processes.notice, controls: list.controls };
+  const result = loaded?.result;
+  const view = !result
+    ? answeringView(query)
+    : result.answer
+      ? buildAnswerView({ ...result, answer: result.answer }, options)
+      : buildSearchView(result.search!, { ...options, ...(result.searched ? { searched: result.searched } : {}) });
   return (
     <>
       <ViewRenderer

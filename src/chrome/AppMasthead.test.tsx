@@ -59,7 +59,7 @@ describe('AppMasthead', () => {
 
   it('has the search field left of the icon buttons from md up', async () => {
     render(<Masthead />);
-    const field = await screen.findByRole('textbox', { name: 'Search objects' });
+    const field = await screen.findByRole('textbox', { name: 'Search or ask' });
     const notifications = screen.getByRole('button', { name: 'Notifications' });
     expect(field.compareDocumentPosition(notifications) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open search' })).not.toBeInTheDocument();
@@ -70,12 +70,12 @@ describe('AppMasthead', () => {
     render(<Masthead />);
     const button = await screen.findByRole('button', { name: 'Open search' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
     await userEvent.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('textbox', { name: 'Search objects' })).toHaveFocus();
+    expect(screen.getByRole('textbox', { name: 'Search or ask' })).toHaveFocus();
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('textbox', { name: 'Search objects' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
     expect(button).toHaveFocus();
   });
 

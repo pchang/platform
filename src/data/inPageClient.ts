@@ -49,6 +49,8 @@ export async function inPageClient(): Promise<GatewayClient> {
     navigation: async (p) => gateway.navigation(p),
     todo: (p) => gateway.todo(p),
     search: (p, query, options) => gateway.search(p, query, options),
+    // The page holds no credential, so no model is connected here: questions are searched (platform spec 5.2).
+    ask: (p, question) => gateway.ask(p, question),
     find: async (p, type) => gateway.find(p, type),
     read: (p, object) => refused(() => gateway.read(p, object)),
     compose: async (p, object, method) => refused(() => gateway.compose(p, object, method)),

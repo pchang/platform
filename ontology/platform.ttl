@@ -384,6 +384,12 @@ p:freezes a rdf:Property ;
   rdfs:domain p:BusinessRule ;
   rdfs:range sh:NodeShape .
 
+p:identifiesPerson a rdf:Property ;
+  rdfs:label "identifies a person" ;
+  rdfs:comment "True when the property's value identifies a person directly, such as a name or a date of birth. A model answering a question is given \"withheld\" in its place." ;
+  rdfs:domain rdf:Property ;
+  rdfs:range xsd:boolean .
+
 p:holdsPersonalData a rdf:Property ;
   rdfs:label "holds personal data" ;
   rdfs:comment "True when objects of this type hold personal health data. The gateway records every read of them." ;

@@ -2,6 +2,7 @@ import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
+import { ANSWER_TOOL, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -177,6 +178,25 @@ export interface SearchResult {
   understoodBy: { model: string } | { ontology: true };
 }
 
+/** An answer to a question (spec 5.2, Asking a question), or the search it fell back to, and why. */
+export interface AskResult {
+  question: string;
+  answer?: {
+    status: AnswerStatus;
+    text: string;
+    /** The objects the answer rests on: only those the model read in this question, as the principal may see them. */
+    cited: ObjectSummary[];
+    /** The model that answered, as the provider reports it. */
+    model: string;
+    /** How many objects the tools showed the model while it answered. */
+    lookedAt: number;
+  };
+  /** The question searched instead, when no model answered it. */
+  search?: SearchResult;
+  /** Why the question was searched rather than answered. */
+  searched?: string;
+}
+
 export type DraftStatus = 'undecided' | 'accepted' | 'discarded';
 
 /** A generated draft (spec 3.4, Generated drafts), as the person deciding on it sees it. */
@@ -291,7 +311,55 @@ export interface GatewayOptions {
   drafter?: Drafter;
   /** The model connected to understand search queries (spec 5.2). Without one, queries are read against the ontology. */
   searchModel?: SearchModel;
+  /** The model connected to answer questions (spec 5.2, Asking a question). Without one, questions are searched. */
+  askModel?: AskModel;
 }
+
+/** The read-only tools a model answering a question may call (spec 5.2, Asking a question). Domain-free: names come from the ontology. */
+const ASK_TOOLS: AskTool[] = [
+  {
+    name: 'find_objects',
+    description:
+      'Finds objects the person may read, best first, up to 50, with the total. Give types by name, states by value (or "Dimension: value"), linked_to as identifiers of objects the results must be linked to (give types too, or you get those objects themselves), words to find in what the person may read, and mine for the person\'s own work. Leave a list empty when it does not apply. Names not understood are returned so you can correct them.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        types: { type: 'array', items: { type: 'string' }, description: 'Type names, such as Safety Case.' },
+        states: { type: 'array', items: { type: 'string' }, description: 'State values, such as serious, or Seriousness: serious.' },
+        linked_to: { type: 'array', items: { type: 'string' }, description: 'Identifiers, such as SITE-2.' },
+        words: { type: 'array', items: { type: 'string' }, description: 'Single words to find in the records, such as rash.' },
+        mine: { type: 'boolean', description: 'True for the person\'s own work: waiting for them, or naming them.' },
+      },
+      required: ['types', 'states', 'linked_to', 'words', 'mine'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'read_object',
+    description: 'Reads one object as the person may see it: its type, title, state, properties, links to other objects, deadline, urgency and last change.',
+    input_schema: { type: 'object', properties: { identifier: { type: 'string', description: 'Such as AE-003.' } }, required: ['identifier'], additionalProperties: false },
+  },
+  {
+    name: 'count_objects',
+    description:
+      'Counts the objects of one type the person may read, optionally only those in the given states, and optionally grouped by one of the type\'s state dimensions or links (by name). Grouped by a link, each group is a linked object\'s identifier.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', description: 'A type name, such as Adverse Event.' },
+        states: { type: 'array', items: { type: 'string' }, description: 'State values to count only, such as serious. Empty for all.' },
+        group_by: { type: 'string', description: 'A state dimension, such as Workflow, or a link, such as runs at. Empty for a total only.' },
+      },
+      required: ['type', 'states', 'group_by'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'methods_for',
+    description: 'Lists the methods the person could run on an object, each available now or blocked with the reasons. Use it for why something cannot be done, or what to do next. It never runs one.',
+    input_schema: { type: 'object', properties: { identifier: { type: 'string', description: 'Such as PT-03.' } }, required: ['identifier'], additionalProperties: false },
+  },
+];
 
 export class Gateway {
   private commitCount = 0;
@@ -660,6 +728,18 @@ export class Gateway {
         console.warn('The search model could not understand the query; reading it against the ontology instead.', error instanceof Error ? error.message : error);
       }
     }
+    return this.match(principal, query, interpretation, understoodBy, limit, readable);
+  }
+
+  /** Applies an understood query to what the principal may read (spec 5.2): the core of search, shared with Ask. */
+  private async match(
+    principal: Principal,
+    query: string,
+    interpretation: Interpretation,
+    understoodBy: SearchResult['understoodBy'],
+    limit: number,
+    readable: Set<string>,
+  ): Promise<SearchResult> {
     const empty = { query, interpretation, results: [], total: 0, understoodBy };
     const understood = interpretation.types.length + interpretation.states.length + interpretation.identifiers.length + interpretation.words.length + (interpretation.mine ? 1 : 0);
     if (!understood) return empty;
@@ -742,6 +822,192 @@ export class Gateway {
       })),
       total: matches.length,
       understoodBy,
+    };
+  }
+
+  // ---------------------------------------------------------------- ask (spec 5.2, Asking a question)
+
+  /** How many turns a question may take, tool calls included (spec 5.2: bounded). */
+  static readonly ASK_STEPS = 12;
+
+  /**
+   * Ask (spec 5.2, Asking a question): a connected model answers from what the principal may read, through read-only
+   * gateway tools run as the principal. The answer cites only objects the model read here. Without a model, or when it
+   * fails or declines, the question is searched, and the result says why.
+   */
+  async ask(principal: Principal, question: string): Promise<AskResult> {
+    this.authorize(principal);
+    const model = this.options.askModel;
+    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, question), ...(reason ? { searched: reason } : {}) });
+    if (!normalize(question)) return searched();
+    if (!model) return searched('No model is connected to answer questions, so the question was searched.');
+
+    // What the model met through the tools in this question: only these may be cited.
+    const seen = new Map<string, string>();
+    const toolbox = {
+      tools: [...ASK_TOOLS, ANSWER_TOOL],
+      run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
+    };
+    try {
+      const answer = await model.answer({ question, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
+      const cited: ObjectSummary[] = [];
+      for (const identifier of answer.cited) {
+        const iri = seen.get(normalize(identifier));
+        if (iri && !cited.some((c) => c.iri === iri)) cited.push(this.summary(iri));
+      }
+      return { question, answer: { status: answer.status, text: answer.text, cited, model: answer.model, lookedAt: seen.size } };
+    } catch (error) {
+      console.warn('The ask model could not answer; searching the question instead.', error instanceof Error ? error.message : error);
+      return searched('The model could not answer, so the question was searched.');
+    }
+  }
+
+  /** Who is asking, today, and the vocabulary they may read, as text for the model. Never a record (spec 5.2). */
+  private askContext(principal: Principal): string {
+    const person = this.q(`SELECT ?name ?role WHERE { <${principal.person}> rdfs:label ?name . <${principal.role}> rdfs:label ?role }`)[0];
+    const hidden = this.unreadable(principal.role);
+    const lines = [
+      `The person asking: ${person?.name ?? 'unknown'}, acting as ${person?.role ?? 'unknown'}.`,
+      `Today: ${this.now().toISOString().slice(0, 10)}.`,
+      'The kinds of object they may read, with their states, other properties and links:',
+    ];
+    for (const t of this.q(`SELECT ?type ?label ?plural ?domain WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?plural . OPTIONAL { ?type p:inDomain/rdfs:label ?domain } } ORDER BY ?label`)) {
+      if (hidden.has(t.type)) continue;
+      const states = this.q(`SELECT ?d ?dim ?value WHERE { ?d p:dimensionOf <${t.type}> ; rdfs:label ?dim ; p:order ?o ; p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?value ; p:order ?vo } ORDER BY ?o ?vo`).filter((r) => !hidden.has(r.d));
+      const dims = new Map<string, string[]>();
+      for (const r of states) dims.set(r.dim, [...(dims.get(r.dim) ?? []), r.value]);
+      // Names only, and only of properties the role may read: an unreadable property is not even named.
+      const properties = this.q(`SELECT DISTINCT ?prop ?label WHERE { ?shape sh:targetClass <${t.type}> ; sh:property/sh:path ?prop . ?prop rdfs:label ?label .
+          FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label`)
+        .filter((r) => !hidden.has(r.prop))
+        .map((r) => r.label);
+      const links = this.ends(t.type)
+        .filter((end) => !hidden.has(end.type))
+        .map((end) => `${end.label} ${end.one ? `one ${end.typeLabel}` : end.pluralLabel}`);
+      lines.push(
+        `- ${t.label} (plural ${t.plural})${t.domain ? `, in ${t.domain}` : ''}.` +
+          (dims.size ? ` States: ${[...dims].map(([d, v]) => `${d} (${v.join(', ')})`).join('; ')}.` : '') +
+          (properties.length ? ` Properties: ${properties.join(', ')}.` : '') +
+          (links.length ? ` Links: ${links.join('; ')}.` : ''),
+      );
+    }
+    return lines.join('\n');
+  }
+
+  /** Runs one of the model's tools as the principal. A refusal or a mistake goes back to the model to correct. */
+  private async runAskTool(principal: Principal, name: string, input: unknown, seen: Map<string, string>): Promise<AskToolOutput> {
+    const meet = (o: { iri: string; identifier: string }) => seen.set(normalize(o.identifier), o.iri);
+    const brief = (o: ObjectSummary) => ({ identifier: o.identifier, type: o.typeLabel, title: o.title, state: o.state });
+    const args = (input ?? {}) as Record<string, unknown>;
+    const strings = (key: string) => (Array.isArray(args[key]) ? (args[key] as unknown[]).filter((v): v is string => typeof v === 'string') : []);
+    const text = (key: string) => (typeof args[key] === 'string' ? (args[key] as string) : '');
+    const out = (value: unknown): AskToolOutput => ({ content: JSON.stringify(value) });
+    try {
+      const vocabulary = this.askVocabulary(principal);
+      switch (name) {
+        case 'find_objects': {
+          const types = strings('types').map((n) => ({ n, t: vocabulary.type(n) }));
+          const chosen = types.filter((x) => x.t).map((x) => x.t!);
+          const states = strings('states').map((n) => ({ n, s: vocabulary.states(n, chosen.map((t) => t.type)) }));
+          const linked = strings('linked_to').map((n) => ({ n, o: vocabulary.identifier(n) }));
+          const notUnderstood = [...types.filter((x) => !x.t), ...states.filter((x) => !x.s.length), ...linked.filter((x) => !x.o)].map((x) => x.n);
+          const interpretation: Interpretation = {
+            types: chosen.map((t) => ({ type: t.type, label: t.label })),
+            states: states.flatMap((x) => x.s),
+            identifiers: linked.filter((x) => x.o).map((x) => x.o!),
+            words: strings('words').map(normalize).filter((w) => w && !w.includes(' ')).slice(0, 8),
+            mine: args.mine === true,
+          };
+          const result = await this.match(principal, '', interpretation, { ontology: true }, 50, vocabulary.readable);
+          for (const r of result.results) meet(r.object);
+          return out({ total: result.total, shown: result.results.length, objects: result.results.map((r) => ({ ...brief(r.object), matched: r.matched })), ...(notUnderstood.length ? { notUnderstood } : {}) });
+        }
+        case 'read_object': {
+          const view = this.read(principal, vocabulary.identifier(text('identifier'))?.iri ?? text('identifier'));
+          meet(view);
+          // Properties that identify a person directly reach the model withheld (spec 5.2).
+          const withheld = new Set(this.q(`SELECT ?label WHERE { ?prop p:identifiesPerson true ; rdfs:label ?label }`).map((r) => r.label));
+          const properties = Object.fromEntries(Object.entries(view.properties).map(([k, v]) => [k, withheld.has(k) ? 'withheld' : v]));
+          for (const end of view.links) for (const o of end.objects) meet(o);
+          return out({
+            ...brief(view),
+            domain: view.domainLabel,
+            properties,
+            links: view.links.filter((end) => end.objects.length).map((end) => ({ link: end.label, objects: end.objects.map(brief) })),
+            ...(view.deadline ? { deadline: view.deadline } : {}),
+            urgency: view.urgency,
+            ...(view.lastChange ? { lastChange: { method: view.lastChange.methodLabel, by: view.lastChange.personName, at: view.lastChange.at } } : {}),
+          });
+        }
+        case 'count_objects': {
+          const type = vocabulary.type(text('type'));
+          if (!type) return { content: `There is no type you may read called "${text('type')}". Use a name from the list you were given.`, isError: true };
+          const states = strings('states').flatMap((n) => vocabulary.states(n, [type.type]));
+          let objects = this.q(`SELECT ?o WHERE { ?o a <${type.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+          const byDimension = new Map<string, Set<string>>();
+          for (const s of states) byDimension.set(s.dimensionLabel, (byDimension.get(s.dimensionLabel) ?? new Set()).add(s.label));
+          objects = objects.filter((o) => [...byDimension].every(([d, values]) => values.has(o.state[d])));
+          const by = normalize(text('group_by'));
+          if (!by) return out({ type: type.label, total: objects.length });
+          const dimension = Object.keys(objects[0]?.state ?? {}).find((d) => normalize(d) === by) ?? this.q(`SELECT ?l WHERE { ?d p:dimensionOf <${type.type}> ; rdfs:label ?l }`).map((r) => r.l).find((l) => normalize(l) === by);
+          const groups = new Map<string, number>();
+          if (dimension) {
+            for (const o of objects) groups.set(o.state[dimension] ?? 'none', (groups.get(o.state[dimension] ?? 'none') ?? 0) + 1);
+          } else {
+            const end = this.ends(type.type).find((e) => !vocabulary.hidden.has(e.type) && [e.label, e.typeLabel, e.pluralLabel, `${e.label} ${e.typeLabel}`].some((n) => normalize(n) === by));
+            if (!end) return { content: `"${text('group_by')}" is neither a state nor a link of ${type.label}. Use one from the list you were given.`, isError: true };
+            for (const o of objects) {
+              const pattern = end.direction === 'out' ? `<${o.iri}> <${end.relationship}> ?x` : `?x <${end.relationship}> <${o.iri}>`;
+              const others = this.q(`SELECT ?x ?id WHERE { ${pattern} . ?x a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`);
+              if (!others.length) groups.set('none', (groups.get('none') ?? 0) + 1);
+              for (const x of others) {
+                meet({ iri: x.x, identifier: x.id });
+                groups.set(x.id, (groups.get(x.id) ?? 0) + 1);
+              }
+            }
+          }
+          return out({ type: type.label, total: objects.length, groupedBy: dimension ?? text('group_by'), groups: [...groups].sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count })) });
+        }
+        case 'methods_for': {
+          const object = vocabulary.identifier(text('identifier'));
+          if (!object) return { content: `There is no object you may read with the identifier "${text('identifier')}".`, isError: true };
+          meet(object);
+          const methods = await this.methods(principal, object.iri);
+          return out({ identifier: object.identifier, methods: methods.map((m) => ({ method: m.label, available: m.available, ...(m.blocks.length ? { blockedBecause: m.blocks } : {}) })) });
+        }
+        default:
+          return { content: `There is no tool called ${name}.`, isError: true };
+      }
+    } catch (error) {
+      if (error instanceof GatewayError) return { content: error.reasons.join(' '), isError: true };
+      throw error;
+    }
+  }
+
+  /** Names the model may use, resolved to what the principal may read: types, state values and identifiers. */
+  private askVocabulary(principal: Principal) {
+    const hidden = this.unreadable(principal.role);
+    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel }`).filter((t) => !hidden.has(t.type));
+    const readable = new Set(types.map((t) => t.type));
+    const allStates = this.q(`SELECT ?dimension ?dimensionLabel ?type ?value ?label WHERE { ?dimension p:dimensionOf ?type ; rdfs:label ?dimensionLabel ; p:valuesFrom ?scheme .
+        ?value skos:inScheme ?scheme ; skos:prefLabel ?label }`).filter((v) => readable.has(v.type)) as Interpretation['states'];
+    return {
+      hidden,
+      readable,
+      type: (name: string) => {
+        const n = normalize(name);
+        const t = types.find((x) => normalize(x.label) === n || normalize(x.pluralLabel) === n);
+        return t && { type: t.type, label: t.label };
+      },
+      /** A state value, as "value" or "Dimension: value", of the given types or of any type when none is given. */
+      states: (phrase: string, of: string[]) => {
+        const [dim, value] = phrase.includes(':') ? phrase.split(':').map(normalize) : ['', normalize(phrase)];
+        return allStates.filter((s) => normalize(s.label) === value && (!dim || normalize(s.dimensionLabel) === dim) && (!of.length || of.includes(s.type)));
+      },
+      identifier: (id: string) => {
+        const r = this.q(`SELECT ?o ?id ?type WHERE { ?o ls:identifier ?id ; a ?type . ?type a p:ObjectType FILTER(LCASE(STR(?id)) = ${JSON.stringify(normalize(id))}) }`)[0];
+        return r && readable.has(r.type) ? { iri: r.o, identifier: r.id } : undefined;
+      },
     };
   }
 

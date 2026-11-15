@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.25. November 14, 2026. Author: Paul Chang.
+Version 0.26. November 15, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -120,7 +120,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers thirteen kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fourteen kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -136,6 +136,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Track runs | The background runs on objects the principal may read: each run's status and progress, and its outcome once it ends |
 | Notifications | The principal's notifications, newest first, with which are unread; and marking them read |
 | Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
+| Ask | A connected model answers a question from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
@@ -280,6 +281,16 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - Without a connected model, or when the model fails or declines, the gateway reads the query against the ontology instead. The answer always says which it was, and for a model, which model.
 - Suggestions while the person types come from the ontology reading alone, so the model is asked once per search, not once per keystroke.
 
+**Asking a question.** One field takes a search or a question, such as "why can't I unblind PT-03?", "how many serious cases came from Lakeside?" or "what is holding up the protocol amendment?". Where the deployment connects a model, the gateway asks it; the answer is a short text and the objects it rests on. Without a model, or when the model fails or declines, the question is searched as above, and the answer says so.
+
+- **The model reads through the gateway, as the principal.** It is given the vocabulary the principal may read, who they are and today's date, and a small set of read-only tools, each a gateway request run as the principal: search for objects by type, state, link and words; read an object; count objects of a type, grouped by a state dimension or a relationship; and list the methods on an object, each available or blocked with its reasons. The same permissions apply as to the person: hidden properties stay hidden, unreadable types are left out, and every read of personal data is recorded in the audit trail as the principal's, as asked by them.
+- **It never changes anything.** No tool commits, previews or drafts. A question that asks for a change is answered with the methods that would make it, which the person runs as any other.
+- **Records are data.** Records reach the model apart from its instructions, and nothing in a record is followed as an instruction.
+- **Personal data is withheld.** A property the ontology marks as identifying a person (`p:identifiesPerson`), such as a name or a date of birth, reaches the model as "withheld", never as its value.
+- **Grounded answers.** The model ends with its answer, whether it answered, needs the person to say more, or cannot answer from what the person may read, and the identifiers it rests on. The gateway keeps only identifiers the model read in this question through its tools, so an answer never cites an object the person may not read or the model did not see. An answer that needs the person to say more asks, as this section requires, rather than guessing.
+- **Bounded.** A question may take a limited number of steps; one that needs more is answered as unanswerable in its steps, never cut off silently. The answer says which model answered and how many objects it looked at.
+- **Shown with its objects.** The answer comes first, then the objects it cites as an object list, each actionable as any other.
+
 ### 5.3 Method Engine
 - Offers only methods valid for the object's current state and the person's context.
 - Accepts a chosen method or a declared outcome, and maps outcomes to methods.
@@ -404,6 +415,9 @@ To resolve in future versions of this spec.
 - Where may a drafting model process records: which providers, regions and retention terms satisfy each domain's privacy obligations?
 - Should a draft expire, or be refused on acceptance, when its object has changed since it was written?
 - Which model should understand search, given that a person waits for it: the platform's default model, or a faster one?
+- Which providers, regions and retention terms may a model reading records to answer questions use, for each domain's privacy obligations?
+- How is free text that may identify a person, such as a reporter's note, withheld from a model, when it is not a property the ontology can mark?
+- Should answers stream as the model works, and should a person be able to ask a follow-up in the context of the last answer?
 - How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
@@ -445,3 +459,4 @@ To resolve in future versions of this spec.
 | 0.23 | 2026-11-14 | Relationships read both ways, with containment and cardinality where certain (section 3.1). Added Within an object (section 5.1): every object opens with its header, an overview and one section per many-valued relationship end, contained objects first, generated from the ontology. Read an object answers relationship ends and the last change. |
 | 0.24 | 2026-11-14 | The To do summary is its counts only. Acting on many objects (section 5.4): the methods every selected object has available, Confirm and Fill in for now, inputs given once, one commit per object, refused objects named with their reasons. Two open questions. |
 | 0.25 | 2026-11-14 | Acting on many objects runs together or one after another (section 5.4), decided by the ontology: an input marked as about each object (`p:perObject`) is given for each object in turn, with its own preview, and all are reviewed before commit. |
+| 0.26 | 2026-11-15 | Asking a question (section 5.2) and the Ask request (section 3.4): a connected model answers from what the principal may read through read-only gateway tools (search, read, count, methods), with reads audited, properties that identify a person withheld, answers grounded in the identifiers it read, and the search as fallback. Three open questions. |

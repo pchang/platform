@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
+import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
 import { BUILT_ARCHETYPES } from './composeView';
 
@@ -434,7 +434,7 @@ function understood(result: SearchResult): ViewNode[] {
  */
 export function buildSearchView(
   result: SearchResult,
-  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
+  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls; searched?: string } = {},
 ): ViewSpec {
   const entries: ListEntry[] = result.results.map(({ object: o, matched }) => ({
     object: o,
@@ -452,12 +452,72 @@ export function buildSearchView(
     root: stack([
       ...(options.notice ? [[options.notice]] : []),
       header('Search', `${count} for “${result.query}”${shown}.`),
-      [text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
+      // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
+      [...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
       ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'Search results'),
     ]),
   };
 }
+
+/** What heads an answer that asks for more, or that cannot be given (design system spec 4.1, Search). */
+const UNANSWERED: Record<'needs more' | 'cannot answer', string> = {
+  'needs more': 'Say a little more',
+  'cannot answer': 'This cannot be answered from what you may read',
+};
+
+/**
+ * The search page with a model's answer (platform spec 5.2, Asking a question; design system spec 4.1, Search): the answer
+ * in a card, with the identifiers it rests on as links, then those objects as an object list.
+ */
+export function buildAnswerView(
+  result: AskResult & { answer: NonNullable<AskResult['answer']> },
+  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
+): ViewSpec {
+  const { answer } = result;
+  const paragraphs = answer.text.split(/\n\s*\n|\n/).map((p) => p.trim()).filter(Boolean).map((p) => text(p, 'p'));
+  const by = text(`Answered by ${answer.model}, after looking at ${answer.lookedAt} ${answer.lookedAt === 1 ? 'object' : 'objects'}.`, 'small');
+  const links = answer.cited.map((o): ViewNode => ({ component: 'Button', props: { label: o.identifier, variant: 'link', isInline: true }, opens: o.iri }));
+  const body: ViewNode =
+    answer.status === 'answered'
+      ? {
+          component: 'Card',
+          children: [
+            { component: 'CardHeader', children: [{ component: 'CardTitle', props: { label: 'Answer', component: 'h2' } }] },
+            {
+              component: 'CardBody',
+              children: [stack([paragraphs, ...(links.length ? [[text('Based on', 'small'), flexOf(links)]] : []), [by]])],
+            },
+          ],
+        }
+      : { component: 'Alert', props: { variant: 'info', title: UNANSWERED[answer.status], isInline: true, component: 'h2' }, children: [...paragraphs, by] };
+  const entries: ListEntry[] = answer.cited.map((o) => ({
+    object: o,
+    status: runLabels(o, options.runs ?? []),
+    methods: tasksFirst((options.methods?.get(o.iri) ?? []).filter((m) => m.available)),
+    firstIsPrimary: false,
+  }));
+  return {
+    pattern: 'card-view',
+    because: `The answer to "${result.question}", from what the person may read, and the objects it rests on`,
+    root: stack([
+      ...(options.notice ? [[options.notice]] : []),
+      header('Search', `“${result.question}”`),
+      [body],
+      ...objectList(entries, options.controls ?? NO_CONTROLS, 'Objects in the answer'),
+    ]),
+  };
+}
+
+/** While a question is worked on: it may take a model several steps (design system spec 4.1, Search). */
+export const answeringView = (question: string): ViewSpec => ({
+  pattern: 'card-view',
+  because: 'Waiting for the answer',
+  root: {
+    component: 'Bullseye',
+    children: [stack([[{ component: 'Spinner', props: { size: 'lg', 'aria-valuetext': `Working on “${question}”` } }], [text(`Working on “${question}”…`, 'small')]])],
+  },
+});
 
 export const loadingView: ViewSpec = {
   pattern: 'card-view',

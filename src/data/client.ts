@@ -1,5 +1,5 @@
 import type { MethodOption } from '../ontology/methods';
-import type { CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -7,7 +7,7 @@ import type { CommitResult, DraftView, MethodComposition, NavigationDomain, Noti
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -31,6 +31,8 @@ export interface GatewayClient {
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
   search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;
+  /** Ask (platform spec 5.2, Asking a question): a connected model's answer and the objects it cites, or the search it fell back to. */
+  ask(principal: Principal, question: string): Promise<AskResult>;
   /** Rejects with RefusedError when the principal may not read the object. */
   read(principal: Principal, object: string): Promise<ObjectView>;
   /** The methods on an object, each available or blocked with its reasons. */

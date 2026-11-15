@@ -76,6 +76,20 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'ask',
+    {
+      title: 'Ask',
+      description:
+        'Answers a question about the objects you may read, such as "why can\'t I unblind PT-03?" or "how many serious cases came from SITE-2?". ' +
+        'A connected model reads through the gateway as you and cites the objects its answer rests on. Changes nothing. ' +
+        'Without a connected model, the question is searched instead, and the result says so.',
+      inputSchema: { question: z.string() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ question }) => result(() => gateway.ask(principal, question)),
+  );
+
+  server.registerTool(
     'read_object',
     {
       title: 'Read an object',
