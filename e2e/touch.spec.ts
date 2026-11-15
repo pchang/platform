@@ -11,7 +11,7 @@ test('the chat’s message bar and form fields use 16px text on a phone, the pag
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Ask', exact: true }).click();
-  const field = page.locator('.pf-chatbot').getByRole('textbox');
+  const field = page.locator('.pf-chatbot__message-bar').getByRole('textbox');
   await field.click();
   expect(await field.evaluate(fontSize)).toBeGreaterThanOrEqual(16);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);

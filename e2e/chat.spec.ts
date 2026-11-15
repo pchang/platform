@@ -7,7 +7,7 @@ test.setTimeout(90_000);
 const axePath = createRequire(import.meta.url).resolve('axe-core/axe.min.js');
 
 const chat = (page: Page) => page.locator('.pf-chatbot');
-const bar = (page: Page) => chat(page).getByRole('textbox');
+const bar = (page: Page) => chat(page).locator('.pf-chatbot__message-bar').getByRole('textbox');
 
 async function openTodo(page: Page, person?: string) {
   await page.goto('/');
@@ -75,6 +75,28 @@ test('the conversation holds until New conversation, and another person starts t
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
   await expect(chat(page).getByText('serious cases', { exact: true })).toHaveCount(0);
   await expect(chat(page).getByText('Search or ask anything')).toBeVisible();
+  // Each person has their own history: back as Chloé, her conversation is back.
+  await page.getByRole('button', { name: /^Profile/ }).click();
+  await page.getByRole('option', { name: /^Chloé Martin/ }).click();
+  await expect(chat(page).getByText('serious cases', { exact: true })).toBeVisible();
+});
+
+test('each object asked about starts a new conversation, and the history returns to any of them', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTodo(page, 'Ben Okafor');
+  for (const id of ['AE-003', 'AE-005']) {
+    await page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: `${id} · Adverse Event` }).getByRole('button', { name: `Ask about ${id}` }).click();
+    await expect(chat(page).locator('.app-chat__about').getByText(`${id} · Adverse Event`)).toBeVisible();
+    await chat(page).getByRole('button', { name: new RegExp(`Summarize ${id}`) }).click();
+    await expect(chat(page).getByText(/here is what you asked about/)).toBeVisible();
+  }
+  await chat(page).getByRole('button', { name: 'Conversations' }).click();
+  const history = chat(page).getByRole('menu');
+  await expect(history.getByRole('menuitem')).toHaveText([/^AE-005 · Fever and cough/, /^AE-003 · Jaundice/]);
+  await history.getByRole('menuitem', { name: /^AE-003/ }).click();
+  await expect(chat(page).locator('.app-chat__about').getByText('AE-003 · Adverse Event')).toBeVisible();
+  await expect(chat(page).getByText('Summarize AE-003', { exact: true })).toBeVisible();
+  await expect(bar(page)).toHaveAttribute('placeholder', 'Ask about AE-003');
 });
 
 test('on a phone the chat fills the screen, and opening an object closes it, keeping the conversation', async ({ page }) => {

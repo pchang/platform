@@ -10,7 +10,19 @@
   box-shadow: none;
 }
 
-/* The chatbot's own layout, inside the element that closes it on Escape. */
+/* The element that closes the chat on Escape, around the history drawer and the conversation. */
+.app-chat__frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.app-chat__frame > .pf-chatbot__history {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* The chatbot's own layout, inside the history drawer's content. */
 .app-chat__body {
   display: flex;
   flex-direction: column;
@@ -108,6 +120,8 @@ html .app-chat .pf-chatbot__sources-card-base.pf-m-wrap .pf-chatbot__sources-lis
 /* The object a conversation is about leads it, on the card surface. */
 .app-chat__about {
   margin-block-end: var(--pf-t--global--spacer--md);
+  /* The conversation is a column that shrinks what it holds to fit; the object keeps its full height. */
+  flex-shrink: 0;
 }
 
 .app-chat__eyebrow {

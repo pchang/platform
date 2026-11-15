@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -149,5 +149,38 @@ describe('the chat panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
     expect(screen.getByText('Search or ask anything')).toBeInTheDocument();
     expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
+  });
+
+  it('starts a new conversation for each object asked about, and keeps the earlier ones in the history to return to', async () => {
+    const { calls } = renderChat(async (q) => answered(q));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ask' }));
+    await userEvent.type(bar(), 'which events are not reported?{Enter}');
+    await screen.findByText('AE-003 waits for you to report it.');
+    await userEvent.click(screen.getByRole('button', { name: 'From the card' }));
+    expect(await screen.findByText('Ask about AE-003')).toBeInTheDocument();
+    expect(screen.queryByText('which events are not reported?')).not.toBeInTheDocument();
+
+    // Both are in the history, newest first, named for their object or first question.
+    await userEvent.click(screen.getByRole('button', { name: 'Conversations' }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((i) => i.textContent)).toEqual(['AE-003 · Jaundice and raised liver enzymes', 'which events are not reported?']);
+    // Choosing one restores it, and a follow-up in it carries its own earlier turns, with no object.
+    await userEvent.click(items[1]);
+    const conversation = () => within(document.querySelector<HTMLElement>('.pf-chatbot__messagebox')!);
+    expect(await conversation().findByText('which events are not reported?')).toBeInTheDocument();
+    expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
+    await userEvent.type(bar(), 'and which are overdue?{Enter}');
+    await waitFor(() => expect(conversation().getAllByText('AE-003 waits for you to report it.')).toHaveLength(2));
+    expect(calls.at(-1)).toMatchObject({ question: 'and which are overdue?', about: [], earlier: [{ question: 'which events are not reported?' }] });
+
+    // A conversation not yet begun is reused, not kept empty.
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Conversations' }));
+    expect((await screen.findAllByRole('menuitem')).map((i) => i.textContent)).toEqual([
+      'New conversation',
+      'AE-003 · Jaundice and raised liver enzymes',
+      'which events are not reported?',
+    ]);
   });
 });
