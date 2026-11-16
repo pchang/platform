@@ -24,7 +24,7 @@ function loadListMode(): ListMode {
  * How an object list is shown and what is chosen in it (design system spec 4.3), and batch actions on the chosen
  * objects. Objects no longer listed are no longer chosen.
  */
-function useObjectList(listed: ObjectSummary[]) {
+export function useObjectList(listed: ObjectSummary[]) {
   const processes = useProcesses();
   const [mode, setMode] = useState<ListMode>(loadListMode);
   const [selecting, setSelecting] = useState(false);

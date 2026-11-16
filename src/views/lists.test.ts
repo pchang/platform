@@ -124,6 +124,16 @@ describe('the list view (design system spec 4.3)', () => {
     expect((sub.children ?? []).map(cellText).slice(0, 7)).toEqual(['SUB-1', 'Case SUB-1', 'Submission', '', '', 'draft', 'on track']);
   });
 
+  // Ask about this comes after the methods, at the right end of the actions column, so it lines up down the list (design system spec 4.1).
+  it('puts Ask about this at the right end of the actions, after the methods', () => {
+    const [row] = bodyRows(view.root);
+    const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];
+    const outer = find(actions, (n) => n.component === 'Flex')[0];
+    expect(outer.props).toMatchObject({ justifyContent: { default: 'justifyContentSpaceBetween' } });
+    expect(outer.children?.at(-1)?.asks).toBe('urn:SC-4');
+    expect(labelsOf(find(outer.children![0], (n) => n.component === 'Button'))).toEqual(['Triage']);
+  });
+
   it('raises one method to the row and keeps the rest in a … menu named for the object', () => {
     const [row] = bodyRows(view.root);
     const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];

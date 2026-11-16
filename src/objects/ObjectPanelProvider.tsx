@@ -25,22 +25,6 @@ export interface ObjectPanelContext {
 const Context = createContext<ObjectPanelContext | null>(null);
 
 /** Whether the panel takes the whole content area: a choice kept on the device (design system spec 4.4). */
-const EXPANDED_KEY = 'lsh.objectPanel.expanded';
-function loadExpanded(): boolean {
-  try {
-    return localStorage.getItem(EXPANDED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-function saveExpanded(expanded: boolean) {
-  try {
-    localStorage.setItem(EXPANDED_KEY, String(expanded));
-  } catch {
-    // Not kept on this device; the choice still applies until the page closes.
-  }
-}
-
 /** A card the panel was opened from is given focus through its title, its button. */
 function focusOrigin(origin: HTMLElement | undefined) {
   if (!origin?.isConnected) return;
@@ -52,7 +36,9 @@ export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   const { principal } = usePrincipal();
   const [stack, setStack] = useState<string[]>([]);
   const [moved, setMoved] = useState<ObjectPanelContext['moved']>('fresh');
-  const [isExpanded, setExpanded] = useState(loadExpanded);
+  // Every object opened from the page opens at three quarters, as a peek; Expand lasts while the person moves through the
+  // panel, until it closes or another object is opened from the page (design system spec 4.4).
+  const [isExpanded, setExpanded] = useState(false);
   const origin = useRef<HTMLElement>(undefined);
 
   // Another person sees their own world: the panel closes when the person changes.
@@ -61,6 +47,7 @@ export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   const open = useCallback((object: string, from?: HTMLElement) => {
     origin.current = from;
     setMoved('fresh');
+    setExpanded(false);
     setStack([object]);
   }, []);
   const moveIn = useCallback((object: string) => {
@@ -73,17 +60,13 @@ export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   }, []);
   const close = useCallback(() => {
     setStack([]);
+    setExpanded(false);
     const from = origin.current;
     origin.current = undefined;
     // After the panel has gone, so focus lands on the page, not on the panel that is closing.
     setTimeout(() => focusOrigin(from), 0);
   }, []);
-  const toggleExpanded = useCallback(() => {
-    setExpanded((e) => {
-      saveExpanded(!e);
-      return !e;
-    });
-  }, []);
+  const toggleExpanded = useCallback(() => setExpanded((e) => !e), []);
 
   const value = useMemo(() => ({ stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded }), [stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded]);
   return <Context.Provider value={value}>{children}</Context.Provider>;

@@ -15,17 +15,17 @@ import CompressIcon from '@patternfly/react-icons/dist/esm/icons/compress-icon';
 import ExpandIcon from '@patternfly/react-icons/dist/esm/icons/expand-icon';
 import CommentsIcon from '@patternfly/react-icons/dist/esm/icons/comments-icon';
 import { useChat } from '../chat/ChatProvider';
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ViewSpec } from '../design-system/catalog';
-import { RefusedError, type MethodOption, type ObjectView } from '../data/client';
+import { RefusedError, type MethodOption, type ObjectSummary, type ObjectView } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { useFrontIsPage } from '../processes/ProcessHost';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
-import { buildObjectView, OBJECT_TAB_FIELD } from '../views/objectView';
+import { buildObjectView, endKey, OBJECT_TAB_FIELD } from '../views/objectView';
 import { loadingView } from '../views/orientView';
-import { useActiveRuns, useOpenMethod } from '../views/OrientViews';
+import { useActiveRuns, useObjectList, useOpenMethod } from '../views/OrientViews';
 import { useMediaQuery } from '../chrome/useMediaQuery';
 import { useObjectPanel } from './ObjectPanelProvider';
 import './ObjectPanel.css';
@@ -61,6 +61,9 @@ export function ObjectDrawer({ children }: { children: ReactNode }) {
     </Drawer>
   );
 }
+
+/** No objects: the overview tab lists none. */
+const NONE: ObjectSummary[] = [];
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -164,6 +167,9 @@ function ObjectContent({
   const [loaded, setLoaded] = useState<{ view: ObjectView; methods: MethodOption[]; related: Map<string, MethodOption[]> }>();
   const [refused, setRefused] = useState<string[]>();
   const runs = useActiveRuns([object, processes.changes, changes]);
+  // The open tab's objects are an object list like any other: cards or a list, selection and batch actions (design system spec 4.4).
+  const listed = useMemo(() => loaded?.view.links.find((end) => endKey(end) === tab)?.objects ?? NONE, [loaded, tab]);
+  const list = useObjectList(listed);
   const openMethod = useOpenMethod((target, method) => {
     if (!loaded) return undefined;
     const option = (target === loaded.view.iri ? loaded.methods : loaded.related.get(target))?.find((m) => m.method === method);
@@ -199,7 +205,7 @@ function ObjectContent({
         root: { component: 'Alert', props: { variant: 'danger', title: 'This object cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
       }
     : loaded
-      ? buildObjectView(loaded.view, { methods: loaded.methods, related: loaded.related, runs, notice: processes.notice })
+      ? buildObjectView(loaded.view, { methods: loaded.methods, related: loaded.related, runs, notice: processes.notice, controls: list.controls })
       : loadingView;
 
   useEffect(() => {
@@ -223,13 +229,16 @@ function ObjectContent({
       <ViewRenderer
         view={spec}
         host={{
-          values: { [OBJECT_TAB_FIELD]: tab ?? '' },
-          onField: (field, value) => field === OBJECT_TAB_FIELD && onTab(value),
+          ...list.host,
+          values: { ...list.values, [OBJECT_TAB_FIELD]: tab ?? '' },
+          onField: (field, value) => (field === OBJECT_TAB_FIELD ? onTab(value) : list.onField(field, value)),
+          onIntent: list.onIntent,
           onAction: (action) => openMethod(action.target, action.method),
           onOpen: (target) => panel.moveIn(target),
           onAsk: chat.askAbout,
         }}
       />
+      {list.dialog}
     </div>
   );
 }

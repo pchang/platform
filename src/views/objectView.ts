@@ -1,6 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
-import { card, daysUntil, flexOf, formatDate, gallery, runLabels, runnable, stack, stateLabels, text } from './orientView';
+import { daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -98,20 +98,16 @@ function overview(view: ObjectView, today: Date): ViewNode {
   return stack(sections);
 }
 
-function section(view: ObjectView, end: RelationshipEnd, options: { methods?: Map<string, MethodOption[]>; runs?: RunView[] }): ViewNode {
+/** A tab's objects as an object list like any other (design system spec 4.4 and 4.3): the list bar, then cards or a list. */
+function section(
+  view: ObjectView,
+  end: RelationshipEnd,
+  name: string,
+  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; controls?: ListControls },
+): ViewNode {
   const sentence = `This ${inText(view.typeLabel)} ${end.label} ${end.objects.length === 1 ? `this ${inText(end.typeLabel)}` : `these ${inText(end.pluralLabel)}`}.`;
   if (!end.objects.length) return stack([[text(`No ${inText(end.pluralLabel)} yet.`)]]);
-  const cards = end.objects.map((o) => {
-    const body: ViewNode[][] = [];
-    const running = runLabels(o, options.runs ?? []);
-    if (running.length) body.push([flexOf(running)]);
-    body.push([flexOf(stateLabels(o))]);
-    const available = (options.methods?.get(o.iri) ?? []).filter((m) => m.available);
-    if (available.length) body.push([text('You can:', 'small')]);
-    body.push(...runnable(available, o.iri, false, o));
-    return card(o, body, 'h3');
-  });
-  return stack([[text(sentence)], [gallery(cards)]]);
+  return stack([[text(sentence)], ...objectList(objectEntries(end.objects, options), options.controls ?? NO_CONTROLS, name, 'h3')]);
 }
 
 /**
@@ -120,7 +116,7 @@ function section(view: ObjectView, end: RelationshipEnd, options: { methods?: Ma
  */
 export function buildObjectView(
   view: ObjectView,
-  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date } = {},
+  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date; controls?: ListControls } = {},
 ): ViewSpec {
   const today = options.today ?? new Date();
   const status: ViewNode[] = [];
@@ -146,7 +142,7 @@ export function buildObjectView(
     ...tabs.map((end) => ({
       component: 'Tab',
       props: { eventKey: endKey(end), label: named.get(end)!, count: end.objects.length },
-      children: [section(view, end, { methods: options.related, runs: options.runs })],
+      children: [section(view, end, named.get(end)!, { methods: options.related, runs: options.runs, controls: options.controls })],
     })),
   ];
 
