@@ -436,11 +436,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const Svg = icons[props.icon];
     props.icon = <Svg />;
   }
-  // A CardHeader in select mode carries the card's select control at its end.
-  // A card's header actions: its select control in select mode, otherwise its Ask button (design system spec 4.1 and 4.3).
-  const asking = entry.id === 'CardHeader' ? (node.children ?? []).filter((c) => c.asks) : [];
+  // A CardHeader in select mode carries the card's select control at its end (design system spec 4.3).
   if (entry.id === 'CardHeader' && select) props.actions = { actions: <SelectCircle />, hasNoOffset: true };
-  else if (asking.length) props.actions = { actions: asking.map((c, i) => <Node key={i} node={c} host={host} />), hasNoOffset: true };
   if (field && entry.id === 'Radio') {
     const value = props.value as string;
     props.isChecked = host.values?.[field] === value;
@@ -488,8 +485,7 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
         </Step>
       ));
   } else if (node.children?.length) {
-    // A card header's Ask buttons are drawn in its actions, not among its children.
-    const children = entry.id === 'CardHeader' ? node.children.filter((c) => !c.asks) : node.children;
+    const children = node.children;
     content = SINGLE_CHILD.has(entry.id)
       ? <Node node={children[0]} host={host} />
       : children.map((child, i) => <Node key={i} node={child} host={host} />);

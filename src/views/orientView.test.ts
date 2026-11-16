@@ -1,3 +1,4 @@
+import type { ViewNode } from '../design-system/catalog';
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { AskResult, MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
@@ -126,7 +127,30 @@ describe('the To do summary (design system spec 4.3)', () => {
 
   it('leads each card with the identifier and type in small text, then the title as its heading', () => {
     const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
-    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}},{"component":"Button","props":{"variant":"plain","icon":"comments","aria-label":"Ask about SC-2"},"asks":"urn:SC-2"}]}');
+    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+  });
+
+  // Anticipation first: the methods the platform expects come first, then Ask about this (design system spec 4.1).
+  const nodes = (n: ViewNode): ViewNode[] => [n, ...(n.children ?? []).flatMap(nodes)];
+  const cardOf = (view: ViewNode, identifier: string) =>
+    nodes(view).find((n) => n.component === 'Card' && JSON.stringify(n).includes(`"label":"${identifier} · `))!;
+  const buttonsOf = (card: ViewNode) =>
+    nodes(card).filter((n) => n.component === 'Button').map((n) => (n.asks ? 'Ask' : (n.props as { label: string }).label));
+
+  it('puts Ask about this last in the row of method buttons, not in the header', () => {
+    const card = cardOf(buildTodoView(items, chloe, undefined, [], { today }).root, 'SC-2');
+    expect(buttonsOf(card)).toEqual(['Triage', 'Ask']);
+    const row = nodes(card).find((n) => n.component === 'Flex' && n.children?.some((c) => c.asks))!;
+    expect(row.children?.map((c) => (c.asks ? 'Ask' : (c.props as { label: string }).label))).toEqual(['Triage', 'Ask']);
+    expect(nodes(nodes(card).find((n) => n.component === 'CardHeader')!).some((n) => n.asks)).toBe(false);
+  });
+
+  it('gives a card with no method buttons its Ask about this alone, at the foot of its body', () => {
+    const notBuilt = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
+    const card = cardOf(buildTodoView(notBuilt, chloe, undefined, [], { today }).root, 'SUB-1');
+    expect(buttonsOf(card)).toEqual(['Ask']);
+    const body = nodes(card).find((n) => n.component === 'Stack')!;
+    expect(nodes(body.children!.at(-1)!).some((n) => n.asks === 'urn:SUB-1')).toBe(true);
   });
 
   it('has no summary when nothing is waiting', () => {

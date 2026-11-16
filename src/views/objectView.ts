@@ -107,7 +107,8 @@ function section(view: ObjectView, end: RelationshipEnd, options: { methods?: Ma
     if (running.length) body.push([flexOf(running)]);
     body.push([flexOf(stateLabels(o))]);
     const available = (options.methods?.get(o.iri) ?? []).filter((m) => m.available);
-    if (available.length) body.push([text('You can:', 'small')], ...runnable(available, o.iri, false));
+    if (available.length) body.push([text('You can:', 'small')]);
+    body.push(...runnable(available, o.iri, false, o));
     return card(o, body, 'h3');
   });
   return stack([[text(sentence)], [gallery(cards)]]);
