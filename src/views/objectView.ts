@@ -128,7 +128,8 @@ export function buildObjectView(
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);
   const available = (options.methods ?? []).filter((m) => m.available);
-  if (available.length) header.push(...runnable(available, view.iri, false));
+  // The methods the person can run now, then Ask about this, as on a card (design system spec 4.1 and 4.4).
+  header.push(...runnable(available, view.iri, false, view));
 
   const tabs = view.links.filter(isTab);
   const named = names(tabs, view.type, (end) => end.pluralLabel);
