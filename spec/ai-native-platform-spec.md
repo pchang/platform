@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.26. November 15, 2026. Author: Paul Chang.
+Version 0.27. November 16, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -120,7 +120,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fourteen kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fifteen kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -138,6 +138,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
 | Ask | A connected model answers a question from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
+| Explain | Why an object, its methods and its values are as the principal sees them: each method's checks with the role, shapes and business rules behind them, the commit behind each value, the rule behind each hidden value, and the ontology versions (section 5.4, Why am I seeing this?) |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -303,6 +304,18 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - Consistent and predictable. The same task produces the same UI shape.
 - Can explain why it shows what it shows.
 
+#### Why am I seeing this?
+
+Any view, and any object, method or value in it, can be asked **why am I seeing this?** The answer is generated from the same ontology, graph, context and policy that produced what it explains, the same way in every domain, never written per screen or per type. It is how a person, an agent or an inspector checks that the platform did what its model says.
+
+- **The view.** Why it was composed (its `because`), the design system pattern it uses, and for a method, the archetype and the rule in this section that chose it, or the override recorded in the ontology.
+- **An object.** Why it is here, from what put it here: on To do because a task waits for the person (which methods) or because a state value is urgent (which value), placed by its deadline (which date property); in a search result because of how the query was understood and what matched; at a relationship end because of the relationship and how it reads; in an answer because the model read and cited it. Then its type, its state in each dimension, and its last change.
+- **A method.** Available or blocked, with every check in the order a commit makes it (section 3.4): whether the role may run it, naming the role; each precondition, by its shape, whether it holds now and its message; the business rule a precondition enforces, with its parameters; and anything the platform cannot do yet, such as no connected model. All checks are shown, not only the first that fails, so a person sees everything that stands in the way.
+- **A value.** The last commit that set it: the method, who ran it, in which role, and when. A hidden value names the rule that hides it and the condition under which it would be shown, never the value.
+- **Versions.** Each explanation names the version of the ontology its type, method, shape and rule come from, so an explanation can be traced under change control (section 7).
+- **Never more than a read.** An explanation shows only what the principal may read, and explaining an object that holds personal data is a read of it, recorded in the audit trail.
+- **Agents ask the same.** The gateway answers Explain (section 3.4), so an agent, including an external one, gets the same explanation a person sees.
+
 #### Running a method: interaction archetypes
 
 In regulated work such as healthcare and clinical trials, the experience must be **predictable and repeatable**. The context and content change; the patterns do not. The platform follows the declarative model of A2UI (Google's Agent-to-User Interface): the experience is described as data, drawn only from a closed catalog of components, with the data bound separately. No interface is generated free-form.
@@ -427,6 +440,7 @@ To resolve in future versions of this spec.
 - What are the performance and scale targets for the first release?
 - May one signature cover many records at once, and how would each record carry it, so methods that need a signature can run for many?
 - Should a run for many objects be one transaction, all or nothing, where a domain needs it?
+- Should an explanation also show how a past view looked and why, from the journal, so an inspector can see what a person saw when they acted?
 
 ---
 
@@ -460,3 +474,4 @@ To resolve in future versions of this spec.
 | 0.24 | 2026-11-14 | The To do summary is its counts only. Acting on many objects (section 5.4): the methods every selected object has available, Confirm and Fill in for now, inputs given once, one commit per object, refused objects named with their reasons. Two open questions. |
 | 0.25 | 2026-11-14 | Acting on many objects runs together or one after another (section 5.4), decided by the ontology: an input marked as about each object (`p:perObject`) is given for each object in turn, with its own preview, and all are reviewed before commit. |
 | 0.26 | 2026-11-15 | Asking a question (section 5.2) and the Ask request (section 3.4): a connected model answers from what the principal may read through read-only gateway tools (search, read, count, methods), with reads audited, properties that identify a person withheld, answers grounded in the identifiers it read, and the search as fallback. Three open questions. |
+| 0.27 | 2026-11-16 | Why am I seeing this? (section 5.4) and the Explain request (section 3.4): the view, objects, methods and values explained from the ontology, graph, context and policy that produced them, with every check behind a method, the commit behind a value, the rule behind a hidden value and ontology versions; never more than a read. One open question. |
