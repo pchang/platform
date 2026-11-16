@@ -72,6 +72,18 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(validateView(buildObjectView(patient, { controls: { mode: 'list', selecting: false, selected: new Set() } })).errors).toEqual([]);
   });
 
+  // Ask about this follows the header's methods, as on a card (design system spec 4.1 and 4.4).
+  it('follows the methods in the header with Ask about this', async () => {
+    const gateway = withSeed();
+    const ae = gateway.read(ben, 'AE-003');
+    const view = buildObjectView(ae, { methods: await gateway.methods(ben, ae.iri) });
+    const header = view.root.children![0];
+    const buttons = find(header, (n) => n.component === 'Button' && !n.lists).map((n) => (n.asks ? 'Ask' : (n.props as { label: string }).label));
+    expect(buttons.at(-1)).toBe('Ask');
+    expect(buttons.length).toBeGreaterThan(1);
+    expect(find(header, (n) => n.asks === ae.iri)).toHaveLength(1);
+  });
+
   it('puts the ends that hold one object in the overview as links, named by the type at the other end', () => {
     const view = buildObjectView(withSeed().read(ben, 'PT-03'));
     const overview = find(view.root, (n) => n.component === 'Tab' && (n.props as { eventKey: string }).eventKey === OVERVIEW_TAB)[0];

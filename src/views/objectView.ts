@@ -140,11 +140,16 @@ export function buildObjectView(
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);
   const available = (options.methods ?? []).filter((m) => m.available);
-  const actions = runnable(available, view.iri, false);
-  // Edit follows the methods, when the person may edit the object now (platform spec 5.3; design system spec 4.4).
+  // The methods the person can run now, then Edit when they may edit it, then Ask about this last, as on a card
+  // (platform spec 5.3; design system spec 4.1 and 4.4).
+  const actions = runnable(available, view.iri, false, view);
   const edit: ViewNode = { component: 'Button', props: { label: 'Edit', variant: 'secondary', size: 'sm' }, edits: view.iri };
-  if (options.editable && actions.length && actions[0][0].component === 'Flex') actions[0][0] = { ...actions[0][0], children: [...(actions[0][0].children ?? []), edit] };
-  else if (options.editable) actions.unshift([{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' } }, children: [edit] }]);
+  if (options.editable) {
+    const row = actions.find((r) => r[0].component === 'Flex')!;
+    const children = row[0].children ?? [];
+    // Before Ask, which is always last in the row.
+    row[0] = { ...row[0], children: [...children.slice(0, -1), edit, children[children.length - 1]] };
+  }
   header.push(...actions);
 
   const tabs = view.links.filter(isTab);
