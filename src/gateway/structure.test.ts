@@ -71,7 +71,7 @@ describe('J7: evolving the structure', () => {
       'Method Compare study scenarios: its precondition allows only some of these values',
       'State Status of Study Scenario: wherever its values are shown or chosen',
     ]));
-    expect(preview.impact!.versions).toEqual(['LS&H life sciences terms 0.2.0 → 0.3.0']);
+    expect(preview.impact!.versions).toEqual(['LS&H life sciences terms 0.3.0 → 0.4.0']);
     await g.commit(noor, changeSet, p('ProposeChangeSet'));
 
     // It waits on To do for the owners of study scenarios, not for the Steward who drafted it, nor for other roles.
@@ -88,7 +88,7 @@ describe('J7: evolving the structure', () => {
     expect(await scenarioStages(g)).toEqual(['draft', 'selected', 'set aside', 'on hold']);
     const after = g.read(noor, changeSet);
     expect(after.state).toMatchObject({ Status: 'applied' });
-    expect(after.properties.version).toBe('LS&H life sciences terms 0.2.0 → 0.3.0');
+    expect(after.properties.version).toBe('LS&H life sciences terms 0.3.0 → 0.4.0');
     expect(after.properties['Turtle patch']).toContain('lst:StudyScenarioStatus-onHold skos:prefLabel "on hold" .');
     expect(after.properties['Turtle patch']).toContain('@prefix lst: <https://w3id.org/lsh-platform/life-sciences/term#> .');
     // The shape that allows each status now allows it too, so a scenario could hold it.
@@ -96,7 +96,7 @@ describe('J7: evolving the structure', () => {
 
     // Rolled back as a new change: the status goes, and so does the version.
     const back = await g.preview(noor, changeSet, p('RollBackChangeSet'));
-    expect(back.impact).toMatchObject({ structure: ['Study Scenario status: removes on hold'], notConforming: [], versions: ['LS&H life sciences terms 0.3.0 → 0.2.0'] });
+    expect(back.impact).toMatchObject({ structure: ['Study Scenario status: removes on hold'], notConforming: [], versions: ['LS&H life sciences terms 0.4.0 → 0.3.0'] });
     await g.commit(noor, changeSet, p('RollBackChangeSet'));
     expect(await scenarioStages(g)).toEqual(['draft', 'selected', 'set aside']);
     expect(g.read(noor, changeSet).state).toMatchObject({ Status: 'ended', Outcome: 'rolled back' });
@@ -123,7 +123,7 @@ describe('J7: evolving the structure', () => {
     await g.commit(noor, created[0], p('RelabelValue'), { value: 'StudyScenarioStatus-setAside', label: 'parked' });
     const impact = (await g.preview(noor, created[0], p('ProposeChangeSet'))).impact!;
     expect(impact.structure).toEqual(['Study Scenario status: relabels set aside as parked']);
-    expect(impact.versions).toEqual(['LS&H life sciences terms 0.2.0 → 0.2.1']);
+    expect(impact.versions).toEqual(['LS&H life sciences terms 0.3.0 → 0.3.1']);
     await g.commit(noor, created[0], p('ProposeChangeSet'));
     await g.commit(marcus, created[0], p('ApproveChangeSet'));
     await g.commit(noor, created[0], p('ApplyChangeSet'));

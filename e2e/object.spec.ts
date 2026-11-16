@@ -38,6 +38,12 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
   await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0']);
+  // Its journey along its lifecycle, its status: named for where it is, each stage said in words.
+  const journey = panel(page).getByRole('list', { name: 'Journey: Status, now enrolling, stage 2 of 5' });
+  await expect(journey).toBeVisible();
+  await expect(panel(page).getByLabel('enrolling, now')).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: 'test-results/object-journey.png' });
 
   // Patients: the relationship in words, then cards that open in turn.
   await panel(page).getByRole('tab', { name: 'Patients 12' }).click();

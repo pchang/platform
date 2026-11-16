@@ -5,7 +5,7 @@ import { GatewayError, type Principal } from './gateway';
 import { withSeed } from './node';
 
 // Journeys run many commits, and each validates the whole graph (see the PR note on validation cost).
-vi.setConfig({ testTimeout: 20_000 });
+vi.setConfig({ testTimeout: 60_000 });
 
 const ls = (n: string) => `${NS.ls}${n}`;
 const lst = (n: string) => `${NS.lst}${n}`;

@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
+import type { Journey, JourneyStatus, MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
 import { group, sections } from './layout';
 import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
 
@@ -113,6 +113,40 @@ function section(
   return group([text(sentence), ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')], 'gapMd');
 }
 
+/** How each stage of a journey is drawn, and said: never by its icon or color alone (design system spec 4.4, Journey). */
+const STEP: Record<JourneyStatus, { variant: 'success' | 'info' | 'pending'; said: string; description?: string }> = {
+  passed: { variant: 'success', said: 'passed' },
+  current: { variant: 'info', said: 'now', description: 'Now' },
+  upcoming: { variant: 'pending', said: 'to come' },
+  skipped: { variant: 'pending', said: 'skipped', description: 'Skipped' },
+  unknown: { variant: 'pending', said: 'not known', description: 'Not known' },
+};
+
+/** The object's journey along its lifecycle, as a progress stepper: vertical on phones, horizontal from md up. */
+export function journeyStepper(journey: Journey): ViewNode {
+  const now = journey.steps.findIndex((s) => s.status === 'current');
+  const current = journey.steps[now];
+  const where = current.exit ? `now ${current.stage}, an exit` : `now ${current.stage}, stage ${now + 1} of ${journey.steps.length}`;
+  return {
+    component: 'ProgressStepper',
+    props: { 'aria-label': `Journey: ${journey.dimension}, ${where}`, horizontalFrom: 'md' },
+    because: `Where the object is along its ${journey.dimension.toLowerCase()}, from its lifecycle in the ontology and its own commits`,
+    children: journey.steps.map((step) => {
+      const look = STEP[step.status];
+      return {
+        component: 'ProgressStep',
+        props: {
+          label: step.stage,
+          variant: step.exit ? 'danger' : look.variant,
+          ...(step.status === 'current' ? { isCurrent: true } : {}),
+          ...(look.description ? { description: look.description } : {}),
+          'aria-label': `${step.stage}, ${look.said}${step.exit ? ', an exit' : ''}`,
+        },
+      };
+    }),
+  };
+}
+
 /**
  * The object panel's content: the header (identity, state, deadline and urgency, runs, and the methods the person can run
  * now), then tabs for the overview and each relationship end that holds many objects, contained objects first.
@@ -151,6 +185,8 @@ export function buildObjectView(
     row[0] = { ...row[0], children: [...children.slice(0, -1), edit, children[children.length - 1]] };
   }
   header.push(...actions);
+  // Under the header, after what the person can do now: where the object is along its lifecycle (design system spec 4.4).
+  if (view.journey) header.push([journeyStepper(view.journey)]);
 
   const tabs = view.links.filter(isTab);
   const named = names(tabs, view.type, (end) => end.pluralLabel);

@@ -75,6 +75,19 @@ export interface RelationshipEnd extends RelationshipEndDescription {
   canAdd?: boolean;
 }
 
+/** Where one stage stands in an object's journey (spec 5.1, Journey). */
+export type JourneyStatus = 'passed' | 'current' | 'upcoming' | 'skipped' | 'unknown';
+
+/**
+ * An object's journey along its lifecycle (spec 5.1, Journey): the main path's stages, passed, current, to come or
+ * skipped, read from the object's own commits; at an exit, the stages up to the one it left from, then the exit.
+ */
+export interface Journey {
+  /** The lifecycle's name, such as Workflow. */
+  dimension: string;
+  steps: { stage: string; status: JourneyStatus; exit?: boolean }[];
+}
+
 export interface ObjectView extends ObjectSummary {
   /**
    * Every relationship end the object's type has in the ontology, in both directions, that reaches a type the principal
@@ -88,6 +101,8 @@ export interface ObjectView extends ObjectSummary {
   urgency: number;
   /** Its earliest deadline, as an ISO date. */
   deadline?: string;
+  /** Where it is along its lifecycle. Absent for a type with no lifecycle, or one whose main path has one stage. */
+  journey?: Journey;
   /** The latest commit on the object: which method, who ran it and when. Absent when nothing has changed it. */
   lastChange?: { commit: string; method: string; methodLabel: string; person: string; personName: string; at: string };
 }
@@ -843,6 +858,49 @@ export class Gateway {
     return { lifecycle: { dimension: dim.label, stage: stages[position].label, position, stages: stages.map((s) => s.label) } };
   }
 
+  /**
+   * An object's journey (spec 5.1, Journey). The lifecycle's values in order are the main path, apart from exits
+   * (`p:exit`). The object's commits say which stages it entered: a stage before the current one that it never entered,
+   * after its first recorded value, was skipped; stages before its first recorded value, as in a seed graph, are taken as
+   * passed. At an exit, the journey runs to the stage it left from, by its history or else the ontology (`p:exitFrom`),
+   * then ends at the exit; when neither says, the main path's stages are not known.
+   */
+  private journeyOf(object: string, type: string): Journey | undefined {
+    const dim = this.q(`SELECT ?d ?label ?scheme WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?label ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
+    if (!dim) return undefined;
+    const values = this.q(`SELECT ?v ?label ?exit ?from WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o .
+        OPTIONAL { ?v p:exit ?exit } OPTIONAL { ?v p:exitFrom ?from } } ORDER BY ?o`);
+    const main = values.filter((v) => v.exit !== 'true');
+    if (main.length < 2) return undefined;
+    const current = this.q(`SELECT ?v WHERE { <${object}> <${dim.d}> ?v }`)[0]?.v;
+    const at = values.find((v) => v.v === current);
+    if (!at) return undefined;
+
+    // The object's own changes to its lifecycle, oldest first, as its commits recorded them.
+    const history = this.q(`SELECT ?old ?new WHERE { GRAPH ?commit { ?commit a p:Commit ; prov:startedAtTime ?at ; p:change ?ch .
+        ?ch p:changedSubject <${object}> ; p:changedProperty <${dim.d}> . OPTIONAL { ?ch p:oldValue ?old } OPTIONAL { ?ch p:newValue ?new } } }
+        ORDER BY ?at STRLEN(STR(?commit)) ?commit`);
+    const entered = new Set(history.flatMap((h) => [h.old, h.new]).filter(Boolean));
+    const first = history.length ? (history[0].old ?? history[0].new) : current;
+    const firstIndex = main.findIndex((v) => v.v === first);
+    const before = (i: number): JourneyStatus => (entered.has(main[i].v) || !history.length || (firstIndex >= 0 && i < firstIndex) ? 'passed' : 'skipped');
+
+    if (at.exit !== 'true') {
+      const index = main.findIndex((v) => v.v === current);
+      return {
+        dimension: dim.label,
+        steps: main.map((v, i) => ({ stage: v.label, status: i < index ? before(i) : i === index ? 'current' : 'upcoming' })),
+      };
+    }
+    // At an exit: where it left the main path, by its own history, or else by the ontology.
+    const left = [...history].reverse().find((h) => h.new === current)?.old ?? at.from;
+    const leftIndex = main.findIndex((v) => v.v === left);
+    const path = leftIndex < 0
+      ? main.map((v) => ({ stage: v.label, status: 'unknown' as const }))
+      : main.slice(0, leftIndex + 1).map((v, i) => ({ stage: v.label, status: i === leftIndex ? ('passed' as const) : before(i) }));
+    return { dimension: dim.label, steps: [...path, { stage: at.label, status: 'current', exit: true }] };
+  }
+
   read(principal: Principal, idOrIri: string): ObjectView {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
@@ -882,7 +940,8 @@ export class Gateway {
     const lastChange = last && { commit: last.commit, method: last.method, methodLabel: last.methodLabel ?? last.method, person: last.person, personName: last.personName ?? last.person, at: last.at };
     const domainLabel = this.q(`SELECT ?label WHERE { <${summary.type}> p:inDomain/rdfs:label ?label }`)[0]?.label ?? '';
     const deadline = this.deadlineOf(object);
-    return { ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(lastChange ? { lastChange } : {}) };
+    const journey = this.journeyOf(object, summary.type);
+    return { ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(journey ? { journey } : {}), ...(lastChange ? { lastChange } : {}) };
   }
 
   // ---------------------------------------------------------------- search (spec 5.2)
@@ -1157,6 +1216,8 @@ export class Gateway {
             links: view.links.filter((end) => end.objects.length).map((end) => ({ link: end.label, objects: end.objects.map(brief) })),
             ...(view.deadline ? { deadline: view.deadline } : {}),
             urgency: view.urgency,
+            // Where it is along its lifecycle, so a question about progress is answered from the same journey a person sees.
+            ...(view.journey ? { journey: { lifecycle: view.journey.dimension, stages: view.journey.steps.map((j) => ({ stage: j.stage, status: j.status, ...(j.exit ? { exit: true } : {}) })) } } : {}),
             ...(view.lastChange ? { lastChange: { method: view.lastChange.methodLabel, by: view.lastChange.personName, at: view.lastChange.at } } : {}),
           });
         }

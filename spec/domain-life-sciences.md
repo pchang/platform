@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.33. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.40.
+Version 0.34. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.41.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -81,7 +81,7 @@ Covers a clinical trial from design to locked data.
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
+| Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Status: planned, enrolling, active, closed, locked. Phase: I, II, III. Blinding: blinded, unblinded. |
 | Protocol | The plan a study is conducted under: its objectives, design, eligibility and schedule of assessments. Each version is its own protocol, with its version number, primary objective, planned enrollment and the date it came into force; an amendment is a new version that amends the one before it, with a summary of what it changes | Status: draft, in review, approved, superseded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
 | Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: unassigned, assigned. Arm visibility: hidden, revealed. The assigned arm itself is hidden while the study is blinded (rule 2). |
@@ -799,6 +799,33 @@ The domain is written in the platform's ontology format (platform spec section 3
   | chooses | Decision → Development Option or Study Scenario | is chosen by | Related only | one choice |
   | justified by | Eligibility Criterion → Assay Result or Safety Case | justifies | Related only | Many |
 
+- **Lifecycles.** Each type's first state dimension is its lifecycle (platform spec section 3.1), and an object's journey is drawn from it (platform spec section 5.1). Its values, in order, are the main path; an exit ends the journey off it, leaving from a named stage where the methods make that certain:
+
+  | Type | Main path | Exits, and where they leave from |
+  |---|---|---|
+  | Compound | designed, synthesized, tested, candidate | retired, from any stage |
+  | Assay Result | valid | invalidated, from valid |
+  | Experiment | planned, in progress, complete | |
+  | Simulation | queued, running, complete | failed, from running |
+  | Formulation | draft, under test, approved, obsolete | |
+  | Process | draft, validated, superseded | |
+  | Batch | planned, in production, complete | |
+  | Study | planned, enrolling, active, closed, locked | |
+  | Protocol | draft, in review, approved, superseded | |
+  | Site | selected, activated, closed | |
+  | Patient | screened, consented, randomized, completed | withdrawn, from any stage |
+  | Visit | scheduled, completed | missed, from scheduled |
+  | Data Record, Adverse Event | entered, verified | |
+  | Data Query | open, answered, closed | |
+  | Safety Case | received, triaged, assessed, reported, closed | |
+  | Product | investigational, approved | withdrawn, from any stage |
+  | Signal | detected, under evaluation, confirmed | refuted, from under evaluation |
+  | Submission | draft, in review, submitted, acknowledged | |
+  | Quality Event | open, investigating, CAPA assigned, closed | |
+  | CAPA | planned, in progress, effective | ineffective, from in progress |
+  | Medical Inquiry | received, answered, closed | |
+
+  A Study's lifecycle is its status; its phase is a second dimension. A case closed without being reported, such as a merged duplicate, shows reported as skipped.
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service; the Design and Plan mappings (Population, Estimand, Arm and its roles, Endpoint, Intervention, Planned Visit, Eligibility Criterion and its kinds, objective levels and patient-reported endpoints) on November 20, 2026. Opportunity, Development Option, Study Concept, Study Scenario, Trial Simulation, Forecast and the planning types have no NCIt match and are minted here. CDISC USDM mappings follow with protocol export. MedDRA and WHODrug follow once licensed.
@@ -974,3 +1001,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.31 | 2026-11-23 | Design and Plan skills (section 3.9): Simulation assumptions for Run trial simulation and Recommend a study scenario for Compare study scenarios, each with its instructions and reference procedure. A trial simulation records each assumption as a number. Section 3.8 calls its methods methods. |
 | 0.32 | 2026-11-23 | The Structure Steward, the platform's own role (platform spec section 3.7), joins the personas with its metrics and a seed person. Who owns each part of the structure, for approving change sets. Journey J7, Evolving the structure. One open question. |
 | 0.33 | 2026-11-23 | The Structure Steward watches Deprecated values, not deprecated terms still in use, until derived states are built (platform spec section 9). J7 adds to a value set and shows the new status wherever study scenarios' statuses are shown or chosen. |
+| 0.34 | 2026-11-23 | Restored from 0.19 on another branch, lost when the branches diverged: lifecycles (section 9), each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |

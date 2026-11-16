@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/platform> a owl:Ontology ;
   dcterms:title "LS&H platform vocabulary" ;
   rdfs:comment "Domain-free vocabulary for what SHACL does not describe: object types, state dimensions, methods, inputs, effects, business rules and roles (platform spec section 3.1)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 p:Domain a rdfs:Class ;
@@ -664,6 +664,18 @@ p:urgency a rdf:Property ;
   rdfs:comment "How urgent an object in this state is, from 2 (medium) upward. Orders To do; 3 or more makes an object urgent." ;
   rdfs:domain skos:Concept ;
   rdfs:range xsd:integer .
+
+p:exit a rdf:Property ;
+  rdfs:label "exit" ;
+  rdfs:comment "True when a lifecycle value ends the object's journey off its main path, such as a refuted signal or a missed visit. The lifecycle's other values, in order, are the main path (platform spec sections 3.1 and 5.1)." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range xsd:boolean .
+
+p:exitFrom a rdf:Property ;
+  rdfs:label "exit from" ;
+  rdfs:comment "The stage of the main path an exit leaves from, where the domain is certain. Without it, an object's own history says where it left." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range skos:Concept .
 
 p:isDeadline a rdf:Property ;
   rdfs:label "is deadline" ;

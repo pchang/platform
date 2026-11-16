@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences> a owl:Ontology ;
   dcterms:title "LS&H life sciences model" ;
   rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5, and Design and Plan in section 3.4)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ScientificInnovation a p:Domain ;
@@ -179,14 +179,14 @@ ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
   rdfs:comment "The phase of a study." ;
   p:dimensionOf ls:Study ;
   p:valuesFrom lst:StudyPhase ;
-  p:order 1 .
+  p:order 2 .
 
 ls:studyStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a study." ;
   p:dimensionOf ls:Study ;
   p:valuesFrom lst:StudyStatus ;
-  p:order 2 .
+  p:order 1 .
 
 ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Blinding" ;

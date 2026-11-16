@@ -3,7 +3,7 @@ import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { withSeed } from '../gateway/node';
 import { NS } from '../ontology/ontology';
-import { buildObjectView, endKey, OVERVIEW_TAB } from './objectView';
+import { buildObjectView, endKey, journeyStepper, OVERVIEW_TAB } from './objectView';
 
 // Some tests here run a commit on a gateway of their own, which takes longer than the default under a full parallel run.
 vi.setConfig({ testTimeout: 30_000 });
@@ -82,6 +82,38 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(buttons.at(-1)).toBe('Ask');
     expect(buttons.length).toBeGreaterThan(1);
     expect(find(header, (n) => n.asks === ae.iri)).toHaveLength(1);
+  });
+
+  // The journey under the header (platform spec 5.1, Journey; design system spec 4.4).
+  it('shows the journey under the header, each stage said in words as well as drawn', () => {
+    const view = buildObjectView(withSeed().read(chloe, 'SC-003'));
+    const stepper = find(view.root, (n) => n.component === 'ProgressStepper')[0];
+    expect(stepper.props).toMatchObject({ 'aria-label': 'Journey: Workflow, now assessed, stage 3 of 5', horizontalFrom: 'md' });
+    expect(stepper.children!.map((c) => c.props)).toEqual([
+      { label: 'received', variant: 'success', 'aria-label': 'received, passed' },
+      { label: 'triaged', variant: 'success', 'aria-label': 'triaged, passed' },
+      { label: 'assessed', variant: 'info', isCurrent: true, description: 'Now', 'aria-label': 'assessed, now' },
+      { label: 'reported', variant: 'pending', 'aria-label': 'reported, to come' },
+      { label: 'closed', variant: 'pending', 'aria-label': 'closed, to come' },
+    ]);
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('ends a journey at an exit, drawn as a danger and said to be one', () => {
+    const stepper = journeyStepper({
+      dimension: 'Status',
+      steps: [
+        { stage: 'detected', status: 'passed' },
+        { stage: 'under evaluation', status: 'passed' },
+        { stage: 'refuted', status: 'current', exit: true },
+      ],
+    });
+    expect(stepper.props).toMatchObject({ 'aria-label': 'Journey: Status, now refuted, an exit' });
+    expect(stepper.children!.at(-1)!.props).toEqual({ label: 'refuted', variant: 'danger', isCurrent: true, description: 'Now', 'aria-label': 'refuted, now, an exit' });
+  });
+
+  it('shows no journey for an object whose lifecycle has one stage on its main path', () => {
+    expect(find(buildObjectView(withSeed().read(ben, 'AR-1')).root, (n) => n.component === 'ProgressStepper')).toHaveLength(0);
   });
 
   it('puts the ends that hold one object in the overview as links, named by the type at the other end', () => {

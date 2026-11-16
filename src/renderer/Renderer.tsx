@@ -491,6 +491,17 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   const inSet = entry.id === 'Radio' || (entry.id === 'Checkbox' && node.field);
   if (NEEDS_ID.has(entry.id)) props.id = !inSet && groupId ? groupId : generatedId;
   if (entry.id === 'FormGroup' && props.role !== 'radiogroup' && props.role !== 'group') props.fieldId = generatedId;
+  // A progress step's title is referenced by its id, so each step needs its own (design system spec 4.4, Journey).
+  if (entry.id === 'ProgressStep') {
+    props.id = generatedId;
+    props.titleId = `${generatedId}-title`;
+  }
+  // A journey is vertical below its breakpoint and horizontal from it, by PatternFly's responsive modifiers.
+  if (entry.id === 'ProgressStepper' && props.horizontalFrom) {
+    props.isVertical = true;
+    props.className = `pf-m-horizontal-on-${props.horizontalFrom as string}`;
+    delete props.horizontalFrom;
+  }
 
   // Fields: the value comes from the host, and changes go back to it.
   const field = node.field;

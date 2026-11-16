@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.67. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.40, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.68. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.41, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -212,6 +212,14 @@ Every object opens in a side panel (platform spec 5.1, Within an object). It is 
 - **Top bar.** Back, a left arrow named "Back to" the previous object's identifier, once the person has moved in. Expand or Restore. Close, an X at the top right, which closes the whole panel; Escape does too. Focus moves to the object's heading as the panel opens, and back to the card that opened it as the panel closes.
 - **Moving in.** Opening a related object slides the current one out to the left as the new one slides in from the right. Back reverses it. The slide is timed by PatternFly's motion tokens; with reduced motion asked for, the content changes without moving.
 - **Header.** The type's name as a small link to that type's list, then the identifier in small, subtle text, such as "Adverse Event · AE-005", the title as the panel's heading, the state as labels, the deadline and urgency as status labels, and the methods the person can run now as buttons, then Edit as a secondary button when the person may edit the object now, then Ask about this, last in the row (4.1), or alone where the methods would be when there are none. Running one opens its process as from a card. While a page pattern, such as Compare and decide, is in front, the panel steps aside; after any commit it shows the object as it now is.
+- **Journey** (platform spec 5.1), under the header: the object’s lifecycle as PatternFly’s progress stepper, named "Journey" and the lifecycle's name, such as "Journey: Workflow". Each stage is a step, labeled with the stage:
+  - a passed stage is a success step;
+  - the current stage is the current step, with "Now" as its description, an info step, or, at an exit, a danger step;
+  - a stage to come is a pending step;
+  - a skipped stage is a pending step described "Skipped";
+  - a stage not known, before an exit whose leaving point is not known, is a pending step described "Not known".
+
+  An exit replaces the stages after the one it left from, so a refuted signal reads detected, under evaluation, refuted. The stepper is vertical below md, where five stages side by side would not fit, and horizontal from md up. Colour is never the only signal: every step has its stage in text, and the current one says Now.
 - **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
   - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
   - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as an object list like any other (4.3): the list bar, with selection, batch actions and the choice of cards or a list, then the objects, each with the methods the person can run on it. Or it says there are none yet.
@@ -530,3 +538,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.66 | 2026-11-23 | Choose an object built: a search field above a select of the objects that qualify, each by identifier and title, narrowing as it is typed. An empty object list still offers New. A value's own line breaks are kept. |
 | 0.42 | 2026-11-16 | Counts name what they count: a count of one type's objects uses the type's name, such as "12 patients", never "12 objects". |
 | 0.67 | 2026-11-23 | Restored from 0.43 on another branch, lost when the branches diverged: in the object panel, Ask about this leaves the top bar and comes last in the header's row of methods and Edit, or alone there when there are none. |
+| 0.68 | 2026-11-23 | Restored from 0.44 on another branch, lost when the branches diverged: the object panel shows the object's journey under its header, as PatternFly's progress stepper, with passed, current, to come, skipped and exit stages, vertical below md. The catalog gains ProgressStepper and ProgressStep. |

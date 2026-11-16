@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences/term> a owl:Ontology ;
   dcterms:title "LS&H life sciences terms" ;
   rdfs:comment "The values of every state dimension, as SKOS concepts. NCIt mappings were checked against the NCI Thesaurus service on 2026-11-08; the Design and Plan mappings on 2026-11-20." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 lst:CompoundStage a skos:ConceptScheme ;
@@ -45,7 +45,8 @@ lst:CompoundStage-candidate a skos:Concept ;
 lst:CompoundStage-retired a skos:Concept ;
   skos:inScheme lst:CompoundStage ;
   skos:prefLabel "retired" ;
-  p:order 5 .
+  p:order 5 ;
+  p:exit true .
 
 lst:CompoundRegistration a skos:ConceptScheme ;
   skos:prefLabel "Compound registration" ;
@@ -83,7 +84,9 @@ lst:SimulationRun-complete a skos:Concept ;
 lst:SimulationRun-failed a skos:Concept ;
   skos:inScheme lst:SimulationRun ;
   skos:prefLabel "failed" ;
-  p:order 4 .
+  p:order 4 ;
+  p:exit true ;
+  p:exitFrom lst:SimulationRun-running .
 
 lst:SimulationReview a skos:ConceptScheme ;
   skos:prefLabel "Simulation review" ;
@@ -154,7 +157,9 @@ lst:AssayResultValidity-valid a skos:Concept ;
 lst:AssayResultValidity-invalidated a skos:Concept ;
   skos:inScheme lst:AssayResultValidity ;
   skos:prefLabel "invalidated" ;
-  p:order 2 .
+  p:order 2 ;
+  p:exit true ;
+  p:exitFrom lst:AssayResultValidity-valid .
 
 lst:FormulationStage a skos:ConceptScheme ;
   skos:prefLabel "Formulation stage" ;
@@ -415,7 +420,8 @@ lst:PatientEnrollment-completed a skos:Concept ;
 lst:PatientEnrollment-withdrawn a skos:Concept ;
   skos:inScheme lst:PatientEnrollment ;
   skos:prefLabel "withdrawn" ;
-  p:order 5 .
+  p:order 5 ;
+  p:exit true .
 
 lst:PatientArm a skos:ConceptScheme ;
   skos:prefLabel "Patient arm" ;
@@ -462,7 +468,9 @@ lst:VisitStatus-completed a skos:Concept ;
 lst:VisitStatus-missed a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
   skos:prefLabel "missed" ;
-  p:order 3 .
+  p:order 3 ;
+  p:exit true ;
+  p:exitFrom lst:VisitStatus-scheduled .
 
 lst:DataRecordEntry a skos:ConceptScheme ;
   skos:prefLabel "Data Record entry" ;
@@ -693,7 +701,8 @@ lst:ProductStatus-approved a skos:Concept ;
 lst:ProductStatus-withdrawn a skos:Concept ;
   skos:inScheme lst:ProductStatus ;
   skos:prefLabel "withdrawn" ;
-  p:order 3 .
+  p:order 3 ;
+  p:exit true .
 
 lst:SignalStatus a skos:ConceptScheme ;
   skos:prefLabel "Signal status" ;
@@ -717,7 +726,9 @@ lst:SignalStatus-confirmed a skos:Concept ;
 lst:SignalStatus-refuted a skos:Concept ;
   skos:inScheme lst:SignalStatus ;
   skos:prefLabel "refuted" ;
-  p:order 4 .
+  p:order 4 ;
+  p:exit true ;
+  p:exitFrom lst:SignalStatus-underEvaluation .
 
 lst:SubmissionStatus a skos:ConceptScheme ;
   skos:prefLabel "Submission status" ;
@@ -831,7 +842,9 @@ lst:CAPAStatus-effective a skos:Concept ;
 lst:CAPAStatus-ineffective a skos:Concept ;
   skos:inScheme lst:CAPAStatus ;
   skos:prefLabel "ineffective" ;
-  p:order 4 .
+  p:order 4 ;
+  p:exit true ;
+  p:exitFrom lst:CAPAStatus-inProgress .
 
 lst:MedicalInquiryStatus a skos:ConceptScheme ;
   skos:prefLabel "Medical Inquiry status" ;
