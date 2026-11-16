@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { Journey, JourneyStatus, MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
 import { group, sections } from './layout';
 import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
+import { inText } from './words';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -21,12 +22,6 @@ const localName = (iri: string) => (iri.split(/[#/]/).pop() ?? iri).replace(/[^A
  */
 export const endKey = (end: Pick<RelationshipEnd, 'direction' | 'relationship' | 'type'>) => [end.direction, localName(end.relationship), localName(end.type)].join('-');
 
-/** A type's name in running text: lower case, except words that start in capitals, such as CAPA and CAPAs. */
-const inText = (name: string) =>
-  name
-    .split(' ')
-    .map((word) => (/^[A-Z]{2}/.test(word) ? word : word.toLowerCase()))
-    .join(' ');
 
 /** The ends that hold at most one object go in the overview; the others each get a tab. */
 const isTab = (end: RelationshipEnd) => !end.one;

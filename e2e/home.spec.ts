@@ -49,7 +49,7 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await expect(row).toHaveAttribute('href', '#/type/DataQuery');
   await row.click();
   await expect(page.getByRole('heading', { level: 1, name: 'Data Queries' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole('main').getByText('8 objects.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('8 data queries.')).toBeVisible();
   // The list begins with a way back to Home, above its heading; the sidebar's Home returns too.
   const back = page.getByRole('link', { name: 'Back to Home' });
   await expect(back).toHaveAttribute('href', '#/');

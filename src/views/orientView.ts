@@ -6,6 +6,7 @@ import { backToHome } from './homeView';
 import { MAX_ABOUT } from '../gateway/ask';
 import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
+import { counted } from './words';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -526,7 +527,7 @@ export function buildTypeView(
     root: sections([
       ...(options.notice ? [options.notice] : []),
       // The way back to Home stands a little above the heading, as on a metric's page (design system spec 4.3, Home).
-      group([backToHome, header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`)], 'gapMd'),
+      group([backToHome, header(pluralLabel, `${counted(objects.length, objects[0]?.typeLabel ?? pluralLabel, pluralLabel)}.`)], 'gapMd'),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };
