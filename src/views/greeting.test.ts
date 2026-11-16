@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import { dayPart, firstName, greeting } from './greeting';
-import { buildTodoView } from './orientViews';
+import { buildTodoView } from './orientView';
 
 // The greeting at the top of To do (design system spec 4.3, The greeting).
 const at = (iso: string) => new Date(iso);
