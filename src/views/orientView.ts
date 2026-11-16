@@ -423,17 +423,22 @@ export function buildTodoView(
 /** Methods with the work waiting first, then actions a person chooses to take, so a row raises a task (design system spec 4.3). */
 const tasksFirst = (methods: MethodOption[]) => [...methods.filter((m) => !m.onDemand), ...methods.filter((m) => m.onDemand)];
 
-export function buildTypeView(
-  pluralLabel: string,
-  objects: ObjectSummary[],
-  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
-): ViewSpec {
-  const entries: ListEntry[] = objects.map((o) => ({
+/** Objects as list entries: runs as status, and the methods available now, tasks first. */
+export function objectEntries(objects: ObjectSummary[], options: { methods?: Map<string, MethodOption[]>; runs?: RunView[] } = {}): ListEntry[] {
+  return objects.map((o) => ({
     object: o,
     status: runLabels(o, options.runs ?? []),
     methods: tasksFirst((options.methods?.get(o.iri) ?? []).filter((m) => m.available)),
     firstIsPrimary: false,
   }));
+}
+
+export function buildTypeView(
+  pluralLabel: string,
+  objects: ObjectSummary[],
+  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
+): ViewSpec {
+  const entries = objectEntries(objects, options);
   return {
     pattern: 'card-view',
     because: `The ${pluralLabel.toLowerCase()} the person may read, with the methods they can run on each now`,

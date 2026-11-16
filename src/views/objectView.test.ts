@@ -48,6 +48,20 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(find(cards[0], (n) => n.component === 'CardTitle')[0].props).toMatchObject({ component: 'h3' });
   });
 
+  // A tab's objects are an object list like any other (design system spec 4.4 and 4.3).
+  it('lists the objects of a tab with the list bar, as cards or as a list, as the person chose', () => {
+    const gateway = withSeed();
+    const patient = gateway.read(ben, 'PT-03');
+    const tabOf = (view: ReturnType<typeof buildObjectView>) => find(view.root, (n) => n.component === 'Tab' && (n.props as { label: string }).label === 'Visits')[0];
+    const cardsTab = tabOf(buildObjectView(patient));
+    expect(find(cardsTab, (n) => n.component === 'ToggleGroup')).toHaveLength(1);
+    expect(find(cardsTab, (n) => n.component === 'Table')).toHaveLength(0);
+    const listTab = tabOf(buildObjectView(patient, { controls: { mode: 'list', selecting: false, selected: new Set() } }));
+    expect(find(listTab, (n) => n.component === 'Table')).toHaveLength(1);
+    expect(find(listTab, (n) => n.component === 'Card' && Boolean(n.opens))).toHaveLength(0);
+    expect(validateView(buildObjectView(patient, { controls: { mode: 'list', selecting: false, selected: new Set() } })).errors).toEqual([]);
+  });
+
   it('puts the ends that hold one object in the overview as links, named by the type at the other end', () => {
     const view = buildObjectView(withSeed().read(ben, 'PT-03'));
     const overview = find(view.root, (n) => n.component === 'Tab' && (n.props as { eventKey: string }).eventKey === OVERVIEW_TAB)[0];

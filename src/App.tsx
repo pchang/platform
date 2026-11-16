@@ -6,7 +6,8 @@ import { AppSidebar } from './chrome/AppSidebar';
 import { NotificationsDrawer } from './chrome/NotificationsDrawer';
 import { NotificationsProvider, useNotifications } from './notifications/NotificationsProvider';
 import { ObjectDrawer } from './objects/ObjectPanel';
-import { ObjectPanelProvider } from './objects/ObjectPanelProvider';
+import { ObjectPanelProvider, useObjectPanel } from './objects/ObjectPanelProvider';
+import { useMediaQuery } from './chrome/useMediaQuery';
 import { ChatPanel } from './chat/ChatPanel';
 import { ChatProvider, useChat } from './chat/ChatProvider';
 import { ProcessDock } from './chrome/ProcessDock';
@@ -43,6 +44,18 @@ function AppPage() {
   // A page pattern, such as Compare and decide, takes the view's place while it is in front (design system spec 5.1).
   const frontIsPage = useFrontIsPage();
   const chat = useChat();
+  // Expanded, the object panel covers the sidebar too, so no destination is chosen behind it (design system spec 4.4).
+  const panel = useObjectPanel();
+  const canExpand = useMediaQuery('(min-width: 992px)');
+  const covering = canExpand && panel.isExpanded && panel.stack.length > 0 && !frontIsPage;
+  const sidebarShown = isSidebarOpen && !covering;
+  // Opening the sidebar while the panel covers it restores the panel, so the sidebar and the content behind it come back.
+  const toggleSidebar = () => {
+    if (covering) {
+      panel.toggleExpanded();
+      setSidebarOpen(true);
+    } else setSidebarOpen((open) => !open);
+  };
 
   return (
     <Page
@@ -50,14 +63,14 @@ function AppPage() {
       className={chat.isOpen ? 'app-page app-page--chat-open' : 'app-page'}
       masthead={
         <AppMasthead
-          isSidebarOpen={isSidebarOpen}
-          onSidebarToggle={() => setSidebarOpen((open) => !open)}
+          isSidebarOpen={sidebarShown}
+          onSidebarToggle={toggleSidebar}
           notifications={{ unread, isExpanded: isDrawerOpen, onToggle: () => setDrawerOpen((open) => !open) }}
         />
       }
       notificationDrawer={<NotificationsDrawer onClose={() => setDrawerOpen(false)} />}
       isNotificationDrawerExpanded={isDrawerOpen}
-      sidebar={<AppSidebar isOpen={isSidebarOpen} route={route} onNavigate={() => !wide && setSidebarOpen(false)} />}
+      sidebar={<AppSidebar isOpen={sidebarShown} route={route} onNavigate={() => !wide && setSidebarOpen(false)} />}
       // Page tracks its width, so the sidebar behaves as a drawer below xl. Crossing xl resets it: open when wide, closed when not.
       onPageResize={(_event, { mobileView }) => {
         if (mobileView === !wide) return;

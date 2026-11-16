@@ -51,18 +51,45 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
   await expect(panel(page).getByRole('tab', { name: 'Patients 12' })).toHaveAttribute('aria-selected', 'true');
 
-  // Expand takes the whole content area; Restore gives the list back.
+  // Expand covers everything below the masthead, the sidebar too, so no destination is chosen behind the panel.
+  const sidebar = page.locator('.pf-v6-c-page__sidebar');
+  await expect(sidebar).not.toHaveClass(/pf-m-collapsed/);
   await page.getByRole('button', { name: 'Expand' }).click();
   await expect(page.getByRole('button', { name: 'Restore' })).toBeVisible();
+  await expect(sidebar).toHaveClass(/pf-m-collapsed/);
+  // The panel spans the content surface from edge to edge, inset from the window as the content area always is.
   const wide = await panel(page).boundingBox();
-  const area = await page.locator('.app-object-drawer').boundingBox();
-  expect(Math.round(wide!.width)).toBe(Math.round(area!.width));
+  expect(wide!.x).toBeLessThan(32);
+  expect(wide!.width).toBeGreaterThan(1280 - 64);
+  // Restore brings the sidebar back.
   await page.getByRole('button', { name: 'Restore' }).click();
+  await expect(sidebar).not.toHaveClass(/pf-m-collapsed/);
+  // So does opening the sidebar with the menu button, which restores the panel.
+  await page.getByRole('button', { name: 'Expand' }).click();
+  await expect(sidebar).toHaveClass(/pf-m-collapsed/);
+  await page.getByRole('button', { name: 'Navigation' }).click();
+  await expect(sidebar).not.toHaveClass(/pf-m-collapsed/);
+  await expect(page.getByRole('button', { name: 'Expand' })).toBeVisible();
+
+  // A tab's objects are an object list like any other: the list bar, and the choice of cards or a list.
+  await panel(page).getByRole('button', { name: 'List' }).click();
+  await expect(panel(page).getByRole('grid').or(panel(page).getByRole('table')).first()).toContainText('PT-03');
+  await panel(page).getByRole('button', { name: 'Cards' }).click();
+  await expect(panelCard(page, 'PT-03')).toBeVisible();
 
   // Escape closes the whole panel, and focus goes back to the card it was opened from.
   await page.keyboard.press('Escape');
   await expect(panel(page).getByRole('tab')).toHaveCount(0);
   await expect(listCard(page, 'ST-01').locator('.app-card-open')).toBeFocused();
+
+  // As in Notion, an object opened from the page always opens at three quarters, whatever size the panel last had.
+  await listCard(page, 'ST-01').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
+  await page.getByRole('button', { name: 'Expand' }).click();
+  await expect(page.getByRole('button', { name: 'Restore' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await listCard(page, 'ST-01').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
+  await expect(page.getByRole('button', { name: 'Expand' })).toBeVisible();
+  await expect(page.locator('.pf-v6-c-page__sidebar')).not.toHaveClass(/pf-m-collapsed/);
 });
 
 test('a linked object opens from the overview, and Close ends the whole panel', async ({ page }) => {
