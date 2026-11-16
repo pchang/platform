@@ -96,7 +96,7 @@ describe('the list view (design system spec 4.3)', () => {
     // No object needs attention here, so there is no Attention column.
     expect(head).toEqual(['Identifier', 'Title', 'Workflow', '(Actions)']);
     const [row] = bodyRows(view.root);
-    expect((row.children ?? []).map(cellText)).toEqual(['SC-4', 'Case SC-4', 'received', ' Triage']);
+    expect((row.children ?? []).map(cellText)).toEqual(['SC-4', 'Case SC-4', 'received', 'Triage ']);
     // Every cell keeps to one line; the actions column fits its content.
     expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'nowrap', 'fitContent']);
   });
@@ -127,7 +127,7 @@ describe('the list view (design system spec 4.3)', () => {
   it('raises one method to the row and keeps the rest in a … menu named for the object', () => {
     const [row] = bodyRows(view.root);
     const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];
-    expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Ask about SC-4', 'Triage']);
+    expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Triage', 'Ask about SC-4']);
     const menu = find(actions, (n) => n.component === 'Dropdown')[0];
     expect(menu.props).toEqual({ 'aria-label': 'More actions for SC-4' });
     expect(find(menu, (n) => n.component === 'DropdownItem').map((n) => [(n.props as { label: string }).label, n.action])).toEqual([
@@ -140,7 +140,7 @@ describe('the list view (design system spec 4.3)', () => {
     const table = buildTypeView('Safety Cases', cases.slice(0, 1), { methods: onDemandFirst, controls: controls({ mode: 'list' }) });
     const [row] = bodyRows(table.root);
     const actions = find(row, (n) => n.component === 'Td' && (n.props as { isActionCell?: boolean }).isActionCell === true)[0];
-    expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Ask about SC-4', 'Triage']);
+    expect(labelsOf(find(actions, (n) => n.component === 'Button'))).toEqual(['Triage', 'Ask about SC-4']);
     expect(find(actions, (n) => n.component === 'DropdownItem').map((n) => (n.props as { label: string }).label)).toEqual(['Flag duplicate']);
   });
 

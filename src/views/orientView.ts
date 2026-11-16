@@ -35,7 +35,10 @@ export const askAbout = (object: ObjectSummary): ViewNode => ({
   asks: object.iri,
 });
 
-/** An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4). */
+/**
+ * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
+ * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
+ */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
   return {
     component: 'GalleryItem',
@@ -52,8 +55,6 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
             children: [
               text(`${object.identifier} · ${object.typeLabel}`, 'small'),
               { component: 'CardTitle', props: { label: object.title, component: heading } },
-              // Ask about this, in the header's actions (design system spec 4.1).
-              askAbout(object),
             ],
           },
           { component: 'CardBody', children: [stack(body)] },
@@ -65,25 +66,32 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
 
 type Runnable = { method: string; label: string; archetype: { label: string } };
 
-/** Methods as buttons named for them when their archetype's pattern is built; otherwise as text. */
-export function runnable(methods: Runnable[], object: string, firstIsPrimary: boolean): ViewNode[][] {
+/**
+ * Methods as buttons named for them when their archetype's pattern is built; otherwise as text. Given the object to ask
+ * about, its Ask button comes last in the row of buttons, or alone when there are none: the anticipated methods first, then
+ * the free-text way forward (design system spec 4.1, Ask about this).
+ */
+export function runnable(methods: Runnable[], object: string, firstIsPrimary: boolean, ask?: ObjectSummary): ViewNode[][] {
   const built = methods.filter((t) => BUILT_ARCHETYPES.has(t.archetype.label));
   const notYet = methods.filter((t) => !BUILT_ARCHETYPES.has(t.archetype.label));
+  const buttons: ViewNode[] = built.map((t, i) => ({
+    component: 'Button',
+    props: { label: t.label, variant: i === 0 && firstIsPrimary ? 'primary' : 'secondary', size: 'sm' },
+    action: { method: t.method, target: object },
+  }));
   const rows: ViewNode[][] = [];
-  if (built.length) {
-    rows.push([
-      flexOf(
-        built.map((t, i) => ({
-          component: 'Button',
-          props: { label: t.label, variant: i === 0 && firstIsPrimary ? 'primary' : 'secondary', size: 'sm' },
-          action: { method: t.method, target: object },
-        })),
-      ),
-    ]);
-  }
+  if (buttons.length) rows.push([buttonRow(ask ? [...buttons, askAbout(ask)] : buttons)]);
   if (notYet.length) rows.push([text(`${notYet.map((t) => `${t.label} (${t.archetype.label}, coming soon)`).join(', ')}`, 'small')]);
+  if (!buttons.length && ask) rows.push([buttonRow([askAbout(ask)])]);
   return rows;
 }
+
+/** A row of buttons, wrapping, with the Ask icon button centered on the small text buttons beside it. */
+const buttonRow = (children: ViewNode[]): ViewNode => ({
+  component: 'Flex',
+  props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsCenter' } },
+  children,
+});
 
 /** A status label for each run on the object that has not ended (design system spec 4.3). */
 export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
@@ -262,7 +270,8 @@ function entryCard(entry: ListEntry, heading: 'h2' | 'h3'): ViewNode {
   if (entry.status.length) body.push([flexOf(entry.status)]);
   body.push([flexOf(stateLabels(entry.object))]);
   if (entry.detail) body.push([text(entry.detail, 'small')]);
-  if (entry.methods.length) body.push([text(entry.intro ?? 'You can:', 'small')], ...runnable(entry.methods, entry.object.iri, entry.firstIsPrimary));
+  if (entry.methods.length) body.push([text(entry.intro ?? 'You can:', 'small')]);
+  body.push(...runnable(entry.methods, entry.object.iri, entry.firstIsPrimary, entry.object));
   return card(entry.object, body, heading);
 }
 
@@ -281,12 +290,12 @@ function stateColumns(entries: ListEntry[]): string[] {
 const th = (label: string): ViewNode => ({ component: 'Th', props: { label, modifier: 'nowrap' } });
 const td = (column: string, children: ViewNode[] = []): ViewNode => ({ component: 'Td', props: { dataLabel: column, modifier: 'nowrap' }, children });
 
-/** A row's actions: one method raised and the rest in a … menu (design system spec 4.3). */
+/** A row's actions: one method raised, the rest in a … menu (design system spec 4.3), then Ask about this last (4.1). */
 function rowActions(entry: ListEntry): ViewNode[] {
   const o = entry.object;
   const built = entry.methods.filter((m) => BUILT_ARCHETYPES.has(m.archetype.label));
   const [raised, ...rest] = built;
-  const actions: ViewNode[] = [askAbout(o)];
+  const actions: ViewNode[] = [];
   if (raised) actions.push({ component: 'Button', props: { label: raised.label, variant: entry.firstIsPrimary ? 'primary' : 'secondary', size: 'sm' }, action: { method: raised.method, target: o.iri } });
   if (rest.length) {
     actions.push({
@@ -295,7 +304,9 @@ function rowActions(entry: ListEntry): ViewNode[] {
       children: rest.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, action: { method: m.method, target: o.iri } })),
     });
   }
-  // Ask, the raised method and its … menu stay side by side.
+  // The anticipated methods first, then the free-text way forward.
+  actions.push(askAbout(o));
+  // The raised method, its … menu and Ask stay side by side.
   return [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }];
 }
 
