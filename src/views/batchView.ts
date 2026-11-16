@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, MethodComposition, ObjectSummary } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import { changeLines, fieldFor } from './composeView';
+import { counted } from './words';
 
 /**
  * A batch action (platform spec 5.4, Acting on many objects; design system spec 4.3): the method's archetype once for
@@ -46,8 +47,7 @@ export function countOf(objects: ObjectSummary[]): string {
   const types = new Set(objects.map((o) => o.type));
   const one = objects.length === 1;
   if (types.size > 1) return `${objects.length} ${one ? 'object' : 'objects'}`;
-  const name = one ? objects[0].typeLabel : objects[0].pluralLabel;
-  return `${objects.length} ${name.split(' ').map((w) => (/^[A-Z]{2}/.test(w) ? w : w.toLowerCase())).join(' ')}`;
+  return counted(objects.length, objects[0].typeLabel, objects[0].pluralLabel);
 }
 
 /** The method aimed at one of the objects, so its preview reads as that object's own changes. */

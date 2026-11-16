@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
 import { greeting } from './greeting';
+import { counted } from './words';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -444,7 +445,7 @@ export function buildTypeView(
     because: `The ${pluralLabel.toLowerCase()} the person may read, with the methods they can run on each now`,
     root: stack([
       ...(options.notice ? [[options.notice]] : []),
-      header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`),
+      header(pluralLabel, `${counted(objects.length, objects[0]?.typeLabel ?? pluralLabel, pluralLabel)}.`),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.41. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.42. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -147,6 +147,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
+- **Counts name what they count.** A count of one type's objects uses the type's own name from the ontology, in running text: "12 patients", "1 safety case", "0 CAPAs". This applies wherever a count is shown or read out, such as under a type list's title and on the sidebar's counts for screen readers. Only a count across several types says "objects", or "items" on To do.
 
 **The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
@@ -440,3 +441,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.39 | 2026-11-16 | Anticipation first: on cards and list rows, Ask about this follows the method buttons, last in their row, as the free-text way forward when the anticipated methods miss. It leaves the card's header. |
 | 0.40 | 2026-11-16 | On list rows, Ask about this sits at the right end of the actions column, so it lines up down the list, still after the methods. |
 | 0.41 | 2026-11-16 | The object panel's tabs list their objects as object lists like any other, with the list bar and the choice of cards or a list. Expanding the panel covers the sidebar too, so a destination is never chosen behind it; Restore, or opening the sidebar, brings the sidebar back. An object opened from the page always opens at three quarters, as in Notion; Expand is no longer kept on the device. |
+| 0.42 | 2026-11-16 | Counts name what they count: a count of one type's objects uses the type's name, such as "12 patients", never "12 objects". |
