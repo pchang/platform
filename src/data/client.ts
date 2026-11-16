@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, Journey, JourneyStatus, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationD
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, Journey, JourneyStatus, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {

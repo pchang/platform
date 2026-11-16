@@ -38,6 +38,10 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
   await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Formulations 1', 'Sites 3']);
+  // Its journey along its lifecycle, its status: named for where it is, each stage said in words.
+  const journey = panel(page).getByRole('list', { name: 'Journey: Status, now enrolling, stage 2 of 5' });
+  await expect(journey).toBeVisible();
+  await expect(panel(page).getByLabel('enrolling, now')).toBeVisible();
 
   // Patients: the relationship in words, then cards that open in turn.
   await panel(page).getByRole('tab', { name: 'Patients 12' }).click();

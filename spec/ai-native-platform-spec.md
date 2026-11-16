@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.30. November 15, 2026. Author: Paul Chang.
+Version 0.31. November 16, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -52,7 +52,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 |---|---|
 | Object type | An RDF class with a named SHACL node shape |
 | Property | A named SHACL property shape |
-| State dimension | A property whose values come from a SKOS concept scheme |
+| State dimension | A property whose values come from a SKOS concept scheme. The first is the type's lifecycle: its values, in order, are the main path an object travels. A value marked as an **exit** (`p:exit`), such as a refuted signal or a missed visit, ends the journey off the main path; where the domain is certain, it names the stage it leaves from (`p:exitFrom`) |
 | Relationship | An RDF property whose shape names the target class. It also declares how it reads from the other end (its inverse label, such as "enrolled in" and "enrolls"), whether one end is part of the other (containment), and, where the domain is certain, that an object links to at most one object along it |
 | Method | A resource in the platform vocabulary, with its inputs, precondition and effects |
 | Precondition | A SHACL shape the object must conform to. Its messages explain a block |
@@ -126,7 +126,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 |---|---|
 | Describe the ontology | Object types, their state dimensions, relationships (read both ways, with containment and cardinality) and methods |
 | Find objects | Objects of a type, filtered by state |
-| Read an object | Its identifier, title, state, properties and last change, and its relationship ends, as the principal may see them (section 5.1, Within an object) |
+| Read an object | Its identifier, title, state, properties, last change and journey, and its relationship ends, as the principal may see them (section 5.1, Within an object) |
 | Offer methods | The methods on an object, each available or blocked with its reasons (core loop step 3) |
 | Commit a method | Runs one method on one object with its inputs (core loop step 6) |
 | Navigation | The domains and object types of the principal's work, with counts (section 5.1) |
@@ -259,6 +259,7 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 Every object opens on its own, from wherever it appears: a card, a link, a search result. What it shows is generated from the ontology, the same way for every type in every domain, never designed per type.
 
 - **Header.** The object's identifier, type and title, its state, its deadline and urgency, and the methods the person can run on it now.
+- **Journey.** Where the object is along its lifecycle, so the person sees the larger process their work advances. Each stage of the main path is passed, current or to come, read from the object's own history of commits: a stage it went past without entering shows as skipped, and a stage it went back to shows where it is now. Stages before its first recorded change, as in a seed graph, are taken as passed. An object at an exit ends there, after the stage it left from, taken from its history or else from the ontology; when neither says, the stages before it are not marked. A lifecycle with one stage on its main path has no journey. Generated from the ontology the same way for every type, never designed per type.
 - **Relationship ends.** For each relationship its type has in the ontology, in either direction, the object has an end: what the relationship reads as from this object (such as "enrolls" for a study's patients), whether it contains the objects at the other end, is part of them, or is only related, and whether it holds at most one object or many. Ends that reach a type the person may not read are left out.
 - **Overview first.** The object's properties; the ends that hold at most one object, as links, the objects it is part of first; and its last change: the method, who ran it and when.
 - **Then the many-valued ends.** One section per end, in order: the objects it contains first, then related objects, in the ontology's order. Each section shows its count and lists its objects as cards, with the methods the person can run on each. Empty sections are shown too, so every object of a type has the same structure.
@@ -427,6 +428,7 @@ To resolve in future versions of this spec.
 - Which providers, regions and retention terms may a model reading records to answer questions use, for each domain's privacy obligations?
 - How is free text that may identify a person, such as a reporter's note, withheld from a model, when it is not a property the ontology can mark?
 - Should answers stream as the model works, and how long should a conversation be kept, if at all, beyond the session it was held in?
+- How should the platform show a journey across objects, such as an adverse event to its safety case to its submission, so a person sees the larger goal their work advances, beyond one object's lifecycle?
 - How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
@@ -473,3 +475,4 @@ To resolve in future versions of this spec.
 | 0.28 | 2026-11-15 | Asking about an object (section 5.2): the gateway reads the objects a question is asked from as the principal, audited, and gives them to the model as data, citable; an unreadable object is refused. |
 | 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
 | 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |
+| 0.31 | 2026-11-16 | An object's journey (section 5.1, Within an object): where it is along its lifecycle, each stage of the main path passed, current, to come or skipped, from its own history of commits. Lifecycle values may be exits off the main path, naming the stage they leave from where certain (section 3.1). Read an object answers the journey. One open question, on journeys across objects. |

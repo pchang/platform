@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.18. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26.
+Version 0.19. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.31.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -80,7 +80,7 @@ Covers a clinical trial from design to locked data.
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Phase: I, II, III. Status: planned, enrolling, active, closed, locked. Blinding: blinded, unblinded. |
+| Study | A clinical trial of one or more formulations, in patients or in people without the disease (for example, healthy volunteers) | Status: planned, enrolling, active, closed, locked. Phase: I, II, III. Blinding: blinded, unblinded. |
 | Protocol | The plan a study is conducted under: its objectives, design, eligibility and schedule of assessments. Each version is its own protocol, with its version number, primary objective, planned enrollment and the date it came into force; an amendment is a new version that amends the one before it, with a summary of what it changes | Status: draft, in review, approved, superseded. |
 | Site | A hospital or clinic running the study | Status: selected, activated, closed. Payment: current, overdue. |
 | Patient | A person enrolled in a study. Labeled participant in studies without a disease state (see Terminology) | Enrollment: screened, consented, randomized, completed, withdrawn. Arm: unassigned, assigned. Arm visibility: hidden, revealed. The assigned arm itself is hidden while the study is blinded (rule 2). |
@@ -393,6 +393,33 @@ The domain is written in the platform's ontology format (platform spec section 3
   | resolves | CAPA → Quality Event | is resolved by | The CAPA is part of the quality event | one quality event |
   | duplicate of | Safety Case → Safety Case | is duplicated by | Related only | one case |
 
+- **Lifecycles.** Each type's first state dimension is its lifecycle (platform spec section 3.1), and an object's journey is drawn from it (platform spec section 5.1). Its values, in order, are the main path; an exit ends the journey off it, leaving from a named stage where the methods make that certain:
+
+  | Type | Main path | Exits, and where they leave from |
+  |---|---|---|
+  | Compound | designed, synthesized, tested, candidate | retired, from any stage |
+  | Assay Result | valid | invalidated, from valid |
+  | Experiment | planned, in progress, complete | |
+  | Simulation | queued, running, complete | failed, from running |
+  | Formulation | draft, under test, approved, obsolete | |
+  | Process | draft, validated, superseded | |
+  | Batch | planned, in production, complete | |
+  | Study | planned, enrolling, active, closed, locked | |
+  | Protocol | draft, in review, approved, superseded | |
+  | Site | selected, activated, closed | |
+  | Patient | screened, consented, randomized, completed | withdrawn, from any stage |
+  | Visit | scheduled, completed | missed, from scheduled |
+  | Data Record, Adverse Event | entered, verified | |
+  | Data Query | open, answered, closed | |
+  | Safety Case | received, triaged, assessed, reported, closed | |
+  | Product | investigational, approved | withdrawn, from any stage |
+  | Signal | detected, under evaluation, confirmed | refuted, from under evaluation |
+  | Submission | draft, in review, submitted, acknowledged | |
+  | Quality Event | open, investigating, CAPA assigned, closed | |
+  | CAPA | planned, in progress, effective | ineffective, from in progress |
+  | Medical Inquiry | received, answered, closed | |
+
+  A Study's lifecycle is its status; its phase is a second dimension. A case closed without being reported, such as a merged duplicate, shows reported as skipped.
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
@@ -525,3 +552,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.16 | 2026-11-14 | Added Protocol to Clinical Development, mapped to NCIt Study Protocol (C70817): versions with a status lifecycle, conducted under by a study and amended by the next version, with Send protocol for review, Approve protocol (signed) and Amend protocol (on demand), run by the Clinical Data Manager. The seed carries VELOCITY-2's protocol in three versions. Added by ontology and seed alone. |
 | 0.17 | 2026-11-14 | Report to safety takes a note to safety, recorded on the new Safety Case. Free-text and link inputs are marked as about each object, except a simulation's model type and analogs' target property, so a batch of their method runs one after another (Interaction archetypes, Run for many objects). |
 | 0.18 | 2026-11-15 | No property identifies a person directly, so none is marked as identifying one for a model answering questions; free text may still name someone. |
+| 0.19 | 2026-11-16 | Lifecycles (section 9): each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |

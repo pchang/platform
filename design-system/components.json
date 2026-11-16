@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.15",
+  "version": "0.16",
   "components": [
     {
       "id": "Button",
@@ -2692,6 +2692,179 @@
             "variant": "success",
             "measureLocation": "top"
           }
+        }
+      ]
+    },
+    {
+      "id": "ProgressStepper",
+      "level": "molecule",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ProgressStepper"
+      },
+      "purpose": "An object's journey along its lifecycle: each stage as a step, passed, current, to come, skipped or an exit (platform spec 5.1, Journey; design system 4.4).",
+      "useWhen": [
+        "Showing where an object is along its lifecycle, under its header in the object panel"
+      ],
+      "avoidWhen": [
+        "Steps a person fills in, one after another: use Wizard",
+        "Progress of a background run: use Progress"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Names the journey and says where the object is, such as \"Journey: Workflow, now assessed, stage 3 of 5\""
+          },
+          "horizontalFrom": {
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl"
+            ],
+            "description": "Vertical below this breakpoint, horizontal from it"
+          }
+        },
+        "required": [
+          "aria-label"
+        ]
+      },
+      "children": {
+        "accepts": [
+          "ProgressStep"
+        ]
+      },
+      "responsive": "Vertical below its horizontalFrom breakpoint, where the stages side by side would not fit; horizontal from it.",
+      "accessibility": [
+        "Named for the journey, with where the object is now, so a screen reader hears the whole before the steps",
+        "Each step's own aria-label says its stage and status, never the icon or color alone (rule 4)"
+      ],
+      "examples": [
+        {
+          "component": "ProgressStepper",
+          "props": {
+            "aria-label": "Journey: Status, now under evaluation, stage 2 of 3",
+            "horizontalFrom": "md"
+          },
+          "children": [
+            {
+              "component": "ProgressStep",
+              "props": {
+                "label": "detected",
+                "variant": "success",
+                "aria-label": "detected, passed"
+              }
+            },
+            {
+              "component": "ProgressStep",
+              "props": {
+                "label": "under evaluation",
+                "variant": "info",
+                "isCurrent": true,
+                "description": "Now",
+                "aria-label": "under evaluation, now"
+              }
+            },
+            {
+              "component": "ProgressStep",
+              "props": {
+                "label": "confirmed",
+                "variant": "pending",
+                "aria-label": "confirmed, to come"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ProgressStep",
+      "level": "atom",
+      "import": {
+        "package": "@patternfly/react-core",
+        "export": "ProgressStep"
+      },
+      "purpose": "One stage in a journey.",
+      "useWhen": [
+        "Inside a ProgressStepper"
+      ],
+      "avoidWhen": [
+        "Anywhere else"
+      ],
+      "props": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The stage"
+          },
+          "variant": {
+            "enum": [
+              "success",
+              "info",
+              "pending",
+              "danger"
+            ],
+            "description": "Passed is success; the current stage is info, or danger at an exit; to come, skipped or not known is pending"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "description": "The stage the object is at now"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Now, Skipped or Not known"
+          },
+          "aria-label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The stage and its status in words"
+          }
+        },
+        "required": [
+          "label",
+          "variant",
+          "aria-label"
+        ]
+      },
+      "children": null,
+      "responsive": "Follows its stepper.",
+      "accessibility": [
+        "Its aria-label says the stage and its status, such as \"reported, skipped\""
+      ],
+      "examples": [
+        {
+          "component": "ProgressStepper",
+          "props": {
+            "aria-label": "Journey: Status, now refuted"
+          },
+          "children": [
+            {
+              "component": "ProgressStep",
+              "props": {
+                "label": "under evaluation",
+                "variant": "success",
+                "aria-label": "under evaluation, passed"
+              }
+            },
+            {
+              "component": "ProgressStep",
+              "props": {
+                "label": "refuted",
+                "variant": "danger",
+                "isCurrent": true,
+                "description": "Now",
+                "aria-label": "refuted, now, an exit"
+              }
+            }
+          ]
         }
       ]
     },
