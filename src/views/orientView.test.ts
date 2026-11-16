@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import type { AskResult, MethodOption, RunView, SearchResult, ToDoItem } from '../data/client';
-import { answeringView, buildAnswerView, buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter } from './orientViews';
+import { answeringView, buildAnswerView, buildSearchView, buildSummary, buildTodoView, buildTypeView, loadingView, matchesFilter } from './orientView';
 
 const object = { iri: 'urn:x', identifier: 'SUB-1', type: 'urn:t', typeLabel: 'Submission', title: 'A Submission title', pluralLabel: 'Submissions', state: { Status: 'draft', Deadline: 'on track' } };
 const items: ToDoItem[] = [

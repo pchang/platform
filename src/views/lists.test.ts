@@ -3,7 +3,7 @@ import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import type { CommitResult, MethodComposition, MethodOption, ObjectSummary } from '../data/client';
 import { batchModeOf, batchNotice, buildBatchView, buildSequentialBatchView, countOf, inputsFor, isComplete, type ObjectPreview } from './batchView';
-import { buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientViews';
+import { buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientView';
 
 // Object lists in cards or a list, the list bar, and batch actions (design system spec 4.3; platform spec 5.4).
 

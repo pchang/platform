@@ -1,6 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
-import { card, daysUntil, flexOf, formatDate, gallery, runLabels, runnable, stack, stateLabels, text } from './orientViews';
+import { card, daysUntil, flexOf, formatDate, gallery, runLabels, runnable, stack, stateLabels, text } from './orientView';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
