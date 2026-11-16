@@ -414,6 +414,18 @@ p:actedAs a rdf:Property ;
   rdfs:domain prov:Activity ;
   rdfs:range p:Role .
 
+p:signedInAs a rdf:Property ;
+  rdfs:label "signed in as" ;
+  rdfs:comment "The signed-in account that made the request, when the deployment has sign-in: its email address. In a demo deployment it may differ from the person acted as." ;
+  rdfs:domain prov:Activity ;
+  rdfs:range xsd:string .
+
+p:email a rdf:Property ;
+  rdfs:label "email" ;
+  rdfs:comment "The person's email address, which their sign-in matches." ;
+  rdfs:domain p:Person ;
+  rdfs:range xsd:string .
+
 p:target a rdf:Property ;
   rdfs:label "target" ;
   rdfs:comment "The object a commit ran on, or a read read." ;

@@ -22,9 +22,9 @@ async function start(developmentMode = true) {
 const elena: [string, string] = ['person-elena', 'QualityLead'];
 
 describe('HTTP transport', () => {
-  it('refuses every request outside development mode, until an identity provider exists', async () => {
+  it('refuses every request outside development mode, without sign-in', async () => {
     const api = await start(false);
-    expect(await api('/objects/B-002', elena)).toEqual({ status: 401, body: { reasons: ['Authentication is required. No identity provider is connected yet.'] } });
+    expect(await api('/objects/B-002', elena)).toEqual({ status: 401, body: { reasons: ['Authentication is required. No sign-in is configured.'] } });
   });
 
   it('asks for a principal in development mode', async () => {

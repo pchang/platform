@@ -12,7 +12,7 @@ const dock = (page: Page) => page.getByRole('region', { name: 'Processes set asi
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Chloé/ })).toBeVisible({ timeout: 30_000 });
   await expect(card(page, 'SC-004')).toBeVisible({ timeout: 30_000 });
 }
 
@@ -63,7 +63,7 @@ test('the dock is kept on this device across a reload, without opening anything 
   // Kept on the device as soon as it is given.
   await page.waitForFunction(() => Object.keys(localStorage).some((k) => k.startsWith('lsh.processes.') && localStorage.getItem(k)!.includes('nonSerious')));
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'To do' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Chloé/ })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await dock(page).getByRole('button', { name: 'Triage SC-004', exact: true }).click();
   await expect(triage.getByRole('radiogroup', { name: 'Seriousness' }).getByLabel('non-serious')).toBeChecked();

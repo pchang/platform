@@ -12,16 +12,19 @@ export function httpClient(base = '/api'): GatewayClient {
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const json = await res.json();
-    if (!res.ok) throw new RefusedError(json.reasons ?? ['The gateway refused the request']);
+    // A session that ends mid-use brings the person back to sign in (design system spec 4.1, Signing in).
+    if (res.status === 401 && path !== '/me') window.location.reload();
+    if (!res.ok) throw new RefusedError(json.reasons ?? ['The gateway refused the request'], res.status);
     return json;
   };
   const methodPath = (object: string, method: string) => `/objects/${encodeURIComponent(object)}/methods/${encodeURIComponent(method)}`;
   return {
+    me: () => request('/me'),
     people: () => request('/dev/people'),
     navigation: (p) => request('/navigation', p),
     todo: (p) => request('/todo', p),
     search: (p, query, options = {}) => request(`/search?q=${encodeURIComponent(query)}${options.understand === 'ontology' ? '&understand=ontology' : ''}`, p),
-    ask: (p, question) => request('/ask', p, { question }),
+    ask: (p, question, earlier = [], about = []) => request('/ask', p, { question, earlier, about }),
     find: (p, type) => request(`/objects?type=${encodeURIComponent(type)}`, p),
     read: (p, object) => request(`/objects/${encodeURIComponent(object)}`, p),
     compose: (p, object, method) => request(methodPath(object, method), p),

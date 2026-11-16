@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { greeting } from './greeting';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -27,6 +28,13 @@ export function stateLabels(object: ObjectSummary): ViewNode[] {
     .map(([dimension, value]) => ({ component: 'Label', props: { label: `${dimension}: ${value}`, color: 'grey', variant: 'outline', isCompact: true } }));
 }
 
+/** The speech bubbles that start a conversation about an object in the chat (design system spec 4.1, Ask about this). */
+export const askAbout = (object: ObjectSummary): ViewNode => ({
+  component: 'Button',
+  props: { variant: 'plain', icon: 'comments', 'aria-label': `Ask about ${object.identifier}` },
+  asks: object.iri,
+});
+
 /** An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4). */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
   return {
@@ -41,7 +49,12 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
           // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
           {
             component: 'CardHeader',
-            children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: heading } }],
+            children: [
+              text(`${object.identifier} · ${object.typeLabel}`, 'small'),
+              { component: 'CardTitle', props: { label: object.title, component: heading } },
+              // Ask about this, in the header's actions (design system spec 4.1).
+              askAbout(object),
+            ],
           },
           { component: 'CardBody', children: [stack(body)] },
         ],
@@ -273,7 +286,7 @@ function rowActions(entry: ListEntry): ViewNode[] {
   const o = entry.object;
   const built = entry.methods.filter((m) => BUILT_ARCHETYPES.has(m.archetype.label));
   const [raised, ...rest] = built;
-  const actions: ViewNode[] = [];
+  const actions: ViewNode[] = [askAbout(o)];
   if (raised) actions.push({ component: 'Button', props: { label: raised.label, variant: entry.firstIsPrimary ? 'primary' : 'secondary', size: 'sm' }, action: { method: raised.method, target: o.iri } });
   if (rest.length) {
     actions.push({
@@ -282,8 +295,8 @@ function rowActions(entry: ListEntry): ViewNode[] {
       children: rest.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, action: { method: m.method, target: o.iri } })),
     });
   }
-  // The raised method and its … menu stay side by side.
-  return actions.length ? [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }] : [];
+  // Ask, the raised method and its … menu stay side by side.
+  return [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }];
 }
 
 /**
@@ -359,7 +372,7 @@ export function todoEntries(items: ToDoItem[], runs: RunView[], today: Date): Li
 
 export function buildTodoView(
   allItems: ToDoItem[],
-  who: string,
+  who: { name: string; role: string },
   notice?: ViewNode,
   runs: RunView[] = [],
   options: { filter?: TodoFilter; today?: Date; controls?: ListControls } = {},
@@ -369,15 +382,16 @@ export function buildTodoView(
   const items = allItems.filter((i) => matchesFilter(i, filter, today));
   const entries = todoEntries(items, runs, today);
   const summary = allItems.length
-    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} ${who}. Nearest deadline first, then the most urgent.`
-    : `Nothing needs ${who} right now.`;
+    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} you as ${who.role}. Nearest deadline first, then the most urgent.`
+    : `Nothing needs you as ${who.role} right now.`;
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
-    because: `To do for ${who}: objects with a task they can run now, or urgent objects they can act on`,
+    because: `To do for ${who.name}, ${who.role}: objects with a task they can run now, or urgent objects they can act on`,
     root: stack([
       ...(notice ? [[notice]] : []),
-      header('To do', summary),
+      // The greeting is the page's main heading (design system spec 4.3, The greeting).
+      header(greeting(who.name, today), summary),
       // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
       ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),

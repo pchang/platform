@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
 import { AnthropicAskModel, askModelFromEnvironment } from './anthropicAsk';
-import { ANSWER_TOOL, type AskModel, type AskRequest, type AskToolOutput, type ModelAnswer } from './ask';
+import { ANSWER_TOOL, checkAbout, checkTurns, MAX_TURNS, type AskModel, type AskRequest, type AskToolOutput, type ModelAnswer } from './ask';
 import { createGatewayServer } from './http';
 import { withSeed } from './node';
 
@@ -161,6 +161,41 @@ describe('Ask with a connected model', () => {
     ]);
   });
 
+  it('gives the model the conversation so far, kept to its shape and limits', async () => {
+    const model = new ScriptedModel(async () => ({ status: 'answered', text: 'AE-003 is overdue.', cited: [] }));
+    const earlier = [{ question: 'which serious events are not reported?', answer: 'AE-003 and AE-005.' }];
+    await withSeed([], { askModel: model }).ask(ben, 'and which of those are overdue?', earlier);
+    expect(model.request!.earlier).toEqual(earlier);
+    expect(model.request!.question).toBe('and which of those are overdue?');
+    // Malformed turns are dropped, an empty answer is said to be none, and only the latest turns go.
+    expect(checkTurns([{ question: 'a', answer: ' ' }, { question: 1, answer: 'x' }, null, 'text'])).toEqual([{ question: 'a', answer: 'No answer was given.' }]);
+    const many = Array.from({ length: MAX_TURNS + 3 }, (_, i) => ({ question: `q${i}`, answer: `a${i}` }));
+    expect(checkTurns(many).map((t) => t.question)).toEqual(many.slice(3).map((t) => t.question));
+    expect(checkTurns('not a list')).toEqual([]);
+  });
+
+  it('reads the objects a question is asked about, as the principal and audited, gives them to the model, and lets it cite them', async () => {
+    const model = new ScriptedModel(async () => ({ status: 'answered', text: 'AE-003 waits to be reported to safety.', cited: ['AE-003'] }));
+    const gateway = withSeed([], { askModel: model });
+    const before = gateway.reads().length;
+    const result = await gateway.ask(ben, 'What can I do next on AE-003, and why?', [], ['AE-003']);
+    expect(model.request!.about).toHaveLength(1);
+    expect(JSON.parse(model.request!.about![0])).toMatchObject({ identifier: 'AE-003', properties: { 'verbatim term': 'Jaundice and raised liver enzymes; admitted to hospital' } });
+    expect(result.answer!.cited.map((c) => c.identifier)).toEqual(['AE-003']);
+    expect(gateway.reads().slice(before).map((r) => r.object)).toEqual([`${NS.d}AE-003`]);
+  });
+
+  it('refuses a question about an object the principal may not read, and shows the objects asked about without a model', async () => {
+    await expect(withSeed([], { askModel: new ScriptedModel(async () => ({ status: 'answered', text: 'x', cited: [] })) }).ask(ada, 'Summarize AE-003', [], ['AE-003'])).rejects.toMatchObject({
+      status: 403,
+      reasons: ['You may not read AE-003'],
+    });
+    const result = await withSeed().ask(ben, 'Summarize AE-003', [], ['AE-003']);
+    expect(result.searched).toBe('No model is connected to answer questions, so here is what you asked about.');
+    expect(result.search!.results.map((r) => r.object.identifier)).toEqual(['AE-003']);
+    expect(checkAbout(['AE-003', 4, '', ...Array.from({ length: 12 }, (_, i) => `X-${i}`)])).toHaveLength(10);
+  });
+
   it('answers over HTTP', async () => {
     const model = new ScriptedModel(async () => ({ status: 'needs more', text: 'Which study do you mean?', cited: [] }));
     const server = createGatewayServer(withSeed([], { askModel: model }), { developmentMode: true });
@@ -228,6 +263,34 @@ describe('AnthropicAskModel', () => {
       const results = (second.body.messages as { role: string; content: { type: string; tool_use_id: string; content: string }[] }[]).at(-1)!;
       expect(results.content.map((r) => r.tool_use_id)).toEqual(['t1', 't2']);
       expect(JSON.parse(results.content[1].content)).toEqual({ type: 'Adverse Event', total: 5 });
+    } finally {
+      api.close();
+    }
+  });
+
+  it('sends the conversation so far as the turns it was, with the context in the first', async () => {
+    const api = await standIn([message([{ type: 'tool_use', id: 't1', name: 'give_answer', input: { status: 'answered', text: 'AE-003.', cited: [] } }], 'tool_use')]);
+    try {
+      await withSeed([], { askModel: new AnthropicAskModel({ apiKey: 'k', baseURL: api.baseURL }) }).ask(ben, 'and which are overdue?', [
+        { question: 'which serious events are not reported?', answer: 'AE-003 and AE-005.' },
+      ]);
+      const sent = api.requests[0].body.messages as { role: string; content: string }[];
+      expect(sent.map((m) => m.role)).toEqual(['user', 'assistant', 'user']);
+      expect(sent[0].content).toMatch(/^<context>\n[\s\S]*<question>\nwhich serious events are not reported\?\n<\/question>$/);
+      expect(sent[1].content).toBe('AE-003 and AE-005.');
+      expect(sent[2].content).toBe('<question>\nand which are overdue?\n</question>');
+    } finally {
+      api.close();
+    }
+  });
+
+  it('gives Claude the objects asked about with the context', async () => {
+    const api = await standIn([message([{ type: 'tool_use', id: 't1', name: 'give_answer', input: { status: 'answered', text: 'It waits.', cited: ['AE-003'] } }], 'tool_use')]);
+    try {
+      const result = await withSeed([], { askModel: new AnthropicAskModel({ apiKey: 'k', baseURL: api.baseURL }) }).ask(ben, 'Summarize AE-003', [], ['AE-003']);
+      const first = (api.requests[0].body.messages as { content: string }[])[0].content;
+      expect(first).toMatch(/<\/context>\n<about>\n\{"identifier":"AE-003"[\s\S]*<\/about>\n<question>\nSummarize AE-003\n<\/question>$/);
+      expect(result.answer!.cited.map((c) => c.identifier)).toEqual(['AE-003']);
     } finally {
       api.close();
     }

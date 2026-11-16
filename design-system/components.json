@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/components.schema.json",
-  "version": "0.13",
+  "version": "0.14",
   "components": [
     {
       "id": "Button",
@@ -66,7 +66,8 @@
               "th-large",
               "list",
               "outlined-check-square",
-              "times"
+              "times",
+              "comments"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -309,7 +310,8 @@
               "th-large",
               "list",
               "outlined-check-square",
-              "times"
+              "times",
+              "comments"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -1095,10 +1097,11 @@
         "package": "@patternfly/react-core",
         "export": "CardHeader"
       },
-      "purpose": "The top of a card: its title, and for a selectable card, the radio button that chooses it.",
+      "purpose": "The top of a card: its title, its Ask button, and for a selectable card, the radio button that chooses it.",
       "useWhen": [
         "A selectable card: the renderer puts its title in a header with the radio button",
-        "An object card: its identifier and type in small text, then its title"
+        "An object card: its identifier and type in small text, then its title",
+        "An object card's Ask button: a Button with `asks`, drawn in the header's actions (design system spec 4.1, Ask about this)"
       ],
       "avoidWhen": [
         "Plain cards: use CardTitle alone"
@@ -1111,12 +1114,14 @@
       "children": {
         "accepts": [
           "Content",
-          "CardTitle"
+          "CardTitle",
+          "Button"
         ]
       },
       "responsive": "Full width of its card.",
       "accessibility": [
-        "Holds the card's title, which names the radio button of a selectable card"
+        "Holds the card's title, which names the radio button of a selectable card",
+        "The Ask button is named for the object, such as \"Ask about SC-003\""
       ],
       "examples": [
         {

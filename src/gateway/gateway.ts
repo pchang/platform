@@ -2,7 +2,7 @@ import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
-import { ANSWER_TOOL, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput } from './ask';
+import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -19,11 +19,13 @@ export interface Principal {
   person: string;
   /** IRI of the role they act in. */
   role: string;
+  /** The signed-in account that made the request, when the deployment has sign-in (spec 3.4, Identity). Recorded, never trusted for access. */
+  account?: string;
 }
 
 export class GatewayError extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 415 | 502,
     readonly reasons: string[],
   ) {
     super(reasons.join('; '));
@@ -516,6 +518,15 @@ export class Gateway {
    * The people and agents in the graph, with the roles each may act in. For the development persona
    * switcher only (design system spec 4.1); the HTTP transport serves it in development mode only.
    */
+  /**
+   * The person a signed-in account acts as (spec 3.4, Identity): the person in the graph with that email, and their roles.
+   * Undefined when nobody has it.
+   */
+  personWithEmail(email: string): { person: string; name: string; roles: { role: string; label: string }[] } | undefined {
+    const found = this.q(`SELECT ?person WHERE { ?person a p:Person ; p:email ?email FILTER(LCASE(STR(?email)) = ${JSON.stringify(email.toLowerCase())}) }`)[0];
+    return found && this.people().find((p) => p.person === found.person);
+  }
+
   people(): { person: string; name: string; roles: { role: string; label: string }[] }[] {
     const rows = this.q(`SELECT ?person ?name ?role ?label WHERE { ?person a p:Person ; rdfs:label ?name ; p:actsAs ?role . ?role rdfs:label ?label } ORDER BY ?name ?label`);
     const people = new Map<string, { person: string; name: string; roles: { role: string; label: string }[] }>();
@@ -835,12 +846,20 @@ export class Gateway {
    * gateway tools run as the principal. The answer cites only objects the model read here. Without a model, or when it
    * fails or declines, the question is searched, and the result says why.
    */
-  async ask(principal: Principal, question: string): Promise<AskResult> {
+  async ask(principal: Principal, question: string, earlier: AskTurn[] = [], about: string[] = []): Promise<AskResult> {
     this.authorize(principal);
+    // The objects the question is asked from (spec 5.2, About an object): each must be one the principal may read.
+    const objects = [...new Set(about)].slice(0, MAX_ABOUT).map((id) => {
+      const object = this.resolve(id);
+      if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, [`You may not read ${id}`]);
+      return this.summary(object);
+    });
     const model = this.options.askModel;
-    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, question), ...(reason ? { searched: reason } : {}) });
+    // Without a model, a question about objects shows those objects; any other question is searched.
+    const searchFor = objects.length ? objects.map((o) => o.identifier).join(' ') : question;
+    const searched = async (reason?: string): Promise<AskResult> => ({ question, search: await this.search(principal, searchFor), ...(reason ? { searched: reason } : {}) });
     if (!normalize(question)) return searched();
-    if (!model) return searched('No model is connected to answer questions, so the question was searched.');
+    if (!model) return searched(objects.length ? 'No model is connected to answer questions, so here is what you asked about.' : 'No model is connected to answer questions, so the question was searched.');
 
     // What the model met through the tools in this question: only these may be cited.
     const seen = new Map<string, string>();
@@ -849,7 +868,10 @@ export class Gateway {
       run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
     };
     try {
-      const answer = await model.answer({ question, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
+      // The objects asked about are read now, as the principal and audited, and may be cited like anything read.
+      const records = [];
+      for (const o of objects) records.push((await this.runAskTool(principal, 'read_object', { identifier: o.identifier }, seen)).content);
+      const answer = await model.answer({ question, earlier: checkTurns(earlier), about: records, context: this.askContext(principal), toolbox, maxSteps: Gateway.ASK_STEPS });
       const cited: ObjectSummary[] = [];
       for (const identifier of answer.cited) {
         const iri = seen.get(normalize(identifier));
@@ -1045,6 +1067,7 @@ export class Gateway {
       quad(read, namedNode(RDF_TYPE), namedNode(`${NS.p}Read`), g),
       quad(read, namedNode(`${NS.prov}wasAssociatedWith`), namedNode(principal.person), g),
       quad(read, namedNode(`${NS.p}actedAs`), namedNode(principal.role), g),
+      ...(principal.account ? [quad(read, namedNode(`${NS.p}signedInAs`), literal(principal.account), g)] : []),
       quad(read, namedNode(`${NS.p}target`), namedNode(object), g),
       quad(read, namedNode(`${NS.prov}startedAtTime`), literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)), g),
     ];
@@ -1055,9 +1078,10 @@ export class Gateway {
   }
 
   /** The audit trail of personal-data reads, newest last. */
-  reads(): { person: string; role: string; object: string; at: string }[] {
-    return this.q(`SELECT ?person ?role ?object ?at WHERE { GRAPH <${this.dataNamespace}audit> {
-        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at } } ORDER BY ?at STRLEN(STR(?r)) ?r`) as never;
+  reads(): { person: string; role: string; object: string; at: string; account?: string }[] {
+    return this.q(`SELECT ?person ?role ?object ?at ?account WHERE { GRAPH <${this.dataNamespace}audit> {
+        ?r a p:Read ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; p:target ?object ; prov:startedAtTime ?at .
+        OPTIONAL { ?r p:signedInAs ?account } } } ORDER BY ?at STRLEN(STR(?r)) ?r`) as never;
   }
 
   // ---------------------------------------------------------------- methods
@@ -1282,6 +1306,7 @@ export class Gateway {
         add(`${NS.p}draftOf`, namedNode(object)),
         add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
         add(`${NS.p}actedAs`, namedNode(principal.role)),
+        ...(principal.account ? [add(`${NS.p}signedInAs`, literal(principal.account))] : []),
         add(`${NS.p}modelId`, literal(reply.model)),
         add(`${NS.p}instructionsDigest`, literal(instructionsDigest)),
         add(`${NS.p}recordsDigest`, literal(recordsDigest)),
@@ -1596,6 +1621,7 @@ export class Gateway {
     add(id, `${NS.p}target`, namedNode(object));
     add(id, `${NS.prov}wasAssociatedWith`, namedNode(principal.person));
     add(id, `${NS.p}actedAs`, namedNode(principal.role));
+    if (principal.account) add(id, `${NS.p}signedInAs`, literal(principal.account));
     if (onBehalfOf) add(id, `${NS.p}onBehalfOf`, namedNode(onBehalfOf));
     add(id, `${NS.prov}startedAtTime`, literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)));
     let i = 0;
@@ -1642,6 +1668,7 @@ export class Gateway {
       add(`${NS.p}target`, namedNode(object)),
       add(`${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
       add(`${NS.p}actedAs`, namedNode(principal.role)),
+      ...(principal.account ? [add(`${NS.p}signedInAs`, literal(principal.account))] : []),
       add(`${NS.p}startCommit`, namedNode(commit)),
       add(`${NS.prov}startedAtTime`, xsdDateTime(at)),
       add(`${NS.p}runStatus`, RUN_STATUS('queued')),
@@ -1852,9 +1879,10 @@ export class Gateway {
   }
 
   /** Every commit, oldest first. */
-  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string }[] {
-    return this.q(`SELECT ?commit ?method ?target ?person ?role ?at WHERE { GRAPH ?commit {
-        ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at } }
+  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string; account?: string }[] {
+    return this.q(`SELECT ?commit ?method ?target ?person ?role ?at ?account WHERE { GRAPH ?commit {
+        ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at .
+        OPTIONAL { ?commit p:signedInAs ?account } } }
         ORDER BY ?at STRLEN(STR(?commit)) ?commit`) as never;
   }
 }
