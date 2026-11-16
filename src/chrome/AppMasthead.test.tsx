@@ -5,11 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { product } from '../config/product';
 import { AppearanceProvider } from '../appearance/AppearanceProvider';
 import { PrincipalProvider } from '../principal/PrincipalProvider';
+import { ChatProvider, useChat } from '../chat/ChatProvider';
+import { ProcessProvider } from '../processes/ProcessProvider';
 import { AppMasthead } from './AppMasthead';
 
 // A fake gateway with one person, so the masthead test does not load the real gateway.
 vi.mock('../data/client', () => ({
   gatewayClient: async () => ({
+    me: async () => ({ mode: 'preview' as const }),
     people: async () => [{ person: 'urn:test:person-chloe', name: 'Chloé Martin', roles: [{ role: 'urn:test:dsp', label: 'Drug Safety Physician' }] }],
   }),
 }));
@@ -26,10 +29,20 @@ beforeEach(() => {
   })) as unknown as typeof window.matchMedia;
 });
 
+/** Shows whether the chat is open, as the panel would. */
+function ChatState() {
+  return <output aria-label="Chat">{useChat().isOpen ? 'open' : 'closed'}</output>;
+}
+
 const Masthead = ({ isSidebarOpen = false }: { isSidebarOpen?: boolean }) => (
   <AppearanceProvider>
     <PrincipalProvider fallback={null}>
-      <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
+      <ProcessProvider>
+        <ChatProvider>
+          <AppMasthead isSidebarOpen={isSidebarOpen} onSidebarToggle={() => {}} />
+          <ChatState />
+        </ChatProvider>
+      </ProcessProvider>
     </PrincipalProvider>
   </AppearanceProvider>
 );
@@ -57,26 +70,23 @@ describe('AppMasthead', () => {
     }
   });
 
-  it('has the search field left of the icon buttons from md up', async () => {
-    render(<Masthead />);
-    const field = await screen.findByRole('textbox', { name: 'Search or ask' });
-    const notifications = screen.getByRole('button', { name: 'Notifications' });
-    expect(field.compareDocumentPosition(notifications) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Open search' })).not.toBeInTheDocument();
-  });
-
-  it('below md, opens the search field under the masthead from an Open search button, and closes it on Escape', async () => {
-    wide = false;
-    render(<Masthead />);
-    const button = await screen.findByRole('button', { name: 'Open search' });
-    expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
-    await userEvent.click(button);
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('textbox', { name: 'Search or ask' })).toHaveFocus();
-    await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('textbox', { name: 'Search or ask' })).not.toBeInTheDocument();
-    expect(button).toHaveFocus();
+  it('has Ask, a pair of speech bubbles, left of the icon buttons at every width, which opens and closes the chat', async () => {
+    for (const isWide of [true, false]) {
+      wide = isWide;
+      const { unmount } = render(<Masthead />);
+      const ask = await screen.findByRole('button', { name: 'Ask' });
+      expect(ask.compareDocumentPosition(screen.getByRole('button', { name: 'Notifications' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(ask).toHaveAttribute('aria-controls', 'app-chat');
+      expect(ask).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      await userEvent.click(ask);
+      expect(ask).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByRole('status', { name: 'Chat' })).toHaveTextContent('open');
+      await userEvent.click(ask);
+      expect(screen.getByRole('status', { name: 'Chat' })).toHaveTextContent('closed');
+      expect(ask).toHaveFocus();
+      unmount();
+    }
   });
 
   it('has no detectable accessibility violations', async () => {

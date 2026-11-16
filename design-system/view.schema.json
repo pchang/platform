@@ -99,6 +99,11 @@
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
           "description": "A graph object the node opens in the object panel when chosen (design system 4.4). Only a Card, anywhere but its buttons, or a Button."
         },
+        "asks": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A graph object a Button starts a conversation about in the chat (design system 4.1, Ask about this). In a CardHeader, the button sits in the header's actions."
+        },
         "selects": {
           "type": "string",
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",

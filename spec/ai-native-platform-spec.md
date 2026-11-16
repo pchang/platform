@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.26. November 15, 2026. Author: Paul Chang.
+Version 0.30. November 15, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -136,7 +136,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Track runs | The background runs on objects the principal may read: each run's status and progress, and its outcome once it ends |
 | Notifications | The principal's notifications, newest first, with which are unread; and marking them read |
 | Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
-| Ask | A connected model answers a question from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
+| Ask | A connected model answers a question, in a conversation, from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
@@ -167,7 +167,7 @@ A database server can later hold the current state for larger data or several ga
 
 - The signer is the principal: a person, never an agent. Any person input of a signed method is the principal; nobody signs for someone else.
 - The signature records the signer's name, the date and time of signing, and the meaning of the signature, such as approval or authorship. The meaning comes from the method in the ontology. All three are bound to the commit's provenance record, so they cannot be separated from what was signed.
-- Signing authenticates the person at the moment of signing, through the identity provider. Until one is connected, development mode accepts the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Outside development mode, the gateway refuses to sign.
+- Signing authenticates the person at the moment of signing, through the identity provider. Until the identity provider can do that, development mode, and a demo deployment holding synthetic data only, accept the person typing their full name, and the signature is recorded as a development signature that is not a valid electronic signature. Otherwise, the gateway refuses to sign.
 
 **Background runs.** A method that runs in the background, such as a computation over many objects, is started by a commit and finished by a worker.
 
@@ -190,7 +190,14 @@ A database server can later hold the current state for larger data or several ga
 
 **Previews.** For reviewing the experience on any device without a server, the same gateway code can run inside the page, with the seed graph, in development mode and without a journal. Nothing a preview does is saved.
 
-**Identity.** Until an identity provider is connected, a development mode accepts the principal from request headers. Outside development mode, the gateway refuses requests it cannot authenticate.
+**Identity.** People sign in through an OpenID Connect provider the deployment connects; the first is Google.
+
+- **The gateway runs the sign-in.** It uses the authorization code flow with PKCE, and verifies the provider's ID token: its signature against the provider's published keys, the issuer, the audience, the nonce, the expiry, and a verified email. It then keeps a session in a signed, HttpOnly, Secure cookie for at most eight hours. The page never holds a token or a credential.
+- **Access** is limited to the email addresses and email domains the deployment allows. Anyone else is refused after signing in, with that reason.
+- **Who an account acts as.** Normally, the person in the graph with that email, in one of their own roles, which the page chooses per request; an account with no person is refused. A demo deployment, holding synthetic data only, may instead let any allowed account act as any person in the graph, to show the personas. Every commit and audited read then records the signed-in account beside the person it acted as.
+- **Forgery.** Requests that change anything must be JSON, so another site cannot forge one with the person's cookie.
+- **Development mode,** for work on one's own machine only, accepts the principal from request headers with no sign-in. Without sign-in or development mode, the gateway refuses every request it cannot authenticate.
+- **Agents** over the Model Context Protocol need the same session until agent identity is decided (section 9).
 
 ### 3.5 Agent Layer
 Agents do the work. The roles below are illustrative. The platform may split or combine them.
@@ -290,6 +297,8 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - **Grounded answers.** The model ends with its answer, whether it answered, needs the person to say more, or cannot answer from what the person may read, and the identifiers it rests on. The gateway keeps only identifiers the model read in this question through its tools, so an answer never cites an object the person may not read or the model did not see. An answer that needs the person to say more asks, as this section requires, rather than guessing.
 - **Bounded.** A question may take a limited number of steps; one that needs more is answered as unanswerable in its steps, never cut off silently. The answer says which model answered and how many objects it looked at.
 - **Shown with its objects.** The answer comes first, then the objects it cites as an object list, each actionable as any other.
+- **About an object.** A person can ask from an object, or several, so the question needs no description of them. The gateway reads each as the principal, with the same permissions and audit as any read, and gives the records to the model with the question, as data. The model may cite them, and reads anything else through its tools. An object the principal may not read is refused, not left out quietly. Without a model, the objects themselves are the result.
+- **In a conversation.** Questions are asked in a conversation, and the earlier turns, each question with the answer's text, go with the next question, so a follow-up such as "and which of those are overdue?" is understood. The earlier turns are what was said, not records: the model reads again through its tools before it answers, and cites only what it read for this question. A conversation belongs to one principal and is never shown to another. A person may hold several, each about an object or about nothing in particular, and return to any of them; until retention is decided, they last for the session only (section 9).
 
 ### 5.3 Method Engine
 - Offers only methods valid for the object's current state and the person's context.
@@ -408,7 +417,7 @@ To resolve in future versions of this spec.
 - How is the generated UI tested for consistency and accessibility at scale?
 - Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
 - Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
-- Which identity provider authenticates people and agents, and how does it authenticate a person at the moment of signing?
+- How does the identity provider authenticate a person again at the moment of signing, and how do agents authenticate over the Model Context Protocol?
 - How are background runs scheduled, as well as started by a person, and who is notified of a scheduled run's outcome?
 - Should workers run outside the gateway process, so long computations never delay commits?
 - How is a drafting model validated for its intended use, and how are its instructions changed under change control?
@@ -417,13 +426,13 @@ To resolve in future versions of this spec.
 - Which model should understand search, given that a person waits for it: the platform's default model, or a faster one?
 - Which providers, regions and retention terms may a model reading records to answer questions use, for each domain's privacy obligations?
 - How is free text that may identify a person, such as a reporter's note, withheld from a model, when it is not a property the ontology can mark?
-- Should answers stream as the model works, and should a person be able to ask a follow-up in the context of the last answer?
+- Should answers stream as the model works, and how long should a conversation be kept, if at all, beyond the session it was held in?
 - How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
 - When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
-- What are the deployment model and hosting targets?
+- Where does the journal live on a hosting target whose disk is not kept, such as Cloud Run, so that history survives a restart (`deployment.md`)?
 - What are the performance and scale targets for the first release?
 - May one signature cover many records at once, and how would each record carry it, so methods that need a signature can run for many?
 - Should a run for many objects be one transaction, all or nothing, where a domain needs it?
@@ -460,3 +469,7 @@ To resolve in future versions of this spec.
 | 0.24 | 2026-11-14 | The To do summary is its counts only. Acting on many objects (section 5.4): the methods every selected object has available, Confirm and Fill in for now, inputs given once, one commit per object, refused objects named with their reasons. Two open questions. |
 | 0.25 | 2026-11-14 | Acting on many objects runs together or one after another (section 5.4), decided by the ontology: an input marked as about each object (`p:perObject`) is given for each object in turn, with its own preview, and all are reviewed before commit. |
 | 0.26 | 2026-11-15 | Asking a question (section 5.2) and the Ask request (section 3.4): a connected model answers from what the principal may read through read-only gateway tools (search, read, count, methods), with reads audited, properties that identify a person withheld, answers grounded in the identifiers it read, and the search as fallback. Three open questions. |
+| 0.27 | 2026-11-15 | Questions are asked in a conversation (section 5.2): earlier turns go with each question as what was said, never as records; the model reads again and cites only what it read for this question. One open question replaced: how long a conversation is kept. |
+| 0.28 | 2026-11-15 | Asking about an object (section 5.2): the gateway reads the objects a question is asked from as the principal, audited, and gives them to the model as data, citable; an unreadable object is refused. |
+| 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
+| 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |

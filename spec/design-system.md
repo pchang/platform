@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.32. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26, sections 3.6, 5.1, 5.4 and 7.
+Version 0.38. November 15, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -26,6 +26,7 @@ The platform uses PatternFly's default visual style, with two changes: the typef
 - **Typeface.** Inter, for headings and body alike, in place of Red Hat Display and Red Hat Text. It is set only through PatternFly's two font-family tokens, `--pf-t--global--font--family--heading` and `--pf-t--global--font--family--body`, so every component follows. Sizes, weights and line heights stay PatternFly's. Code keeps Red Hat Mono.
 - Inter is bundled with the platform, the Latin and Latin Extended sets in the four weights PatternFly uses (400, 500, 600 and 700). It is never loaded from a font service, so the platform makes no outside requests and previews work offline. Inter is under the SIL Open Font License.
 - **Card surface.** Three surfaces step evenly: the outer chrome (masthead and sidebar) on PatternFly's secondary background, the content area halfway between secondary and primary, and cards on primary. The content area has no border of its own. Cards carry a shadow subtler than PatternFly's small one: its 1px offset, half its blur, and its color at half the opacity. Every value is a PatternFly token or mixed from tokens, so dark mode follows: there the chrome is darkest and cards lightest.
+- **The chat panel follows the same style** (4.1, Ask), so chat reads as a mode of the same product, not a separate one. The panel is chrome. Its header lines up with the masthead: the same height and padding, the title in the logo's size and weight, and plain icon buttons like the masthead's, with no divider. The conversation and the message bar sit on the content surface, inset from the panel's edges as the content area is from the page's, with the same rounding; on phones, as the content area does there, it runs to the edges. Cards, such as prompts and cited objects, are on the card surface with the card shadow, and so are the person's own messages: no brand-colored fills. The welcome's greeting is set as a page's main heading and its line as body text, as on To do. The message bar is a field like any other, with PatternFly's small rounding and default border, and the footnote is small, subtle text. The panel has no border or shadow of its own: the surfaces set it apart.
 
 ### Packages
 
@@ -95,7 +96,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 | Position | Content |
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
-| Masthead, right | The search field, then notifications, settings and profile, as icon buttons with accessible names |
+| Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
@@ -104,16 +105,25 @@ All masthead items stay visible at every width, on one row with the logo, center
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
-**Search.** The search field sits in the masthead, immediately left of the icon buttons, so it is in the same place on every page. It takes a search or a question (platform spec 5.2, Asking a question), so its placeholder reads "Search or ask".
+**Ask.** A chat button, a pair of speech bubbles (PatternFly's comments icon) named "Ask", sits in the masthead immediately left of the icon buttons, at every width. It opens the chat panel: a conversation with the platform, for a search or a question (platform spec 5.2, Asking a question). It replaces a search field in the masthead, and in time it is where agentic sessions start.
 
-- From md up it is a field. Below md there is no room for a field beside the logo and the icons, so it is a Search icon button; choosing it opens the field in a row across the page under the masthead, with focus in it. That row closes when a search opens, on Escape, or on the button again.
-- **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, this one and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
+- **The panel** is PatternFly's chatbot (`@patternfly/chatbot`). From lg up it is docked at the right, the full height of the window, and the page moves left to make room, so the person works beside it: an object opened from the chat opens in the object panel next to it. Below lg it is docked over the page, and below md it fills the screen; there, opening an object closes the chat, keeping the conversation, so the object can be read.
+- **Header:** the title "Ask", a New conversation button and Close. Escape closes it too, and focus returns to the Ask button.
+- **Before the first message,** a welcome of its own, not To do's greeting: the title "Search or ask anything" and the line "Find objects, or ask about the work you may see.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
+- **Ask about this.** Every object can start a conversation about itself, so the person never has to describe it (platform spec 5.2, About an object). The entry point is the same speech bubbles, named "Ask about" and the identifier:
+  - on an object's card, at the top right of its header (in select mode the card's select control takes its place);
+  - on a list's row, beside its actions;
+  - in the object panel's header, beside Expand and Close.
 
-- As the person types, the best five matches appear in a raised panel under the field, over the page, each its identifier and type, with a count of every match and a link to see them all. The count is announced to screen readers as it changes.
-- Choosing a match, or pressing Enter, opens the search page; a match opens it at that object. Escape, or a click outside, closes the panel.
-- The best matches under the field come from the ontology reading, so they appear as fast as the person types. The search page asks the connected model, if there is one, and says while it is working on the answer.
-- **An answer.** When a model answers, the search page leads with it in a card headed "Answer": the model's text in short paragraphs, then "Based on" and the identifiers it cites as inline links that open each object, and, in small text, which model answered and how many objects it looked at. The cited objects follow as an object list with its bar, like any other. An answer that needs the person to say more, or that cannot be given from what they may read, is an inline info alert with the model's words instead of the card. Without a model, or when it fails, the page is the search as below, with a quiet line saying the question was searched rather than answered.
-- The search page (`#/search/…`) shows who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
+  It opens the chat on a new conversation about the object, keeping the one before in the history. The object leads the conversation as a card like an object list's: its identifier and type in small text, its title, which opens it, its state, and the methods the person can run on it now as buttons, which run as they do anywhere. The welcome becomes "Ask about" and the identifier, with the title as its line, and three prompts about it: "Summarize" it, "What can I do next on" it, "and why?", and "What is" it "linked to?". The message bar reads "Ask about" and the identifier. Every question in the conversation is about it, until New conversation.
+- **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
+- **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
+  - **An answer:** the model's text, then the objects it cites as sources, one under another with an object list's gutter, each like an object list's card: its identifier and type in small text, then its title, which opens the object; and in small text which model answered and how many objects it looked at.
+  - **A question searched instead:** why, in the model's place ("No model is connected to answer questions, so the question was searched."), then the best matches as sources, and "See all N on the search page", which opens the search page. With no match, it says so and suggests fewer words.
+  - **A refusal or failure:** an inline danger alert with the gateway's reasons.
+- **No zoom on focus.** On touch screens, phones zoom the page in when a field whose text is smaller than 16px takes focus, and the page then runs wider than the screen. So on touch screens every text field, the message bar and those in forms alike, uses the large body size (`--pf-t--global--font--size--body--lg`, 16px). The viewport never blocks zoom: people can still pinch to zoom.
+- **Conversations and their history.** Asking about an object always starts a new conversation, and so does New conversation; a conversation not yet begun is reused rather than kept empty. Earlier conversations are kept, newest first, in the chat's history, PatternFly's conversation history drawer, opened from a Conversations button at the start of the header. Each is named for its object, its identifier and title, or for a general one, its first question, or "New conversation" until one is asked. The history has New conversation and a search that narrows it by name. Choosing one restores it, its object's card read again, so its state and methods are current. The history belongs to the person: another person chosen in Profile sees only their own, and it is kept for the session, never stored on the device or the server (platform spec 9). The earlier turns of a conversation go with each question in it, so a follow-up such as "and which of those are overdue?" is understood (platform spec 5.2).
+- **The search page** (`#/search/…`), opened from the chat, asks the gateway the same way and shows the answer, or who understood the query, "Understood by" the model or "Understood from the ontology", then how, as labels such as "Type: Safety Case", "Seriousness: serious" and "Yours", then the results as cards like an object list: identifier, type, state, why it matched, and the methods the person can run now. With no match, it says so and suggests fewer words.
 
 **Process dock.** Processes the person has set aside wait in a dock along the bottom of the page, the platform chrome's footer. It is shown only while there is something in it.
 
@@ -127,7 +137,9 @@ Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
 Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its button is a plain icon button like Settings and Profile, with no frame; a badge on it shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
 
-Profile opens a menu showing who the person is and the role they act in. In development it also lists the seed graph's people, to act as any of them; it is labeled as a development tool and does not exist outside development and previews.
+Profile opens a menu showing who the person is and the role they act in, and, where people sign in, the signed-in account and Sign out. In development, in previews and in a demo deployment it also lists the graph's people, to act as any of them, labeled as a development or demo tool; elsewhere it lists only the person's own roles.
+
+**Signing in.** Where the deployment connects sign-in (platform spec 3.4, Identity), a person who is not signed in sees PatternFly's Login page instead of the chrome: the product name, "Sign in to continue", and a primary button, "Sign in with Google", which goes to the provider. A refusal after signing in, such as an account the deployment does not allow, is an inline danger alert on the same page with the gateway's reason, and a Sign out link. When a session ends, the next request brings the person back to it.
 
 ### 4.3 To do and object lists
 
@@ -161,6 +173,13 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Commit runs only the objects that would succeed, one commit each.
   - The outcome names each object, those changed and those refused, and the choice is cleared.
   - A batch is not set aside in the dock.
+
+**The greeting.** To do opens with a greeting as its main heading, in place of the words "To do": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page To do. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
+
+- The time of day comes from the person's own clock: morning from 5:00, afternoon from 12:00, evening from 17:00, and late night from 22:00.
+- Each part of the day has a few greetings, plain or playful, such as "Good evening, Chloé", "Winding down, Chloé?" or "Burning the midnight oil, Chloé?". Some fit a day of the week: "Happy Monday" on a Monday morning, "Happy Friday" on a Friday afternoon, "Weekend shift" on a Saturday or Sunday.
+- Which one shows is chosen by the date, so a part of the day keeps the same greeting all day, and the next day may bring another. It changes only when the part of the day does, never at random while the person works.
+- The greeting is the same in every domain: it names no object or domain.
 
 **The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 
@@ -412,3 +431,9 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.30 | 2026-11-14 | A batch runs together, or one after another as a Wizard with a step per object and a Review, when some input is about each object. |
 | 0.31 | 2026-11-15 | The search field takes a search or a question, "Search or ask". The search page leads with the model's answer in a card, with the objects it cites as links and then as an object list; an answer that asks for more, or cannot be given, is an info alert. |
 | 0.32 | 2026-11-15 | On touch screens, text fields use the large body size, 16px, so phones do not zoom in when one takes focus. Pinch zoom stays. |
+| 0.33 | 2026-11-15 | To do opens with a greeting for the person chosen in Profile, by time of day and first name, chosen by the date so it holds all day, with a line saying how much waits for them and in which role. |
+| 0.34 | 2026-11-15 | The masthead's search field becomes an Ask button, a pair of speech bubbles, that opens a chat panel built from PatternFly's chatbot: docked at the right beside the page from lg up, over it below lg and full screen on phones. It holds one conversation per person, answers with the objects cited as sources, falls back to search with a link to the search page, and starts agentic sessions in time. |
+| 0.35 | 2026-11-15 | The chat panel follows the visual style: a chrome panel with a header lined up with the masthead, the conversation on the inset content surface, the person's messages and cards on the card surface with the card shadow, the welcome set as To do's heading, and the message bar as a standard field. No brand-colored fills, borders or floating shadow. |
+| 0.36 | 2026-11-15 | The chat's welcome is its own, "Search or ask anything", not To do's greeting. Ask about this: a speech-bubble button on every card, list row and object panel starts a conversation about that object, led by its card with its methods, with prompts and a message bar about it. The view spec gains `asks`. |
+| 0.37 | 2026-11-15 | Every Ask about this, and New conversation, starts a new conversation; earlier ones are kept, newest first, in the chat's conversation history drawer, named for their object or first question, searchable, and restored when chosen. The history is the person's own and kept for the session only. |
+| 0.38 | 2026-11-15 | Signing in: PatternFly's Login page with Sign in with Google, a refusal shown on it; Profile shows the signed-in account and Sign out, and the persona switcher only in development, previews and demo deployments. |

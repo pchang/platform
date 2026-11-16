@@ -31,6 +31,7 @@ const accepted: CommitResult = { commit: 'urn:c1', changes: [], created: [], pen
 
 function fakeClient(overrides: Partial<GatewayClient> = {}) {
   const client = {
+    me: async () => ({ mode: 'preview' as const }),
     people: async () => [{ person: 'urn:chloe', name: 'Chloé Martin', roles: [{ role: 'urn:dsp', label: 'Drug Safety Physician' }] }],
     compose: vi.fn(async () => composition),
     draft: vi.fn(async () => draft),

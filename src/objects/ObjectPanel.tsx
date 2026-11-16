@@ -13,6 +13,8 @@ import {
 import ArrowLeftIcon from '@patternfly/react-icons/dist/esm/icons/arrow-left-icon';
 import CompressIcon from '@patternfly/react-icons/dist/esm/icons/compress-icon';
 import ExpandIcon from '@patternfly/react-icons/dist/esm/icons/expand-icon';
+import CommentsIcon from '@patternfly/react-icons/dist/esm/icons/comments-icon';
+import { useChat } from '../chat/ChatProvider';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ViewSpec } from '../design-system/catalog';
 import { RefusedError, type MethodOption, type ObjectView } from '../data/client';
@@ -65,6 +67,7 @@ const prefersReducedMotion = () => typeof window !== 'undefined' && window.match
 /** The panel's top bar and its content, which slides as the person moves in and back (design system spec 4.4). */
 function PanelInner() {
   const panel = useObjectPanel();
+  const chat = useChat();
   const current = panel.stack.at(-1)!;
   const previous = panel.stack.at(-2);
   // What each object looked like when last shown, so the one moving out keeps its place as it slides away.
@@ -101,6 +104,10 @@ function PanelInner() {
           )}
         </div>
         <DrawerActions>
+          {/* Ask about this object, in the chat (design system spec 4.1, Ask about this). */}
+          <Tooltip content={`Ask about ${shown.current.get(current)?.identifier ?? 'this object'}`}>
+            <Button variant="plain" icon={<CommentsIcon />} aria-label={`Ask about ${shown.current.get(current)?.identifier ?? 'this object'}`} onClick={() => chat.askAbout(current)} />
+          </Tooltip>
           {canExpand && (
             <Tooltip content={panel.isExpanded ? 'Restore' : 'Expand'}>
               <Button variant="plain" icon={panel.isExpanded ? <CompressIcon /> : <ExpandIcon />} aria-label={panel.isExpanded ? 'Restore' : 'Expand'} onClick={panel.toggleExpanded} />
@@ -153,6 +160,7 @@ function ObjectContent({
   const { changes } = useNotifications();
   const processes = useProcesses();
   const panel = useObjectPanel();
+  const chat = useChat();
   const [loaded, setLoaded] = useState<{ view: ObjectView; methods: MethodOption[]; related: Map<string, MethodOption[]> }>();
   const [refused, setRefused] = useState<string[]>();
   const runs = useActiveRuns([object, processes.changes, changes]);
@@ -219,6 +227,7 @@ function ObjectContent({
           onField: (field, value) => field === OBJECT_TAB_FIELD && onTab(value),
           onAction: (action) => openMethod(action.target, action.method),
           onOpen: (target) => panel.moveIn(target),
+          onAsk: chat.askAbout,
         }}
       />
     </div>

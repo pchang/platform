@@ -22,8 +22,39 @@ export interface AskToolbox {
   run(name: string, input: unknown): Promise<AskToolOutput>;
 }
 
+/** An earlier turn of the conversation: what the person asked, and the text of what they were answered. Never records. */
+export interface AskTurn {
+  question: string;
+  answer: string;
+}
+
+/** How many earlier turns go with a question, and how long each part may be. */
+export const MAX_TURNS = 10;
+export const MAX_TURN_LENGTH = 4000;
+/** How many objects a question may be asked about. */
+export const MAX_ABOUT = 10;
+
+/** Keeps the objects a question is about to identifiers, at most MAX_ABOUT; anything else is dropped. */
+export function checkAbout(about: unknown): string[] {
+  if (!Array.isArray(about)) return [];
+  return about.filter((a): a is string => typeof a === 'string' && Boolean(a.trim())).slice(0, MAX_ABOUT);
+}
+
+/** Keeps earlier turns to their shape and limits, the latest ones last; anything else is dropped. */
+export function checkTurns(turns: unknown): AskTurn[] {
+  if (!Array.isArray(turns)) return [];
+  return turns
+    .filter((t): t is AskTurn => Boolean(t) && typeof t.question === 'string' && typeof t.answer === 'string' && Boolean(t.question.trim()))
+    .slice(-MAX_TURNS)
+    .map((t) => ({ question: t.question.slice(0, MAX_TURN_LENGTH), answer: t.answer.trim().slice(0, MAX_TURN_LENGTH) || 'No answer was given.' }));
+}
+
 export interface AskRequest {
   question: string;
+  /** The conversation so far, oldest first (spec 5.2, In a conversation). What was said, never records. */
+  earlier: AskTurn[];
+  /** The records of the objects the question is asked about, read for the person just now (spec 5.2, About an object). */
+  about?: string[];
   /** Who is asking, today's date, and the vocabulary they may read: never a record. Records come only through the tools. */
   context: string;
   toolbox: AskToolbox;
