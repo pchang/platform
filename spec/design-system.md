@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.39. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.40. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -112,7 +112,7 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 - **Before the first message,** a welcome of its own, not To do's greeting: the title "Search or ask anything" and the line "Find objects, or ask about the work you may see.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
 - **Ask about this.** Every object can start a conversation about itself, so the person never has to describe it (platform spec 5.2, About an object). The entry point is the same speech bubbles, named "Ask about" and the identifier. **Anticipation first:** the method buttons are what the platform anticipates the person wants to do, so they come first; Ask follows them, as the free-text way forward when the anticipation misses.
   - on an object's card, last in the row of its method buttons; a card with no method buttons has it alone at the foot of its body;
-  - on a list's row, last among its actions, after the raised method and its … menu;
+  - on a list's row, last among its actions, after the raised method and its … menu, at the right end of the actions column, so the Ask buttons line up down the list;
   - in the object panel's header, beside Expand and Close.
 
   It opens the chat on a new conversation about the object, keeping the one before in the history. The object leads the conversation as a card like an object list's: its identifier and type in small text, its title, which opens it, its state, and the methods the person can run on it now as buttons, which run as they do anywhere. The welcome becomes "Ask about" and the identifier, with the title as its line, and three prompts about it: "Summarize" it, "What can I do next on" it, "and why?", and "What is" it "linked to?". The message bar reads "Ask about" and the identifier. Every question in the conversation is about it, until New conversation.
@@ -438,3 +438,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.37 | 2026-11-15 | Every Ask about this, and New conversation, starts a new conversation; earlier ones are kept, newest first, in the chat's conversation history drawer, named for their object or first question, searchable, and restored when chosen. The history is the person's own and kept for the session only. |
 | 0.38 | 2026-11-15 | Signing in: PatternFly's Login page with Sign in with Google, a refusal shown on it; Profile shows the signed-in account and Sign out, and the persona switcher only in development, previews and demo deployments. |
 | 0.39 | 2026-11-16 | Anticipation first: on cards and list rows, Ask about this follows the method buttons, last in their row, as the free-text way forward when the anticipated methods miss. It leaves the card's header. |
+| 0.40 | 2026-11-16 | On list rows, Ask about this sits at the right end of the actions column, so it lines up down the list, still after the methods. |

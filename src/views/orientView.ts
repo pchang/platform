@@ -295,19 +295,24 @@ function rowActions(entry: ListEntry): ViewNode[] {
   const o = entry.object;
   const built = entry.methods.filter((m) => BUILT_ARCHETYPES.has(m.archetype.label));
   const [raised, ...rest] = built;
-  const actions: ViewNode[] = [];
-  if (raised) actions.push({ component: 'Button', props: { label: raised.label, variant: entry.firstIsPrimary ? 'primary' : 'secondary', size: 'sm' }, action: { method: raised.method, target: o.iri } });
+  const methods: ViewNode[] = [];
+  if (raised) methods.push({ component: 'Button', props: { label: raised.label, variant: entry.firstIsPrimary ? 'primary' : 'secondary', size: 'sm' }, action: { method: raised.method, target: o.iri } });
   if (rest.length) {
-    actions.push({
+    methods.push({
       component: 'Dropdown',
       props: { 'aria-label': `More actions for ${o.identifier}` },
       children: rest.map((m) => ({ component: 'DropdownItem', props: { label: m.label }, action: { method: m.method, target: o.iri } })),
     });
   }
-  // The anticipated methods first, then the free-text way forward.
-  actions.push(askAbout(o));
-  // The raised method, its … menu and Ask stay side by side.
-  return [{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' } }, children: actions }];
+  // The anticipated methods first, then the free-text way forward at the right end of the column, lined up down the list.
+  const row = (children: ViewNode[], justify: string): ViewNode => ({
+    component: 'Flex',
+    props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsCenter' }, justifyContent: { default: justify } },
+    children,
+  });
+  if (!methods.length) return [row([askAbout(o)], 'justifyContentFlexEnd')];
+  // The raised method and its … menu stay side by side, with Ask apart from them at the end.
+  return [row([row(methods, 'justifyContentFlexStart'), askAbout(o)], 'justifyContentSpaceBetween')];
 }
 
 /**
