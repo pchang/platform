@@ -24,7 +24,7 @@ import { useFrontIsPage } from '../processes/ProcessHost';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { buildObjectView, OBJECT_TAB_FIELD } from '../views/objectView';
-import { loadingView } from '../views/orientViews';
+import { loadingView } from '../views/orientView';
 import { useActiveRuns, useOpenMethod } from '../views/OrientViews';
 import { useMediaQuery } from '../chrome/useMediaQuery';
 import { useObjectPanel } from './ObjectPanelProvider';
