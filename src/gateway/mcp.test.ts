@@ -33,7 +33,7 @@ describe('MCP transport', () => {
   it('offers the gateway requests as tools', async () => {
     const client = await connect(withSeed());
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['ask', 'commit_method', 'compose_method', 'describe_ontology', 'draft_method', 'find_objects', 'list_notifications', 'list_todo', 'mark_notifications_read', 'offer_methods', 'preview_method', 'read_object', 'search_objects', 'track_runs']);
+    expect(tools.map((t) => t.name).sort()).toEqual(['ask', 'at_a_glance', 'commit_method', 'compose_method', 'describe_ontology', 'draft_method', 'find_objects', 'list_notifications', 'list_todo', 'mark_notifications_read', 'offer_methods', 'preview_method', 'read_object', 'search_objects', 'track_runs']);
   });
 
   it('asks a question: without a connected model, the question is searched and the result says so', async () => {

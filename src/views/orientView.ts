@@ -410,7 +410,7 @@ export function buildTodoView(
       // The greeting is the page's main heading (design system spec 4.3, The greeting).
       header(greeting(who.name, today), summary),
       // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
-      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
+      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'Summary', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'To do'),
     ]),

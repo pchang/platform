@@ -11,7 +11,7 @@ const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
 }
 
 test('the search page shows how the query was understood, and what it found', async ({ page }) => {
@@ -29,7 +29,7 @@ test('words find what the records say, with the methods the person can run', asy
   await openTodo(page);
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/search/pneumonia');
   await expect(results(page)).toHaveText(['AE-005 · Adverse Event'], { timeout: 30_000 });
   await expect(cardFor(page, 'AE-005').getByRole('button', { name: 'Report to safety' })).toBeVisible();
@@ -40,7 +40,7 @@ test('“list all of my queries” finds the person’s own queries, and says th
   await openTodo(page);
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Sam Whitfield/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/search/' + encodeURIComponent('list all of my queries'));
   await expect(page.getByText('3 matches for “list all of my queries”.')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('Understood from the ontology')).toBeVisible();

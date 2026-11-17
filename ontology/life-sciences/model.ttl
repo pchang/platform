@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences> a owl:Ontology ;
   dcterms:title "LS&H life sciences model" ;
   rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ScientificInnovation a p:Domain ;
@@ -172,7 +172,9 @@ ls:Study a p:ObjectType, rdfs:Class ;
   rdfs:comment "A clinical trial of one or more formulations, in patients or in people without the disease." ;
   p:inDomain ls:ClinicalDevelopment ;
   skos:closeMatch ncit:C15206 ;
-  p:titleTemplate "{ls:studyTitle}" .
+  p:titleTemplate "{ls:studyTitle}" ;
+  p:initiative true ;
+  p:reachesAlong ls:originatesFrom, ls:reports, ls:receives .
 
 ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Phase" ;

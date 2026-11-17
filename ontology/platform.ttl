@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/platform> a owl:Ontology ;
   dcterms:title "LS&H platform vocabulary" ;
   rdfs:comment "Domain-free vocabulary for what SHACL does not describe: object types, state dimensions, methods, inputs, effects, business rules and roles (platform spec section 3.1)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 p:Domain a rdfs:Class ;
@@ -72,6 +72,27 @@ p:DescribedEffect a rdfs:Class ;
 p:BusinessRule a rdfs:Class ;
   rdfs:label "business rule" ;
   rdfs:comment "A rule of the business context. Rules are data: their parameters live here, and shapes or the gateway enforce them." .
+
+p:HealthRule a rdfs:Class ;
+  rdfs:label "health rule" ;
+  rdfs:comment "A business rule about an initiative's scope: a measure of one type's objects in it, and the levels at which that puts the initiative at risk or off track (platform spec sections 3.1 and 5.1, At a glance)." ;
+  rdfs:subClassOf p:BusinessRule .
+
+p:Measure a rdfs:Class ;
+  rdfs:label "measure" ;
+  rdfs:comment "What a health rule measures of a type's objects in an initiative's scope. The platform implements each measure once, for every domain." .
+
+p:ShareInState a p:Measure ;
+  rdfs:label "share in a state" ;
+  rdfs:comment "The share of the objects whose state is the rule's state value, from 0 to 1." .
+
+p:OverdueCount a p:Measure ;
+  rdfs:label "how many are overdue" ;
+  rdfs:comment "How many of the objects have a deadline before today." .
+
+p:UrgentCount a p:Measure ;
+  rdfs:label "how many are urgent" ;
+  rdfs:comment "How many of the objects have a state value of urgency 3 or more." .
 
 p:Parameter a rdfs:Class ;
   rdfs:label "parameter" ;
@@ -360,6 +381,60 @@ p:parameter a rdf:Property ;
   rdfs:domain p:BusinessRule ;
   rdfs:range p:Parameter .
 
+p:initiative a rdf:Property ;
+  rdfs:label "initiative" ;
+  rdfs:comment "True when objects of the type are initiatives: work people oversee as a whole, seen At a glance." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:boolean .
+
+p:reachesAlong a rdf:Property ;
+  rdfs:label "reaches along" ;
+  rdfs:comment "A relationship, followed either way, along which an initiative's scope reaches beyond what it contains, such as from an adverse event to its safety case. Followed again from what it reaches." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range p:Relationship .
+
+p:oversees a rdf:Property ;
+  rdfs:label "oversees" ;
+  rdfs:comment "An initiative type the role oversees as a whole. The role opens on At a glance instead of To do." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
+p:healthOf a rdf:Property ;
+  rdfs:label "health of" ;
+  rdfs:comment "The initiative type whose health the rule judges." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range p:ObjectType .
+
+p:measuresType a rdf:Property ;
+  rdfs:label "measures type" ;
+  rdfs:comment "The type of the objects in the scope the rule measures." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range p:ObjectType .
+
+p:measure a rdf:Property ;
+  rdfs:label "measure" ;
+  rdfs:comment "What the rule measures of them." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range p:Measure .
+
+p:inState a rdf:Property ;
+  rdfs:label "in state" ;
+  rdfs:comment "The state value a share-in-state measure counts." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range skos:Concept .
+
+p:atRiskAbove a rdf:Property ;
+  rdfs:label "at risk above" ;
+  rdfs:comment "The parameter whose value, when the measure is above it, puts the initiative at risk." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range p:Parameter .
+
+p:offTrackAbove a rdf:Property ;
+  rdfs:label "off track above" ;
+  rdfs:comment "The parameter whose value, when the measure is above it, puts the initiative off track." ;
+  rdfs:domain p:HealthRule ;
+  rdfs:range p:Parameter .
+
 p:enforcedBy a rdf:Property ;
   rdfs:label "enforced by" ;
   rdfs:comment "A SHACL shape that enforces the rule." ;
@@ -505,6 +580,12 @@ p:exitFrom a rdf:Property ;
   rdfs:comment "The stage of the main path an exit leaves from, where the domain is certain. Without it, an object's own history says where it left." ;
   rdfs:domain skos:Concept ;
   rdfs:range skos:Concept .
+
+p:meetsDeadline a rdf:Property ;
+  rdfs:label "meets deadline" ;
+  rdfs:comment "True when reaching this lifecycle stage meets the object's deadlines. From it, any later stage on the main path, or an exit, the object has no deadline." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range xsd:boolean .
 
 p:isDeadline a rdf:Property ;
   rdfs:label "is deadline" ;

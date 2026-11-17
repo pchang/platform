@@ -39,6 +39,10 @@ d:person-sam a p:Person ;
   rdfs:label "Sam Whitfield" ;
   p:actsAs ls:ClinicalResearchCoordinator .
 
+d:person-morgan a p:Person ;
+  rdfs:label "Morgan Ellis" ;
+  p:actsAs ls:ClinicalProgramLead .
+
 d:agent-northbridge a p:Person ;
   rdfs:label "Northbridge CRO agent" ;
   p:actsAs ls:ExternalCROAgent ;

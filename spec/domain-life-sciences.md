@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.19. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.31.
+Version 0.20. November 17, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.32.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -207,12 +207,31 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise, close and re-query queries, report adverse events to safety and reconcile them with their safety cases, lock studies, and send, approve and amend protocol versions | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
+| Clinical Program Lead | Clinical Development and Safety and Regulatory | See whether the study is on track, and where it needs help | Oversee studies: opens on At a glance. Read the study's clinical and safety work | Run the day-to-day methods. See unblinded arms |
 
 An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
 
 The same object must look different to each persona. A Batch is a production record to the Quality Lead, a supply item to the Clinical Data Manager and a possible cause to the Drug Safety Physician. The platform must explain why each persona sees what it sees.
 
 ---
+
+### At a glance
+
+A Study is an initiative (platform spec section 3.1). The Clinical Program Lead oversees studies and opens on At a glance; anyone may open it from navigation.
+
+- **Scope.** The study's own sites, protocol versions and formulations; its patients and everything within them: visits, data records, queries and adverse events; and, along *originates from*, *reports* and *receives*, the safety cases that came from its adverse events, the submissions that report them and the batches its patients received.
+- **Health rules.** Each is a business rule in `rules.ttl`, with its levels as parameters, so an organization can vary them:
+
+  | Rule | Measures | At risk above | Off track above | Why it matters |
+  |---|---|---|---|---|
+  | Missed visits | Share of visits missed | 5% | 15% | Missed visits leave gaps in the efficacy and safety data |
+  | Overdue visits | Visits past their date and not held | 0 | 3 | An overdue visit is about to become a missed one |
+  | Data awaiting verification | Share of data records entered and not yet verified | 25% | 50% | Unverified data hold up the database lock |
+  | Open queries | Share of data queries open | 40% | 60% | Open queries hold up the database lock |
+  | Withdrawn patients | Share of patients withdrawn | 10% | 20% | Withdrawals threaten the study's power |
+  | Serious events not yet with safety | Urgent adverse events: serious and not reported to safety | 0 | 2 | Serious events must reach safety within the reporting window (rule 1) |
+
+  On the seed graph, VELOCITY-2 needs attention: 14 of 40 data records await verification, 2 serious adverse events are not yet with safety, and its third visits fall overdue as their dates pass without them being held.
 
 ### To do
 
@@ -419,6 +438,8 @@ The domain is written in the platform's ontology format (platform spec section 3
   | CAPA | planned, in progress, effective | ineffective, from in progress |
   | Medical Inquiry | received, answered, closed | |
 
+  A visit's scheduled date is met when it is completed, and a submission's due date when it is submitted (`p:meetsDeadline`).
+
   A Study's lifecycle is its status; its phase is a second dimension. A case closed without being reported, such as a merged duplicate, shows reported as skipped.
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
@@ -496,6 +517,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - 1 open quality event and 1 submission in draft.
 - Six people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
 - One external agent, a contract research organization's, for the External agent journey.
+- A Clinical Program Lead, Morgan Ellis, who oversees the study.
 
 All names, compounds, products, sites, lots, studies and people are invented. Product names, such as Velcorin and Duxalate, belong to no real medicine.
 
@@ -553,3 +575,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.17 | 2026-11-14 | Report to safety takes a note to safety, recorded on the new Safety Case. Free-text and link inputs are marked as about each object, except a simulation's model type and analogs' target property, so a batch of their method runs one after another (Interaction archetypes, Run for many objects). |
 | 0.18 | 2026-11-15 | No property identifies a person directly, so none is marked as identifying one for a model answering questions; free text may still name someone. |
 | 0.19 | 2026-11-16 | Lifecycles (section 9): each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |
+| 0.20 | 2026-11-17 | A Study is an initiative, with its scope and six health rules (section 6, At a glance). Added the Clinical Program Lead, who oversees studies and opens on At a glance, and a seed person for it. Deadlines are met at completed for a visit and submitted for a submission. |

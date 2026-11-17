@@ -90,6 +90,19 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
   );
 
   server.registerTool(
+    'at_a_glance',
+    {
+      title: 'At a glance',
+      description:
+        'An initiative, such as a study "ST-01", seen whole: its journey, its health by the rules of its type (on track, at risk or off track, with each rule\'s numbers), ' +
+        'the progress of each type of object in its scope along its lifecycle, and the objects that need attention. Without an id, the initiatives your role may read.',
+      inputSchema: { id: z.string().optional() },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id }) => result(() => (id ? gateway.glance(principal, id) : gateway.glanceList(principal))),
+  );
+
+  server.registerTool(
     'read_object',
     {
       title: 'Read an object',

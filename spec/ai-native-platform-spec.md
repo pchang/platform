@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.31. November 16, 2026. Author: Paul Chang.
+Version 0.32. November 17, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -61,6 +61,8 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Title | How a type names its objects for people: one or more templates over the object's properties, coded values and links, declared with the type. The first template whose values are all present is used, so new objects are titled without anyone naming them. A title may use only what no role or rule hides. The identifier stays the stable reference |
 | Analysis | Background work the platform computes, such as a disproportionality analysis, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
+| Initiative | A type marked as one (`p:initiative`), such as a study: work people oversee as a whole. Its scope is its own related objects, the objects within it by containment at any depth, and the objects reached from those along the relationships it names (`p:reachesAlong`), such as from an adverse event to its safety case |
+| Health rule | A business rule about an initiative's scope (`p:HealthRule`): a measure of one type's objects in it, being the share in a state, or how many are overdue or urgent, and the levels at which that puts the initiative at risk or off track |
 | Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
@@ -106,6 +108,7 @@ Agents must know more than the business context and the state of objects. They m
 - **Organizations vary.** Each organization can change what a canonical role grants. The platform records each change as variance from the canonical defaults, as data, so it can be seen, explained and audited.
 - **Many hats, or one.** In a small organization one person may hold several roles; in a large, matrixed one, people are specialized. A person can hold any number of roles, plus personal grants and removals. Their effective permissions are the combination. Rules about people, such as separation of duties, apply to the person, not to a role.
 - **Both directions.** From roles to permissions: start from the canonical defaults and track the variance. From permissions to roles: given what a person may do, find the canonical roles that match it most closely, and show the difference. This explains a person to agents, and maps people when permissions come from another system.
+- **Altitude.** A role may oversee initiatives of a type (`p:oversees`) rather than work their objects one at a time. It opens on At a glance (section 5.1, At a glance) instead of To do. The same permissions apply: it sees only what it may read.
 - **Agents receive the user context.** Every agent request carries the person's roles, effective permissions, variance and scope. Agents use it to decide what to surface and suggest. The gateway still enforces every permission, whatever an agent infers.
 
 The first release implements canonical roles with their default permissions only. Variance, multiple roles and role inference follow.
@@ -120,7 +123,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fourteen kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fifteen kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -138,6 +141,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
 | Ask | A connected model answers a question, in a conversation, from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
+| At a glance | An initiative's journey, health, progress and the objects in its scope that need attention, as the principal may read them (section 5.1, At a glance); or the initiatives the principal may read, and whether their role oversees them, so it opens on At a glance |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -249,7 +253,7 @@ Orient opens on **To do**: the objects where the person has work waiting, as car
 
 - An object is on the list when the person can run a **task** on it now: a method whose preconditions hold and that their role may run. Methods marked **on demand**, such as running a simulation, are actions a person chooses to take; they do not put an object on the list.
 - An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
-- The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines.
+- The list is ordered by the nearest deadline, then by urgency. Date properties marked as deadlines in the ontology give the deadlines. A deadline holds until the object reaches the stage of its lifecycle that meets it (`p:meetsDeadline`), or a later one, or an exit: a completed visit is not overdue, and a missed one is counted as missed instead.
 - Each card shows the object, its state, its deadline and the tasks waiting.
 - **A summary leads the list**, so the person sees the shape of their work before its parts. It is computed from the same items, never designed per role: how many items are waiting, urgent, due within 7 days and overdue. Choosing a count narrows the list to those items.
 - **Lifecycle stage.** Each object type's state dimensions are ordered in the ontology; the first is its lifecycle, such as a case's workflow or a submission's status, and its values are ordered too, so an object's stage reads as a step along the way, such as "stage 3 of 5", in every domain.
@@ -266,6 +270,18 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - **Names.** An end is named by the type at the other end, such as Patients. When two ends of one object reach the same type, or an end reaches the object's own type, it is named by how its relationship reads instead, such as "Duplicate of".
 - **Moving through the graph.** Opening a related object from inside another keeps the way back, one step at a time.
 - Reading an object is a read like any other: permissions apply, hidden properties stay hidden, and reads of personal data are audited.
+
+#### At a glance
+
+The same context, at another altitude. A coordinator or an executive sees an initiative whole, from the same objects, states, deadlines, urgency and lifecycles the people doing the work use day to day. Nothing is kept for this view alone, so it is never out of step with the work, and a new domain gets it from its ontology.
+
+- **Scope.** The initiative's scope, as its type declares it (section 3.1): its own related objects, everything within it by containment, and what is reached from those along the relationships it names.
+- **Journey.** The initiative's own journey, as within any object.
+- **Health.** Each health rule of the initiative's type is measured over its scope: its value, such as 2 of 30 visits missed, its levels and what they make it: on track, at risk or off track. The initiative's health is the worst of its rules, and every judgment shows its rule and its numbers, never a color alone. The rules are data in the ontology, versioned and reviewed with it.
+- **Progress.** For each type in the scope, how many objects are at each stage of its lifecycle, the main path in order and then the exits, and how far along they are together: the average position along the main path, as a share, leaving out objects at an exit. With each, how many are overdue and how many urgent.
+- **Needs attention.** The objects in the scope that are urgent or past a deadline, nearest deadline first, as an object list, each actionable as anywhere.
+- **Who sees it.** A role that oversees the initiative's type opens on it. Anyone may open At a glance from navigation, for the initiatives they may read.
+- **Permissions as in a read.** Only types the principal may read are counted or listed, and a health rule about a type they may not read is left out, saying so. Counting objects by state reads no record; the objects listed under Needs attention are summaries, as in any object list.
 
 ### 5.2 AI Search
 - Accepts natural language and structured queries.
@@ -438,6 +454,8 @@ To resolve in future versions of this spec.
 - What are the performance and scale targets for the first release?
 - May one signature cover many records at once, and how would each record carry it, so methods that need a signature can run for many?
 - Should a run for many objects be one transaction, all or nothing, where a domain needs it?
+- How does an organization vary a health rule's levels, and who approves the change? (section 3.3, Organizations vary)
+- Should At a glance show how health and progress have changed over time, read from the journal?
 
 ---
 
@@ -476,3 +494,4 @@ To resolve in future versions of this spec.
 | 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
 | 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |
 | 0.31 | 2026-11-16 | An object's journey (section 5.1, Within an object): where it is along its lifecycle, each stage of the main path passed, current, to come or skipped, from its own history of commits. Lifecycle values may be exits off the main path, naming the stage they leave from where certain (section 3.1). Read an object answers the journey. One open question, on journeys across objects. |
+| 0.32 | 2026-11-17 | At a glance (section 5.1): an initiative's journey, health, progress and what needs attention, from the same objects and states as the day-to-day work. Initiatives and their scope, and health rules, join the ontology's expressions (section 3.1). A role may oversee initiatives, and opens on At a glance (section 3.3, Altitude). The gateway answers At a glance. A deadline holds until the lifecycle stage that meets it (section 5.1, To do). Two open questions. |

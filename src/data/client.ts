@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, Journey, JourneyStatus, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, GlanceList, GlanceView, Health, HealthRuleResult, Journey, JourneyStatus, TypeProgress, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, Journey, JourneyStatus, DraftView, Method
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, Journey, JourneyStatus, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, GlanceList, GlanceView, Health, HealthRuleResult, Journey, JourneyStatus, TypeProgress, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -43,6 +43,10 @@ export interface GatewayClient {
   people(): Promise<Person[]>;
   navigation(principal: Principal): Promise<NavigationDomain[]>;
   todo(principal: Principal): Promise<ToDoItem[]>;
+  /** At a glance (platform spec 5.1): the initiatives the principal may read, and whether their role oversees them. */
+  glanceList(principal: Principal): Promise<GlanceList>;
+  /** An initiative seen whole. Rejects with RefusedError when it is not an initiative or cannot be read. */
+  glance(principal: Principal, initiative: string): Promise<GlanceView>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */

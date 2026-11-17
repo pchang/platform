@@ -164,6 +164,10 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.navigation(principal));
       case 'GET todo':
         return send(res, 200, await gateway.todo(principal));
+      case 'GET glance':
+        return send(res, 200, gateway.glanceList(principal));
+      case 'GET glance/:':
+        return send(res, 200, gateway.glance(principal, parts[2]));
       case 'GET objects': {
         const type = url.searchParams.get('type');
         if (!type) throw new GatewayError(400, ['Give a type, such as ?type=Batch']);

@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences/rules> a owl:Ontology ;
   dcterms:title "LS&H life sciences business rules" ;
   rdfs:comment "The business rules of domain spec section 7, as data." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/rules/0.1.0> ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/rules/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ExpeditedReporting a p:BusinessRule ;
@@ -74,6 +74,108 @@ ls:SignalDetection-minimumPRR a p:Parameter ;
 ls:SignalDetection-minimumChiSquare a p:Parameter ;
   rdfs:label "Minimum chi-squared statistic" ;
   p:parameterValue 4 .
+
+# Health rules: how a study's health is judged At a glance (domain spec section 6, At a glance). Levels are parameters, so an organization can vary them.
+
+ls:MissedVisits a p:HealthRule ;
+  rdfs:label "Missed visits" ;
+  rdfs:comment "Missed visits leave gaps in the efficacy and safety data." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:Visit ;
+  p:measure p:ShareInState ;
+  p:inState lst:VisitStatus-missed ;
+  p:atRiskAbove ls:MissedVisits-atRisk ;
+  p:offTrackAbove ls:MissedVisits-offTrack ;
+  p:parameter ls:MissedVisits-atRisk, ls:MissedVisits-offTrack .
+ls:MissedVisits-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0.05 .
+ls:MissedVisits-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 0.15 .
+
+ls:OverdueVisits a p:HealthRule ;
+  rdfs:label "Overdue visits" ;
+  rdfs:comment "An overdue visit is about to become a missed one." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:Visit ;
+  p:measure p:OverdueCount ;
+  p:atRiskAbove ls:OverdueVisits-atRisk ;
+  p:offTrackAbove ls:OverdueVisits-offTrack ;
+  p:parameter ls:OverdueVisits-atRisk, ls:OverdueVisits-offTrack .
+ls:OverdueVisits-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0 .
+ls:OverdueVisits-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 3 .
+
+ls:DataAwaitingVerification a p:HealthRule ;
+  rdfs:label "Data awaiting verification" ;
+  rdfs:comment "Unverified data hold up the database lock." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:DataRecord ;
+  p:measure p:ShareInState ;
+  p:inState lst:DataRecordEntry-entered ;
+  p:atRiskAbove ls:DataAwaitingVerification-atRisk ;
+  p:offTrackAbove ls:DataAwaitingVerification-offTrack ;
+  p:parameter ls:DataAwaitingVerification-atRisk, ls:DataAwaitingVerification-offTrack .
+ls:DataAwaitingVerification-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0.25 .
+ls:DataAwaitingVerification-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 0.5 .
+
+ls:OpenQueries a p:HealthRule ;
+  rdfs:label "Open queries" ;
+  rdfs:comment "Open queries hold up the database lock." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:DataQuery ;
+  p:measure p:ShareInState ;
+  p:inState lst:DataQueryStatus-open ;
+  p:atRiskAbove ls:OpenQueries-atRisk ;
+  p:offTrackAbove ls:OpenQueries-offTrack ;
+  p:parameter ls:OpenQueries-atRisk, ls:OpenQueries-offTrack .
+ls:OpenQueries-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0.4 .
+ls:OpenQueries-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 0.6 .
+
+ls:WithdrawnPatients a p:HealthRule ;
+  rdfs:label "Withdrawn patients" ;
+  rdfs:comment "Withdrawals threaten the study's power." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:Patient ;
+  p:measure p:ShareInState ;
+  p:inState lst:PatientEnrollment-withdrawn ;
+  p:atRiskAbove ls:WithdrawnPatients-atRisk ;
+  p:offTrackAbove ls:WithdrawnPatients-offTrack ;
+  p:parameter ls:WithdrawnPatients-atRisk, ls:WithdrawnPatients-offTrack .
+ls:WithdrawnPatients-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0.1 .
+ls:WithdrawnPatients-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 0.2 .
+
+ls:SeriousEventsNotWithSafety a p:HealthRule ;
+  rdfs:label "Serious events not yet with safety" ;
+  rdfs:comment "Serious events must reach safety within the reporting window (rule 1)." ;
+  p:healthOf ls:Study ;
+  p:measuresType ls:AdverseEvent ;
+  p:measure p:UrgentCount ;
+  p:atRiskAbove ls:SeriousEventsNotWithSafety-atRisk ;
+  p:offTrackAbove ls:SeriousEventsNotWithSafety-offTrack ;
+  p:parameter ls:SeriousEventsNotWithSafety-atRisk, ls:SeriousEventsNotWithSafety-offTrack .
+ls:SeriousEventsNotWithSafety-atRisk a p:Parameter ;
+  rdfs:label "At risk above" ;
+  p:parameterValue 0 .
+ls:SeriousEventsNotWithSafety-offTrack a p:Parameter ;
+  rdfs:label "Off track above" ;
+  p:parameterValue 2 .
 
 # Shapes the rules use
 

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.44. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.31, sections 3.6, 5.1, 5.4 and 7.
+Version 0.45. November 17, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.32, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -97,7 +97,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 |---|---|
 | Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
 | Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
-| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
+| Sidebar | At a glance and To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
 
@@ -182,7 +182,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - Which one shows is chosen by the date, so a part of the day keeps the same greeting all day, and the next day may bring another. It changes only when the part of the day does, never at random while the person works.
 - The greeting is the same in every domain: it names no object or domain.
 
-**The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
+**The To do summary** sits above the list, under the heading "Summary", so it is not mistaken for At a glance (4.5), with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 
 ### 4.4 The object panel
 
@@ -204,6 +204,20 @@ Every object opens in a side panel (platform spec 5.1, Within an object). It is 
 - **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
   - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
   - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as an object list like any other (4.3): the list bar, with selection, batch actions and the choice of cards or a list, then the objects, each with the methods the person can run on it. Or it says there are none yet.
+
+### 4.5 At a glance
+
+An initiative seen whole (platform spec 5.1, At a glance), composed as a view spec (pattern `glance`) and drawn by the renderer. It is in the sidebar above To do for everyone, and is where a role that oversees initiatives opens. With several initiatives the person may read, it lists them as an object list to choose from; with one, it opens on it.
+
+- **Header.** The initiative's identifier and type in small text, its title as the page's heading, and a line saying its health in words, such as "At risk: 3 of 6 health rules need attention." Then its journey, as in the object panel, and Open, which opens the initiative in the object panel.
+- **Health.** A card, "Health", with the overall health as a status label: On track (success), At risk (warning) or Off track (danger). Under it, one line per rule, worst first: its status label, its name, and its measure in words with the level it crossed, such as "2 visits overdue, above 0". A rule the person may not read says so.
+- **Progress.** A heading, "Progress", then one card per type in the scope, in the ontology's order of domains and types, each with:
+  - its plural name and count as the card's title, such as "Visits · 30";
+  - a progress bar, "How far along", with the share as its value and in words;
+  - the count at each stage as labels, the main path in order, then exits;
+  - overdue and urgent counts as status labels, when there are any.
+- **Needs attention.** A heading with the count, then the urgent and overdue objects as an object list like any other (4.3), with cards or a list, selection and batch actions. When nothing needs attention, it says so.
+- Cards are two across from md up and three from xl, one on phones, as object lists are. Every status is said in words; color is never the only signal.
 
 ### 4.2 Light and dark mode
 
@@ -452,3 +466,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.42 | 2026-11-16 | Counts name what they count: a count of one type's objects uses the type's name, such as "12 patients", never "12 objects". |
 | 0.43 | 2026-11-16 | In the object panel, Ask about this leaves the top bar and follows the header's method buttons, as on cards. |
 | 0.44 | 2026-11-16 | The object panel shows the object's journey under its header, as PatternFly's progress stepper: passed, current, to come, skipped and exit stages, vertical below md. The catalog gains ProgressStepper and ProgressStep. |
+| 0.45 | 2026-11-17 | At a glance (4.5, pattern `glance`): an initiative's header and journey, its health card with a line per rule, a progress card per type in its scope, and what needs attention as an object list. In the sidebar above To do; where an overseeing role opens. The To do summary's heading becomes Summary, so the two are not confused. |

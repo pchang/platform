@@ -1,6 +1,6 @@
 {
   "$schema": "./schema/patterns.schema.json",
-  "version": "0.8",
+  "version": "0.9",
   "patterns": [
     {
       "id": "card-view",
@@ -25,6 +25,27 @@
         }
       ],
       "responsive": "One card per row on phones. More per row as width allows, through a Gallery."
+    },
+    {
+      "id": "glance",
+      "purpose": "An initiative seen whole: its header and journey, its health by rule, the progress of each type in its scope, and what needs attention (platform spec 5.1, At a glance; design system 4.5).",
+      "template": "page",
+      "coreLoopSteps": [
+        "orient",
+        "find"
+      ],
+      "fitsWhen": [
+        "A person oversees an initiative and needs its progress and health without working its objects one at a time"
+      ],
+      "slots": [
+        {
+          "name": "main",
+          "accepts": [
+            "Stack"
+          ]
+        }
+      ],
+      "responsive": "One card per row on phones. Health, then progress cards that wrap through a Gallery, then the object list of what needs attention."
     },
     {
       "id": "confirm",

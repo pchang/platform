@@ -17,7 +17,7 @@ async function choose(page: Page, name: string) {
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await expect(cards(page).first()).toBeVisible({ timeout: 30_000 });
 }
 

@@ -23,6 +23,8 @@ export function httpClient(base = '/api'): GatewayClient {
     people: () => request('/dev/people'),
     navigation: (p) => request('/navigation', p),
     todo: (p) => request('/todo', p),
+    glanceList: (p) => request('/glance', p),
+    glance: (p, initiative) => request(`/glance/${encodeURIComponent(initiative)}`, p),
     search: (p, query, options = {}) => request(`/search?q=${encodeURIComponent(query)}${options.understand === 'ontology' ? '&understand=ontology' : ''}`, p),
     ask: (p, question, earlier = [], about = []) => request('/ask', p, { question, earlier, about }),
     find: (p, type) => request(`/objects?type=${encodeURIComponent(type)}`, p),

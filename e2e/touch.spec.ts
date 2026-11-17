@@ -9,7 +9,7 @@ const fontSize = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
 
 test('the chat’s message bar and form fields use 16px text on a phone, the page stays the width of the screen, and pinch zoom stays', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Ask', exact: true }).click();
   const field = page.locator('.pf-chatbot__message-bar').getByRole('textbox');
   await field.click();
@@ -23,7 +23,7 @@ test('the chat’s message bar and form fields use 16px text on a phone, the pag
   await expect(page.locator('.pf-chatbot').getByRole('heading', { name: 'Ask', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Elena/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/type/Batch');
   await page.getByRole('main').getByRole('button', { name: 'Quarantine batch' }).first().click();
   const reason = page.getByRole('textbox', { name: 'Reason' });

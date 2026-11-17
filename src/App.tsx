@@ -14,6 +14,8 @@ import { ProcessDock } from './chrome/ProcessDock';
 import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
 import { ProcessProvider } from './processes/ProcessProvider';
 import { useRoute } from './routing';
+import { GlanceView } from './views/Glance';
+import { useGlanceList } from './views/landing';
 import { SearchView, TodoView, TypeView } from './views/OrientViews';
 
 /** From PatternFly's xl breakpoint up, the sidebar sits beside the content; below it, it is a drawer (design system spec 4.1). */
@@ -44,6 +46,9 @@ function AppPage() {
   // A page pattern, such as Compare and decide, takes the view's place while it is in front (design system spec 5.1).
   const frontIsPage = useFrontIsPage();
   const chat = useChat();
+  // Home opens where the person's role does: At a glance for a role that oversees initiatives, else To do (platform spec 3.3).
+  const glanceList = useGlanceList();
+  const home = route.name === 'glance' ? 'glance' : route.name === 'todo' ? 'todo' : route.name === 'home' ? (glanceList ? (glanceList.oversees ? 'glance' : 'todo') : undefined) : undefined;
   // Expanded, the object panel covers the sidebar too, so no destination is chosen behind it (design system spec 4.4).
   const panel = useObjectPanel();
   const canExpand = useMediaQuery('(min-width: 992px)');
@@ -70,7 +75,7 @@ function AppPage() {
       }
       notificationDrawer={<NotificationsDrawer onClose={() => setDrawerOpen(false)} />}
       isNotificationDrawerExpanded={isDrawerOpen}
-      sidebar={<AppSidebar isOpen={sidebarShown} route={route} onNavigate={() => !wide && setSidebarOpen(false)} />}
+      sidebar={<AppSidebar isOpen={sidebarShown} route={route} home={home} onNavigate={() => !wide && setSidebarOpen(false)} />}
       // Page tracks its width, so the sidebar behaves as a drawer below xl. Crossing xl resets it: open when wide, closed when not.
       onPageResize={(_event, { mobileView }) => {
         if (mobileView === !wide) return;
@@ -82,10 +87,11 @@ function AppPage() {
       isContentFilled
     >
       {/* The content area is the object panel's drawer content, so the panel opens over it (design system spec 4.4). */}
-      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
+      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : home === 'todo' ? 'To do' : home === 'glance' ? 'At a glance' : route.name === 'search' ? 'Search' : 'Objects'}>
         <ObjectDrawer>
           {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
-          {!frontIsPage && route.name === 'todo' && <TodoView />}
+          {!frontIsPage && home === 'todo' && <TodoView />}
+          {!frontIsPage && home === 'glance' && <GlanceView key={route.name === 'glance' ? (route.initiative ?? '') : ''} initiative={route.name === 'glance' ? route.initiative : undefined} />}
           {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
           {!frontIsPage && route.name === 'search' && <SearchView query={route.query} />}
           <ProcessHost />

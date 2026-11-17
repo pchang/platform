@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences/term> a owl:Ontology ;
   dcterms:title "LS&H life sciences terms" ;
   rdfs:comment "The values of every state dimension, as SKOS concepts. NCIt mappings were checked against the NCI Thesaurus service on 2026-11-08." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 lst:CompoundStage a skos:ConceptScheme ;
@@ -463,7 +463,8 @@ lst:VisitStatus-scheduled a skos:Concept ;
 lst:VisitStatus-completed a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
   skos:prefLabel "completed" ;
-  p:order 2 .
+  p:order 2 ;
+  p:meetsDeadline true .
 
 lst:VisitStatus-missed a skos:Concept ;
   skos:inScheme lst:VisitStatus ;
@@ -747,7 +748,8 @@ lst:SubmissionStatus-inReview a skos:Concept ;
 lst:SubmissionStatus-submitted a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;
   skos:prefLabel "submitted" ;
-  p:order 3 .
+  p:order 3 ;
+  p:meetsDeadline true .
 
 lst:SubmissionStatus-acknowledged a skos:Concept ;
   skos:inScheme lst:SubmissionStatus ;

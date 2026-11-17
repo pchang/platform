@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences/roles> a owl:Ontology ;
   dcterms:title "LS&H life sciences roles" ;
   rdfs:comment "The personas of domain spec section 6 and the external agent role." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.1.0> ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
@@ -59,6 +59,13 @@ ls:QualityLead a p:Role ;
   rdfs:label "Quality Lead" ;
   rdfs:comment "Keeps every batch compliant." ;
   p:mayRun ls:ReleaseBatch, ls:QuarantineBatch, ls:OpenQualityEvent, ls:StartInvestigation, ls:AssignCAPA, ls:RecordCAPAOutcome, ls:CloseQualityEvent .
+
+ls:ClinicalProgramLead a p:Role ;
+  p:worksIn ls:ClinicalDevelopment, ls:SafetyAndRegulatory ;
+  rdfs:label "Clinical Program Lead" ;
+  rdfs:comment "Sees whether each study is on track, and where it needs help. Oversees studies as a whole rather than working their objects." ;
+  p:oversees ls:Study ;
+  p:mayNotRead ls:assignedArm .
 
 ls:ExternalCROAgent a p:Role ;
   p:worksIn ls:ClinicalDevelopment ;

@@ -54,7 +54,7 @@ describe('seed graph (domain spec section 11)', () => {
     ['a signal for drug-induced liver injury', `?x a ls:Signal ; ls:reaction lst:Reaction-drugInducedLiverInjury`, 1],
     ['1 open quality event', `?x ls:qualityEventStatus lst:QualityEventStatus-open`, 1],
     ['1 submission in draft', `?x ls:submissionStatus lst:SubmissionStatus-draft`, 1],
-    ['a person for each persona, a second Drug Safety Physician and an external agent', `?x a p:Person`, 8],
+    ['a person for each persona, a second Drug Safety Physician and an external agent', `?x a p:Person`, 9],
   ])('has %s', (_label, pattern, expected) => {
     expect(count(pattern)).toBe(expected);
   });

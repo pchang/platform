@@ -131,6 +131,64 @@ export interface ToDoItem {
   deadline?: string;
 }
 
+/** How an initiative stands on one health rule, or on all of them (spec 5.1, At a glance). */
+export type Health = 'onTrack' | 'atRisk' | 'offTrack';
+
+/** One health rule, measured over an initiative's scope. */
+export interface HealthRuleResult {
+  rule: string;
+  label: string;
+  /** Why the rule matters, from the ontology. */
+  comment: string;
+  type: string;
+  typeLabel: string;
+  pluralLabel: string;
+  measure: 'share' | 'overdue' | 'urgent';
+  /** The state a share counts, such as missed. */
+  stateLabel?: string;
+  /** How many objects the measure counts, and of how many in the scope. */
+  count: number;
+  total: number;
+  /** The measure: a share from 0 to 1, or a count. */
+  value: number;
+  atRiskAbove: number;
+  offTrackAbove: number;
+  /** Where the rule puts the initiative; hidden when the principal may not read the type it measures. */
+  health: Health | 'hidden';
+}
+
+/** One type's objects in an initiative's scope, by the stages of their lifecycle. */
+export interface TypeProgress {
+  type: string;
+  typeLabel: string;
+  pluralLabel: string;
+  count: number;
+  /** The lifecycle's name, such as Status, when the type has one. */
+  dimension?: string;
+  /** How many are at each stage: the main path in order, then exits. */
+  stages: { stage: string; count: number; exit?: boolean }[];
+  /** How far along they are together: the average position along the main path, from 0 to 1, leaving out exits. */
+  along?: number;
+  overdue: number;
+  urgent: number;
+}
+
+/** An initiative seen whole (spec 5.1, At a glance). */
+export interface GlanceView {
+  initiative: ObjectView;
+  health: Health;
+  rules: HealthRuleResult[];
+  progress: TypeProgress[];
+  /** The urgent and overdue objects in its scope, nearest deadline first. */
+  attention: { object: ObjectSummary; urgency: number; deadline?: string }[];
+}
+
+/** The initiatives the principal may read, and whether their role oversees them, so it opens on At a glance. */
+export interface GlanceList {
+  initiatives: ObjectSummary[];
+  oversees: boolean;
+}
+
 export interface ComposedInput {
   name: string;
   label: string;
@@ -512,7 +570,23 @@ export class Gateway {
 
   /** The object's earliest deadline, as an ISO date (spec 5.1). */
   private deadlineOf(object: string): string | undefined {
+    if (this.deadlineMet(object)) return undefined;
     return this.q(`SELECT (MIN(?date) AS ?first) WHERE { <${object}> ?p ?date . ?p p:isDeadline true }`)[0]?.first;
+  }
+
+  /**
+   * Whether the object's deadlines are met (spec 5.1, To do): its lifecycle is at the stage that meets them
+   * (`p:meetsDeadline`), at a later stage on the main path, or at an exit.
+   */
+  private deadlineMet(object: string): boolean {
+    const dim = this.q(`SELECT ?d ?scheme WHERE { <${object}> a ?type . ?d p:dimensionOf ?type ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
+    if (!dim) return false;
+    const current = this.q(`SELECT ?v ?exit WHERE { <${object}> <${dim.d}> ?v . OPTIONAL { ?v p:exit ?exit } }`)[0];
+    if (!current) return false;
+    if (current.exit === 'true') return true;
+    const main = this.q(`SELECT ?v ?meets WHERE { ?v skos:inScheme <${dim.scheme}> ; p:order ?o . OPTIONAL { ?v p:meetsDeadline ?meets } FILTER NOT EXISTS { ?v p:exit true } } ORDER BY ?o`);
+    const meets = main.findIndex((v) => v.meets === 'true');
+    return meets >= 0 && main.findIndex((v) => v.v === current.v) >= meets;
   }
 
   private typeLabels(type: string): { typeLabel: string; pluralLabel: string } {
@@ -1186,6 +1260,147 @@ export class Gateway {
   }
 
   // ---------------------------------------------------------------- commits
+
+  // ---------------------------------------------------------------- at a glance (spec 5.1)
+
+  /** The initiatives the principal may read, and whether their role oversees them (spec 3.3, Altitude). */
+  glanceList(principal: Principal): GlanceList {
+    this.authorize(principal);
+    const types = this.q(`SELECT ?type WHERE { ?type a p:ObjectType ; p:initiative true }`).map((r) => r.type).filter((t) => this.canRead(principal, t));
+    const initiatives = types
+      .flatMap((type) => this.q(`SELECT ?o WHERE { ?o a <${type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o)))
+      .sort((a, b) => a.identifier.localeCompare(b.identifier, undefined, { numeric: true }));
+    const oversees = types.some((t) => ask(this.graph.store, `ASK { <${principal.role}> p:oversees <${t}> }`));
+    return { initiatives, oversees };
+  }
+
+  /**
+   * An initiative seen whole (spec 5.1, At a glance): its journey, its health by the rules of its type, the progress of
+   * each type in its scope along its lifecycle, and what needs attention. Only types the principal may read are counted.
+   */
+  glance(principal: Principal, idOrIri: string): GlanceView {
+    this.authorize(principal);
+    const initiativeIri = this.resolve(idOrIri);
+    const type = this.typeOf(initiativeIri).type;
+    if (!ask(this.graph.store, `ASK { <${type}> p:initiative true }`)) throw new GatewayError(400, ['This object is not an initiative, so it has no At a glance']);
+    const initiative = this.read(principal, initiativeIri);
+    const today = this.now().toISOString().slice(0, 10);
+    const scope = this.scopeOf(initiativeIri, type);
+    const readable = scope.filter((o) => this.canRead(principal, this.typeOf(o).type));
+    const byType = new Map<string, string[]>();
+    for (const o of readable) {
+      const t = this.typeOf(o).type;
+      byType.set(t, [...(byType.get(t) ?? []), o]);
+    }
+    const overdue = (o: string) => {
+      const d = this.deadlineOf(o);
+      return Boolean(d && d < today);
+    };
+    const urgent = (o: string) => this.urgencyOf(o) >= 3;
+
+    // Health: each rule of the initiative's type, measured over the objects of its type in the scope.
+    const rules: HealthRuleResult[] = this.q(`SELECT ?rule ?label ?comment ?type ?measure ?state ?stateLabel ?atRisk ?offTrack WHERE {
+        ?rule a p:HealthRule ; p:healthOf <${type}> ; rdfs:label ?label ; p:measuresType ?type ; p:measure ?measure ;
+          p:atRiskAbove/p:parameterValue ?atRisk ; p:offTrackAbove/p:parameterValue ?offTrack .
+        OPTIONAL { ?rule rdfs:comment ?comment } OPTIONAL { ?rule p:inState ?state . ?state skos:prefLabel ?stateLabel } } ORDER BY ?label`).map((r) => {
+      const measure = r.measure === `${NS.p}ShareInState` ? 'share' : r.measure === `${NS.p}OverdueCount` ? 'overdue' : 'urgent';
+      const labels = this.typeLabels(r.type);
+      const base = { rule: r.rule, label: r.label, comment: r.comment ?? '', type: r.type, ...labels, measure, ...(r.stateLabel ? { stateLabel: r.stateLabel } : {}), atRiskAbove: Number(r.atRisk), offTrackAbove: Number(r.offTrack) } as const;
+      if (!this.canRead(principal, r.type)) return { ...base, count: 0, total: 0, value: 0, health: 'hidden' as const };
+      const objects = byType.get(r.type) ?? [];
+      const count =
+        measure === 'share'
+          ? objects.filter((o) => ask(this.graph.store, `ASK { <${o}> ?d <${r.state}> . ?d a p:StateDimension }`)).length
+          : measure === 'overdue'
+            ? objects.filter(overdue).length
+            : objects.filter(urgent).length;
+      const value = measure === 'share' ? (objects.length ? count / objects.length : 0) : count;
+      const health: Health = value > base.offTrackAbove ? 'offTrack' : value > base.atRiskAbove ? 'atRisk' : 'onTrack';
+      return { ...base, count, total: objects.length, value, health };
+    });
+    const rank: Record<Health, number> = { onTrack: 0, atRisk: 1, offTrack: 2 };
+    const judged = rules.filter((r): r is HealthRuleResult & { health: Health } => r.health !== 'hidden');
+    const health = judged.reduce<Health>((worst, r) => (rank[r.health] > rank[worst] ? r.health : worst), 'onTrack');
+    rules.sort((a, b) => (b.health === 'hidden' ? -1 : rank[b.health]) - (a.health === 'hidden' ? -1 : rank[a.health]) || a.label.localeCompare(b.label));
+
+    // Progress: each type's objects by the stages of its lifecycle, in the order of domains and types.
+    const progress: TypeProgress[] = [...byType.entries()]
+      .map(([t, objects]) => ({ t, objects, domain: this.q(`SELECT ?label WHERE { <${t}> p:inDomain/rdfs:label ?label }`)[0]?.label ?? '', ...this.typeLabels(t) }))
+      .sort((a, b) => a.domain.localeCompare(b.domain) || a.typeLabel.localeCompare(b.typeLabel))
+      .map(({ t, objects, typeLabel, pluralLabel }) => {
+        const dim = this.q(`SELECT ?d ?label ?scheme WHERE { ?d p:dimensionOf <${t}> ; rdfs:label ?label ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
+        const values = dim
+          ? this.q(`SELECT ?v ?label ?exit WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o . OPTIONAL { ?v p:exit ?exit } } ORDER BY ?o`)
+          : [];
+        const main = values.filter((v) => v.exit !== 'true');
+        const ordered = [...main, ...values.filter((v) => v.exit === 'true')];
+        const valueOf = (o: string) => (dim ? this.q(`SELECT ?v WHERE { <${o}> <${dim.d}> ?v }`)[0]?.v : undefined);
+        const at = objects.map(valueOf);
+        const positions = at.map((v) => main.findIndex((m) => m.v === v)).filter((i) => i >= 0);
+        const along = main.length > 1 && positions.length ? positions.reduce((sum, i) => sum + i / (main.length - 1), 0) / positions.length : undefined;
+        return {
+          type: t,
+          typeLabel,
+          pluralLabel,
+          count: objects.length,
+          ...(dim ? { dimension: dim.label } : {}),
+          stages: ordered.map((v) => ({ stage: v.label, count: at.filter((x) => x === v.v).length, ...(v.exit === 'true' ? { exit: true } : {}) })),
+          ...(along !== undefined ? { along } : {}),
+          overdue: objects.filter(overdue).length,
+          urgent: objects.filter(urgent).length,
+        };
+      });
+
+    const attention = readable
+      .filter((o) => urgent(o) || overdue(o))
+      .map((o) => {
+        const deadline = this.deadlineOf(o);
+        return { object: this.summary(o), urgency: this.urgencyOf(o), ...(deadline ? { deadline } : {}) };
+      })
+      .sort((a, b) => (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999') || b.urgency - a.urgency || a.object.identifier.localeCompare(b.object.identifier, undefined, { numeric: true }));
+
+    return { initiative, health, rules, progress, attention };
+  }
+
+  /**
+   * An initiative's scope (spec 3.1, Initiative): its own related objects, everything within it by containment at any
+   * depth, and what is reached from those along the relationships its type names, followed again from what they reach.
+   */
+  private scopeOf(initiative: string, type: string): string[] {
+    const along = new Set(this.q(`SELECT ?r WHERE { <${type}> p:reachesAlong ?r }`).map((r) => r.r));
+    const others = (o: string, end: RelationshipEndDescription) =>
+      this.q(`SELECT ?x WHERE { ${end.direction === 'out' ? `<${o}> <${end.relationship}> ?x` : `?x <${end.relationship}> <${o}>`} . ?x a <${end.type}> }`).map((r) => r.x);
+    const scope = new Set<string>();
+    // Its own related objects, of every kind.
+    for (const end of this.ends(type)) for (const x of others(initiative, end)) scope.add(x);
+    // Everything within it, by containment at any depth.
+    const contained: string[] = [initiative];
+    for (let i = 0; i < contained.length; i++) {
+      const o = contained[i];
+      for (const end of this.ends(this.typeOf(o).type).filter((e) => e.kind === 'contains')) {
+        for (const x of others(o, end)) {
+          if (x === initiative || contained.includes(x)) continue;
+          contained.push(x);
+          scope.add(x);
+        }
+      }
+    }
+    // Then along the relationships it names, from everything in the scope so far and from what they reach.
+    if (along.size) {
+      const queue = [...scope];
+      for (let i = 0; i < queue.length; i++) {
+        for (const end of this.ends(this.typeOf(queue[i]).type).filter((e) => along.has(e.relationship))) {
+          for (const x of others(queue[i], end)) {
+            if (x === initiative || scope.has(x)) continue;
+            scope.add(x);
+            queue.push(x);
+          }
+        }
+      }
+    }
+    scope.delete(initiative);
+    return [...scope];
+  }
 
   /** Commits run one at a time: each waits for the one before it to finish. */
   commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven): Promise<CommitResult> {
