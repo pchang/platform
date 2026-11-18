@@ -90,9 +90,10 @@
             "minimize",
             "select",
             "select-all",
-            "clear-selection"
+            "clear-selection",
+            "ask-chosen"
           ],
-          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, discard records a draft as discarded, and minimize sets the process aside in the dock. Select starts or ends select mode on an object list, select-all chooses every object listed, and clear-selection chooses none."
+          "description": "A button's role in an interaction: submit commits, cancel closes without changing anything, edit makes generated text editable, discard records a draft as discarded, and minimize sets the process aside in the dock. Select starts or ends select mode on an object list, select-all chooses every object listed, clear-selection chooses none, and ask-chosen starts a conversation about the chosen objects in the chat (design system 4.1, Ask about this)."
         },
         "opens": {
           "type": "string",

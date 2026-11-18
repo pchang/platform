@@ -25,7 +25,7 @@ export interface CatalogComponent {
 }
 
 /** A button's role in an interaction (design system spec 5.2). */
-export type Intent = 'submit' | 'cancel' | 'edit' | 'discard' | 'minimize' | 'select' | 'select-all' | 'clear-selection';
+export type Intent = 'submit' | 'cancel' | 'edit' | 'discard' | 'minimize' | 'select' | 'select-all' | 'clear-selection' | 'ask-chosen';
 
 export interface ViewNode {
   component: string;

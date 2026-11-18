@@ -11,7 +11,7 @@ import ChatbotWelcomePrompt from '@patternfly/chatbot/dist/dynamic/ChatbotWelcom
 import Message from '@patternfly/chatbot/dist/dynamic/Message';
 import MessageBar from '@patternfly/chatbot/dist/dynamic/MessageBar';
 import MessageBox from '@patternfly/chatbot/dist/dynamic/MessageBox';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from '../chrome/useMediaQuery';
 import { product } from '../config/product';
 import type { AskResult, ObjectSummary } from '../data/client';
@@ -20,7 +20,8 @@ import { usePrincipal } from '../principal/PrincipalProvider';
 import { routeHref } from '../routing';
 import { useProcesses } from '../processes/ProcessProvider';
 import { BUILT_ARCHETYPES } from '../views/composeView';
-import { nameOf, useChat, type ChatAbout, type ChatTurn } from './ChatProvider';
+import { countOf } from '../views/batchView';
+import { nameOf, namesOf, useChat, type ChatAbout, type ChatTurn } from './ChatProvider';
 import './ChatPanel.css';
 
 /** Prompts that work in any domain (design system spec 4.1, Ask). */
@@ -28,6 +29,12 @@ const PROMPTS = ['What needs me first today?', 'What is overdue or due this week
 
 /** Prompts about one object, in any domain (design system spec 4.1, Ask about this). */
 const promptsAbout = (identifier: string) => [`Summarize ${identifier}`, `What can I do next on ${identifier}, and why?`, `What is ${identifier} linked to?`];
+
+/** Prompts about several objects, such as the ones chosen in a list (design system spec 4.1, Ask about this). */
+const PROMPTS_ABOUT_MANY = ['Summarize these', 'What do these have in common?', 'What can I do next on these, and why?'];
+
+/** What a conversation is about, in its welcome and message bar: one object's identifier, or how many objects. */
+const askingAbout = (about: ChatAbout[]) => `Ask about ${about.length === 1 ? about[0].object.identifier : countOf(about.map((a) => a.object))}`;
 
 /** From PatternFly's lg breakpoint up, the panel sits beside the page; below it, over it. */
 export const SIDE_BY_SIDE = '(min-width: 992px)';
@@ -273,14 +280,20 @@ export function ChatPanel() {
                 <div className="app-chat__surface">
                   <ChatbotContent>
                     <MessageBox ariaLabel="Conversation">
-                      {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the object" />}
-                      {chat.about && aboutCard(chat.about)}
+                      {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the objects" />}
+                      {chat.about?.map((a) => <Fragment key={a.object.iri}>{aboutCard(a)}</Fragment>)}
                       {chat.turns.length === 0 && !chat.aboutLoading && (
                         // The chat's own welcome, not To do's greeting; about an object, the object's (design system spec 4.1).
                         <ChatbotWelcomePrompt
-                          title={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask anything'}
-                          description={chat.about ? chat.about.object.title : 'Find objects, or ask about the work you may see.'}
-                          prompts={(chat.about ? promptsAbout(chat.about.object.identifier) : PROMPTS).map((p) => ({
+                          title={chat.about ? askingAbout(chat.about) : 'Search or ask anything'}
+                          description={
+                            chat.about
+                              ? chat.about.length === 1
+                                ? chat.about[0].object.title
+                                : namesOf(chat.about.map((a) => a.object.identifier))
+                              : 'Find objects, or ask about the work you may see.'
+                          }
+                          prompts={(chat.about ? (chat.about.length === 1 ? promptsAbout(chat.about[0].object.identifier) : PROMPTS_ABOUT_MANY) : PROMPTS).map((p) => ({
                             title: p,
                             onClick: () => chat.send(p),
                           }))}
@@ -293,7 +306,7 @@ export function ChatPanel() {
                   <ChatbotFooter>
                     <MessageBar
                       onSendMessage={(m) => chat.send(String(m))}
-                      placeholder={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask'}
+                      placeholder={chat.about ? askingAbout(chat.about) : 'Search or ask'}
                       hasAttachButton={false}
                       alwayShowSendButton
                     />

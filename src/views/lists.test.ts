@@ -45,7 +45,7 @@ describe('the list bar (design system spec 4.3)', () => {
       ['Select all (3)', 'select-all'],
       ['Select none', 'clear-selection'],
     ]);
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done']);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Ask about 2 safety cases', 'Done']);
     // Once selecting, the card bar is the list bar, with Done to end select mode.
     const listBar = find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) }).root, (n) => n.component === 'Toolbar')[0];
     const dropDone = (n: ViewNode): ViewNode => ({
@@ -63,10 +63,33 @@ describe('the list bar (design system spec 4.3)', () => {
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
   });
 
-  it('says when no method applies to all the chosen objects', () => {
+  // Ask about the chosen objects (design system spec 4.1, Ask about this; 4.3, Batch actions).
+  it('offers only Ask about the chosen objects when no method applies to all of them', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-6']) }) });
     expect(find(view.root, (n) => Boolean(n.batch))).toEqual([]);
-    expect(JSON.stringify(view)).toContain('No action applies to all of them.');
+    expect(JSON.stringify(view)).not.toContain('No action applies');
+    const ask = find(view.root, (n) => n.intent === 'ask-chosen');
+    expect(ask).toHaveLength(1);
+    expect(ask[0].props).toMatchObject({ 'aria-label': 'Ask about 2 safety cases', icon: 'comments' });
+    expect(ask[0].props).not.toHaveProperty('isAriaDisabled');
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('puts Ask about the chosen objects last, after the methods common to them', () => {
+    const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) });
+    const bar = find(view.root, (n) => n.component === 'ToolbarGroup')[0];
+    const items = bar.children!.filter((c) => c.component === 'ToolbarItem' && c.children?.length);
+    const last = items.at(-1)!;
+    expect(find(last, (n) => n.intent === 'ask-chosen')).toHaveLength(1);
+    expect(find(bar, (n) => Boolean(n.batch)).length).toBeGreaterThan(0);
+  });
+
+  it('keeps Ask in view but disabled, saying why, when more are chosen than one conversation can be about', () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({ ...cases[0], iri: `urn:SC-X${i}`, identifier: `SC-X${i}` }));
+    const view = buildTypeView('Safety Cases', many, { controls: controls({ mode: 'list', selected: new Set(many.map((o) => o.iri)) }) });
+    const tooltip = find(view.root, (n) => n.component === 'Tooltip' && Boolean(n.children?.some((c) => c.intent === 'ask-chosen')))[0];
+    expect(tooltip.props).toEqual({ content: 'Choose 10 or fewer to ask about them' });
+    expect(tooltip.children![0].props).toMatchObject({ 'aria-label': 'Ask about 11 safety cases', isAriaDisabled: true });
   });
 
   it('works out the common methods from what each chosen object has available now', () => {

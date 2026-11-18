@@ -30,11 +30,11 @@ interface ChatContext {
   turns: ChatTurn[];
   send: (question: string) => void;
   newConversation: () => void;
-  /** Starts a conversation about an object, opening the chat (design system spec 4.1, Ask about this). */
-  askAbout: (object: string) => void;
-  /** The object the conversation is about, once read; undefined for a general conversation. */
-  about?: ChatAbout;
-  /** True while the object asked about is being read. */
+  /** Starts a conversation about an object, or several, opening the chat (design system spec 4.1, Ask about this). */
+  askAbout: (objects: string | string[]) => void;
+  /** The objects the conversation is about, once read, in order; undefined for a general conversation. */
+  about?: ChatAbout[];
+  /** True while the objects asked about are being read. */
   aboutLoading: boolean;
   /** The person's conversations, newest first (design system spec 4.1, Conversations and their history). */
   conversations: Conversation[];
@@ -61,12 +61,19 @@ export function saidIn(result: AskResult): string {
 export interface Conversation {
   id: string;
   turns: ChatTurn[];
-  aboutIri?: string;
-  /** The object's identifier and title, once read, to name the conversation in the history. */
+  /** The objects it is about, in order: one from Ask about this, or the objects chosen in a list. */
+  aboutIris?: string[];
+  /** Its name in the history, once they are read: one object's identifier and title, or several objects' identifiers. */
   aboutName?: string;
 }
 
-/** A conversation's name in the history: its object, else its first question, else "New conversation". */
+/** Several objects' name in the history: their identifiers, the first three and how many more (design system spec 4.1). */
+export const namesOf = (identifiers: string[]) =>
+  identifiers.length <= 3
+    ? identifiers.join(identifiers.length === 3 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1')
+    : `${identifiers.slice(0, 3).join(', ')} and ${identifiers.length - 3} more`;
+
+/** A conversation's name in the history: its objects, else its first question, else "New conversation". */
 export const nameOf = (c: Conversation) => c.aboutName ?? c.turns[0]?.question ?? 'New conversation';
 
 /** A person's conversations, newest first, and the one in front. */
@@ -82,12 +89,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const owner = `${principal.person} ${principal.role}`;
   const [histories, setHistories] = useState<Record<string, History>>({});
   const next = useRef(1);
-  const fresh = (aboutIri?: string): Conversation => ({ id: `c${next.current++}`, turns: [], ...(aboutIri ? { aboutIri } : {}) });
+  const fresh = (aboutIris?: string[]): Conversation => ({ id: `c${next.current++}`, turns: [], ...(aboutIris?.length ? { aboutIris } : {}) });
   const [initial] = useState(() => fresh());
   const history: History = histories[owner] ?? { conversations: [initial], current: initial.id };
   const current = history.conversations.find((c) => c.id === history.current) ?? history.conversations[0];
-  const aboutIri = current.aboutIri;
-  const [about, setAbout] = useState<ChatAbout>();
+  const aboutIris = current.aboutIris;
+  // A stable key for the objects asked about, so reading them again waits for a real change.
+  const aboutKey = aboutIris?.join(' ') ?? '';
+  const [about, setAbout] = useState<{ key: string; objects: ChatAbout[] }>();
   const { changes } = useProcesses();
   const trigger = useRef<HTMLButtonElement | null>(null);
 
@@ -106,41 +115,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
-  // The object asked about, read as the person, and read again after any method runs, so its state and methods are current.
+  // The objects asked about, read as the person, and read again after any method runs, so their state and methods are current.
   useEffect(() => {
-    if (!aboutIri) {
+    if (!aboutKey) {
       setAbout(undefined);
       return;
     }
     let cancelled = false;
     const id = current.id;
-    Promise.all([client.read(principal, aboutIri), client.methods(principal, aboutIri)]).then(
-      ([object, methods]) => {
+    const iris = aboutKey.split(' ');
+    Promise.all(iris.map((iri) => Promise.all([client.read(principal, iri), client.methods(principal, iri)]))).then(
+      (read) => {
         if (cancelled) return;
-        setAbout({ object, methods });
-        updateConversation(owner, id, (c) => ({ ...c, aboutName: `${object.identifier} · ${object.title}` }));
+        const objects = read.map(([object, methods]) => ({ object, methods }));
+        setAbout({ key: aboutKey, objects });
+        const name = objects.length === 1 ? `${objects[0].object.identifier} · ${objects[0].object.title}` : namesOf(objects.map((o) => o.object.identifier));
+        updateConversation(owner, id, (c) => ({ ...c, aboutName: name }));
       },
       () => !cancelled && setAbout(undefined),
     );
     return () => {
       cancelled = true;
     };
-  }, [client, principal, aboutIri, changes, current.id, owner, updateConversation]);
+  }, [client, principal, aboutKey, changes, current.id, owner, updateConversation]);
 
   const close = useCallback(() => {
     setOpen(false);
     trigger.current?.focus();
   }, []);
 
-  /** Starts a conversation, about an object or not. One not yet begun is reused rather than kept empty. */
+  /** Starts a conversation, about objects or not. One not yet begun is reused rather than kept empty. */
   const start = useCallback(
-    (objectIri?: string) =>
+    (objectIris?: string[]) =>
       update(owner, (h) => {
         const now = h.conversations.find((c) => c.id === h.current);
-        const rest = h.conversations.filter((c) => c.turns.length || c.aboutIri || c.id === h.current);
-        if (now && !now.turns.length && now.aboutIri === objectIri) return h;
+        const rest = h.conversations.filter((c) => c.turns.length || c.aboutIris || c.id === h.current);
+        if (now && !now.turns.length && (now.aboutIris ?? []).join(' ') === (objectIris ?? []).join(' ')) return h;
         const kept = now && !now.turns.length ? rest.filter((c) => c.id !== now.id) : rest;
-        const started = fresh(objectIri);
+        const started = fresh(objectIris);
         return { conversations: [started, ...kept], current: started.id };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,8 +172,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       updateConversation(asker, conversation.id, (c) => ({ ...c, turns: [...c.turns, { id: turnId, question: q, status: 'waiting' }] }));
       const settle = (change: Partial<ChatTurn>) =>
         updateConversation(asker, conversation.id, (c) => ({ ...c, turns: c.turns.map((t) => (t.id === turnId ? { ...t, ...change } : t)) }));
-      // Every question in a conversation about an object is about it (platform spec 5.2, About an object).
-      client.ask(principal, q, earlier, conversation.aboutIri ? [conversation.aboutIri] : []).then(
+      // Every question in a conversation about objects is about them (platform spec 5.2, About an object).
+      client.ask(principal, q, earlier, conversation.aboutIris ?? []).then(
         (result) => settle({ status: 'answered', result }),
         (e: unknown) => settle({ status: 'failed', reasons: e instanceof RefusedError ? e.reasons : [String(e)] }),
       );
@@ -169,7 +181,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [client, principal, current, owner, updateConversation],
   );
 
-  const shownAbout = about && about.object.iri === aboutIri ? about : undefined;
+  const shownAbout = about && about.key === aboutKey ? about.objects : undefined;
   const value = useMemo<ChatContext>(
     () => ({
       isOpen,
@@ -180,21 +192,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       send,
       newConversation: () => start(),
       // Every Ask about this starts a new conversation; the one before stays in the history.
-      askAbout: (object: string) => {
+      askAbout: (objects: string | string[]) => {
         setAbout(undefined);
-        start(object);
+        start(typeof objects === 'string' ? [objects] : objects);
         setOpen(true);
       },
       about: shownAbout,
-      aboutLoading: Boolean(aboutIri) && !shownAbout,
+      aboutLoading: Boolean(aboutKey) && !shownAbout,
       // Begun conversations, newest first, with the one in front even before it begins.
-      conversations: history.conversations.filter((c) => c.turns.length || c.aboutIri || c.id === current.id),
+      conversations: history.conversations.filter((c) => c.turns.length || c.aboutIris || c.id === current.id),
       currentId: current.id,
       select: (id: string) => update(owner, (h) => (h.conversations.some((c) => c.id === id) ? { ...h, current: id } : h)),
       trigger,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isOpen, close, current, send, start, shownAbout, aboutIri, history, owner, update],
+    [isOpen, close, current, send, start, shownAbout, aboutKey, history, owner, update],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

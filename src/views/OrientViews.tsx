@@ -8,7 +8,7 @@ import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
-import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
+import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, MAX_ASK_ABOUT, type ListControls, type ListMode, type TodoFilter } from './orientView';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
 const LIST_MODE_KEY = 'lsh.listMode';
@@ -26,6 +26,7 @@ function loadListMode(): ListMode {
  */
 export function useObjectList(listed: ObjectSummary[]) {
   const processes = useProcesses();
+  const chat = useChat();
   const [mode, setMode] = useState<ListMode>(loadListMode);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -62,6 +63,11 @@ export function useObjectList(listed: ObjectSummary[]) {
     }
     if (intent === 'select-all') setSelected(new Set(listed.map((o) => o.iri)));
     if (intent === 'clear-selection') setSelected(new Set());
+    // Ask about the chosen objects, in the order they are listed (design system spec 4.1, Ask about this).
+    if (intent === 'ask-chosen') {
+      const chosen = listed.filter((o) => selected.has(o.iri)).map((o) => o.iri);
+      if (chosen.length && chosen.length <= MAX_ASK_ABOUT) chat.askAbout(chosen);
+    }
   };
   const onField = (field: string, value: string) => {
     if (field !== LIST_MODE_FIELD) return false;

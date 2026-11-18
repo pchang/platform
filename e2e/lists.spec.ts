@@ -44,8 +44,14 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await card(page, 'SC-005').getByRole('checkbox').click();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await expect(bar(page).getByText('3 selected')).toBeVisible();
-  // SC-002 waits to be assessed, not triaged: nothing applies to all three.
-  await expect(bar(page).getByText('No action applies to all of them.')).toBeVisible();
+  // SC-002 waits to be assessed, not triaged: no method applies to all three, so Ask about them is all the bar offers.
+  await expect(bar(page).getByRole('button', { name: 'Triage' })).toHaveCount(0);
+  await bar(page).getByRole('button', { name: 'Ask about 3 safety cases' }).click();
+  const chat = page.locator('.pf-chatbot');
+  await expect(chat.getByRole('heading', { name: 'Ask about 3 safety cases' })).toBeVisible();
+  for (const id of ['SC-002', 'SC-004', 'SC-005']) await expect(chat.getByText(`${id} · Safety Case`, { exact: true })).toBeVisible();
+  await expect(chat.locator('.pf-chatbot__message-bar').getByRole('textbox')).toHaveAttribute('placeholder', 'Ask about 3 safety cases');
+  await chat.getByRole('button', { name: 'Close' }).click();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await card(page, 'SC-006').getByRole('checkbox').click();
   await bar(page).getByRole('button', { name: 'Triage' }).click();

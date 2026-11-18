@@ -1,6 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
-import { BATCH_ARCHETYPES } from './batchView';
+import { BATCH_ARCHETYPES, countOf } from './batchView';
 import { greeting } from './greeting';
 import { counted } from './words';
 import { BUILT_ARCHETYPES } from './composeView';
@@ -203,6 +203,28 @@ const separator: ViewNode = { component: 'ToolbarItem', props: { variant: 'separ
 const barLink = (label: string, intent: 'select'): ViewNode => ({ component: 'Button', props: { label, variant: 'link', isInline: true }, intent });
 /** Batch actions shown as buttons; the rest go in a … menu. */
 const SHOWN_BATCH_ACTIONS = 3;
+/** The most objects one conversation can be about (platform spec 5.2, About an object). */
+export const MAX_ASK_ABOUT = 10;
+
+/**
+ * Ask about the chosen objects, last in the list bar (design system spec 4.1, Ask about this): always there once objects
+ * are chosen, so the person can say in their own words what to do with them. With more than a conversation can hold, it
+ * stays in view but disabled, its tooltip saying why.
+ */
+function askAboutChosen(chosen: ListEntry[]): ViewNode {
+  const name = `Ask about ${countOf(chosen.map((e) => e.object))}`;
+  const tooMany = chosen.length > MAX_ASK_ABOUT;
+  const button: ViewNode = {
+    component: 'Button',
+    props: { variant: 'plain', icon: 'comments', 'aria-label': name, ...(tooMany ? { isAriaDisabled: true } : {}) },
+    intent: 'ask-chosen',
+  };
+  return barItem({
+    component: 'Tooltip',
+    props: { content: tooMany ? `Choose ${MAX_ASK_ABOUT} or fewer to ask about them` : name },
+    children: [button],
+  });
+}
 
 /**
  * The list bar (design system spec 4.3), after Gmail's: the selection control at its start, the chosen objects' actions
@@ -230,7 +252,6 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
   if (chosen) {
     const batch = commonMethods(entries, controls.selected);
     start.push(separator);
-    if (!batch.length) start.push(barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small')));
     for (const m of batch.slice(0, SHOWN_BATCH_ACTIONS)) start.push(barItem({ component: 'Button', props: { label: m.label, variant: 'plain' }, batch: m.method }));
     const more = batch.slice(SHOWN_BATCH_ACTIONS);
     if (more.length) {
@@ -242,6 +263,8 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
         }),
       );
     }
+    // Last, after the methods common to them: the free-text way forward, whether or not any method applies to all.
+    start.push(askAboutChosen(entries.filter((e) => controls.selected.has(e.object.iri))));
   }
   const groups: ViewNode[] = [
     { component: 'ToolbarGroup', props: { variant: 'action-group-plain' }, children: start },
