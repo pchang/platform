@@ -20,6 +20,8 @@ async function todoCards(page: Page) {
 }
 
 test('opens on To do for the Drug Safety Physician, nearest deadline first', async ({ page }) => {
+  // Deadlines are read against today, so the page's clock is set to a day the seed graph was written for.
+  await page.clock.setFixedTime(new Date('2026-11-15T09:00:00'));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   expect(await todoCards(page)).toEqual(['SUB-1', 'SC-003', 'SC-001', 'SC-002', 'SC-004', 'SC-005', 'SC-006', 'SIG-1']);

@@ -16,6 +16,8 @@ async function choose(page: Page, name: string) {
 }
 
 async function openTodo(page: Page) {
+  // Due and overdue are read against today, so the page's clock is set to a day the seed graph was written for.
+  await page.clock.setFixedTime(new Date('2026-11-15T09:00:00'));
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 2, name: 'Summary' })).toBeVisible({ timeout: 30_000 });
   await expect(cards(page).first()).toBeVisible({ timeout: 30_000 });
