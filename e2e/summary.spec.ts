@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
+import { expect, test } from './seedClock';
 import { createRequire } from 'node:module';
 import { eyebrow } from './cards';
 
