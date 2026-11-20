@@ -35,7 +35,7 @@ export function fieldFor(input: ComposedInput): ViewNode {
   const group = (children: ViewNode[], role?: 'radiogroup' | 'group'): ViewNode => ({
     component: 'FormGroup',
     // Radio buttons sit side by side, so each has room to be tapped (WCAG 2.2 target size).
-    props: { label: input.label, isRequired: true, ...(role === 'radiogroup' ? { role, isInline: true } : role ? { role } : {}) },
+    props: { label: input.label, isRequired: !input.optional, ...(role === 'radiogroup' ? { role, isInline: true } : role ? { role } : {}) },
     children,
   });
   if (input.kind === 'choice' && input.many) {
@@ -52,7 +52,7 @@ export function fieldFor(input: ComposedInput): ViewNode {
     return group([
       {
         component: 'FormSelect',
-        props: { 'aria-label': input.label, isRequired: true },
+        props: { 'aria-label': input.label, isRequired: !input.optional },
         field: input.name,
         children: [
           { component: 'FormSelectOption', props: { value: '', label: `Choose ${input.label.toLowerCase()}` } },
@@ -61,9 +61,12 @@ export function fieldFor(input: ComposedInput): ViewNode {
       },
     ]);
   }
-  if (input.kind === 'url') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'url', isRequired: true }, field: input.name }]);
-  if (input.kind === 'number') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'number', isRequired: true }, field: input.name }]);
-  return group([{ component: 'TextArea', props: { 'aria-label': input.label, isRequired: true }, field: input.name }]);
+  const isRequired = !input.optional;
+  if (input.kind === 'url') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'url', isRequired }, field: input.name }]);
+  if (input.kind === 'number') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'number', isRequired }, field: input.name }]);
+  if (input.kind === 'date') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'date', isRequired }, field: input.name }]);
+  if (input.kind === 'line') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'text', isRequired }, field: input.name }]);
+  return group([{ component: 'TextArea', props: { 'aria-label': input.label, isRequired }, field: input.name }]);
 }
 
 /** One line per change the person will recognize: the object's own values, related objects, and new objects. */

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.44. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.45. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -148,7 +148,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -192,7 +192,7 @@ Every object opens in a side panel (platform spec 5.1, Within an object). It is 
 - **Size.** The panel slides in from the right and takes three quarters of the content area from lg up, and all of it below. From lg up, Expand widens it over everything below the masthead, the sidebar too, so the person never chooses a destination whose content the panel hides; Restore returns it to three quarters and brings the sidebar back, and so does opening the sidebar with the menu button. As in Notion, an object opened from a card, a row, a link or a search result always opens at three quarters, as a peek, whatever size the panel last had; Expand lasts while the person moves in and back through the panel, until it closes. The masthead and the process dock stay in reach, and at three quarters, so do the sidebar and the cards behind the panel: choosing another card opens that object in its place.
 - **Top bar.** Back, a left arrow named "Back to" the previous object's identifier, once the person has moved in. Expand or Restore. Close, an X at the top right, which closes the whole panel; Escape does too. Focus moves to the object's heading as the panel opens, and back to the card that opened it as the panel closes.
 - **Moving in.** Opening a related object slides the current one out to the left as the new one slides in from the right. Back reverses it. The slide is timed by PatternFly's motion tokens; with reduced motion asked for, the content changes without moving.
-- **Header.** The identifier and type in small text, the title as the panel's heading, the state as labels, the deadline and urgency as status labels, and the methods the person can run now as buttons. Running one opens its process as from a card. While a page pattern, such as Compare and decide, is in front, the panel steps aside; after any commit it shows the object as it now is.
+- **Header.** The identifier and type in small text, the title as the panel's heading, the state as labels, the deadline and urgency as status labels, and the methods the person can run now as buttons, then Edit as a secondary button when the person may edit the object now. Running one opens its process as from a card. While a page pattern, such as Compare and decide, is in front, the panel steps aside; after any commit it shows the object as it now is.
 - **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
   - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
   - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as an object list like any other (4.3): the list bar, with selection, batch actions and the choice of cards or a list, then the objects, each with the methods the person can run on it. Or it says there are none yet.
@@ -257,6 +257,8 @@ Each interaction archetype has one pattern. On phones, every surface below takes
 | Review a draft | Page | The draft, marked as generated until accepted (rule 5); Accept, Edit and Discard |
 | Review and sign | Wizard | A review step with the preview, then a signature step showing the signer, the time and the meaning of the signature |
 | Start and track | Modal, then the object | Confirm the start; progress then shows on the object, and Notifications tells the person when it ends |
+
+**Creating and editing** open as Fill in, a medium modal titled New and the type, or Edit and the object's identifier. The required fields come first, marked as required, then the optional ones under the heading Optional. Editing starts with the object's current values. The preview lists what will be created or what will change, and the button says Create or Save.
 
 **Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, an input that takes many values from a scheme gives a group of checkboxes, one per value, stacked so each label reads in full, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
 
@@ -445,3 +447,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.42 | 2026-11-20 | An input that takes many values from a scheme gives a group of checkboxes; a Checkbox bound to a field adds or removes its value. |
 | 0.43 | 2026-11-20 | Set actions in the list bar, before batch actions: the set methods the selection qualifies for, each opening its pattern once for the whole selection. Compare and decide over a set: the objects as columns, the comparison's rows first. |
 | 0.44 | 2026-11-20 | The list bar's shadow shows only once the list has scrolled under it. |
+| 0.45 | 2026-11-20 | New and Add at the end of the list bar, Edit in the object panel's header, and the create and edit form: required fields first, then Optional, as Fill in. |

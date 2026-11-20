@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, ComparisonView, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, ComparisonView, DraftView, MethodComposit
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, FormField, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -60,6 +60,15 @@ export interface GatewayClient {
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
   commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }): Promise<CommitResult>;
+  /** The form to create an object of a type, inside a parent when given (platform spec 5.3, Creating and editing objects). */
+  createForm(principal: Principal, type: string, parent?: string): Promise<ObjectForm>;
+  previewCreate(principal: Principal, type: string, values: Record<string, string>, parent?: string): Promise<Omit<CommitResult, 'commit'>>;
+  create(principal: Principal, type: string, values: Record<string, string>, parent?: string): Promise<CommitResult>;
+  /** Why the object cannot be edited now; empty when it can. */
+  editBlocks(principal: Principal, object: string): Promise<string[]>;
+  editForm(principal: Principal, object: string): Promise<ObjectForm>;
+  previewEdit(principal: Principal, object: string, values: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
+  edit(principal: Principal, object: string, values: Record<string, string>): Promise<CommitResult>;
   /** The set methods a selection qualifies for (platform spec 5.4, Acting on a set). */
   setMethods(principal: Principal, objects: string[]): Promise<SetMethodOption[]>;
   /** Compose a set method for a selection, with its comparison. Rejects with RefusedError when the set does not qualify. */

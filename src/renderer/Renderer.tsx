@@ -35,6 +35,10 @@ export interface RenderHost {
   selection?: { selecting: boolean; selected: ReadonlySet<string>; onSelect: (object: string, chosen: boolean) => void };
   /** Runs a method on every chosen object (view spec `batch`). */
   onBatch?: (method: string) => void;
+  /** Opens the form to create an object of a type, inside an object when given (platform spec 5.3). */
+  onCreate?: (type: string, within?: string) => void;
+  /** Opens the form to edit an object (platform spec 5.3). */
+  onEdit?: (object: string) => void;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
   onAsk?: (object: string) => void;
 }
@@ -551,6 +555,15 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Button' && node.batch) {
     const method = node.batch;
     props.onClick = () => host.onBatch?.(method);
+  }
+  if (entry.id === 'Button' && node.creates) {
+    const type = node.creates;
+    const within = node.within;
+    props.onClick = () => host.onCreate?.(type, within);
+  }
+  if (entry.id === 'Button' && node.edits) {
+    const object = node.edits;
+    props.onClick = () => host.onEdit?.(object);
   }
   if (entry.id === 'Button' && node.asks) {
     const object = node.asks;

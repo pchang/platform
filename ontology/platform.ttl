@@ -121,6 +121,40 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
   rdfs:subClassOf p:Analysis .
 
+p:PlatformMethod a rdfs:Class ;
+  rdfs:label "platform method" ;
+  rdfs:comment "A method every object type has, declared once here rather than in each domain, such as Create and Edit (platform spec 5.3, Creating and editing objects)." .
+
+p:Create a p:PlatformMethod ;
+  rdfs:label "Create" ;
+  rdfs:comment "Creates an object of a type, from the properties its title needs, the object it belongs to and its classifying states; every lifecycle starts at its first value." .
+
+p:Edit a p:PlatformMethod ;
+  rdfs:label "Edit" ;
+  rdfs:comment "Changes an object's properties, one-valued links and classifying states. Never its lifecycle states, the object it belongs to, or an object a business rule freezes." .
+
+p:mayCreate a rdf:Property ;
+  rdfs:label "may create" ;
+  rdfs:comment "An object type the role may create." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
+p:mayEdit a rdf:Property ;
+  rdfs:label "may edit" ;
+  rdfs:comment "An object type whose objects the role may edit." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
+p:onlyThroughMethods a rdf:Property ;
+  rdfs:label "only through methods" ;
+  rdfs:comment "True when a type's objects come into being only through the methods and models that create them, so they are never created or edited directly." ;
+  rdfs:domain p:ObjectType .
+
+p:chosenOnCreate a rdf:Property ;
+  rdfs:label "chosen on create" ;
+  rdfs:comment "True when a state dimension classifies its objects: chosen when an object is created and corrected by editing, never moved by a method. Every other dimension is a lifecycle that starts at its first value." ;
+  rdfs:domain p:StateDimension .
+
 p:Comparison a rdfs:Class ;
   rdfs:label "comparison" ;
   rdfs:comment "What a set method shows side by side: rows read from each object along a path, keyed by a state dimension, each cell the row object's title and its status (platform spec 5.4, Acting on a set)." .

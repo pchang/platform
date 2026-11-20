@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.33. November 20, 2026. Author: Paul Chang.
+Version 0.34. November 20, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -62,7 +62,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Analysis | Background work the platform computes, such as a disproportionality analysis or a model run, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Input | What a method needs from the person, declared with its kind. A choice from a concept scheme may take **many values**, such as the measures to simulate; it is sent as its chosen values separated by spaces, and an input's shape may narrow the scheme |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
-| Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
+| Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, and what it may not read |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
 The platform vocabulary (`ontology/platform.ttl`) adds what SHACL does not describe: methods, inputs, effects, business rules and roles. It is domain-free.
@@ -310,6 +310,17 @@ Every object opens on its own, from wherever it appears: a card, a link, a searc
 - Previews the effect of a change before commit.
 - Acts on one object or many.
 
+#### Creating and editing objects
+
+Every type can have new objects and have its objects corrected, without a method written for each. **Create** and **Edit** are platform methods, declared once in the platform vocabulary, that every type has. They go through the gateway as commits like any other: checked, previewed, validated against every shape and recorded.
+
+- **Permission.** Creating and editing are permissions like running a method (section 3.3): a role names the types it may create (`p:mayCreate`) and edit (`p:mayEdit`), as defaults each organization may vary.
+- **Only through methods.** Some objects come into being only through the methods and models that create them, such as a data record captured at a visit, a query raised on it or a forecast from a simulation. Their type says so (`p:onlyThroughMethods`), and they are never created or edited directly, whatever a role may do.
+- **The minimal form.** Creating asks only for what the object needs to exist and be named: the properties its title needs, the object it belongs to when its type is contained (given already when it is created from that object), and each classifying state, such as an endpoint's type. Other properties and one-valued links are offered as optional. The fields come from the ontology: a property's datatype gives its field, a concept scheme its choices, a relationship the objects that qualify.
+- **States start at the beginning.** A state dimension is either classifying, chosen when the object is created and corrected by editing (`p:chosenOnCreate`), or part of a lifecycle that only methods move. A new object starts each lifecycle at its first value. No form sets a status: approving, closing or locking is a method's job, with its precondition, its rule and, where needed, its signature.
+- **Editing.** Edit offers the same fields, filled in, except the object a contained object belongs to. It changes properties, one-valued links and classifying states only. An object that a business rule freezes (`p:freezes`), such as a signed or approved record, cannot be edited; it is corrected by a new linked record, as the rule says.
+- **Where they are offered.** A list of a type offers New when the person may create it. A tab of objects an object contains offers Add, creating the new object inside it. An object's header offers Edit when the person may edit it now. Each opens as Fill in (section 5.4), with the preview showing exactly what will be created or changed.
+
 ### 5.4 Generated UI
 - Assembles the interface from design system components at runtime.
 - Each generated view has one job: move the object from its current state to the target state.
@@ -485,3 +496,4 @@ To resolve in future versions of this spec.
 | 0.31 | 2026-11-20 | Navigation lists entry types, not every type (section 5.1): a type whose objects are part of another object is reached inside it, unless a role names it as a type it works across. |
 | 0.32 | 2026-11-20 | Model runs (section 3.4, Background runs): a background analysis that runs a connected model on an object and what it links to, and commits what it returns; a reference model says so in every result. Inputs may take many values from a concept scheme (section 3.1). |
 | 0.33 | 2026-11-20 | Acting on a set (section 5.4): a set method takes the selection as its one object, offered only when the selection qualifies (type, count, what the objects share, each one's precondition), beside the batch actions. It commits once, on the chosen object, and may change the others; it may declare a comparison read from each object. |
+| 0.34 | 2026-11-20 | Creating and editing objects (section 5.3): Create and Edit are platform methods every type has, permitted by role, never for types that only come through methods. The form asks for the title's properties, the parent and classifying states; lifecycles start at their first value and only methods move them. Frozen objects cannot be edited. New on lists, Add on containing tabs, Edit in the header. |

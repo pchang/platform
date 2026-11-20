@@ -164,7 +164,7 @@ function ObjectContent({
   const processes = useProcesses();
   const panel = useObjectPanel();
   const chat = useChat();
-  const [loaded, setLoaded] = useState<{ view: ObjectView; methods: MethodOption[]; related: Map<string, MethodOption[]> }>();
+  const [loaded, setLoaded] = useState<{ view: ObjectView; methods: MethodOption[]; related: Map<string, MethodOption[]>; editable: boolean }>();
   const [refused, setRefused] = useState<string[]>();
   const runs = useActiveRuns([object, processes.changes, changes]);
   // The open tab's objects are an object list like any other: cards or a list, selection and batch actions (design system spec 4.4).
@@ -184,11 +184,13 @@ function ObjectContent({
       try {
         const view = await client.read(principal, object);
         const listed = [...new Set(view.links.flatMap((l) => l.objects.map((o) => o.iri)))];
-        const [methods, related] = await Promise.all([
+        const [methods, related, editBlocks] = await Promise.all([
           client.methods(principal, object),
           Promise.all(listed.map(async (o) => [o, await client.methods(principal, o)] as const)).then((entries) => new Map(entries)),
+          // Edit is offered only when the person may edit the object now (platform spec 5.3).
+          client.editBlocks(principal, object),
         ]);
-        if (!cancelled) setLoaded({ view, methods, related });
+        if (!cancelled) setLoaded({ view, methods, related, editable: editBlocks.length === 0 });
       } catch (error) {
         if (!cancelled) setRefused(error instanceof RefusedError ? error.reasons : [String(error)]);
       }
@@ -205,7 +207,7 @@ function ObjectContent({
         root: { component: 'Alert', props: { variant: 'danger', title: 'This object cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
       }
     : loaded
-      ? buildObjectView(loaded.view, { methods: loaded.methods, related: loaded.related, runs, notice: processes.notice, controls: list.controls })
+      ? buildObjectView(loaded.view, { methods: loaded.methods, related: loaded.related, runs, notice: processes.notice, controls: list.controls, editable: loaded.editable })
       : loadingView;
 
   useEffect(() => {

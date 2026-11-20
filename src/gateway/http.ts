@@ -23,6 +23,13 @@ import { createMcpServer } from './mcp';
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." }, "draft": { "draft": "...", "text": "..." } }
  *   POST /api/objects/:id/methods/:method/draft     a connected model drafts the method; recorded, changes nothing
+ *   GET  /api/types/:type/form?parent=:id    the form to create an object of a type, inside a parent when given
+ *   POST /api/types/:type/preview            preview a create; body { "values": { ... }, "parent": "..." }
+ *   POST /api/types/:type                    create an object; body { "values": { ... }, "parent": "..." }
+ *   GET  /api/objects/:id/editable           why the object cannot be edited now: { "blocks": [...] }
+ *   GET  /api/objects/:id/edit               the form to edit an object, with its current values
+ *   POST /api/objects/:id/edit/preview       preview an edit; body { "values": { ... } }
+ *   POST /api/objects/:id/edit               edit an object; body { "values": { ... } }
  *   POST /api/sets                           the set methods a selection qualifies for; body { "objects": [...] }
  *   POST /api/sets/:method                   compose a set method for a selection; body { "objects": [...] }
  *   POST /api/sets/:method/preview           preview a set method; body { "objects": [...], "inputs": { ... } }
@@ -196,6 +203,26 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
       }
+      case 'GET types/:/form':
+        return send(res, 200, gateway.createForm(principal, expand(parts[2], NS.ls), url.searchParams.get('parent') ?? undefined));
+      case 'POST types/:/preview': {
+        const given = await body(req);
+        return send(res, 200, await gateway.previewCreate(principal, expand(parts[2], NS.ls), checkValues(given), checkParent(given)));
+      }
+      case 'POST types/:': {
+        const given = await body(req);
+        return send(res, 201, await gateway.create(principal, expand(parts[2], NS.ls), checkValues(given), checkParent(given)));
+      }
+      case 'GET objects/:/editable':
+        return send(res, 200, { blocks: await gateway.editBlocks(principal, parts[2]) });
+      case 'GET objects/:/edit':
+        return send(res, 200, await gateway.editForm(principal, parts[2]));
+      case 'POST objects/:/edit/:': {
+        if (parts[4] !== 'preview') throw new GatewayError(404, ['Not found']);
+        return send(res, 200, await gateway.previewEdit(principal, parts[2], checkValues(await body(req))));
+      }
+      case 'POST objects/:/edit':
+        return send(res, 200, await gateway.edit(principal, parts[2], checkValues(await body(req))));
       case 'POST sets':
         return send(res, 200, await gateway.setMethods(principal, checkObjects(await body(req))));
       case 'POST sets/:': {
@@ -293,4 +320,17 @@ function checkInputs(given: unknown): Record<string, string> {
   const inputs = (given as { inputs?: unknown })?.inputs ?? {};
   if (typeof inputs !== 'object' || inputs === null || !Object.values(inputs).every((v) => typeof v === 'string')) throw new GatewayError(400, ['Give the inputs as text values']);
   return inputs as Record<string, string>;
+}
+
+/** A form's values, from a request body (spec 5.3, Creating and editing objects). */
+function checkValues(given: unknown): Record<string, string> {
+  const values = (given as { values?: unknown })?.values ?? {};
+  if (typeof values !== 'object' || values === null || !Object.values(values).every((v) => typeof v === 'string')) throw new GatewayError(400, ['Give the values as text']);
+  return values as Record<string, string>;
+}
+
+function checkParent(given: unknown): string | undefined {
+  const parent = (given as { parent?: unknown })?.parent;
+  if (parent !== undefined && typeof parent !== 'string') throw new GatewayError(400, ['Give the parent as an identifier']);
+  return parent;
 }

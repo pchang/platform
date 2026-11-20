@@ -19,6 +19,8 @@
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
+  p:mayCreate ls:Compound, ls:Experiment, ls:AssayResult, ls:Formulation ;
+  p:mayEdit ls:Compound, ls:Experiment, ls:AssayResult, ls:Formulation ;
   p:worksAcross ls:AssayResult ;
   p:worksIn ls:ScientificInnovation ;
   rdfs:label "Computational Chemist" ;
@@ -27,6 +29,8 @@ ls:ComputationalChemist a p:Role ;
   p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
 
 ls:ClinicalDataManager a p:Role ;
+  p:mayCreate ls:Study, ls:Site, ls:Protocol, ls:Visit ;
+  p:mayEdit ls:Study, ls:Site, ls:Protocol, ls:Visit ;
   p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
@@ -44,6 +48,8 @@ ls:ClinicalResearchAssociate a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchCoordinator a p:Role ;
+  p:mayCreate ls:Patient, ls:Visit ;
+  p:mayEdit ls:Patient, ls:Visit ;
   p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Research Coordinator" ;
@@ -52,6 +58,8 @@ ls:ClinicalResearchCoordinator a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;
+  p:mayCreate ls:MedicalInquiry, ls:Product ;
+  p:mayEdit ls:MedicalInquiry, ls:Product ;
   p:worksAcross ls:QualityEvent ;
   p:worksIn ls:SafetyAndRegulatory ;
   rdfs:label "Drug Safety Physician" ;
@@ -60,6 +68,8 @@ ls:DrugSafetyPhysician a p:Role ;
     ls:SendForReview, ls:Submit, ls:RunSignalDetection, ls:EvaluateSignal, ls:ConfirmSignal, ls:RefuteSignal, ls:UnblindPatient .
 
 ls:QualityLead a p:Role ;
+  p:mayCreate ls:Process, ls:Batch ;
+  p:mayEdit ls:Process, ls:Batch ;
   p:worksAcross ls:QualityEvent, ls:CAPA ;
   p:worksIn ls:ScientificInnovation, ls:SafetyAndRegulatory ;
   rdfs:label "Quality Lead" ;
@@ -78,6 +88,8 @@ ls:ExternalCROAgent a p:Role ;
 # so until then these roles read and navigate the design and plan graph and run only the protocol methods named here.
 
 ls:ClinicalScientist a p:Role ;
+  p:mayCreate ls:StudyConcept, ls:StudyScenario, ls:Protocol, ls:Population, ls:Objective, ls:Estimand, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment, ls:OutcomeTarget ;
+  p:mayEdit ls:StudyConcept, ls:StudyScenario, ls:Protocol, ls:Population, ls:Objective, ls:Estimand, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment, ls:OutcomeTarget ;
   p:worksAcross ls:StudyConcept ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Scientist" ;
@@ -86,6 +98,8 @@ ls:ClinicalScientist a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:Biostatistician a p:Role ;
+  p:mayCreate ls:Objective, ls:Estimand, ls:Endpoint ;
+  p:mayEdit ls:Objective, ls:Estimand, ls:Endpoint ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Biostatistician" ;
   rdfs:comment "Makes a design answer its question reliably and efficiently: estimands, sample size, allocation and the assumptions of trial simulations." ;
@@ -93,6 +107,8 @@ ls:Biostatistician a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:MedicalWriter a p:Role ;
+  p:mayCreate ls:Protocol, ls:Contribution, ls:Population, ls:Objective, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment ;
+  p:mayEdit ls:Protocol, ls:Contribution, ls:Population, ls:Objective, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Medical Writer" ;
   rdfs:comment "Accountable for one coherent, approvable protocol: confirms contributions, writes the narrative and sends each version for review." ;
@@ -100,6 +116,8 @@ ls:MedicalWriter a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalOperationsLead a p:Role ;
+  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
+  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Operations Lead" ;
   rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
@@ -107,12 +125,16 @@ ls:ClinicalOperationsLead a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:PortfolioStrategist a p:Role ;
+  p:mayCreate ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:OutcomeTarget ;
+  p:mayEdit ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:OutcomeTarget ;
   p:worksIn ls:DesignAndPlan, ls:ScientificInnovation ;
   rdfs:label "Portfolio Strategist" ;
   rdfs:comment "Recommends which assets, indications and development options the organization should fund, from discovery's candidates and from simulated chance of success, time and cost." ;
   p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
 
 ls:ProgramLeader a p:Role ;
+  p:mayCreate ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:StudyConcept, ls:OutcomeTarget ;
+  p:mayEdit ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:StudyConcept, ls:OutcomeTarget ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   p:worksAcross ls:StudyConcept ;
   p:mayRun ls:CompareStudyScenarios ;

@@ -113,6 +113,21 @@
           "type": "string",
           "minLength": 1,
           "description": "An ontology method a Button or a DropdownItem runs on every chosen object (design system 4.3). The gateway checks each object again."
+        },
+        "creates": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "An object type a Button opens the create form for (platform spec 5.3, Creating and editing objects; design system 4.3)."
+        },
+        "within": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "With creates: the object the new one is created inside, such as the object whose tab lists it."
+        },
+        "edits": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A graph object a Button opens the edit form for (platform spec 5.3; design system 4.4)."
         }
       }
     }

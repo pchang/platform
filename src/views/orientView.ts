@@ -173,6 +173,8 @@ export interface ListControls {
   selected: ReadonlySet<string>;
   /** The set methods the chosen objects qualify for together, from the gateway (platform spec 5.4, Acting on a set). */
   setActions?: { method: string; label: string }[];
+  /** New or Add at the bar's end, when the person may create the listed type (platform spec 5.3; design system spec 4.3). */
+  create?: { type: string; typeLabel: string; within?: string; verb: 'New' | 'Add' };
 }
 export const NO_CONTROLS: ListControls = { mode: 'cards', selecting: false, selected: new Set() };
 
@@ -199,6 +201,14 @@ export function commonMethods(entries: ListEntry[], selected: ReadonlySet<string
 }
 
 const barItem = (child: ViewNode): ViewNode => ({ component: 'ToolbarItem', children: [child] });
+
+/** New or Add and the type, opening the create form (platform spec 5.3; design system spec 4.3). */
+export const createButton = (create: NonNullable<ListControls['create']>): ViewNode => ({
+  component: 'Button',
+  props: { label: `${create.verb} ${create.typeLabel}`, variant: 'secondary', size: 'sm' },
+  creates: create.type,
+  ...(create.within ? { within: create.within } : {}),
+});
 const separator: ViewNode = { component: 'ToolbarItem', props: { variant: 'separator' } };
 /** A quiet link in the bar, such as Select. */
 const barLink = (label: string, intent: 'select'): ViewNode => ({ component: 'Button', props: { label, variant: 'link', isInline: true }, intent });
@@ -255,6 +265,7 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       children: [
         // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
         ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
+        ...(controls.create ? [barItem(createButton(controls.create))] : []),
         barItem({
           component: 'ToggleGroup',
           props: { 'aria-label': 'Show objects as', isCompact: true },

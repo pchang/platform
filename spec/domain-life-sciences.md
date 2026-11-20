@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.25. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.33.
+Version 0.26. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.34.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -492,6 +492,26 @@ The same object must look different to each persona. A Batch is a production rec
 
 ---
 
+### Creating and editing
+
+Platform spec 5.3. Each persona may create and edit the types of its own work; organizations may vary this like any permission.
+
+| Persona | Creates and edits |
+|---|---|
+| Computational Chemist | Compounds, experiments, assay results, formulations |
+| Quality Lead | Processes, batches |
+| Clinical Data Manager | Studies, sites, protocols, visits |
+| Clinical Research Coordinator | Patients, visits |
+| Drug Safety Physician | Medical inquiries, products |
+| Portfolio Strategist | Programs, opportunities, development options, target product profiles, outcome targets |
+| Program Leader | Programs, opportunities, development options, target product profiles, study concepts, outcome targets |
+| Clinical Scientist | Study concepts, study scenarios, protocols and their design objects (populations, objectives, estimands, endpoints, eligibility criteria, arms, interventions, planned visits, assessments), outcome targets |
+| Biostatistician | Objectives, estimands, endpoints |
+| Medical Writer | Protocols, contributions, and the design objects of protocols except estimands |
+| Clinical Operations Lead | Study scenarios, study budgets, site selections, proposed sites, sites |
+
+The Clinical Research Associate and the external agent create and edit nothing; their work is verifying and answering. These types come only through methods and models, so nobody creates or edits them directly: adverse events, data records, data queries, safety cases, signals, submissions, quality events, CAPAs, simulations, trial simulations, forecasts, design signals and decisions. Classifying states, chosen at creation and corrected by editing: an arm's role, an assessment's purpose and burden, an eligibility criterion's kind and testability, an endpoint's type, an objective's level, an opportunity's kind, an outcome target's measure, a study's phase and blinding, a site's payment, a batch's deviation risk and a proposed site's status. Every other state starts at its first value and changes only through methods.
+
 ### To do
 
 These make To do work for this domain (platform spec section 5.1).
@@ -575,7 +595,7 @@ Rules the Guard agent enforces. They are data in the business context, not code.
 1. **Expedited reporting.** A serious, unexpected case with possible or probable causality must be submitted within 15 days of receipt. Within 3 days of the deadline, its Submission is due soon.
 2. **Blinding.** While a study is blinded, no persona sees a patient's arm. A Drug Safety Physician may unblind one patient only when that patient's Safety Case is triaged as serious and unexpected, so the arm is needed to assess causality for a possible expedited report. Every unblinding is logged with its justification.
 3. **Batch release.** A batch with an open Quality Event cannot be released.
-4. **Data integrity.** Signed experiments and verified data records cannot be edited. They can only be corrected by a new linked record.
+4. **Data integrity.** Signed, verified, approved and closed records cannot be edited: signed experiments, verified data records and adverse events, approved or superseded protocol versions, locked studies and closed safety cases. They can only be corrected by a new linked record.
 5. **Separation of duties.** The person who prepares a Submission cannot approve it.
 6. **Human review.** Generated narratives and generated analogs are drafts until a human accepts them.
 7. **Signal detection.** For a product and a reaction, count the cases: those of the product with the reaction (a), the product's other cases (b), other products' cases with the reaction (c), and other products' other cases (d). A case flagged as a duplicate of another is not counted. The pair is a signal when all three hold (the criteria of Evans, Waller and Davis, 2001):
@@ -883,3 +903,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.23 | 2026-11-20 | Portfolio and asset decisions join Design and Plan. Concept (0.21–0.22, not yet merged) is replaced by Opportunity, a new asset from discovery, a new indication or a scientific question across programs, with Development Options simulated for chance of technical and regulatory success, time to submission and cost; and Study Concept, in its industry meaning, holding study scenarios until governance approves it. Section 3.4.2 lays out the stages from discovery to protocol and who works each. Two personas: Portfolio Strategist and Program Leader. Methods, rules, journey J7, seed and four open questions follow. |
 | 0.24 | 2026-11-20 | The study scenario's three elements and how they move each other (section 3.4.4), the outcome measures a sponsor can simulate, and the reference trial model: a transparent, seeded Monte Carlo over the scenario's own objects. Run trial simulation is built (section 3.7) as a model run (platform spec 0.32), with the measures chosen as checkboxes. Proposed sites carry their equipment, site count and costs; assessments the equipment they need. The seed's variant protocols are structured, and its study scenarios are simulated live. |
 | 0.25 | 2026-11-20 | Compare study scenarios is built as a set method (platform spec 0.33): choose two to four scenarios with the same parent, compare their current forecasts against their targets side by side, choose one with a rationale; the others are set aside and a Decision is recorded on the parent. It replaces the unbuilt Compare and Select study scenario. A forecast that misses its target is urgent. |
+| 0.26 | 2026-11-20 | Creating and editing (platform spec 0.34): which types each persona creates and edits, which come only through methods, and which states are classifying. Rule 4 also freezes approved or superseded protocols, locked studies and closed safety cases. |

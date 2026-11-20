@@ -1,6 +1,7 @@
 import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
 import { CONNECTED_MODELS } from '../ontology/models';
+import { templateProperties } from '../ontology/titles';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
 import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
@@ -69,6 +70,8 @@ export interface RelationshipEndDescription {
 /** A relationship end of one object, with the objects at its other end that the principal may read. */
 export interface RelationshipEnd extends RelationshipEndDescription {
   objects: ObjectSummary[];
+  /** True when the principal may create an object inside this one, at this end (spec 5.3, Creating and editing objects). */
+  canAdd?: boolean;
 }
 
 export interface ObjectView extends ObjectSummary {
@@ -102,7 +105,8 @@ export interface TypeDescription {
 export interface NavigationDomain {
   domain: string;
   label: string;
-  types: { type: string; label: string; pluralLabel: string; count: number }[];
+  /** Creatable: the principal may create objects of the type (spec 5.3, Creating and editing objects). */
+  types: { type: string; label: string; pluralLabel: string; count: number; creatable?: boolean }[];
 }
 
 export interface ToDoItem {
@@ -120,7 +124,9 @@ export interface ToDoItem {
 export interface ComposedInput {
   name: string;
   label: string;
-  kind: 'text' | 'number' | 'url' | 'choice' | 'person' | 'object';
+  kind: 'line' | 'text' | 'number' | 'date' | 'url' | 'choice' | 'person' | 'object';
+  /** True when the field may be left empty, as optional fields of a create or edit form (spec 5.3). */
+  optional?: boolean;
   /** The values the person may choose from, with their labels. */
   choices?: { value: string; label: string }[];
   /** True when a choice takes any number of the values, sent separated by spaces (spec 3.1, Input). */
@@ -161,6 +167,28 @@ export interface MethodComposition {
 /** A set method's comparison (spec 5.4, Acting on a set): rows keyed by a state value, a cell per object of the set. */
 export interface ComparisonView {
   rows: { key: string; label: string; cells: ({ identifier: string; title: string; status?: string; urgent?: boolean } | null)[] }[];
+}
+
+/** One field of a create or edit form (spec 5.3, Creating and editing objects): a property, link or classifying state. */
+export interface FormField extends Omit<ComposedInput, 'kind'> {
+  kind: 'line' | 'text' | 'number' | 'date' | 'url' | 'choice' | 'object';
+  /** The property, relationship or state dimension the field sets. */
+  property: string;
+  required: boolean;
+  /** The object's current value, when editing. */
+  value?: string;
+}
+
+/** A create or edit form, from the ontology (spec 5.3, Creating and editing objects). */
+export interface ObjectForm {
+  mode: 'create' | 'edit';
+  type: string;
+  typeLabel: string;
+  /** The object being edited. */
+  object?: ObjectSummary;
+  /** The object a new one is created inside. */
+  parent?: ObjectSummary;
+  fields: FormField[];
 }
 
 /** A set method a selection qualifies for (spec 5.4, Acting on a set). */
@@ -579,7 +607,7 @@ export class Gateway {
           ?type a p:ObjectType ; p:inDomain <${domain}> ; rdfs:label ?label ; p:pluralLabel ?pluralLabel .
           OPTIONAL { ?o a ?type } } GROUP BY ?type ?label ?pluralLabel ORDER BY ?label`)
         .filter((t) => !hidden.has(t.type) && !contained.has(t.type))
-        .map((t) => ({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, count: Number(t.count) })),
+        .map((t) => ({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, count: Number(t.count), ...(this.mayCreate(principal, t.type) ? { creatable: true } : {}) })),
     })).filter((d) => d.types.length > 0);
   }
 
@@ -695,7 +723,7 @@ export class Gateway {
       .map((end) => {
         const pattern = end.direction === 'out' ? `<${object}> <${end.relationship}> ?o` : `?o <${end.relationship}> <${object}>`;
         const objects = this.q(`SELECT ?o WHERE { ${pattern} . ?o a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
-        return { ...end, objects };
+        return { ...end, objects, ...(end.kind === 'contains' && !end.one && this.mayCreate(principal, end.type) ? { canAdd: true } : {}) };
       });
     // Coded values show their labels, people their names; a property with several values shows them all, in order.
     const properties: Record<string, string> = {};
@@ -1157,6 +1185,237 @@ export class Gateway {
   /** Commits run one at a time: each waits for the one before it to finish. */
   commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven): Promise<CommitResult> {
     return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft));
+  }
+
+  // ---------------------------------------------------------------- creating and editing (spec 5.3)
+
+  /** Whether the principal may create objects of a type: a permission, never for a type that comes only through methods. */
+  private mayCreate(principal: Principal, type: string): boolean {
+    return this.canRead(principal, type) && ask(this.graph.store, `ASK { <${principal.role}> p:mayCreate <${type}> FILTER NOT EXISTS { <${type}> p:onlyThroughMethods true } }`);
+  }
+
+  /** The containment that makes a type part of another: its one-valued link to the object it belongs to, and that object's types. */
+  private parentLinkOf(type: string): { property: string; label: string; targets: string[] } | undefined {
+    const r = this.q(`SELECT ?rel ?label ?ps WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 .
+        ?rel p:partOf true ; rdfs:label ?label }`)[0];
+    if (!r) return undefined;
+    return { property: r.rel, label: r.label, targets: this.targetsOf(r.ps) };
+  }
+
+  private targetsOf(propertyShape: string): string[] {
+    return this.q(`SELECT DISTINCT ?t WHERE { { <${propertyShape}> sh:class ?t } UNION { <${propertyShape}> sh:or/rdf:rest*/rdf:first/sh:class ?t } }`).map((r) => r.t);
+  }
+
+  /** The fields of a type's form: the title's properties, the parent and classifying states first and required, then the rest. */
+  private formFields(principal: Principal, type: string, mode: 'create' | 'edit', object?: string): FormField[] {
+    const hidden = this.unreadable(principal.role);
+    const template = this.q(`SELECT ?t WHERE { <${type}> p:titleTemplate ?t }`)[0]?.t ?? '';
+    const titled = new Set(templateProperties(template.split(' | ')[0]));
+    const parent = this.parentLinkOf(type);
+    const shapes = this.q(`SELECT ?ps ?path ?dt ?max ?name ?label ?order WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?path .
+        OPTIONAL { ?ps sh:datatype ?dt } OPTIONAL { ?ps sh:maxCount ?max } OPTIONAL { ?ps sh:name ?name } OPTIONAL { ?path rdfs:label ?label } OPTIONAL { ?path p:order ?order }
+        FILTER(?path != ls:identifier) }`);
+    const current = (property: string) => (object ? this.q(`SELECT ?v WHERE { <${object}> <${property}> ?v }`)[0]?.v : undefined);
+    const objectChoices = (types: string[]) =>
+      types.filter((t) => this.canRead(principal, t)).flatMap((t) => this.q(`SELECT ?o WHERE { ?o a <${t}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o)))
+        .map((o) => ({ value: o.iri, label: `${o.identifier} · ${o.title}` }));
+    const fields: FormField[] = [];
+    for (const sh of shapes) {
+      if (hidden.has(sh.path)) continue;
+      const label = sh.label ?? sh.name ?? sh.path.split('#').pop()!;
+      const name = sh.path.split(/[#/]/).pop()!;
+      const base = { name, property: sh.path, label: label[0].toUpperCase() + label.slice(1) };
+      const isDimension = ask(this.graph.store, `ASK { <${sh.path}> a p:StateDimension }`);
+      const isRelationship = ask(this.graph.store, `ASK { <${sh.path}> a p:Relationship }`);
+      const value = current(sh.path);
+      if (isDimension) {
+        // Only classifying states are chosen; lifecycles start at their first value and only methods move them.
+        if (!ask(this.graph.store, `ASK { <${sh.path}> p:chosenOnCreate true }`)) continue;
+        const choices = this.q(`SELECT ?value ?label WHERE { <${sh.path}> p:valuesFrom ?s . ?value skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`);
+        fields.push({ ...base, kind: 'choice', required: true, choices: choices.map((c) => ({ value: c.value, label: c.label })), ...(value ? { value } : {}) });
+      } else if (isRelationship) {
+        if (sh.max !== '1') continue; // Many-valued links are kept in the object's tabs.
+        const isParent = parent?.property === sh.path;
+        if (isParent && mode === 'edit') continue; // An object does not move between the objects it belongs to.
+        // A link is named by the type it reaches, such as Protocol, unless it reaches several, such as a program or an opportunity.
+        const targets = this.targetsOf(sh.ps);
+        const targetLabel = targets.length === 1 ? this.q(`SELECT ?l WHERE { <${targets[0]}> rdfs:label ?l }`)[0]?.l : undefined;
+        fields.push({ ...base, ...(targetLabel ? { label: targetLabel } : {}), kind: 'object', required: isParent || titled.has(sh.path), choices: objectChoices(targets), ...(value ? { value } : {}) });
+      } else if (sh.dt && sh.max === '1') {
+        // A name the title shows is one line; other text may run longer.
+        const kind = sh.dt === `${NS.xsd}decimal` || sh.dt === `${NS.xsd}integer` ? 'number' : sh.dt === `${NS.xsd}date` ? 'date' : sh.dt === `${NS.xsd}anyURI` ? 'url' : titled.has(sh.path) ? 'line' : 'text';
+        fields.push({ ...base, kind, required: titled.has(sh.path), ...(value ? { value } : {}) });
+      }
+    }
+    // Required first: the parent, then the title's properties and the classifying states, then the rest, each in shape order.
+    const rank = (f: FormField) => (f.property === parent?.property ? 0 : f.required ? 1 : 2);
+    return fields.map((f, i) => ({ f, i })).sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i).map(({ f }) => f);
+  }
+
+  /** Checks a form's values against its fields: required ones given, numbers and dates well formed, choices allowed. */
+  private checkForm(fields: FormField[], values: Record<string, string>, editing: boolean): Map<FormField, Term | undefined> {
+    const problems: string[] = [];
+    const resolved = new Map<FormField, Term | undefined>();
+    for (const name of Object.keys(values)) if (!fields.some((f) => f.name === name)) problems.push(`Unknown field ${name}`);
+    for (const f of fields) {
+      if (!(f.name in values) && editing) continue; // Not given: left as it is.
+      const raw = (values[f.name] ?? '').trim();
+      if (!raw) {
+        if (f.required) problems.push(`${f.label} is required`);
+        else resolved.set(f, undefined);
+        continue;
+      }
+      const dt = this.q(`SELECT ?dt WHERE { ?ps sh:path <${f.property}> ; sh:datatype ?dt } LIMIT 1`)[0]?.dt;
+      const problem =
+        f.kind === 'number' && !/^-?\d+(\.\d+)?$/.test(raw) ? `${f.label} must be a number`
+        : f.kind === 'number' && dt === `${NS.xsd}integer` && !/^-?\d+$/.test(raw) ? `${f.label} must be a whole number`
+        : f.kind === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${f.label} must be a date`
+        : f.kind === 'url' && !URL.canParse(raw) ? `${f.label} must be a web address`
+        : (f.kind === 'choice' || f.kind === 'object') && !f.choices?.some((c) => c.value === raw) ? `${f.label} is not one of the allowed choices`
+        : undefined;
+      if (problem) {
+        problems.push(problem);
+        continue;
+      }
+      resolved.set(f, f.kind === 'choice' || f.kind === 'object' ? namedNode(raw) : literal(raw, namedNode(dt ?? `${NS.xsd}string`)));
+    }
+    if (problems.length) throw new GatewayError(400, problems);
+    return resolved;
+  }
+
+  /** The form to create an object of a type, inside a parent when given (spec 5.3). */
+  createForm(principal: Principal, type: string, parentId?: string): ObjectForm {
+    this.authorize(principal);
+    if (!ask(this.graph.store, `ASK { <${type}> a p:ObjectType }`)) throw new GatewayError(404, ['No such type']);
+    if (ask(this.graph.store, `ASK { <${type}> p:onlyThroughMethods true }`)) throw new GatewayError(400, ['Objects of this type come only through the methods that create them']);
+    if (!this.mayCreate(principal, type)) throw new GatewayError(403, ['Your role cannot create objects of this type']);
+    const parent = parentId ? this.resolve(parentId) : undefined;
+    let fields = this.formFields(principal, type, 'create');
+    if (parent) {
+      const link = this.parentLinkFor(type, parent);
+      // Inside a parent, the field that names it is given already; a parent on its own side links to the new object.
+      fields = fields.filter((f) => f.property !== link.property);
+    }
+    const typeLabel = this.q(`SELECT ?l WHERE { <${type}> rdfs:label ?l }`)[0].l;
+    return { mode: 'create', type, typeLabel, fields, ...(parent ? { parent: this.summary(parent) } : {}) };
+  }
+
+  /** How a new object of a type belongs to a parent: its own link to the parent, or the parent's link to it. */
+  private parentLinkFor(type: string, parent: string): { property: string; fromParent: boolean } {
+    const parentType = this.typeOf(parent).type;
+    const own = this.q(`SELECT ?rel WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true .
+        { ?ps sh:class <${parentType}> } UNION { ?ps sh:or/rdf:rest*/rdf:first/sh:class <${parentType}> } }`)[0];
+    if (own) return { property: own.rel, fromParent: false };
+    const theirs = this.q(`SELECT ?rel WHERE { ?shape sh:targetClass <${parentType}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:hasPart true .
+        { ?ps sh:class <${type}> } UNION { ?ps sh:or/rdf:rest*/rdf:first/sh:class <${type}> } }`)[0];
+    if (theirs) return { property: theirs.rel, fromParent: true };
+    throw new GatewayError(400, ['A new object of this type cannot be created inside that object']);
+  }
+
+  /** Plans a create on a working copy: the new object, its lifecycles at their first values, and the values given. */
+  private async planCreate(principal: Principal, type: string, values: Record<string, string>, parentId?: string) {
+    const form = this.createForm(principal, type, parentId);
+    const resolved = this.checkForm(form.fields, values, false);
+    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    const created = this.mint(work, type, changes);
+    for (const { d, first } of this.q(`SELECT ?d ?first WHERE { ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?first skos:inScheme ?s ; p:order 1
+        FILTER NOT EXISTS { ?d p:chosenOnCreate true } }`)) this.set(work, created, d, namedNode(first), changes, false);
+    for (const [f, v] of resolved) if (v) this.set(work, created, f.property, v, changes, false);
+    if (form.parent) {
+      const link = this.parentLinkFor(type, form.parent.iri);
+      if (link.fromParent) this.set(work, form.parent.iri, link.property, namedNode(created), changes, false);
+      else this.set(work, created, link.property, namedNode(form.parent.iri), changes, false);
+    }
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work);
+    if (problems.length) throw new GatewayError(400, problems);
+    return { work, changes, created };
+  }
+
+  /** Why an object cannot be edited now: no permission, a type that comes only through methods, or a rule that freezes it. */
+  async editBlocks(principal: Principal, idOrIri: string): Promise<string[]> {
+    this.authorize(principal);
+    const object = this.resolve(idOrIri);
+    const { type } = this.typeOf(object);
+    if (!this.canRead(principal, type)) return ['Your role cannot read this object'];
+    if (ask(this.graph.store, `ASK { <${type}> p:onlyThroughMethods true }`)) return ['Objects of this type change only through their methods'];
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayEdit <${type}> }`)) return ['Your role cannot edit objects of this type'];
+    const blocks: string[] = [];
+    const validator = validatorFor(this.graph);
+    for (const { shape, rule, label } of this.q(`SELECT ?shape ?rule ?label WHERE { ?r p:freezes ?shape ; rdfs:label ?rule . OPTIONAL { ?shape rdfs:label ?label } }`)) {
+      if (!(await conformanceProblems(this.graph, object, [shape], validator)).length) blocks.push(`${label ?? 'This record'} cannot be edited (${rule}): correct it with a new linked record`);
+    }
+    return blocks;
+  }
+
+  /** The form to edit an object, with its current values (spec 5.3). */
+  async editForm(principal: Principal, idOrIri: string): Promise<ObjectForm> {
+    const blocks = await this.editBlocks(principal, idOrIri);
+    if (blocks.length) throw new GatewayError(403, blocks);
+    const object = this.resolve(idOrIri);
+    const summary = this.summary(object);
+    return { mode: 'edit', type: summary.type, typeLabel: summary.typeLabel, object: summary, fields: this.formFields(principal, summary.type, 'edit', object) };
+  }
+
+  private async planEdit(principal: Principal, idOrIri: string, values: Record<string, string>) {
+    const form = await this.editForm(principal, idOrIri);
+    const object = form.object!.iri;
+    const resolved = this.checkForm(form.fields, values, true);
+    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    for (const [f, v] of resolved) {
+      if ((f.value ?? '') === (v?.value ?? '')) continue;
+      this.set(work, object, f.property, v, changes);
+    }
+    if (!changes.length) throw new GatewayError(400, ['Nothing has changed']);
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work);
+    if (problems.length) throw new GatewayError(400, problems);
+    return { work, changes, object };
+  }
+
+  async previewCreate(principal: Principal, type: string, values: Record<string, string>, parentId?: string): Promise<Omit<CommitResult, 'commit'>> {
+    const { work, changes, created } = await this.planCreate(principal, type, values, parentId);
+    return { changes: changes.map((c) => this.changeView(c, work)), created: [created], pending: [], pendingDescriptions: [], background: [] };
+  }
+
+  async previewEdit(principal: Principal, idOrIri: string, values: Record<string, string>): Promise<Omit<CommitResult, 'commit'>> {
+    const { work, changes } = await this.planEdit(principal, idOrIri, values);
+    return { changes: changes.map((c) => this.changeView(c, work)), created: [], pending: [], pendingDescriptions: [], background: [] };
+  }
+
+  /** Creates an object, as a commit by the platform method Create (spec 5.3). */
+  create(principal: Principal, type: string, values: Record<string, string>, parentId?: string): Promise<CommitResult> {
+    return this.enqueue(async () => {
+      this.authorize(principal);
+      const { work, changes, created } = await this.planCreate(principal, type, values, parentId);
+      return this.commitPlanned(principal, created, `${NS.p}Create`, work, changes, [created]);
+    });
+  }
+
+  /** Edits an object, as a commit by the platform method Edit (spec 5.3). */
+  edit(principal: Principal, idOrIri: string, values: Record<string, string>): Promise<CommitResult> {
+    return this.enqueue(async () => {
+      this.authorize(principal);
+      const { work, changes, object } = await this.planEdit(principal, idOrIri, values);
+      return this.commitPlanned(principal, object, `${NS.p}Edit`, work, changes, []);
+    });
+  }
+
+  /** Records a planned, validated change as a commit: journal first, then the live graph (spec 3.4, steps 6 and 7). */
+  private commitPlanned(principal: Principal, object: string, method: string, work: Graph, changes: Change[], created: string[]): CommitResult {
+    const at = this.now();
+    const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
+    const record = this.record(commit, principal, object, method, new Map(), changes, created, [], at);
+    const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
+    const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
+    this.options.journal?.append('commit', at, removed, added);
+    for (const q of removed) this.graph.store.delete(q);
+    for (const q of added) this.graph.store.add(q);
+    this.graph.dataset = work.dataset;
+    this.commitCount++;
+    return { commit, changes: changes.map((c) => this.changeView(c, work)), created, pending: [], pendingDescriptions: [], background: [] };
   }
 
   // ---------------------------------------------------------------- acting on a set (spec 5.4)

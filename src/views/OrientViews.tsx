@@ -10,6 +10,7 @@ import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
 import { SetDialog } from './SetDialog';
+import { ObjectFormDialog, type FormTarget } from './ObjectFormDialog';
 import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
@@ -32,6 +33,7 @@ export function useObjectList(listed: ObjectSummary[]) {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [batch, setBatch] = useState<{ method: string; objects: ObjectSummary[] }>();
+  const [form, setForm] = useState<FormTarget>();
   const key = listed.map((o) => o.iri).join('|');
   useEffect(() => {
     const present = new Set(key.split('|'));
@@ -79,6 +81,9 @@ export function useObjectList(listed: ObjectSummary[]) {
         }),
     },
     onBatch: (method) => setBatch({ method, objects: listed.filter((o) => selected.has(o.iri)) }),
+    // Creating and editing (platform spec 5.3): New and Add in the list bar, Edit in the object panel's header.
+    onCreate: (type, within) => setForm({ mode: 'create', type, ...(within ? { within } : {}) }),
+    onEdit: (object) => setForm({ mode: 'edit', object }),
   };
   const onIntent = (intent: string) => {
     if (intent === 'select') {
@@ -105,6 +110,16 @@ export function useObjectList(listed: ObjectSummary[]) {
     processes.report(notice);
   };
   const isSet = batch && setActions.some((m) => m.method === batch.method);
+  const formDialog = form && (
+    <ObjectFormDialog
+      target={form}
+      onCancel={() => setForm(undefined)}
+      onDone={(notice) => {
+        setForm(undefined);
+        processes.report(notice);
+      }}
+    />
+  );
   const dialog = batch && isSet ? (
     <SetDialog objects={batch.objects} method={batch.method} onCancel={() => setBatch(undefined)} onDone={done} />
   ) : batch && (
@@ -120,7 +135,7 @@ export function useObjectList(listed: ObjectSummary[]) {
       }}
     />
   );
-  return { controls, host, onIntent, onField, dialog, values: { [LIST_MODE_FIELD]: mode } };
+  return { controls, host, onIntent, onField, dialog: (<>{dialog}{formDialog}</>), values: { [LIST_MODE_FIELD]: mode } };
 }
 
 const NONE: ObjectSummary[] = [];
@@ -227,7 +242,7 @@ export function TypeView({ type }: { type: string }) {
   const chat = useChat();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
-  const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
+  const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]>; create?: { type: string; typeLabel: string; verb: 'New' } }>();
   const processes = useProcesses();
   const openMethod = useOpenMethod((object, method) => {
     const summary = loaded?.objects.find((o) => o.iri === object);
@@ -243,7 +258,8 @@ export function TypeView({ type }: { type: string }) {
       const entry = nav.flatMap((d) => d.types).find((t) => t.type === type);
       const objects = await client.find(principal, type);
       const methods = new Map(await Promise.all(objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
-      if (!cancelled) setLoaded({ pluralLabel: entry?.pluralLabel ?? type.split('#').pop()!, objects, methods });
+      const create = entry?.creatable ? { type, typeLabel: entry.label, verb: 'New' as const } : undefined;
+      if (!cancelled) setLoaded({ pluralLabel: entry?.pluralLabel ?? type.split('#').pop()!, objects, methods, ...(create ? { create } : {}) });
     })();
     return () => {
       cancelled = true;
@@ -251,7 +267,11 @@ export function TypeView({ type }: { type: string }) {
   }, [client, principal, type, processes.changes, changes]);
 
   const list = useObjectList(loaded?.objects ?? NONE);
-  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: list.controls }) : loadingView;
+  // New, when the person may create objects of the type (platform spec 5.3).
+  const create = loaded?.create;
+  const view = loaded
+    ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: { ...list.controls, ...(create ? { create } : {}) } })
+    : loadingView;
   return (
     <>
       <ViewRenderer

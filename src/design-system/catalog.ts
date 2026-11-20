@@ -43,6 +43,12 @@ export interface ViewNode {
   selects?: string;
   /** A method a Button runs on every chosen object (design system spec 4.3). */
   batch?: string;
+  /** An object type a Button opens the create form for (platform spec 5.3). */
+  creates?: string;
+  /** With creates: the object the new one is created inside. */
+  within?: string;
+  /** An object a Button opens the edit form for (platform spec 5.3). */
+  edits?: string;
   children?: ViewNode[];
 }
 

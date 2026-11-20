@@ -1581,6 +1581,39 @@ lsh:IsSignal a sh:NodeShape ;
 
 
 
+
+# Creating and editing (platform spec 5.3; domain spec section 6). Types whose objects come only through methods and models,
+# and the state dimensions that classify objects rather than track a lifecycle.
+
+ls:AdverseEvent p:onlyThroughMethods true .
+ls:DataRecord p:onlyThroughMethods true .
+ls:DataQuery p:onlyThroughMethods true .
+ls:SafetyCase p:onlyThroughMethods true .
+ls:Signal p:onlyThroughMethods true .
+ls:Submission p:onlyThroughMethods true .
+ls:QualityEvent p:onlyThroughMethods true .
+ls:CAPA p:onlyThroughMethods true .
+ls:Simulation p:onlyThroughMethods true .
+ls:TrialSimulation p:onlyThroughMethods true .
+ls:Forecast p:onlyThroughMethods true .
+ls:DesignSignal p:onlyThroughMethods true .
+ls:Decision p:onlyThroughMethods true .
+
+ls:armRole p:chosenOnCreate true .
+ls:assessmentPurpose p:chosenOnCreate true .
+ls:assessmentBurden p:chosenOnCreate true .
+ls:batchDeviationRisk p:chosenOnCreate true .
+ls:eligibilityCriterionKind p:chosenOnCreate true .
+ls:eligibilityCriterionTestability p:chosenOnCreate true .
+ls:endpointType p:chosenOnCreate true .
+ls:objectiveLevel p:chosenOnCreate true .
+ls:opportunityKind p:chosenOnCreate true .
+ls:targetMeasure p:chosenOnCreate true .
+ls:studyPhase p:chosenOnCreate true .
+ls:studyBlinding p:chosenOnCreate true .
+ls:sitePayment p:chosenOnCreate true .
+ls:proposedSiteStatus p:chosenOnCreate true .
+
 # ---------------------------------------------------------------------------
 # Design and Plan (domain spec section 3.4). Version 0.2.0.
 # ---------------------------------------------------------------------------

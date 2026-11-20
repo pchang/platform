@@ -1,6 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
-import { daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
+import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -106,8 +106,10 @@ function section(
   options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; controls?: ListControls },
 ): ViewNode {
   const sentence = `This ${inText(view.typeLabel)} ${end.label} ${end.objects.length === 1 ? `this ${inText(end.typeLabel)}` : `these ${inText(end.pluralLabel)}`}.`;
-  if (!end.objects.length) return stack([[text(`No ${inText(end.pluralLabel)} yet.`)]]);
-  return stack([[text(sentence)], ...objectList(objectEntries(end.objects, options), options.controls ?? NO_CONTROLS, name, 'h3')]);
+  // Add creates a new object inside this one, when the person may (platform spec 5.3; design system spec 4.3).
+  const create = end.canAdd ? { type: end.type, typeLabel: end.typeLabel, within: view.iri, verb: 'Add' as const } : undefined;
+  if (!end.objects.length) return stack([[text(`No ${inText(end.pluralLabel)} yet.`)], ...(create ? [[createButton(create)]] : [])]);
+  return stack([[text(sentence)], ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')]);
 }
 
 /**
@@ -116,7 +118,7 @@ function section(
  */
 export function buildObjectView(
   view: ObjectView,
-  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date; controls?: ListControls } = {},
+  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date; controls?: ListControls; editable?: boolean } = {},
 ): ViewSpec {
   const today = options.today ?? new Date();
   const status: ViewNode[] = [];
@@ -133,7 +135,12 @@ export function buildObjectView(
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);
   const available = (options.methods ?? []).filter((m) => m.available);
-  if (available.length) header.push(...runnable(available, view.iri, false));
+  const actions = runnable(available, view.iri, false);
+  // Edit follows the methods, when the person may edit the object now (platform spec 5.3; design system spec 4.4).
+  const edit: ViewNode = { component: 'Button', props: { label: 'Edit', variant: 'secondary', size: 'sm' }, edits: view.iri };
+  if (options.editable && actions.length && actions[0][0].component === 'Flex') actions[0][0] = { ...actions[0][0], children: [...(actions[0][0].children ?? []), edit] };
+  else if (options.editable) actions.unshift([{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' } }, children: [edit] }]);
+  header.push(...actions);
 
   const tabs = view.links.filter(isTab);
   const named = names(tabs, view.type, (end) => end.pluralLabel);
