@@ -1579,6 +1579,7 @@ lsh:IsSafetyCase a sh:NodeShape ;
 lsh:IsSignal a sh:NodeShape ;
   sh:class ls:Signal .
 
+
 # ---------------------------------------------------------------------------
 # Design and Plan (domain spec section 3.4). Version 0.2.0.
 # ---------------------------------------------------------------------------
@@ -1630,32 +1631,83 @@ ls:minimumClaim a owl:DatatypeProperty ;
   rdfs:label "minimum claim" ;
   rdfs:comment "The least the product must show to be worth developing." .
 
-ls:Concept a p:ObjectType, rdfs:Class ;
-  rdfs:label "Concept" ;
-  p:pluralLabel "Concepts" ;
-  rdfs:comment "A research opportunity being explored: its rationale, intended direction and preliminary objectives. It can lead to one study, several or none." ;
+ls:Opportunity a p:ObjectType, rdfs:Class ;
+  rdfs:label "Opportunity" ;
+  p:pluralLabel "Opportunities" ;
+  rdfs:comment "A portfolio or asset opportunity being explored: a new asset from discovery, a new indication for an existing one, or a scientific question that bears on several programs. It can lead to a new program, a change to one, or nothing." ;
   p:inDomain ls:DesignAndPlan ;
-  p:titleTemplate "{ls:conceptName}" .
+  p:titleTemplate "{ls:opportunityName}" .
 
-ls:conceptStatus a p:StateDimension, owl:ObjectProperty ;
+ls:opportunityStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
-  rdfs:comment "The status of a concept." ;
-  p:dimensionOf ls:Concept ;
-  p:valuesFrom lst:ConceptStatus ;
+  rdfs:comment "The status of an opportunity." ;
+  p:dimensionOf ls:Opportunity ;
+  p:valuesFrom lst:OpportunityStatus ;
   p:order 1 .
 
-ls:conceptName a owl:DatatypeProperty ;
+ls:opportunityKind a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Kind" ;
+  rdfs:comment "The kind of an opportunity." ;
+  p:dimensionOf ls:Opportunity ;
+  p:valuesFrom lst:OpportunityKind ;
+  p:order 2 .
+
+ls:opportunityName a owl:DatatypeProperty ;
   rdfs:label "name" ;
-  rdfs:comment "The concept's name." .
+  rdfs:comment "The opportunity's name." .
 
 ls:rationale a owl:DatatypeProperty ;
   rdfs:label "rationale" ;
-  rdfs:comment "Why the opportunity is worth exploring." .
+  rdfs:comment "Why it is worth exploring." .
+
+ls:DevelopmentOption a p:ObjectType, rdfs:Class ;
+  rdfs:label "Development Option" ;
+  p:pluralLabel "Development Options" ;
+  rdfs:comment "One path to an opportunity's goal, or to a program's: the study concepts it would run and in what order, simulated together for its chance of success, time and cost." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:optionName}" .
+
+ls:developmentOptionStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a development option." ;
+  p:dimensionOf ls:DevelopmentOption ;
+  p:valuesFrom lst:DevelopmentOptionStatus ;
+  p:order 1 .
+
+ls:optionName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The option's name." .
+
+ls:optionSummary a owl:DatatypeProperty ;
+  rdfs:label "summary" ;
+  rdfs:comment "The path in words: the studies, their order and what each decides." .
+
+ls:StudyConcept a p:ObjectType, rdfs:Class ;
+  rdfs:label "Study Concept" ;
+  p:pluralLabel "Study Concepts" ;
+  rdfs:comment "A short proposal for one study, reviewed by governance before a protocol is written: its rationale, objectives, population and design outline. Its study scenarios test how the study could run." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:studyConceptName}" .
+
+ls:studyConceptStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a study concept." ;
+  p:dimensionOf ls:StudyConcept ;
+  p:valuesFrom lst:StudyConceptStatus ;
+  p:order 1 .
+
+ls:studyConceptName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The study concept's name." .
+
+ls:conceptRationale a owl:DatatypeProperty ;
+  rdfs:label "rationale" ;
+  rdfs:comment "Why the study is needed, and the decision it informs." .
 
 ls:StudyScenario a p:ObjectType, rdfs:Class ;
   rdfs:label "Study Scenario" ;
   p:pluralLabel "Study Scenarios" ;
-  rdfs:comment "One possible approach to a concept or a study: a protocol, a study budget and a site selection, worked on together and simulated as one." ;
+  rdfs:comment "One possible approach to a study concept or a study: a protocol, a study budget and a site selection, worked on together and simulated as one." ;
   p:inDomain ls:DesignAndPlan ;
   p:titleTemplate "{ls:scenarioName}" .
 
@@ -1960,7 +2012,7 @@ ls:activationDays a owl:DatatypeProperty ;
 ls:TrialSimulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Trial Simulation" ;
   p:pluralLabel "Trial Simulations" ;
-  rdfs:comment "A simulation of a study scenario as it stood at one moment, run many times under stated assumptions to predict the study's outcomes." ;
+  rdfs:comment "A simulation of a study scenario, or of a development option's sequence of studies, as it stood at one moment, run many times under stated assumptions to predict outcomes." ;
   p:inDomain ls:DesignAndPlan ;
   p:titleTemplate "Simulation of {ls:simulates}" .
 
@@ -2042,7 +2094,7 @@ ls:forecastUnit a owl:DatatypeProperty ;
 ls:OutcomeTarget a p:ObjectType, rdfs:Class ;
   rdfs:label "Outcome Target" ;
   p:pluralLabel "Outcome Targets" ;
-  rdfs:comment "What success means for a concept or a study, on one measure, such as the last patient in within 20 months." ;
+  rdfs:comment "What success means for an opportunity, a study concept or a study, on one measure, such as the last patient in within 20 months." ;
   p:inDomain ls:DesignAndPlan ;
   p:titleTemplate "{ls:targetMeasure} {ls:targetComparison} {ls:targetThreshold} {ls:targetUnit}" .
 
@@ -2115,7 +2167,7 @@ ls:designSignalText a owl:DatatypeProperty ;
 ls:Decision a p:ObjectType, rdfs:Class ;
   rdfs:label "Decision" ;
   p:pluralLabel "Decisions" ;
-  rdfs:comment "A recorded choice on a concept or a study: to pursue, park or stop a concept, to select a scenario, or to approve a study's baseline." ;
+  rdfs:comment "A recorded choice on an opportunity, a study concept or a study: to pursue, park or stop it, to select a development option or a study scenario, or to approve a study's baseline." ;
   p:inDomain ls:DesignAndPlan ;
   p:titleTemplate "{ls:decisionRationale}" .
 
@@ -2138,7 +2190,7 @@ ls:informs a p:Relationship, owl:ObjectProperty ;
   rdfs:label "informs" ;
   p:inverseLabel "is informed by" ;
   p:order 26 ;
-  rdfs:comment "A concept informs the programs and studies it bears on." .
+  rdfs:comment "An opportunity informs the programs it bears on, and a study concept the study it became." .
 
 ls:belongsTo a p:Relationship, owl:ObjectProperty ;
   rdfs:label "belongs to" ;
@@ -2151,7 +2203,7 @@ ls:aimsAt a p:Relationship, owl:ObjectProperty ;
   p:inverseLabel "is the aim of" ;
   p:order 28 ;
   p:hasPart true ;
-  rdfs:comment "A program aims at a target product profile." .
+  rdfs:comment "A program or an opportunity aims at a target product profile, which is part of it." .
 
 ls:develops a p:Relationship, owl:ObjectProperty ;
   rdfs:label "develops" ;
@@ -2159,168 +2211,194 @@ ls:develops a p:Relationship, owl:ObjectProperty ;
   p:order 29 ;
   rdfs:comment "A program develops a compound." .
 
+ls:evaluates a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "evaluates" ;
+  p:inverseLabel "is evaluated in" ;
+  p:order 30 ;
+  rdfs:comment "An opportunity evaluates the compounds it would develop, as discovery hands them over." .
+
+ls:optionFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is an option for" ;
+  p:inverseLabel "has options" ;
+  p:order 31 ;
+  p:partOf true ;
+  rdfs:comment "A development option is one path for an opportunity or a program." .
+
+ls:proposedFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is proposed for" ;
+  p:inverseLabel "has study concepts" ;
+  p:order 32 ;
+  p:partOf true ;
+  rdfs:comment "A study concept is proposed for an opportunity or a program." .
+
+ls:plans a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "plans" ;
+  p:inverseLabel "is planned in" ;
+  p:order 33 ;
+  rdfs:comment "A development option plans the study concepts it would run." .
+
 ls:explores a p:Relationship, owl:ObjectProperty ;
   rdfs:label "explores" ;
   p:inverseLabel "is explored by" ;
-  p:order 30 ;
+  p:order 34 ;
   p:partOf true ;
-  rdfs:comment "A study scenario explores a concept or a study. It has one parent." .
+  rdfs:comment "A study scenario explores a study concept or a study. It has one parent." .
 
 ls:usesProtocol a p:Relationship, owl:ObjectProperty ;
   rdfs:label "uses" ;
   p:inverseLabel "is used in" ;
-  p:order 31 ;
+  p:order 35 ;
   rdfs:comment "A study scenario uses one protocol version." .
 
 ls:usesBudget a p:Relationship, owl:ObjectProperty ;
   rdfs:label "uses" ;
   p:inverseLabel "is used in" ;
-  p:order 32 ;
+  p:order 36 ;
   p:hasPart true ;
-  rdfs:comment "A study scenario uses one study budget." .
+  rdfs:comment "A study scenario uses one study budget, which is part of it." .
 
 ls:usesSiteSelection a p:Relationship, owl:ObjectProperty ;
   rdfs:label "uses" ;
   p:inverseLabel "is used in" ;
-  p:order 33 ;
+  p:order 37 ;
   p:hasPart true ;
-  rdfs:comment "A study scenario uses one site selection." .
+  rdfs:comment "A study scenario uses one site selection, which is part of it." .
 
 ls:baselineFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "began from" ;
   p:inverseLabel "seeded" ;
-  p:order 34 ;
-  rdfs:comment "A study began from a concept's selected scenario, copied as its baseline." .
+  p:order 38 ;
+  rdfs:comment "A study began from a study concept's selected scenario, copied as its baseline." .
 
 ls:simulates a p:Relationship, owl:ObjectProperty ;
   rdfs:label "simulates" ;
   p:inverseLabel "is simulated by" ;
-  p:order 35 ;
+  p:order 39 ;
   p:partOf true ;
-  rdfs:comment "A trial simulation simulates a study scenario as it stood at one moment." .
+  rdfs:comment "A trial simulation simulates a study scenario or a development option as it stood at one moment." .
 
 ls:forecastFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "comes from" ;
   p:inverseLabel "forecasts" ;
-  p:order 36 ;
+  p:order 40 ;
   p:partOf true ;
   rdfs:comment "A forecast comes from a trial simulation." .
 
 ls:measuredAgainst a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is measured against" ;
   p:inverseLabel "measures" ;
-  p:order 37 ;
+  p:order 41 ;
   rdfs:comment "A forecast is measured against an outcome target on the same measure." .
 
 ls:targetFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "sets success for" ;
   p:inverseLabel "has targets" ;
-  p:order 38 ;
+  p:order 42 ;
   p:partOf true ;
-  rdfs:comment "An outcome target sets what success means for a concept or a study." .
+  rdfs:comment "An outcome target sets what success means for an opportunity, a study concept or a study." .
 
 ls:specifiedIn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "specified in" ;
   p:inverseLabel "specifies" ;
-  p:order 39 ;
+  p:order 43 ;
   p:partOf true ;
   rdfs:comment "A protocol version specifies its population, objectives, arms, interventions, planned visits and assessments." .
 
 ls:defines a p:Relationship, owl:ObjectProperty ;
   rdfs:label "defines" ;
   p:inverseLabel "is defined by" ;
-  p:order 40 ;
+  p:order 44 ;
   p:partOf true ;
   rdfs:comment "An eligibility criterion defines a population." .
 
 ls:measures a p:Relationship, owl:ObjectProperty ;
   rdfs:label "measures" ;
   p:inverseLabel "is measured by" ;
-  p:order 41 ;
+  p:order 45 ;
   p:partOf true ;
   rdfs:comment "An endpoint measures an objective." .
 
 ls:estimandOf a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is the estimand of" ;
   p:inverseLabel "targets" ;
-  p:order 42 ;
+  p:order 46 ;
   p:partOf true ;
   rdfs:comment "An estimand is the precise effect an objective targets." .
 
 ls:requires a p:Relationship, owl:ObjectProperty ;
   rdfs:label "requires" ;
   p:inverseLabel "produces data for" ;
-  p:order 43 ;
+  p:order 47 ;
   rdfs:comment "An endpoint requires the assessments that produce its data." .
 
 ls:givenIn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "given in" ;
   p:inverseLabel "gives" ;
-  p:order 44 ;
+  p:order 48 ;
   rdfs:comment "An intervention is given in an arm." .
 
 ls:administers a p:Relationship, owl:ObjectProperty ;
   rdfs:label "administers" ;
   p:inverseLabel "is administered as" ;
-  p:order 45 ;
+  p:order 49 ;
   rdfs:comment "An intervention administers a formulation." .
 
 ls:performedAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "performed at" ;
   p:inverseLabel "performs" ;
-  p:order 46 ;
+  p:order 50 ;
   rdfs:comment "An assessment is performed at planned visits." .
 
 ls:scheduledFrom a p:Relationship, owl:ObjectProperty ;
   rdfs:label "scheduled from" ;
   p:inverseLabel "schedules" ;
-  p:order 47 ;
+  p:order 51 ;
   rdfs:comment "A patient's visit is scheduled from a planned visit." .
 
 ls:proposedIn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "proposed in" ;
   p:inverseLabel "proposes" ;
-  p:order 48 ;
+  p:order 52 ;
   p:partOf true ;
   rdfs:comment "A proposed site is proposed in a site selection." .
 
 ls:candidateSite a p:Relationship, owl:ObjectProperty ;
   rdfs:label "proposes" ;
   p:inverseLabel "is proposed as" ;
-  p:order 49 ;
+  p:order 53 ;
   rdfs:comment "A proposed site names the site it proposes." .
 
 ls:contributesTo a p:Relationship, owl:ObjectProperty ;
   rdfs:label "contributes to" ;
   p:inverseLabel "has contributions" ;
-  p:order 50 ;
+  p:order 54 ;
   p:partOf true ;
   rdfs:comment "A contribution contributes to a protocol version." .
 
 ls:isAbout a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is about" ;
   p:inverseLabel "has design signals" ;
-  p:order 51 ;
+  p:order 55 ;
   p:partOf true ;
   rdfs:comment "A design signal is about the design or plan object it concerns." .
 
 ls:decidesOn a p:Relationship, owl:ObjectProperty ;
   rdfs:label "decides on" ;
   p:inverseLabel "is decided by" ;
-  p:order 52 ;
+  p:order 56 ;
   p:partOf true ;
-  rdfs:comment "A decision is about a concept or a study." .
+  rdfs:comment "A decision is about an opportunity, a study concept or a study." .
 
 ls:chooses a p:Relationship, owl:ObjectProperty ;
   rdfs:label "chooses" ;
   p:inverseLabel "is chosen by" ;
-  p:order 53 ;
-  rdfs:comment "A decision chooses a study scenario." .
+  p:order 57 ;
+  rdfs:comment "A decision chooses a development option or a study scenario." .
 
 ls:justifiedBy a p:Relationship, owl:ObjectProperty ;
   rdfs:label "justified by" ;
   p:inverseLabel "justifies" ;
-  p:order 54 ;
+  p:order 58 ;
   rdfs:comment "An eligibility criterion is justified by a nonclinical result or a known risk." .
 
 lsh:Program-identifier a sh:PropertyShape ;
@@ -2369,25 +2447,77 @@ lsh:TargetProductProfile-minimumClaim a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "minimum claim" .
 
-lsh:Concept-identifier a sh:PropertyShape ;
+lsh:Opportunity-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
   sh:datatype xsd:string ;
   sh:maxCount 1 .
 
-lsh:Concept-conceptStatus a sh:PropertyShape ;
-  sh:path ls:conceptStatus ;
-  sh:in ( lst:ConceptStatus-exploring lst:ConceptStatus-pursued lst:ConceptStatus-parked lst:ConceptStatus-notPursued ) ;
+lsh:Opportunity-opportunityStatus a sh:PropertyShape ;
+  sh:path ls:opportunityStatus ;
+  sh:in ( lst:OpportunityStatus-exploring lst:OpportunityStatus-recommended lst:OpportunityStatus-pursued lst:OpportunityStatus-parked lst:OpportunityStatus-notPursued ) ;
   sh:maxCount 1 ;
   sh:name "Status" .
 
-lsh:Concept-conceptName a sh:PropertyShape ;
-  sh:path ls:conceptName ;
+lsh:Opportunity-opportunityKind a sh:PropertyShape ;
+  sh:path ls:opportunityKind ;
+  sh:in ( lst:OpportunityKind-newAsset lst:OpportunityKind-newIndication lst:OpportunityKind-scientificQuestion ) ;
+  sh:maxCount 1 ;
+  sh:name "Kind" .
+
+lsh:Opportunity-opportunityName a sh:PropertyShape ;
+  sh:path ls:opportunityName ;
   sh:datatype xsd:string ;
   sh:maxCount 1 ;
   sh:name "name" .
 
-lsh:Concept-rationale a sh:PropertyShape ;
+lsh:Opportunity-rationale a sh:PropertyShape ;
   sh:path ls:rationale ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "rationale" .
+
+lsh:DevelopmentOption-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:DevelopmentOption-developmentOptionStatus a sh:PropertyShape ;
+  sh:path ls:developmentOptionStatus ;
+  sh:in ( lst:DevelopmentOptionStatus-draft lst:DevelopmentOptionStatus-selected lst:DevelopmentOptionStatus-setAside ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:DevelopmentOption-optionName a sh:PropertyShape ;
+  sh:path ls:optionName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:DevelopmentOption-optionSummary a sh:PropertyShape ;
+  sh:path ls:optionSummary ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "summary" .
+
+lsh:StudyConcept-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:StudyConcept-studyConceptStatus a sh:PropertyShape ;
+  sh:path ls:studyConceptStatus ;
+  sh:in ( lst:StudyConceptStatus-draft lst:StudyConceptStatus-inReview lst:StudyConceptStatus-approved lst:StudyConceptStatus-parked lst:StudyConceptStatus-rejected ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:StudyConcept-studyConceptName a sh:PropertyShape ;
+  sh:path ls:studyConceptName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:StudyConcept-conceptRationale a sh:PropertyShape ;
+  sh:path ls:conceptRationale ;
   sh:datatype xsd:string ;
   sh:maxCount 1 ;
   sh:name "rationale" .
@@ -2769,7 +2899,7 @@ lsh:Forecast-forecastCurrency a sh:PropertyShape ;
 
 lsh:Forecast-forecastMeasure a sh:PropertyShape ;
   sh:path ls:forecastMeasure ;
-  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden ) ;
+  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess lst:OutcomeMeasure-timeToSubmission lst:OutcomeMeasure-developmentCost ) ;
   sh:maxCount 1 ;
   sh:name "Measure" .
 
@@ -2816,7 +2946,7 @@ lsh:OutcomeTarget-outcomeTargetStatus a sh:PropertyShape ;
 
 lsh:OutcomeTarget-targetMeasure a sh:PropertyShape ;
   sh:path ls:targetMeasure ;
-  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden ) ;
+  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess lst:OutcomeMeasure-timeToSubmission lst:OutcomeMeasure-developmentCost ) ;
   sh:maxCount 1 ;
   sh:name "Measure" .
 
@@ -2885,7 +3015,7 @@ lsh:Decision-identifier a sh:PropertyShape ;
 
 lsh:Decision-decisionKind a sh:PropertyShape ;
   sh:path ls:decisionKind ;
-  sh:in ( lst:DecisionKind-pursue lst:DecisionKind-park lst:DecisionKind-stop lst:DecisionKind-selectScenario lst:DecisionKind-approveBaseline ) ;
+  sh:in ( lst:DecisionKind-pursue lst:DecisionKind-park lst:DecisionKind-stop lst:DecisionKind-select lst:DecisionKind-approveBaseline ) ;
   sh:maxCount 1 ;
   sh:name "Kind" .
 
@@ -2901,9 +3031,14 @@ lsh:Decision-decidedOn a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "decided on" .
 
-lsh:Concept-informs a sh:PropertyShape ;
+lsh:Opportunity-informs a sh:PropertyShape ;
   sh:path ls:informs ;
-  sh:or ( lsh:IsProgram lsh:IsStudy ) ;
+  sh:class ls:Program ;
+  sh:name "informs" .
+
+lsh:StudyConcept-informs a sh:PropertyShape ;
+  sh:path ls:informs ;
+  sh:class ls:Study ;
   sh:name "informs" .
 
 lsh:Study-belongsTo a sh:PropertyShape ;
@@ -2917,14 +3052,41 @@ lsh:Program-aimsAt a sh:PropertyShape ;
   sh:class ls:TargetProductProfile ;
   sh:name "aims at" .
 
+lsh:Opportunity-aimsAt a sh:PropertyShape ;
+  sh:path ls:aimsAt ;
+  sh:class ls:TargetProductProfile ;
+  sh:name "aims at" .
+
 lsh:Program-develops a sh:PropertyShape ;
   sh:path ls:develops ;
   sh:class ls:Compound ;
   sh:name "develops" .
 
+lsh:Opportunity-evaluates a sh:PropertyShape ;
+  sh:path ls:evaluates ;
+  sh:class ls:Compound ;
+  sh:name "evaluates" .
+
+lsh:DevelopmentOption-optionFor a sh:PropertyShape ;
+  sh:path ls:optionFor ;
+  sh:or ( lsh:IsOpportunity lsh:IsProgram ) ;
+  sh:maxCount 1 ;
+  sh:name "is an option for" .
+
+lsh:StudyConcept-proposedFor a sh:PropertyShape ;
+  sh:path ls:proposedFor ;
+  sh:or ( lsh:IsOpportunity lsh:IsProgram ) ;
+  sh:maxCount 1 ;
+  sh:name "is proposed for" .
+
+lsh:DevelopmentOption-plans a sh:PropertyShape ;
+  sh:path ls:plans ;
+  sh:class ls:StudyConcept ;
+  sh:name "plans" .
+
 lsh:StudyScenario-explores a sh:PropertyShape ;
   sh:path ls:explores ;
-  sh:or ( lsh:IsConcept lsh:IsStudy ) ;
+  sh:or ( lsh:IsStudyConcept lsh:IsStudy ) ;
   sh:maxCount 1 ;
   sh:name "explores" .
 
@@ -2954,7 +3116,7 @@ lsh:Study-baselineFrom a sh:PropertyShape ;
 
 lsh:TrialSimulation-simulates a sh:PropertyShape ;
   sh:path ls:simulates ;
-  sh:class ls:StudyScenario ;
+  sh:or ( lsh:IsStudyScenario lsh:IsDevelopmentOption ) ;
   sh:maxCount 1 ;
   sh:name "simulates" .
 
@@ -2972,7 +3134,7 @@ lsh:Forecast-measuredAgainst a sh:PropertyShape ;
 
 lsh:OutcomeTarget-targetFor a sh:PropertyShape ;
   sh:path ls:targetFor ;
-  sh:or ( lsh:IsConcept lsh:IsStudy ) ;
+  sh:or ( lsh:IsOpportunity lsh:IsStudyConcept lsh:IsStudy ) ;
   sh:maxCount 1 ;
   sh:name "sets success for" .
 
@@ -2994,7 +3156,19 @@ lsh:Arm-specifiedIn a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "specified in" .
 
+lsh:Intervention-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
 lsh:PlannedVisit-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Assessment-specifiedIn a sh:PropertyShape ;
   sh:path ls:specifiedIn ;
   sh:class ls:Protocol ;
   sh:maxCount 1 ;
@@ -3071,13 +3245,13 @@ lsh:DesignSignal-isAbout a sh:PropertyShape ;
 
 lsh:Decision-decidesOn a sh:PropertyShape ;
   sh:path ls:decidesOn ;
-  sh:or ( lsh:IsConcept lsh:IsStudy ) ;
+  sh:or ( lsh:IsOpportunity lsh:IsStudyConcept lsh:IsStudy ) ;
   sh:maxCount 1 ;
   sh:name "decides on" .
 
 lsh:Decision-chooses a sh:PropertyShape ;
   sh:path ls:chooses ;
-  sh:class ls:StudyScenario ;
+  sh:or ( lsh:IsDevelopmentOption lsh:IsStudyScenario ) ;
   sh:maxCount 1 ;
   sh:name "chooses" .
 
@@ -3094,9 +3268,17 @@ lsh:TargetProductProfile a sh:NodeShape ;
   sh:targetClass ls:TargetProductProfile ;
   sh:property lsh:TargetProductProfile-identifier, lsh:TargetProductProfile-targetProductProfileStatus, lsh:TargetProductProfile-tppIndication, lsh:TargetProductProfile-targetClaim, lsh:TargetProductProfile-minimumClaim .
 
-lsh:Concept a sh:NodeShape ;
-  sh:targetClass ls:Concept ;
-  sh:property lsh:Concept-identifier, lsh:Concept-conceptStatus, lsh:Concept-conceptName, lsh:Concept-rationale, lsh:Concept-informs .
+lsh:Opportunity a sh:NodeShape ;
+  sh:targetClass ls:Opportunity ;
+  sh:property lsh:Opportunity-identifier, lsh:Opportunity-opportunityStatus, lsh:Opportunity-opportunityKind, lsh:Opportunity-opportunityName, lsh:Opportunity-rationale, lsh:Opportunity-informs, lsh:Opportunity-aimsAt, lsh:Opportunity-evaluates .
+
+lsh:DevelopmentOption a sh:NodeShape ;
+  sh:targetClass ls:DevelopmentOption ;
+  sh:property lsh:DevelopmentOption-identifier, lsh:DevelopmentOption-developmentOptionStatus, lsh:DevelopmentOption-optionName, lsh:DevelopmentOption-optionSummary, lsh:DevelopmentOption-optionFor, lsh:DevelopmentOption-plans .
+
+lsh:StudyConcept a sh:NodeShape ;
+  sh:targetClass ls:StudyConcept ;
+  sh:property lsh:StudyConcept-identifier, lsh:StudyConcept-studyConceptStatus, lsh:StudyConcept-studyConceptName, lsh:StudyConcept-conceptRationale, lsh:StudyConcept-informs, lsh:StudyConcept-proposedFor .
 
 lsh:StudyScenario a sh:NodeShape ;
   sh:targetClass ls:StudyScenario ;
@@ -3128,7 +3310,7 @@ lsh:Arm a sh:NodeShape ;
 
 lsh:Intervention a sh:NodeShape ;
   sh:targetClass ls:Intervention ;
-  sh:property lsh:Intervention-specifiedIn, lsh:Intervention-identifier, lsh:Intervention-interventionName, lsh:Intervention-regimen, lsh:Intervention-givenIn, lsh:Intervention-administers .
+  sh:property lsh:Intervention-identifier, lsh:Intervention-interventionName, lsh:Intervention-regimen, lsh:Intervention-specifiedIn, lsh:Intervention-givenIn, lsh:Intervention-administers .
 
 lsh:PlannedVisit a sh:NodeShape ;
   sh:targetClass ls:PlannedVisit ;
@@ -3136,7 +3318,7 @@ lsh:PlannedVisit a sh:NodeShape ;
 
 lsh:Assessment a sh:NodeShape ;
   sh:targetClass ls:Assessment ;
-  sh:property lsh:Assessment-specifiedIn, lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-performedAt .
+  sh:property lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-specifiedIn, lsh:Assessment-performedAt .
 
 lsh:StudyBudget a sh:NodeShape ;
   sh:targetClass ls:StudyBudget ;
@@ -3180,8 +3362,8 @@ lsh:IsAssayResult a sh:NodeShape ;
 lsh:IsAssessment a sh:NodeShape ;
   sh:class ls:Assessment .
 
-lsh:IsConcept a sh:NodeShape ;
-  sh:class ls:Concept .
+lsh:IsDevelopmentOption a sh:NodeShape ;
+  sh:class ls:DevelopmentOption .
 
 lsh:IsEligibilityCriterion a sh:NodeShape ;
   sh:class ls:EligibilityCriterion .
@@ -3191,6 +3373,9 @@ lsh:IsEndpoint a sh:NodeShape ;
 
 lsh:IsObjective a sh:NodeShape ;
   sh:class ls:Objective .
+
+lsh:IsOpportunity a sh:NodeShape ;
+  sh:class ls:Opportunity .
 
 lsh:IsPlannedVisit a sh:NodeShape ;
   sh:class ls:PlannedVisit .
@@ -3207,14 +3392,8 @@ lsh:IsStudy a sh:NodeShape ;
 lsh:IsStudyBudget a sh:NodeShape ;
   sh:class ls:StudyBudget .
 
-lsh:Intervention-specifiedIn a sh:PropertyShape ;
-  sh:path ls:specifiedIn ;
-  sh:class ls:Protocol ;
-  sh:maxCount 1 ;
-  sh:name "specified in" .
+lsh:IsStudyConcept a sh:NodeShape ;
+  sh:class ls:StudyConcept .
 
-lsh:Assessment-specifiedIn a sh:PropertyShape ;
-  sh:path ls:specifiedIn ;
-  sh:class ls:Protocol ;
-  sh:maxCount 1 ;
-  sh:name "specified in" .
+lsh:IsStudyScenario a sh:NodeShape ;
+  sh:class ls:StudyScenario .

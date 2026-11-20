@@ -26,12 +26,19 @@ describe('navigation shows each person the object world of their work (spec 5.1)
   });
 
   it('lists entry types, and reaches contained types inside the objects they belong to (spec 5.1, Entry types)', () => {
-    // Every Design and Plan type but Program and Concept is part of another object, so the Clinical Scientist starts from those.
+    // Every Design and Plan type but Program and Opportunity is part of another object; the Clinical Scientist also works across study concepts.
     const scientist = as('person-nadia', 'ClinicalScientist');
     expect(nav(scientist)).toEqual([
       ['Clinical Development', ['Protocols', 'Sites', 'Studies']],
-      ['Design and Plan', ['Concepts', 'Programs']],
+      ['Design and Plan', ['Opportunities', 'Programs', 'Study Concepts']],
     ]);
+    // The Portfolio Strategist starts from opportunities and programs, beside discovery's compounds.
+    // Unlike the chemist, the strategist does not work across assay results; they are reached inside experiments.
+    const strategist = nav(as('person-ingrid', 'PortfolioStrategist'));
+    expect(strategist.map(([domain]) => domain)).toEqual(['Design and Plan', 'Scientific Innovation']);
+    expect(strategist[0][1]).toEqual(['Opportunities', 'Programs']);
+    expect(strategist[1][1]).toContain('Compounds');
+    expect(strategist[1][1]).not.toContain('Assay Results');
   });
 
   it('keeps the contained types a role works across, such as a coordinator\'s patients and visits', () => {

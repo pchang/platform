@@ -78,6 +78,7 @@ ls:ExternalCROAgent a p:Role ;
 # so until then these roles read and navigate the design and plan graph and run only the protocol methods named here.
 
 ls:ClinicalScientist a p:Role ;
+  p:worksAcross ls:StudyConcept ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Scientist" ;
   rdfs:comment "Shapes a design that answers the right question for the program: concepts, scenarios, objectives, criteria and assessments." ;
@@ -101,4 +102,17 @@ ls:ClinicalOperationsLead a p:Role ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Operations Lead" ;
   rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
+  p:mayNotRead ls:assignedArm .
+
+ls:PortfolioStrategist a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ScientificInnovation ;
+  rdfs:label "Portfolio Strategist" ;
+  rdfs:comment "Recommends which assets, indications and development options the organization should fund, from discovery's candidates and from simulated chance of success, time and cost." ;
+  p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
+
+ls:ProgramLeader a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  p:worksAcross ls:StudyConcept ;
+  rdfs:label "Program Leader" ;
+  rdfs:comment "Leads one asset's development: its target product profile, its development options and the study concepts it puts forward." ;
   p:mayNotRead ls:assignedArm .

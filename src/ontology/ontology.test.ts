@@ -67,7 +67,7 @@ describe('model', () => {
 
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
-    expect(dims.length).toBe(66);
+    expect(dims.length).toBe(69);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
       const allowed = q(`SELECT ?c WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
@@ -84,18 +84,18 @@ describe('model', () => {
     expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship FILTER NOT EXISTS { ?rel p:inverseLabel ?inverse ; p:order ?order } }`)).toEqual([]);
     expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship ; p:partOf true ; p:hasPart true }`)).toEqual([]);
     // The domain spec's containment: a study's patients, a patient's visits and adverse events, a visit's records, a record's queries;
-    // and in Design and Plan (section 3.4), a parent's scenarios, targets and decisions, a scenario's simulations, a simulation's forecasts,
+    // and in Design and Plan (section 3.4), an opportunity's or program's options and study concepts, a parent's scenarios, targets and decisions, a scenario's simulations, a simulation's forecasts,
     // a protocol's design objects, a population's criteria, an objective's estimand and a site selection's proposed sites.
     const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true }`).map((r) => r.rel.split('#').pop()).sort();
     expect(partOf).toEqual(['capturedAt', 'contributesTo', 'decidesOn', 'defines', 'enrolledIn', 'estimandOf', 'experiencedBy', 'explores', 'forecastFrom',
-      'isAbout', 'measures', 'proposedIn', 'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
+      'isAbout', 'measures', 'optionFor', 'proposedFor', 'proposedIn', 'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
     // An experiment's results, a program's target product profiles, and a study scenario's budget and site selection.
     expect(q(`SELECT ?rel WHERE { ?rel p:hasPart true }`).map((r) => r.rel.split('#').pop()).sort()).toEqual(['aimsAt', 'produces', 'usesBudget', 'usesSiteSelection']);
   });
 
   it('says an end holds at most one object only where the domain is certain', () => {
     const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
-    expect(one.length).toBe(45);
+    expect(one.length).toBe(47);
     expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
     expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
   });

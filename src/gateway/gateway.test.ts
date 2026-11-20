@@ -59,7 +59,7 @@ describe('reads', () => {
         ['tests', 'Formulations', 'related', 'many', 'F-101'],
         ['runs at', 'Sites', 'related', 'many', 'SITE-1 SITE-2 SITE-3'],
         ['conducted under', 'Protocols', 'related', 'one', 'PROT-2'],
-        ['is informed by', 'Concepts', 'related', 'many', ''],
+        ['is informed by', 'Study Concepts', 'related', 'many', ''],
         ['belongs to', 'Programs', 'related', 'one', 'PRG-1'],
         ['began from', 'Study Scenarios', 'related', 'one', ''],
       ]);
@@ -102,7 +102,7 @@ describe('reads', () => {
         'tests Formulations',
         'runs at Sites',
         'conducted under Protocols',
-        'is informed by Concepts',
+        'is informed by Study Concepts',
         'belongs to Programs',
         'began from Study Scenarios',
       ]);

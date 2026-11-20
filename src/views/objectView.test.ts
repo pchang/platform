@@ -33,7 +33,7 @@ describe('the object panel (design system spec 4.4)', () => {
       ['Decisions', 0],
       ['Formulations', 1],
       ['Sites', 3],
-      ['Concepts', 0],
+      ['Study Concepts', 0],
     ]);
     expect(json).toContain('This study enrolls these patients.');
     expect(json).toContain('This study runs at these sites.');

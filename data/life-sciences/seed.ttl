@@ -1253,9 +1253,10 @@ d:QE-1 a ls:QualityEvent ;
 
 # ---------------------------------------------------------------------------
 # Design and Plan (domain spec section 3.4)
-# One program for LSH-4471. Under it, a Phase III concept being explored in three study scenarios,
-# a parked concept, and a concept outside any program. VELOCITY-2 belongs to the program and runs one
-# study scenario of its own, testing its draft amendment.
+# Portfolio: an opportunity for a follow-on asset from discovery's analogs, with two development options;
+# a parked indication opportunity; and a scientific question outside any program.
+# Program: one for LSH-4471. Under it, the VELOCITY-3 study concept is explored in three study scenarios.
+# VELOCITY-2 belongs to the program and runs one study scenario of its own, testing its draft amendment.
 # ---------------------------------------------------------------------------
 
 d:person-nadia a p:Person ;
@@ -1274,6 +1275,14 @@ d:person-marcus a p:Person ;
   rdfs:label "Marcus Bell" ;
   p:actsAs ls:ClinicalOperationsLead .
 
+d:person-ingrid a p:Person ;
+  rdfs:label "Ingrid Solberg" ;
+  p:actsAs ls:PortfolioStrategist .
+
+d:person-kwame a p:Person ;
+  rdfs:label "Kwame Asante" ;
+  p:actsAs ls:ProgramLeader .
+
 d:PRG-1 a ls:Program ;
   ls:identifier "PRG-1" ;
   ls:programStatus lst:ProgramStatus-active ;
@@ -1290,14 +1299,14 @@ d:TPP-1 a ls:TargetProductProfile ;
 
 d:ST-01 ls:belongsTo d:PRG-1 .
 
-# Concept 1: the Phase III study, being explored.
+# The VELOCITY-3 study concept, proposed for the program and being explored.
 
-d:CON-1 a ls:Concept ;
-  ls:identifier "CON-1" ;
-  ls:conceptStatus lst:ConceptStatus-exploring ;
-  ls:conceptName "Phase III of Velcorin in moderate to severe rheumatoid arthritis" ;
-  ls:rationale "VELOCITY-2 shows a dose response at 25 mg. A confirmatory study on background methotrexate is the next step to the target product profile." ;
-  ls:informs d:PRG-1 .
+d:STC-1 a ls:StudyConcept ;
+  ls:identifier "STC-1" ;
+  ls:studyConceptStatus lst:StudyConceptStatus-draft ;
+  ls:studyConceptName "VELOCITY-3: Phase III of Velcorin in moderate to severe rheumatoid arthritis" ;
+  ls:conceptRationale "VELOCITY-2 shows a dose response at 25 mg. A confirmatory study on background methotrexate is the next step to the target product profile." ;
+  ls:proposedFor d:PRG-1 .
 
 d:OT-1 a ls:OutcomeTarget ;
   ls:identifier "OT-1" ;
@@ -1306,7 +1315,7 @@ d:OT-1 a ls:OutcomeTarget ;
   ls:targetComparison "at most" ;
   ls:targetThreshold 20.0 ;
   ls:targetUnit "months" ;
-  ls:targetFor d:CON-1 .
+  ls:targetFor d:STC-1 .
 
 d:OT-2 a ls:OutcomeTarget ;
   ls:identifier "OT-2" ;
@@ -1315,7 +1324,7 @@ d:OT-2 a ls:OutcomeTarget ;
   ls:targetComparison "at least" ;
   ls:targetThreshold 60.0 ;
   ls:targetUnit "percent" ;
-  ls:targetFor d:CON-1 .
+  ls:targetFor d:STC-1 .
 
 d:OT-3 a ls:OutcomeTarget ;
   ls:identifier "OT-3" ;
@@ -1324,13 +1333,13 @@ d:OT-3 a ls:OutcomeTarget ;
   ls:targetComparison "at most" ;
   ls:targetThreshold 85.0 ;
   ls:targetUnit "million USD" ;
-  ls:targetFor d:CON-1 .
+  ls:targetFor d:STC-1 .
 
 d:SSC-1 a ls:StudyScenario ;
   ls:identifier "SSC-1" ;
   ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
   ls:scenarioName "VELOCITY-3 baseline: 640 patients, 9 countries" ;
-  ls:explores d:CON-1 ;
+  ls:explores d:STC-1 ;
   ls:usesProtocol d:PROT-31 ;
   ls:usesBudget d:SB-1 ;
   ls:usesSiteSelection d:SS-1 .
@@ -1340,7 +1349,7 @@ d:SSC-2 a ls:StudyScenario ;
   ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
   ls:scenarioName "VELOCITY-3 with prior biologic use allowed" ;
   ls:scenarioChange "Copied from SSC-1. Allows patients who failed one prior biologic, instead of excluding them." ;
-  ls:explores d:CON-1 ;
+  ls:explores d:STC-1 ;
   ls:usesProtocol d:PROT-32 ;
   ls:usesBudget d:SB-2 ;
   ls:usesSiteSelection d:SS-2 .
@@ -1350,7 +1359,7 @@ d:SSC-3 a ls:StudyScenario ;
   ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
   ls:scenarioName "VELOCITY-3 without hand MRI, broader country mix" ;
   ls:scenarioChange "Copied from SSC-1. Drops hand MRI at Weeks 12 and 24, and adds sites in Poland and Brazil." ;
-  ls:explores d:CON-1 ;
+  ls:explores d:STC-1 ;
   ls:usesProtocol d:PROT-33 ;
   ls:usesBudget d:SB-3 ;
   ls:usesSiteSelection d:SS-3 .
@@ -1884,13 +1893,104 @@ d:FC-7 a ls:Forecast ;
   ls:forecastFrom d:TS-2 ;
   ls:measuredAgainst d:OT-3 .
 
-# Concept 2: parked. Concept 3: a scientific question outside any program.
+# Portfolio opportunities.
 
-d:CON-2 a ls:Concept ;
-  ls:identifier "CON-2" ;
-  ls:conceptStatus lst:ConceptStatus-parked ;
-  ls:conceptName "Velcorin in active psoriatic arthritis" ;
+d:OPP-1 a ls:Opportunity ;
+  ls:identifier "OPP-1" ;
+  ls:opportunityStatus lst:OpportunityStatus-exploring ;
+  ls:opportunityKind lst:OpportunityKind-newAsset ;
+  ls:opportunityName "A follow-on JAK1 inhibitor with lower liver risk" ;
+  ls:rationale "SIG-1 suggests a liver risk with Velcorin. Two analogs designed from LSH-4471 aim to keep its potency with less liver exposure. Is a follow-on asset worth funding?" ;
+  ls:evaluates d:C-104, d:C-105 ;
+  ls:aimsAt d:TPP-2 .
+
+d:TPP-2 a ls:TargetProductProfile ;
+  ls:identifier "TPP-2" ;
+  ls:targetProductProfileStatus lst:TargetProductProfileStatus-draft ;
+  ls:tppIndication "moderate to severe rheumatoid arthritis, without routine liver monitoring" ;
+  ls:targetClaim "ACR20 response at Week 24 matching Velcorin, with no more liver enzyme elevations than placebo" ;
+  ls:minimumClaim "ACR20 response at Week 24 at least 12 points above placebo, with half Velcorin's rate of liver enzyme elevations" .
+
+d:OT-4 a ls:OutcomeTarget ;
+  ls:identifier "OT-4" ;
+  ls:outcomeTargetStatus lst:OutcomeTargetStatus-agreed ;
+  ls:targetMeasure lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess ;
+  ls:targetComparison "at least" ;
+  ls:targetThreshold 12.0 ;
+  ls:targetUnit "percent" ;
+  ls:targetFor d:OPP-1 .
+
+d:OPT-1 a ls:DevelopmentOption ;
+  ls:identifier "OPT-1" ;
+  ls:developmentOptionStatus lst:DevelopmentOptionStatus-draft ;
+  ls:optionName "Develop the lead analog in rheumatoid arthritis" ;
+  ls:optionSummary "First-in-human study of the lead analog, then a Phase II dose-ranging study against Velcorin, then Phase III if liver safety holds." ;
+  ls:optionFor d:OPP-1 ;
+  ls:plans d:STC-2 .
+
+d:OPT-2 a ls:DevelopmentOption ;
+  ls:identifier "OPT-2" ;
+  ls:developmentOptionStatus lst:DevelopmentOptionStatus-draft ;
+  ls:optionName "No follow-on: manage Velcorin's liver risk with monitoring" ;
+  ls:optionSummary "Keep the analogs in discovery and add liver monitoring to Velcorin's studies and label." ;
+  ls:optionFor d:OPP-1 .
+
+d:STC-2 a ls:StudyConcept ;
+  ls:identifier "STC-2" ;
+  ls:studyConceptStatus lst:StudyConceptStatus-draft ;
+  ls:studyConceptName "First-in-human study of the lead analog in healthy participants" ;
+  ls:conceptRationale "Single and multiple ascending doses to find a safe, tolerated dose and the analog's pharmacokinetics before patients." ;
+  ls:proposedFor d:OPP-1 .
+
+d:TS-4 a ls:TrialSimulation ;
+  ls:identifier "TS-4" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:OPT-1 ;
+  ls:scenarioAsOf "2026-11-18"^^xsd:date ;
+  ls:simulatedTrials 10000 ;
+  ls:assumedEffect "Efficacy as Velcorin, from matched JAK1 potency (AR-1); phase transition rates from historical immunology programs" .
+
+d:FC-8 a ls:Forecast ;
+  ls:identifier "FC-8" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 14.0 ;
+  ls:forecastLow 9.0 ;
+  ls:forecastHigh 21.0 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-4 ;
+  ls:measuredAgainst d:OT-4 .
+
+d:FC-9 a ls:Forecast ;
+  ls:identifier "FC-9" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-timeToSubmission ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 6.5 ;
+  ls:forecastLow 5.5 ;
+  ls:forecastHigh 8.0 ;
+  ls:forecastUnit "years" ;
+  ls:forecastFrom d:TS-4 .
+
+d:FC-10 a ls:Forecast ;
+  ls:identifier "FC-10" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-developmentCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 310.0 ;
+  ls:forecastLow 240.0 ;
+  ls:forecastHigh 410.0 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-4 .
+
+d:OPP-2 a ls:Opportunity ;
+  ls:identifier "OPP-2" ;
+  ls:opportunityStatus lst:OpportunityStatus-parked ;
+  ls:opportunityKind lst:OpportunityKind-newIndication ;
+  ls:opportunityName "Velcorin in active psoriatic arthritis" ;
   ls:rationale "JAK1 selectivity may suit psoriatic arthritis, where two JAK inhibitors are approved." ;
+  ls:evaluates d:C-101 ;
   ls:informs d:PRG-1 .
 
 d:DEC-1 a ls:Decision ;
@@ -1898,12 +1998,13 @@ d:DEC-1 a ls:Decision ;
   ls:decisionKind lst:DecisionKind-park ;
   ls:decisionRationale "Parked until VELOCITY-3 is designed, so the program does not run two Phase III studies at once" ;
   ls:decidedOn "2026-10-28"^^xsd:date ;
-  ls:decidesOn d:CON-2 .
+  ls:decidesOn d:OPP-2 .
 
-d:CON-3 a ls:Concept ;
-  ls:identifier "CON-3" ;
-  ls:conceptStatus lst:ConceptStatus-exploring ;
-  ls:conceptName "Liver enzyme monitoring across JAK1 inhibitor studies" ;
+d:OPP-3 a ls:Opportunity ;
+  ls:identifier "OPP-3" ;
+  ls:opportunityStatus lst:OpportunityStatus-exploring ;
+  ls:opportunityKind lst:OpportunityKind-scientificQuestion ;
+  ls:opportunityName "Liver enzyme monitoring across JAK1 inhibitor studies" ;
   ls:rationale "SIG-1 raises the question of how often liver tests are needed. The answer would shape the schedule of every study in the class, in and beyond this program." .
 
 # VELOCITY-2 runs a study scenario of its own, testing its draft amendment before it goes for review.

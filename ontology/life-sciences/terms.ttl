@@ -898,6 +898,7 @@ lst:Reaction-diarrhea a skos:Concept ;
   p:order 7 ;
   skos:closeMatch ncit:C2987 .
 
+
 # Design and Plan (domain spec section 3.4)
 
 lst:ProgramStatus a skos:ConceptScheme ;
@@ -938,29 +939,101 @@ lst:TargetProductProfileStatus-superseded a skos:Concept ;
   skos:prefLabel "superseded" ;
   p:order 3 .
 
-lst:ConceptStatus a skos:ConceptScheme ;
-  skos:prefLabel "Concept status" ;
-  skos:definition "The values of the status dimension of a concept." .
+lst:OpportunityStatus a skos:ConceptScheme ;
+  skos:prefLabel "Opportunity status" ;
+  skos:definition "The values of the status dimension of an opportunity." .
 
-lst:ConceptStatus-exploring a skos:Concept ;
-  skos:inScheme lst:ConceptStatus ;
+lst:OpportunityStatus-exploring a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
   skos:prefLabel "exploring" ;
   p:order 1 .
 
-lst:ConceptStatus-pursued a skos:Concept ;
-  skos:inScheme lst:ConceptStatus ;
-  skos:prefLabel "pursued" ;
+lst:OpportunityStatus-recommended a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "recommended" ;
   p:order 2 .
 
-lst:ConceptStatus-parked a skos:Concept ;
-  skos:inScheme lst:ConceptStatus ;
-  skos:prefLabel "parked" ;
+lst:OpportunityStatus-pursued a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "pursued" ;
   p:order 3 .
 
-lst:ConceptStatus-notPursued a skos:Concept ;
-  skos:inScheme lst:ConceptStatus ;
-  skos:prefLabel "not pursued" ;
+lst:OpportunityStatus-parked a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "parked" ;
   p:order 4 .
+
+lst:OpportunityStatus-notPursued a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "not pursued" ;
+  p:order 5 .
+
+lst:OpportunityKind a skos:ConceptScheme ;
+  skos:prefLabel "Opportunity kind" ;
+  skos:definition "The values of the kind dimension of an opportunity." .
+
+lst:OpportunityKind-newAsset a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "new asset" ;
+  p:order 1 .
+
+lst:OpportunityKind-newIndication a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "new indication" ;
+  p:order 2 .
+
+lst:OpportunityKind-scientificQuestion a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "scientific question" ;
+  p:order 3 .
+
+lst:DevelopmentOptionStatus a skos:ConceptScheme ;
+  skos:prefLabel "Development Option status" ;
+  skos:definition "The values of the status dimension of a development option." .
+
+lst:DevelopmentOptionStatus-draft a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:DevelopmentOptionStatus-selected a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "selected" ;
+  p:order 2 .
+
+lst:DevelopmentOptionStatus-setAside a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "set aside" ;
+  p:order 3 .
+
+lst:StudyConceptStatus a skos:ConceptScheme ;
+  skos:prefLabel "Study Concept status" ;
+  skos:definition "The values of the status dimension of a study concept." .
+
+lst:StudyConceptStatus-draft a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:StudyConceptStatus-inReview a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "in review" ;
+  p:order 2 .
+
+lst:StudyConceptStatus-approved a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "approved" ;
+  p:order 3 .
+
+lst:StudyConceptStatus-parked a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "parked" ;
+  p:order 4 .
+
+lst:StudyConceptStatus-rejected a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "rejected" ;
+  p:order 5 .
 
 lst:StudyScenarioStatus a skos:ConceptScheme ;
   skos:prefLabel "Study Scenario status" ;
@@ -1275,6 +1348,21 @@ lst:OutcomeMeasure-siteBurden a skos:Concept ;
   skos:prefLabel "site burden" ;
   p:order 6 .
 
+lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "probability of technical and regulatory success" ;
+  p:order 7 .
+
+lst:OutcomeMeasure-timeToSubmission a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "time to submission" ;
+  p:order 8 .
+
+lst:OutcomeMeasure-developmentCost a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "development cost" ;
+  p:order 9 .
+
 lst:ForecastAgainstTarget a skos:ConceptScheme ;
   skos:prefLabel "Forecast against target" ;
   skos:definition "The values of the against target dimension of a forecast." .
@@ -1360,9 +1448,9 @@ lst:DecisionKind-stop a skos:Concept ;
   skos:prefLabel "stop" ;
   p:order 3 .
 
-lst:DecisionKind-selectScenario a skos:Concept ;
+lst:DecisionKind-select a skos:Concept ;
   skos:inScheme lst:DecisionKind ;
-  skos:prefLabel "select scenario" ;
+  skos:prefLabel "select" ;
   p:order 4 .
 
 lst:DecisionKind-approveBaseline a skos:Concept ;

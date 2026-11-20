@@ -1200,14 +1200,14 @@ lsh:SendProtocolForReview-pre a sh:NodeShape ;
   sh:property lsh:SendProtocolForReview-pre-status .
 
 lsh:SendProtocolForReview-pre-notExploration a sh:NodeShape ;
-  rdfs:label "The protocol belongs to a concept's study scenario, which is still exploration" ;
+  rdfs:label "The protocol belongs to a study concept's scenario, which is still exploration" ;
   sh:sparql lsh:SendProtocolForReview-pre-notExploration-query .
 lsh:SendProtocolForReview-pre-notExploration-query a sh:SPARQLConstraint ;
-  sh:message "The protocol belongs to a concept's study scenario, which is still exploration: pursue the concept first" ;
+  sh:message "The protocol belongs to a study concept's scenario, which is still exploration: approve the study concept first" ;
   sh:prefixes lsh:prefixes ;
   sh:select """
     SELECT $this WHERE {
-      ?scenario ls:usesProtocol $this ; ls:explores ?concept . ?concept a ls:Concept .
+      ?scenario ls:usesProtocol $this ; ls:explores ?concept . ?concept a ls:StudyConcept .
     }""" .
 
 lsh:ApproveProtocol-pre-status a sh:PropertyShape ;
