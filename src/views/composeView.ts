@@ -32,12 +32,16 @@ const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: {
 const MAX_RADIOS = 5;
 
 export function fieldFor(input: ComposedInput): ViewNode {
-  const group = (children: ViewNode[], role?: 'radiogroup'): ViewNode => ({
+  const group = (children: ViewNode[], role?: 'radiogroup' | 'group'): ViewNode => ({
     component: 'FormGroup',
     // Radio buttons sit side by side, so each has room to be tapped (WCAG 2.2 target size).
-    props: { label: input.label, isRequired: true, ...(role ? { role, isInline: true } : {}) },
+    props: { label: input.label, isRequired: true, ...(role === 'radiogroup' ? { role, isInline: true } : role ? { role } : {}) },
     children,
   });
+  if (input.kind === 'choice' && input.many) {
+    // Many values: one checkbox per value, stacked so each label reads in full (design system spec 5.1).
+    return group(input.choices!.map((c) => ({ component: 'Checkbox', props: { label: c.label, value: c.value }, field: input.name })), 'group');
+  }
   if (input.kind === 'choice' && (input.choices?.length ?? 0) <= MAX_RADIOS) {
     return group(
       input.choices!.map((c) => ({ component: 'Radio', props: { label: c.label, name: input.name, value: c.value }, field: input.name })),
@@ -58,6 +62,7 @@ export function fieldFor(input: ComposedInput): ViewNode {
     ]);
   }
   if (input.kind === 'url') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'url', isRequired: true }, field: input.name }]);
+  if (input.kind === 'number') return group([{ component: 'TextInput', props: { 'aria-label': input.label, type: 'number', isRequired: true }, field: input.name }]);
   return group([{ component: 'TextArea', props: { 'aria-label': input.label, isRequired: true }, field: input.name }]);
 }
 

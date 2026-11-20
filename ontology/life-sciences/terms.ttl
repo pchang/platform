@@ -899,6 +899,7 @@ lst:Reaction-diarrhea a skos:Concept ;
   skos:closeMatch ncit:C2987 .
 
 
+
 # Design and Plan (domain spec section 3.4)
 
 lst:ProgramStatus a skos:ConceptScheme ;

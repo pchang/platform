@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.31. November 20, 2026. Author: Paul Chang.
+Version 0.32. November 20, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -59,7 +59,8 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Effect | State changes and new objects, declared in the platform vocabulary and applied by the gateway in one transaction |
 | Drafting | A value a connected model drafts and a person accepts, declared with the property it fills, the model's instructions and the linked objects it may draw on (section 3.4, Generated drafts) |
 | Title | How a type names its objects for people: one or more templates over the object's properties, coded values and links, declared with the type. The first template whose values are all present is used, so new objects are titled without anyone naming them. A title may use only what no role or rule hides. The identifier stays the stable reference |
-| Analysis | Background work the platform computes, such as a disproportionality analysis, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
+| Analysis | Background work the platform computes, such as a disproportionality analysis or a model run, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
+| Input | What a method needs from the person, declared with its kind. A choice from a concept scheme may take **many values**, such as the measures to simulate; it is sent as its chosen values separated by spaces, and an input's shape may narrow the scheme |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run and what it may not read |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
@@ -175,6 +176,7 @@ A database server can later hold the current state for larger data or several ga
 - **Workers.** The work itself is an **analysis** the method declares in the ontology, with its parameters (section 3.1). The platform implements each kind of analysis once, for every domain. A method whose background work no worker can do yet, such as a model nobody has connected, is refused before step 1 with that reason. The platform never pretends to run it.
 - **Status.** A run is queued, then running, then succeeded or failed. Its progress, as a fraction, is reported while it runs and not kept. Status changes are written to the journal.
 - **Results.** A worker reads and writes the graph only through the gateway, as the platform's background worker, acting on behalf of the person who started the run. Its result is a commit like any other: validated against every shape, recorded with PROV-O provenance, and refused whole if any shape fails, which fails the run with the reasons. The result and the run's end are written in one journal entry, so a result is never applied twice.
+- **Model runs.** One kind of analysis runs a **model**: a predictive or simulation model the gateway connects through an adapter, named in the ontology. It runs on the method's object as it stands when the run starts, with the inputs the person gave. The model reads that object and the objects it links to, and returns objects to create, values to set and a message in words. The gateway applies them to a working copy, validates every shape and commits them as the run's result, recorded with the model's name and version. A model that is not connected cannot run, and a model shipped as a **reference model** says so in every result: it is transparent and reproducible, but not validated for decisions about real studies.
 - **Restarts.** A run that had not ended when the gateway stopped starts again when the gateway restarts.
 - **Notifications.** When a run ends, the person who started it is notified: what ran, on which object, and what it found or why it failed. A notification belongs to its recipient; nobody else sees it. Notifications and their read state are kept in the graph and the journal.
 
@@ -476,3 +478,4 @@ To resolve in future versions of this spec.
 | 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
 | 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |
 | 0.31 | 2026-11-20 | Navigation lists entry types, not every type (section 5.1): a type whose objects are part of another object is reached inside it, unless a role names it as a type it works across. |
+| 0.32 | 2026-11-20 | Model runs (section 3.4, Background runs): a background analysis that runs a connected model on an object and what it links to, and commits what it returns; a reference model says so in every result. Inputs may take many values from a concept scheme (section 3.1). |

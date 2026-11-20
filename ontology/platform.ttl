@@ -121,6 +121,21 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
   rdfs:subClassOf p:Analysis .
 
+p:ModelRun a rdfs:Class ;
+  rdfs:label "model run" ;
+  rdfs:comment "Runs a model the gateway connects, named by p:model, on the method's object as it stands when the run starts, with the person's inputs. The model reads the object and what it links to, and returns objects to create, values to set and a message; the gateway validates and commits them as the run's result (platform spec 3.4, Model runs)." ;
+  rdfs:subClassOf p:Analysis .
+
+p:model a rdf:Property ;
+  rdfs:label "model" ;
+  rdfs:comment "The name of the connected model a model run runs." ;
+  rdfs:domain p:ModelRun .
+
+p:manyValues a rdf:Property ;
+  rdfs:label "many values" ;
+  rdfs:comment "True when a choice input takes any number of values from its scheme, sent separated by spaces (platform spec 3.1, Input)." ;
+  rdfs:domain p:Input .
+
 p:Drafting a rdfs:Class ;
   rdfs:label "drafting" ;
   rdfs:comment "An effect whose value a connected model drafts and a person accepts: the property the accepted text fills, the model's instructions, and the linked objects it may draw on (platform spec 3.4, Generated drafts)." ;

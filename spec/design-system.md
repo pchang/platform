@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.41. November 16, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.42. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -257,7 +257,7 @@ Each interaction archetype has one pattern. On phones, every surface below takes
 | Review and sign | Wizard | A review step with the preview, then a signature step showing the signer, the time and the meaning of the signature |
 | Start and track | Modal, then the object | Confirm the start; progress then shows on the object, and Notifications tells the person when it ends |
 
-**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
+**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, an input that takes many values from a scheme gives a group of checkboxes, one per value, stacked so each label reads in full, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
 
 **After every commit**, a success Alert says what changed, and the person returns to where they came from, with the object updated and its next tasks, if any, shown.
 
@@ -352,6 +352,7 @@ The Compose agent emits a view spec: a tree of catalog components. Nothing else 
 - `field` binds a form control to one input of the method being composed, by the input's name. The renderer keeps the value; the view spec never holds it.
 - `intent` gives a button its role in an interaction: `submit` commits, `cancel` closes without changing anything, `edit` makes generated text editable, `discard` records a draft as discarded, and `minimize` sets the process aside in the dock.
 - A selectable Card with a `field` and a `value` works as one of a set of radio buttons: choosing it sets the field to its value.
+- A Checkbox with a `field` and a `value` is one of a set: its field holds the chosen values separated by spaces, and checking or clearing it adds or removes its value.
 
 The renderer validates the view spec, maps each node to its PatternFly component and renders it. An invalid spec is rejected and logged, never partly drawn.
 
@@ -440,3 +441,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.39 | 2026-11-16 | Anticipation first: on cards and list rows, Ask about this follows the method buttons, last in their row, as the free-text way forward when the anticipated methods miss. It leaves the card's header. |
 | 0.40 | 2026-11-16 | On list rows, Ask about this sits at the right end of the actions column, so it lines up down the list, still after the methods. |
 | 0.41 | 2026-11-16 | The object panel's tabs list their objects as object lists like any other, with the list bar and the choice of cards or a list. Expanding the panel covers the sidebar too, so a destination is never chosen behind it; Restore, or opening the sidebar, brings the sidebar back. An object opened from the page always opens at three quarters, as in Notion; Expand is no longer kept on the device. |
+| 0.42 | 2026-11-20 | An input that takes many values from a scheme gives a group of checkboxes; a Checkbox bound to a field adds or removes its value. |

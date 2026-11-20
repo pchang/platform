@@ -151,7 +151,7 @@ describe('lifecycles (platform spec 5.1)', () => {
   });
 
   it('keep each lifecycle to at most five stages, the steps of the chart color ramp', () => {
-    const counts = q(`SELECT ?d (COUNT(?v) AS ?n) WHERE { ?d p:order 1 ; p:valuesFrom ?s . ?v skos:inScheme ?s } GROUP BY ?d`).map((r) => Number(r.n));
+    const counts = q(`SELECT ?d (COUNT(?v) AS ?n) WHERE { ?d a p:StateDimension ; p:order 1 ; p:valuesFrom ?s . ?v skos:inScheme ?s } GROUP BY ?d`).map((r) => Number(r.n));
     expect(counts.length).toBeGreaterThan(10);
     expect(Math.max(...counts)).toBeLessThanOrEqual(5);
   });
@@ -186,7 +186,7 @@ describe('agrees with the domain spec', () => {
       .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()));
   };
   const typeSections = ['### 2.1 Object types', '### 3.1 Object types', '### 3.5 Design and Plan object types', '### 4.1 Object types'];
-  const methodSections = ['### 2.3 Methods', '### 3.3 Methods', '### 4.3 Methods'];
+  const methodSections = ['### 2.3 Methods', '### 3.3 Methods', '### 3.7 Design and Plan methods', '### 4.3 Methods'];
 
   it('has every object type, state dimension and state value', () => {
     for (const heading of typeSections) {
@@ -213,8 +213,8 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(46);
-    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(46);
+    expect(count).toBe(47);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(47);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {

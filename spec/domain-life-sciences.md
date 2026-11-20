@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.23. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.31.
+Version 0.24. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.32.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -126,7 +126,7 @@ Covers a clinical trial from design to locked data.
 
 ### 3.4 Design and Plan
 
-Design and Plan is its own work domain: where the organization decides which assets and indications to fund, and where each study is conceived, designed, planned and simulated before a single patient is enrolled. It takes candidates from Scientific Innovation and hands designs to Clinical Development, and is described here because most of its objects are about studies. Its object types, state dimensions and relationships are built (sections 3.5 and 3.6). Its methods are specified and not yet built (section 3.7). The model follows the design note *Authoring the Protocol as Structure* (October 31, 2026) and the product direction of November 20, 2026. Where those are silent, common industry practice fills the gap.
+Design and Plan is its own work domain: where the organization decides which assets and indications to fund, and where each study is conceived, designed, planned and simulated before a single patient is enrolled. It takes candidates from Scientific Innovation and hands designs to Clinical Development, and is described here because most of its objects are about studies. Its object types, state dimensions and relationships are built (sections 3.5 and 3.6). Run trial simulation is built, with a reference trial model (section 3.7); its other methods are specified and not yet built (section 3.8). The model follows the design note *Authoring the Protocol as Structure* (October 31, 2026) and the product direction of November 20, 2026. Where those are silent, common industry practice fills the gap.
 
 #### 3.4.1 Simulate the trial before it runs
 
@@ -183,7 +183,43 @@ A **study scenario** is one possible approach to a study. It is named apart from
 2. **Study budget.** The cost of the scenario, or a ceiling set first as a constraint the design must meet.
 3. **Site selection.** A list of proposed sites, each with its country, expected enrollment and start-up time.
 
-Nothing inside a scenario has to come first. A team with a protocol in hand starts there; a team constrained by budget or by sites sets that first. Pulling one lever shows its effect on the other two. A narrower eligibility criterion shrinks the patient pool and the sites that can fill it. An added visit raises the cost per patient and the burden on patients and sites. A cheaper country mix may change the comparator, the visits or the labs.
+Nothing inside a scenario has to come first. A team with a protocol in hand starts there; a team constrained by budget or by sites sets that first.
+
+**How the three move each other.** Each element constrains the other two, which is why they are worked on together and simulated as one:
+
+| Change | Moves | How |
+|---|---|---|
+| Protocol → sites | Which sites can take part | An assessment that needs equipment, such as hand MRI, rules out proposed sites without it. Tighter eligibility lowers how many screened patients each site randomizes |
+| Protocol → budget | Cost per patient | Every assessment at every planned visit has a cost; more visits, costlier procedures and more patients raise the total. Screening failures cost too |
+| Sites → budget | Site cost | Each site costs to start up and to keep running each month it is active, so more sites, slower activation and longer enrollment cost more |
+| Sites → protocol | What the design can ask | A country mix whose sites lack equipment, or whose standard of care differs, pushes the design toward procedures those sites can do |
+| Budget → protocol and sites | What the study can afford | A ceiling bounds the visits, procedures and modalities the study can carry, and the number and kind of sites. When a scenario is over its ceiling, the simulation names the assessments and sites driving the cost |
+
+A narrower eligibility criterion shrinks the patient pool and the sites that can fill it. An added visit raises the cost per patient and the burden on patients and sites. A cheaper country mix may change the comparator, the visits or the labs. Dropping a costly modality can bring a scenario under its ceiling and open it to sites that could not run it.
+
+**Simulating a study scenario.** A trial simulation takes the three elements as they stand at one moment, as the design variables, and adds the assumptions the person gives. The person chooses the outcome measures they care about. The simulation runs many virtual trials and returns one forecast per chosen measure, as a median with a 10th to 90th percentile range, each measured against the outcome target for that measure, if one is set. Running a new simulation makes the scenario's earlier forecasts out of date (rule D2).
+
+| Measure | What it tells | Unit | Reference model |
+|---|---|---|---|
+| Last patient in | When enrollment finishes, from the first site's activation | months | Yes |
+| Total cost | Patient, screening and site costs together, against the budget's ceiling | million USD | Yes |
+| Probability of success | The chance the primary analysis succeeds at the assumed effect | percent | Yes |
+| Serious adverse events | How many serious adverse events to expect across the study | events | Yes |
+| Patient burden | Time each patient spends on site over the study | hours per patient | Yes |
+| Site burden | Coordinator time each active site spends on study visits | hours per site per month | Yes |
+| Probability of technical and regulatory success, time to submission, development cost | Portfolio measures, for a development option's sequence of studies | percent, years, million USD | No |
+
+Other measures sponsors track, to add as models support them: screen failure rate, dropout and retention, time to first patient in, site activation time, enrollment diversity against a diversity action plan, protocol deviations, data query rate and the likelihood of an amendment.
+
+**The reference trial model.** Until a sponsor's validated models are connected, the platform ships a reference model (platform spec section 3.4, Model runs). It is transparent and reproducible, it reads only the scenario's own objects and the person's assumptions, and every result says it is a reference model, not validated for decisions about real studies. It runs 2,000 virtual trials with a fixed seed, so the same scenario and assumptions give the same forecasts.
+
+- **Sites that can take part.** A proposed site that is not rejected takes part unless it lacks equipment an assessment in the protocol needs. Each excluded site raises a design signal about it. A proposed site stands for one named site or for a group of similar sites in its country, as many as its site count.
+- **Enrollment.** Each site screens patients at its expected rate per month and randomizes those who pass screening, at one minus the screen failure rate. Following the Poisson-gamma recruitment model (Anisimov and Fedorov, 2007), each virtual trial draws each site's rate from a gamma distribution around its expected rate, and its activation from within 20 percent of its expected days. Patients then arrive as a Poisson process, week by week, until the protocol's planned enrollment is randomized. Last patient in is the month that happens, counted from the first activation; a trial that has not finished in 10 years counts as 120 months.
+- **Cost.** Per patient: the cost of every assessment at every planned visit it is performed at. Screening: each screened patient's assessments at the first planned visit, with screened patients the planned enrollment divided by one minus the screen failure rate. Sites: each site's start-up cost, and its monthly cost from its activation until the last patient's last visit, the planned enrollment's last patient in plus the last planned visit's study day. The study budget's total is set to the median, and its fit to within or over its ceiling.
+- **Probability of success.** Each virtual trial randomizes the planned enrollment to the arms by their allocation, draws responders in each arm from the assumed response rates, with patients who drop out counted as non-responders (the composite strategy of the seed's estimand), and tests the difference with a two-sided test at the 5 percent level. The probability is the share of virtual trials that succeed in the right direction.
+- **Serious adverse events.** Patient-years of exposure, the planned enrollment over the last planned visit's study day with dropouts contributing half, times the assumed rate per 100 patient-years, drawn as a Poisson count in each virtual trial.
+- **Patient burden.** The minutes of every assessment at every planned visit, in hours.
+- **Site burden.** All patients' hours on site, spread over the months each taking-part site is active.
 
 A study scenario lives in a study concept or in a study, never both. People build several scenarios, often by copying one and changing a single lever, then simulate each and compare their forecasts side by side. The best is selected. When a study concept is approved, its selected scenario is copied into the new study as the study's baseline, so the study concept keeps its full history. A study can also run scenarios of its own, for example to test a change before an amendment.
 
@@ -271,7 +307,15 @@ Phase changes what dominates a design. Phase I studies are first-in-human, with 
 
 ### 3.7 Design and Plan methods
 
-**Specified, not yet built.** These are the skills that act on the objects above. The conformance tests read sections 3.1 to 3.6 and not this table. Several need the platform spec first (section 12): a deep copy for Copy study scenario and Approve study concept, and connected models for Import protocol and Run trial simulation. Until a model is connected, the gateway refuses those methods, as it refuses Run simulation.
+Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
+
+| Method | On | Needs | Precondition | Effect |
+|---|---|---|---|---|
+| Run trial simulation | Study Scenario | Outcome measures (many, of one study), screen failure rate, dropout rate, response on control and on treatment, serious adverse events per 100 patient-years | Its protocol has a planned enrollment and planned visits, and its site selection proposes a site that is not rejected | Runs the reference trial model in the background (section 3.4.4): creates a Trial Simulation and a Forecast for each chosen measure, against its target; sets the study budget's total and fit; makes earlier forecasts out of date; raises a Design Signal on each proposed site that cannot perform an assessment the protocol needs |
+
+### 3.8 Design and Plan methods to come
+
+**Specified, not yet built.** These are the skills that act on the objects above. The conformance tests read sections 3.1 to 3.7 and not this table. Several need the platform spec first (section 12): a deep copy for Copy study scenario and Approve study concept, a connected model for Import protocol, and for Run development simulation a portfolio model. Until a model is connected, the gateway refuses those methods, as it refuses Run simulation.
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
@@ -297,7 +341,6 @@ Phase changes what dominates a design. Phase I studies are first-in-human, with 
 | Add assessment | Planned Visit | Name, purpose, cost per visit, time on site | Its protocol is draft | Creates an Assessment performed at the visit |
 | Propose site | Site Selection | Site, country, patients per month, days to activate | Status is draft | Creates a Proposed Site in proposed |
 | Set budget ceiling | Study Budget | Ceiling | Status is draft | Records the ceiling. Fit follows the latest forecast of total cost |
-| Run trial simulation | Study Scenario | Assumptions: recruitment rate, screen failure rate, dropout rate, assumed effect, simulated trials | Status is draft or selected | Runs in the background on the scenario as it is now: creates a Trial Simulation and its Forecasts, measures each against its outcome target, and raises a Design Signal on each object history flags. The scenario's earlier forecasts: out of date |
 | Compare study scenarios | Study Scenario | Other scenarios with the same parent | Each has a complete simulation with current forecasts | Shows their forecasts side by side, against the outcome targets (Compare and decide) |
 | Select study scenario | Study Scenario | Rationale | Status is draft, with current forecasts | Status: selected. Records a Decision |
 | Set aside study scenario | Study Scenario | Reason | Status is draft | Status: set aside |
@@ -442,7 +485,7 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 
 Each role's navigation lists the entry types of its work domains (platform spec section 5.1). A role also works across some contained types, which stay in its navigation: the clinical roles across patients, visits, data records, data queries and adverse events; the external agent across data queries; the Quality Lead across quality events and CAPAs; the Drug Safety Physician across quality events; the Computational Chemist across assay results. The Clinical Scientist and Program Leader work across study concepts. The other Design and Plan personas work across none: they start from opportunities, programs, studies and protocols.
 
-The six Design and Plan personas run only the protocol methods named for them until the methods of section 3.7 are built; they read and navigate the design and plan graph now.
+The six Design and Plan personas run Run trial simulation (Clinical Scientist, Biostatistician and Clinical Operations Lead) and the protocol methods named for them until the methods of section 3.8 are built; they read and navigate the design and plan graph now.
 
 An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
 
@@ -454,7 +497,7 @@ The same object must look different to each persona. A Batch is a production rec
 
 These make To do work for this domain (platform spec section 5.1).
 
-- **On-demand methods**, which a person chooses to run rather than work waiting: Amend protocol, Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
+- **On-demand methods**, which a person chooses to run rather than work waiting: Run trial simulation, Amend protocol, Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
 - **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
 - **Deadlines:** a submission's due date, and the date a visit is scheduled for.
 
@@ -469,6 +512,7 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Approve protocol | Protocol | Review and sign |
 | Run signal detection | Product | Start and track |
 | Run simulation | Compound | Start and track |
+| Run trial simulation | Study Scenario | Start and track |
 | Flag duplicate | Safety Case | Compare and decide |
 | Merge duplicate | Safety Case | Compare and decide |
 | Generate analogs | Compound | Review a draft |
@@ -755,9 +799,9 @@ Small and fictional. Used for development and automated testing, and enough to r
 - Eight people, one for each persona of the three domains, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
 - One external agent, a contract research organization's, for the External agent journey.
 - **Design and Plan.** One active program for the candidate, with an endorsed target product profile; the Phase II study belongs to it. Three opportunities: a new asset, evaluating discovery's two analogs of the candidate, with a draft target product profile, an agreed target for the chance of success and two development options, one simulated; a parked new indication, psoriatic arthritis, with its decision; and a scientific question outside any program, on liver monitoring across the class.
-- Two study concepts: first-in-human for the new asset's lead analog, planned by its first option, and VELOCITY-3, the Phase III study concept for the program. VELOCITY-3 has three outcome targets (last patient in, probability of success, total cost) and three study scenarios: a baseline and two copies, each changing one lever. Each uses a draft protocol, a study budget and a site selection; two budgets are over their ceiling. Seven proposed sites, two of them at new sites in Poland and Brazil.
-- The baseline protocol is structured: a population with 7 eligibility criteria (one not yet testable), 3 objectives with a complete estimand for the primary, 4 endpoints, 2 arms with their interventions, 6 planned visits and 6 assessments, one with no recorded purpose. Two contributions, one awaiting confirmation. The two variant protocols record only what they change; their structure is copied once Copy study scenario is built.
-- Four trial simulations: three complete with 10 forecasts, 4 of which miss their target, and one queued. One simulates the new asset's development option. Two design signals raised, on an exclusion criterion and on hand MRI.
+- Two study concepts: first-in-human for the new asset's lead analog, planned by its first option, and VELOCITY-3, the Phase III study concept for the program. VELOCITY-3 has three outcome targets (last patient in, probability of success, total cost) and three study scenarios: a baseline and two copies, each changing one lever. Each uses a draft protocol, a study budget with a 45 million US dollar ceiling, and a site selection. Ten proposed sites stand for 250 sites in five countries, each with its equipment, start-up and monthly cost; the Irish, Polish and Brazilian sites have no MRI.
+- All three protocols are structured; the two variants are copies of the baseline with their one change, prior biologic use allowed or hand MRI dropped. The baseline protocol: a population with 7 eligibility criteria (one not yet testable), 3 objectives with a complete estimand for the primary, 4 endpoints, 2 arms with their interventions, 6 planned visits and 6 assessments, one with no recorded purpose. Two contributions, one awaiting confirmation.
+- No study scenario is simulated in the seed: the reference trial model runs them live. With the same assumptions (35 and 46 percent response, 15 percent dropout), the baseline misses its 18-month target and its ceiling; allowing prior biologics, at a 33 percent screen failure rate and a smaller effect, enrolls faster but falls below a 60 percent chance of success; dropping hand MRI and adding Poland and Brazil meets every target. The new asset's development option has one seeded simulation with three forecasts, from a portfolio model not yet connected. Two design signals raised, on an exclusion criterion and on hand MRI.
 - The Phase II study runs one study scenario of its own, using its draft amendment (J5).
 - Six more people, one for each Design and Plan persona.
 
@@ -797,6 +841,7 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 - Which models and historical study data back Run trial simulation, and how is each validated for its intended use? Until one is connected, the gateway refuses it, as it refuses Run simulation.
 - Which models back Import protocol, and how is a proposed mapping checked?
 - Should design objects belong to one protocol version and be copied when it is amended, as USDM study versions do, or be versioned one by one? Copying keeps each version a complete, signed whole and is recommended.
+- The reference trial model's rates, costs and gamma shape are illustrative. Which historical study data should calibrate it, by indication and country, and when does a sponsor's validated model replace it?
 - Which outcome measures does the business define beyond the nine in section 3.5, and should a study concept's targets pass to the study it seeds?
 - Portfolio decisions weigh commercial value, such as risk-adjusted net present value, as well as chance of success, time and cost. Which commercial data and which persona (new product planning, health economics) bring value into a development option's forecasts?
 - How does discovery hand a candidate to the portfolio? Which Scientific Innovation results (assay results, simulations, the candidate's stage) should an opportunity draw on, and should a target product profile set the criteria a compound must meet to be promoted to candidate?
@@ -836,3 +881,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.21 | 2026-11-20 | Design and Plan is built as a work domain: its 22 object types, state dimensions and relationships (sections 3.5 and 3.6) are in the ontology, with titles, NCIt mappings checked at the source, four personas and a seed. Section 3.4 frames the offering as simulating a trial before it runs, in three spaces: protocol authoring, trial simulation and concepts. Scenario is renamed Study Scenario, with protocol, study budget and site selection; Trial Simulation produces Forecasts measured against Outcome Targets. Methods are specified in section 3.7, not yet built. Send protocol for review now refuses a concept's protocol (rule D1). Open questions updated. |
 | 0.22 | 2026-11-20 | Navigation lists entry types (platform spec 0.31): in Design and Plan, Programs and Concepts. Study scenarios open inside their concept or study; endpoints are part of their objective; interventions and assessments of their protocol; contributions of their protocol; design signals of the object they are about; target product profiles of their program; a scenario's budget and site selection of the scenario. Each role names the contained types it works across, so clinical, safety, quality and discovery navigation is unchanged. Section 3.6 shows where each object lives. |
 | 0.23 | 2026-11-20 | Portfolio and asset decisions join Design and Plan. Concept (0.21–0.22, not yet merged) is replaced by Opportunity, a new asset from discovery, a new indication or a scientific question across programs, with Development Options simulated for chance of technical and regulatory success, time to submission and cost; and Study Concept, in its industry meaning, holding study scenarios until governance approves it. Section 3.4.2 lays out the stages from discovery to protocol and who works each. Two personas: Portfolio Strategist and Program Leader. Methods, rules, journey J7, seed and four open questions follow. |
+| 0.24 | 2026-11-20 | The study scenario's three elements and how they move each other (section 3.4.4), the outcome measures a sponsor can simulate, and the reference trial model: a transparent, seeded Monte Carlo over the scenario's own objects. Run trial simulation is built (section 3.7) as a model run (platform spec 0.32), with the measures chosen as checkboxes. Proposed sites carry their equipment, site count and costs; assessments the equipment they need. The seed's variant protocols are structured, and its study scenarios are simulated live. |

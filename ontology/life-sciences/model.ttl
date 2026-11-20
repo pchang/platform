@@ -1580,6 +1580,7 @@ lsh:IsSignal a sh:NodeShape ;
   sh:class ls:Signal .
 
 
+
 # ---------------------------------------------------------------------------
 # Design and Plan (domain spec section 3.4). Version 0.2.0.
 # ---------------------------------------------------------------------------
@@ -1932,6 +1933,10 @@ ls:minutesOnSite a owl:DatatypeProperty ;
   rdfs:label "time on site" ;
   rdfs:comment "Minutes it adds to a visit." .
 
+ls:needsEquipment a owl:DatatypeProperty ;
+  rdfs:label "needs equipment" ;
+  rdfs:comment "Equipment a site must have to perform it, such as MRI." .
+
 ls:StudyBudget a p:ObjectType, rdfs:Class ;
   rdfs:label "Study Budget" ;
   p:pluralLabel "Study Budgets" ;
@@ -2001,13 +2006,29 @@ ls:siteCountry a owl:DatatypeProperty ;
   rdfs:label "country" ;
   rdfs:comment "The country the site is in." .
 
+ls:siteCount a owl:DatatypeProperty ;
+  rdfs:label "site count" ;
+  rdfs:comment "How many sites this entry stands for: one named site, or a group of similar sites in its country." .
+
 ls:patientsPerMonth a owl:DatatypeProperty ;
   rdfs:label "patients per month" ;
-  rdfs:comment "Patients the site is expected to enroll each month." .
+  rdfs:comment "Patients each site is expected to screen each month." .
 
 ls:activationDays a owl:DatatypeProperty ;
   rdfs:label "activation" ;
-  rdfs:comment "Days the site is expected to take to activate." .
+  rdfs:comment "Days each site is expected to take to activate." .
+
+ls:equipment a owl:DatatypeProperty ;
+  rdfs:label "equipment" ;
+  rdfs:comment "Equipment each site has, such as MRI. One value per kind." .
+
+ls:startupCost a owl:DatatypeProperty ;
+  rdfs:label "start-up cost" ;
+  rdfs:comment "What it costs to start up each site, in thousands of US dollars." .
+
+ls:monthlyCost a owl:DatatypeProperty ;
+  rdfs:label "monthly cost" ;
+  rdfs:comment "What each active site costs each month, in thousands of US dollars." .
 
 ls:TrialSimulation a p:ObjectType, rdfs:Class ;
   rdfs:label "Trial Simulation" ;
@@ -2046,6 +2067,10 @@ ls:dropoutRate a owl:DatatypeProperty ;
 ls:assumedEffect a owl:DatatypeProperty ;
   rdfs:label "assumed effect" ;
   rdfs:comment "The treatment effect assumed, with its source." .
+
+ls:simulationModel a owl:DatatypeProperty ;
+  rdfs:label "model" ;
+  rdfs:comment "The model that ran the simulation, its version, and whether it is a reference model." .
 
 ls:Forecast a p:ObjectType, rdfs:Class ;
   rdfs:label "Forecast" ;
@@ -2758,6 +2783,12 @@ lsh:Assessment-minutesOnSite a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "time on site" .
 
+lsh:Assessment-needsEquipment a sh:PropertyShape ;
+  sh:path ls:needsEquipment ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "needs equipment" .
+
 lsh:StudyBudget-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
   sh:datatype xsd:string ;
@@ -2827,6 +2858,12 @@ lsh:ProposedSite-siteCountry a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "country" .
 
+lsh:ProposedSite-siteCount a sh:PropertyShape ;
+  sh:path ls:siteCount ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "site count" .
+
 lsh:ProposedSite-patientsPerMonth a sh:PropertyShape ;
   sh:path ls:patientsPerMonth ;
   sh:datatype xsd:decimal ;
@@ -2838,6 +2875,23 @@ lsh:ProposedSite-activationDays a sh:PropertyShape ;
   sh:datatype xsd:integer ;
   sh:maxCount 1 ;
   sh:name "activation" .
+
+lsh:ProposedSite-equipment a sh:PropertyShape ;
+  sh:path ls:equipment ;
+  sh:datatype xsd:string ;
+  sh:name "equipment" .
+
+lsh:ProposedSite-startupCost a sh:PropertyShape ;
+  sh:path ls:startupCost ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "start-up cost" .
+
+lsh:ProposedSite-monthlyCost a sh:PropertyShape ;
+  sh:path ls:monthlyCost ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "monthly cost" .
 
 lsh:TrialSimulation-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -2885,6 +2939,12 @@ lsh:TrialSimulation-assumedEffect a sh:PropertyShape ;
   sh:datatype xsd:string ;
   sh:maxCount 1 ;
   sh:name "assumed effect" .
+
+lsh:TrialSimulation-simulationModel a sh:PropertyShape ;
+  sh:path ls:simulationModel ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "model" .
 
 lsh:Forecast-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -3318,7 +3378,7 @@ lsh:PlannedVisit a sh:NodeShape ;
 
 lsh:Assessment a sh:NodeShape ;
   sh:targetClass ls:Assessment ;
-  sh:property lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-specifiedIn, lsh:Assessment-performedAt .
+  sh:property lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-needsEquipment, lsh:Assessment-specifiedIn, lsh:Assessment-performedAt .
 
 lsh:StudyBudget a sh:NodeShape ;
   sh:targetClass ls:StudyBudget ;
@@ -3330,11 +3390,11 @@ lsh:SiteSelection a sh:NodeShape ;
 
 lsh:ProposedSite a sh:NodeShape ;
   sh:targetClass ls:ProposedSite ;
-  sh:property lsh:ProposedSite-identifier, lsh:ProposedSite-proposedSiteStatus, lsh:ProposedSite-siteCountry, lsh:ProposedSite-patientsPerMonth, lsh:ProposedSite-activationDays, lsh:ProposedSite-proposedIn, lsh:ProposedSite-candidateSite .
+  sh:property lsh:ProposedSite-identifier, lsh:ProposedSite-proposedSiteStatus, lsh:ProposedSite-siteCountry, lsh:ProposedSite-siteCount, lsh:ProposedSite-patientsPerMonth, lsh:ProposedSite-activationDays, lsh:ProposedSite-equipment, lsh:ProposedSite-startupCost, lsh:ProposedSite-monthlyCost, lsh:ProposedSite-proposedIn, lsh:ProposedSite-candidateSite .
 
 lsh:TrialSimulation a sh:NodeShape ;
   sh:targetClass ls:TrialSimulation ;
-  sh:property lsh:TrialSimulation-identifier, lsh:TrialSimulation-trialSimulationRun, lsh:TrialSimulation-scenarioAsOf, lsh:TrialSimulation-simulatedTrials, lsh:TrialSimulation-recruitmentRate, lsh:TrialSimulation-screenFailureRate, lsh:TrialSimulation-dropoutRate, lsh:TrialSimulation-assumedEffect, lsh:TrialSimulation-simulates .
+  sh:property lsh:TrialSimulation-identifier, lsh:TrialSimulation-trialSimulationRun, lsh:TrialSimulation-scenarioAsOf, lsh:TrialSimulation-simulatedTrials, lsh:TrialSimulation-recruitmentRate, lsh:TrialSimulation-screenFailureRate, lsh:TrialSimulation-dropoutRate, lsh:TrialSimulation-assumedEffect, lsh:TrialSimulation-simulationModel, lsh:TrialSimulation-simulates .
 
 lsh:Forecast a sh:NodeShape ;
   sh:targetClass ls:Forecast ;

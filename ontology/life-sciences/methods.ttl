@@ -1606,3 +1606,88 @@ lsh:CAPAOutcome a sh:NodeShape ;
   rdfs:label "CAPA outcome" ;
   sh:in ( lst:CAPAStatus-effective lst:CAPAStatus-ineffective ) ;
   sh:message "The outcome must be effective or ineffective" .
+
+# ---------------------------------------------------------------------------
+# Design and Plan (domain spec sections 3.4.4 and 3.7): simulating a study scenario.
+# ---------------------------------------------------------------------------
+
+ls:RunTrialSimulation-measures a p:Input ;
+  p:inputName "measures" ;
+  rdfs:label "Outcome measures" ;
+  p:order 1 ;
+  p:valuesFrom lst:OutcomeMeasure ;
+  p:manyValues true ;
+  p:inputShape lsh:StudyMeasure .
+
+ls:RunTrialSimulation-screenFailureRate a p:Input ;
+  p:inputName "screenFailureRate" ;
+  rdfs:label "Screen failure rate, percent" ;
+  p:order 2 ;
+  p:datatype xsd:decimal .
+
+ls:RunTrialSimulation-dropoutRate a p:Input ;
+  p:inputName "dropoutRate" ;
+  rdfs:label "Dropout rate, percent" ;
+  p:order 3 ;
+  p:datatype xsd:decimal .
+
+ls:RunTrialSimulation-controlResponse a p:Input ;
+  p:inputName "controlResponse" ;
+  rdfs:label "Response on control, percent" ;
+  p:order 4 ;
+  p:datatype xsd:decimal .
+
+ls:RunTrialSimulation-treatmentResponse a p:Input ;
+  p:inputName "treatmentResponse" ;
+  rdfs:label "Response on treatment, percent" ;
+  p:order 5 ;
+  p:datatype xsd:decimal .
+
+ls:RunTrialSimulation-saeRate a p:Input ;
+  p:inputName "saeRate" ;
+  rdfs:label "Serious adverse events per 100 patient-years" ;
+  p:order 6 ;
+  p:datatype xsd:decimal .
+
+ls:RunTrialSimulation-effect1 a p:ModelRun ;
+  p:model "Reference trial model" ;
+  p:description "Simulates the study scenario as it stands now, with your assumptions, 2,000 times: creates a Trial Simulation with a Forecast for each measure you chose, measured against its outcome target; sets the study budget's total and fit; makes the scenario's earlier forecasts out of date; and raises a Design Signal on each proposed site that cannot perform an assessment the protocol needs. A reference model, not validated for decisions about real studies." .
+
+ls:RunTrialSimulation a p:Method ;
+  rdfs:label "Run trial simulation" ;
+  rdfs:comment "Simulates a study scenario's protocol, budget and site selection together, to forecast the outcomes chosen." ;
+  p:appliesTo ls:StudyScenario ;
+  p:input ls:RunTrialSimulation-measures, ls:RunTrialSimulation-screenFailureRate, ls:RunTrialSimulation-dropoutRate,
+    ls:RunTrialSimulation-controlResponse, ls:RunTrialSimulation-treatmentResponse, ls:RunTrialSimulation-saeRate ;
+  p:precondition lsh:RunTrialSimulation-pre-schedule, lsh:RunTrialSimulation-pre-sites ;
+  p:effect ls:RunTrialSimulation-effect1 ;
+  p:onDemand true ;
+  p:runsInBackground true .
+
+lsh:StudyMeasure a sh:NodeShape ;
+  rdfs:label "A measure of one study" ;
+  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents
+    lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden ) ;
+  sh:message "The reference trial model forecasts measures of one study, not of a development option" .
+
+lsh:RunTrialSimulation-pre-schedule a sh:NodeShape ;
+  rdfs:label "The scenario's protocol has no planned enrollment and planned visits" ;
+  sh:sparql lsh:RunTrialSimulation-pre-schedule-query .
+lsh:RunTrialSimulation-pre-schedule-query a sh:SPARQLConstraint ;
+  sh:message "The scenario's protocol has no planned enrollment and planned visits" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:usesProtocol ?p . ?p ls:plannedEnrollment ?n . ?v ls:specifiedIn ?p ; a ls:PlannedVisit }
+    }""" .
+
+lsh:RunTrialSimulation-pre-sites a sh:NodeShape ;
+  rdfs:label "The scenario's site selection proposes no sites" ;
+  sh:sparql lsh:RunTrialSimulation-pre-sites-query .
+lsh:RunTrialSimulation-pre-sites-query a sh:SPARQLConstraint ;
+  sh:message "The scenario's site selection proposes no sites that are not rejected" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      FILTER NOT EXISTS { $this ls:usesSiteSelection ?s . ?ps ls:proposedIn ?s FILTER NOT EXISTS { ?ps ls:proposedSiteStatus lst:ProposedSiteStatus-rejected } }
+    }""" .

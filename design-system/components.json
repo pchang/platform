@@ -469,6 +469,11 @@
           "isDisabled": {
             "type": "boolean",
             "description": "Not available"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value this option adds to its field when checked, such as an IRI"
           }
         },
         "required": [
@@ -478,7 +483,8 @@
       "children": null,
       "responsive": "Label wraps at narrow widths.",
       "accessibility": [
-        "Always has a visible label"
+        "Always has a visible label",
+        "Options in a set sit in a FormGroup with role group, whose label names the set"
       ],
       "examples": [
         {
@@ -2020,9 +2026,10 @@
           },
           "role": {
             "enum": [
-              "radiogroup"
+              "radiogroup",
+              "group"
             ],
-            "description": "Set for a group of radio buttons"
+            "description": "Set for a group of radio buttons, or group for a set of checkboxes"
           },
           "isInline": {
             "type": "boolean",
@@ -2038,13 +2045,14 @@
           "TextArea",
           "FormSelect",
           "Radio",
+          "Checkbox",
           "TextInput"
         ],
         "minItems": 1
       },
       "responsive": "Full width of its form. Inline radio buttons wrap onto new lines at narrow widths.",
       "accessibility": [
-        "The label names the control, or the group of radio buttons"
+        "The label names the control, the group of radio buttons, or the set of checkboxes"
       ],
       "examples": [
         {

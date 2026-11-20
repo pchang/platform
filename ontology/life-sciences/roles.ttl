@@ -82,13 +82,14 @@ ls:ClinicalScientist a p:Role ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Scientist" ;
   rdfs:comment "Shapes a design that answers the right question for the program: concepts, scenarios, objectives, criteria and assessments." ;
-  p:mayRun ls:AmendProtocol ;
+  p:mayRun ls:AmendProtocol, ls:RunTrialSimulation ;
   p:mayNotRead ls:assignedArm .
 
 ls:Biostatistician a p:Role ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Biostatistician" ;
   rdfs:comment "Makes a design answer its question reliably and efficiently: estimands, sample size, allocation and the assumptions of trial simulations." ;
+  p:mayRun ls:RunTrialSimulation ;
   p:mayNotRead ls:assignedArm .
 
 ls:MedicalWriter a p:Role ;
@@ -102,6 +103,7 @@ ls:ClinicalOperationsLead a p:Role ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
   rdfs:label "Clinical Operations Lead" ;
   rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
+  p:mayRun ls:RunTrialSimulation ;
   p:mayNotRead ls:assignedArm .
 
 ls:PortfolioStrategist a p:Role ;

@@ -416,8 +416,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
-  if (NEEDS_ID.has(entry.id)) props.id = entry.id !== 'Radio' && groupId ? groupId : generatedId;
-  if (entry.id === 'FormGroup' && props.role !== 'radiogroup') props.fieldId = generatedId;
+  // Radios and field-bound checkboxes come in sets, so each needs its own id, not the group's.
+  const inSet = entry.id === 'Radio' || (entry.id === 'Checkbox' && node.field);
+  if (NEEDS_ID.has(entry.id)) props.id = !inSet && groupId ? groupId : generatedId;
+  if (entry.id === 'FormGroup' && props.role !== 'radiogroup' && props.role !== 'group') props.fieldId = generatedId;
 
   // Fields: the value comes from the host, and changes go back to it.
   const field = node.field;
@@ -438,6 +440,15 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   }
   // A CardHeader in select mode carries the card's select control at its end (design system spec 4.3).
   if (entry.id === 'CardHeader' && select) props.actions = { actions: <SelectCircle />, hasNoOffset: true };
+  // A Checkbox bound to a field is one of a set: the field holds the chosen values separated by spaces (design system spec 5.2).
+  if (field && entry.id === 'Checkbox') {
+    const value = props.value as string;
+    const chosen = (host.values?.[field] ?? '').split(' ').filter(Boolean);
+    props.isChecked = chosen.includes(value);
+    props.onChange = (_event: unknown, checked: boolean) =>
+      host.onField?.(field, (checked ? [...chosen.filter((v) => v !== value), value] : chosen.filter((v) => v !== value)).join(' '));
+    delete props.value;
+  }
   if (field && entry.id === 'Radio') {
     const value = props.value as string;
     props.isChecked = host.values?.[field] === value;

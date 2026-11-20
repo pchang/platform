@@ -1,5 +1,6 @@
 import type * as oxigraph from 'oxigraph';
 import { ask, NS, select } from './ontology';
+import { CONNECTED_MODELS } from './models';
 
 /**
  * Analyses: background work the platform computes (platform spec 3.1 and 3.4, Background runs).
@@ -8,13 +9,13 @@ import { ask, NS, select } from './ontology';
  */
 
 /** The kinds of analysis the platform implements, by their local name in the platform vocabulary. */
-export const IMPLEMENTED_ANALYSES = new Set(['DisproportionalityAnalysis']);
+export const IMPLEMENTED_ANALYSES = new Set(['DisproportionalityAnalysis', 'ModelRun']);
 
-/** The method's background analysis effect, if the platform implements it. */
-export function analysisOf(store: oxigraph.Store, method: string): { effect: string; kind: string } | undefined {
-  const rows = select(store, `SELECT ?e ?kind WHERE { <${method}> p:effect ?e . ?e a ?kind . ?kind rdfs:subClassOf p:Analysis }`);
-  const row = rows.find((r) => IMPLEMENTED_ANALYSES.has(r.kind.slice(NS.p.length)));
-  return row && { effect: row.e, kind: row.kind.slice(NS.p.length) };
+/** The method's background analysis effect, if the platform implements it; a model run only when its model is connected. */
+export function analysisOf(store: oxigraph.Store, method: string): { effect: string; kind: string; model?: string } | undefined {
+  const rows = select(store, `SELECT ?e ?kind ?model WHERE { <${method}> p:effect ?e . ?e a ?kind . ?kind rdfs:subClassOf p:Analysis OPTIONAL { ?e p:model ?model } }`);
+  const row = rows.find((r) => IMPLEMENTED_ANALYSES.has(r.kind.slice(NS.p.length)) && (r.kind !== `${NS.p}ModelRun` || CONNECTED_MODELS.has(r.model)));
+  return row && { effect: row.e, kind: row.kind.slice(NS.p.length), ...(row.model ? { model: row.model } : {}) };
 }
 
 /** Why a background method cannot start: no worker can do its work. Empty when it can, or when it is not a background method. */
@@ -22,7 +23,8 @@ export function backgroundBlocks(store: oxigraph.Store, method: string): string[
   if (!ask(store, `ASK { <${method}> p:runsInBackground true }`)) return [];
   if (analysisOf(store, method)) return [];
   const described = select(store, `SELECT ?d WHERE { <${method}> p:effect ?e . ?e a p:DescribedEffect ; p:description ?d }`).map((r) => r.d);
-  return [['No worker can do this method’s background work yet.', ...described].join(' ')];
+  const models = select(store, `SELECT ?model WHERE { <${method}> p:effect ?e . ?e a p:ModelRun ; p:model ?model }`).map((r) => `${r.model} is not connected.`);
+  return [['No worker can do this method’s background work yet.', ...models, ...described].join(' ')];
 }
 
 /** What the person is told the method's analysis will do, in words. */

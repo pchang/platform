@@ -1,5 +1,6 @@
 import * as oxigraph from 'oxigraph';
 import { analysisDescriptions, analysisOf, backgroundBlocks, planDisproportionality } from '../ontology/analyses';
+import { CONNECTED_MODELS } from '../ontology/models';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
 import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
@@ -119,9 +120,11 @@ export interface ToDoItem {
 export interface ComposedInput {
   name: string;
   label: string;
-  kind: 'text' | 'url' | 'choice' | 'person' | 'object';
+  kind: 'text' | 'number' | 'url' | 'choice' | 'person' | 'object';
   /** The values the person may choose from, with their labels. */
   choices?: { value: string; label: string }[];
+  /** True when a choice takes any number of the values, sent separated by spaces (spec 3.1, Input). */
+  many?: boolean;
   default?: string;
   /** True when the input is about the object it is given for, so a batch asks for it object by object (spec 5.4). */
   perObject?: boolean;
@@ -506,9 +509,9 @@ export class Gateway {
   }
 
   private inputs(method: string) {
-    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong ?perObject WHERE {
+    return this.q(`SELECT ?input ?name ?label ?datatype ?valuesFrom ?objectOf ?isActor ?choicesAlong ?perObject ?manyValues WHERE {
         <${method}> p:input ?input . ?input p:inputName ?name ; rdfs:label ?label ; p:order ?order .
-        OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom }
+        OPTIONAL { ?input p:datatype ?datatype } OPTIONAL { ?input p:valuesFrom ?valuesFrom } OPTIONAL { ?input p:manyValues ?manyValues }
         OPTIONAL { ?input p:objectOf ?objectOf } OPTIONAL { ?input p:isActor ?isActor } OPTIONAL { ?input p:choicesAlong ?choicesAlong } OPTIONAL { ?input p:perObject ?perObject } } ORDER BY ?order`);
   }
 
@@ -1472,13 +1475,15 @@ export class Gateway {
     const signature = this.signatureRequest(principal, method);
     const inputs = await Promise.all(this.inputs(method).map(async (input): Promise<ComposedInput> => {
       const base = { name: input.name, label: input.label, ...(input.perObject === 'true' ? { perObject: true } : {}) };
-      if (input.datatype) return { ...base, kind: input.datatype === `${NS.xsd}anyURI` ? 'url' : 'text' };
+      if (input.datatype === `${NS.xsd}anyURI`) return { ...base, kind: 'url' };
+      if (input.datatype === `${NS.xsd}decimal` || input.datatype === `${NS.xsd}integer`) return { ...base, kind: 'number' };
+      if (input.datatype) return { ...base, kind: 'text' };
       if (input.valuesFrom) {
         // The input's shape may narrow the scheme, such as causality without "unassessed".
         const narrowed = this.q(`SELECT ?value WHERE { <${input.input}> p:inputShape ?shape . ?shape sh:in/rdf:rest*/rdf:first ?value }`).map((r) => r.value);
         const choices = this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${input.valuesFrom}> ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`)
           .filter((c) => !narrowed.length || narrowed.includes(c.value));
-        return { ...base, kind: 'choice', choices: asChoices(choices) };
+        return { ...base, kind: 'choice', choices: asChoices(choices), ...(input.manyValues === 'true' ? { many: true } : {}) };
       }
       if (input.isActor && signature) {
         // A signed method's person input is the signer: the principal, and nobody else (spec 3.4).
@@ -1520,7 +1525,19 @@ export class Gateway {
       let value: Term;
       if (input.datatype) {
         if (input.datatype === `${NS.xsd}anyURI` && !URL.canParse(raw)) problems.push(`${input.label} must be a web address`);
-        value = literal(raw, namedNode(input.datatype));
+        const numeric = [`${NS.xsd}decimal`, `${NS.xsd}integer`].includes(input.datatype);
+        if (numeric && !/^-?\d+(\.\d+)?$/.test(raw.trim())) problems.push(`${input.label} must be a number`);
+        else if (input.datatype === `${NS.xsd}integer` && !/^-?\d+$/.test(raw.trim())) problems.push(`${input.label} must be a whole number`);
+        value = literal(numeric ? raw.trim() : raw, namedNode(input.datatype));
+      } else if (input.manyValues === 'true') {
+        // Many values from a scheme, sent separated by spaces (spec 3.1, Input), each allowed by the scheme and the input's shape.
+        const chosen = [...new Set(raw.split(/\s+/).filter(Boolean))];
+        const narrowed = this.q(`SELECT ?value WHERE { <${input.input}> p:inputShape ?shape . ?shape sh:in/rdf:rest*/rdf:first ?value }`).map((r) => r.value);
+        for (const iri of chosen) {
+          if (!ask(this.graph.store, `ASK { <${iri}> skos:inScheme <${input.valuesFrom}> }`) || (narrowed.length && !narrowed.includes(iri))) problems.push(`${input.label}: ${iri.split(/[#/]/).pop()} is not an allowed value`);
+        }
+        resolved.set(input.input, literal(chosen.join(' ')));
+        continue;
       } else {
         const iri = input.valuesFrom ? raw : this.tryResolve(raw);
         value = namedNode(iri);
@@ -1584,13 +1601,7 @@ export class Gateway {
     const e = this.q(`SELECT ?type ?typeLabel ?link ?actorAs ?setsDate ?fromDate ?days WHERE { <${effect}> p:createsType ?type . ?type rdfs:label ?typeLabel .
         OPTIONAL { <${effect}> p:linkedBy ?link } OPTIONAL { <${effect}> p:recordsActorAs ?actorAs } OPTIONAL { <${effect}> p:setsDate ?setsDate }
         OPTIONAL { <${effect}> p:fromDate ?fromDate } OPTIONAL { <${effect}> p:plusDays/p:parameterValue ?days } }`)[0];
-    const prefix = e.typeLabel.replace(/[^A-Za-z]+/g, '');
-    let n = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${e.type}> }`, work)[0].n) + 1;
-    while (ask(work.store, `ASK { ?o ls:identifier "${prefix}-${n}" }`)) n++;
-    const identifier = `${prefix}-${n}`;
-    const created = `${this.dataNamespace}${identifier}`;
-    this.set(work, created, RDF_TYPE, namedNode(e.type), changes, false);
-    this.set(work, created, `${NS.ls}identifier`, literal(identifier), changes, false);
+    const created = this.mint(work, e.type, changes);
     if (e.link) this.set(work, created, e.link, namedNode(object), changes, false);
     const states = [
       ...this.q(`SELECT ?v WHERE { <${effect}> p:initialState ?v }`).map((r) => r.v),
@@ -1611,6 +1622,18 @@ export class Gateway {
       }
       this.set(work, created, e.setsDate, literal(day.toISOString().slice(0, 10), namedNode(`${NS.xsd}date`)), changes, false);
     }
+    return created;
+  }
+
+  /** A new object of a type: its identifier, from the type's name and the next free number, and its type. */
+  private mint(work: Graph, type: string, changes: Change[]): string {
+    const prefix = this.q(`SELECT ?l WHERE { <${type}> rdfs:label ?l }`)[0].l.replace(/[^A-Za-z]+/g, '');
+    let n = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${type}> }`, work)[0].n) + 1;
+    while (ask(work.store, `ASK { ?o ls:identifier "${prefix}-${n}" }`)) n++;
+    const identifier = `${prefix}-${n}`;
+    const created = `${this.dataNamespace}${identifier}`;
+    this.set(work, created, RDF_TYPE, namedNode(type), changes, false);
+    this.set(work, created, `${NS.ls}identifier`, literal(identifier), changes, false);
     return created;
   }
 
@@ -1725,6 +1748,7 @@ export class Gateway {
   private async analyse(run: string, starter: Principal, method: string, object: string) {
     const analysis = analysisOf(this.graph.store, method);
     if (!analysis) throw new GatewayError(400, backgroundBlocks(this.graph.store, method));
+    if (analysis.kind === 'ModelRun') return this.runModel(run, object, analysis.model!);
     const plan = planDisproportionality(this.graph.store, analysis.effect, object);
     if (plan.cannotRun) throw new GatewayError(400, [plan.cannotRun]);
 
@@ -1765,6 +1789,50 @@ export class Gateway {
       ...again,
     ].join(' ');
     return { message, changes, created, work, at };
+  }
+
+  /**
+   * A model run (spec 3.4, Model runs): the connected model reads the object and what it links to, with the inputs of the
+   * run's starting commit, and returns what to create and set. Applied to a working copy and validated against every shape;
+   * throws with the reasons when the model cannot run or its result breaks a shape.
+   */
+  private async runModel(run: string, object: string, name: string) {
+    const model = CONNECTED_MODELS.get(name);
+    if (!model) throw new GatewayError(400, [`${name} is not connected.`]);
+    const inputs = Object.fromEntries(this.q(`SELECT ?name ?value WHERE { GRAPH <${run}> { <${run}> p:startCommit ?commit } GRAPH ?commit { ?commit p:inputValue ?iv . ?iv p:forInput ?input ; rdf:value ?value } ?input p:inputName ?name }`)
+      .map((r) => [r.name, r.value]));
+    const at = this.now();
+    this.progress.set(run, 0.1);
+    await yieldToReaders();
+    let result;
+    try {
+      result = model.run({ store: this.graph.store, target: object, inputs, at });
+    } catch (error) {
+      throw new GatewayError(400, [error instanceof Error ? error.message : String(error)]);
+    }
+    this.progress.set(run, 0.8);
+    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    const created: string[] = [];
+    const byKey = new Map<string, string>();
+    for (const c of result.creates) {
+      const iri = this.mint(work, c.type, changes);
+      byKey.set(c.key, iri);
+      created.push(iri);
+    }
+    for (const c of result.creates) {
+      for (const { property, value } of c.values) {
+        const term = 'key' in value ? namedNode(byKey.get(value.key) ?? '') : value;
+        if ('key' in value && !byKey.has(value.key)) throw new GatewayError(400, [`${name} linked to an object it did not create.`]);
+        this.set(work, byKey.get(c.key)!, property, term, changes, false);
+      }
+    }
+    for (const { subject, property, value } of result.sets) this.set(work, subject, property, value, changes);
+    this.progress.set(run, 1);
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work);
+    if (problems.length) throw new GatewayError(400, problems);
+    return { message: result.message, changes, created, work, at };
   }
 
   /** Ends a run: its result commit, if any, its status, and the starter's notification, in one journal entry. */
