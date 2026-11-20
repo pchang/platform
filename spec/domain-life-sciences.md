@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.20. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26.
+Version 0.21. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -13,7 +13,7 @@ The platform spec stays domain-free. Everything domain-specific lives here.
 The three domains form one lifecycle: from molecule, to patient, to the real world, and back.
 
 1. **Scientific Innovation.** A molecule is designed, tested in the lab and made in a controlled process.
-2. **Clinical Development.** The molecule is tested on patients in a clinical trial.
+2. **Clinical Development.** The molecule is tested on patients in a clinical trial. Its first work domain, **Design and Plan**, conceives, designs and simulates each study before anyone is enrolled (section 3.4).
 3. **Safety and Regulatory.** What happens to patients is monitored, assessed and reported to regulators, during the trial and after launch.
 
 What is learned in each domain flows back to the others. A safety signal sends scientists back to the molecule. A manufacturing deviation can explain an adverse event. The links between domains are the point of the platform.
@@ -29,6 +29,7 @@ Each domain is modeled on the scope of an existing Dassault Systèmes brand. The
 |---|---|---|
 | Scientific Innovation | BIOVIA | Modeling and generative design, lab informatics (ELN), scientific data and registration, quality and manufacturing intelligence |
 | Clinical Development | Medidata | Electronic data capture, data integration, trial management, patient experience (eConsent, eCOA, wearables) |
+| Design and Plan | Medidata | Structured protocol authoring and digitization, trial simulation and forecasting from historical study data, study planning: budgets and site selection |
 | Safety and Regulatory | ArisGlobal | Pharmacovigilance, regulatory information management, quality management (QMS, eTMF), medical affairs |
 
 ---
@@ -119,224 +120,172 @@ Covers a clinical trial from design to locked data.
 | Reconcile adverse event | Adverse Event | None | Reported to safety, and a Safety Case originates from it | Reporting: reconciled. The person confirms the event and its case agree: seriousness, dates and outcome (SAE reconciliation) |
 | Unblind patient | Patient | Justification | Study is blinded, arm is hidden, and rule 2 allows it | Arm visibility: revealed, for this patient only. Logged with its justification |
 | Lock study | Study | None | Status closed, no open Data Queries | Status: locked |
-| Send protocol for review | Protocol | None | Status is draft | Status: in review |
+| Send protocol for review | Protocol | None | Status is draft, and no concept's study scenario uses it (rule D1, section 3.7) | Status: in review |
 | Approve protocol | Protocol | Electronic signature (approval) | Status is in review | Status: approved. The version it amends: superseded. Moves the studies the amended version governs to this version |
 | Amend protocol | Protocol | What the amendment changes | Status is approved, and no amendment of it is in progress | Creates a Protocol in draft that amends this one, with the summary |
 
 ### 3.4 Design and Plan
 
-**Status: specified, not yet built.** This section extends Clinical Development back to where a study begins, before its first site is activated. Its object model follows the design note *Authoring the Protocol as Structure* (October 31, 2026). Where that note is silent, common industry practice fills the gap, and each such addition is marked "from practice". Nothing here is in the ontology yet, so the spec conformance tests read sections 3.1 and 3.3 only. When the model is agreed, each part moves into 3.1 to 3.3, sections 6, 7 and 11, and the ontology, and this status line is removed.
+Design and Plan is its own work domain: where a study is conceived, designed, planned and simulated before a single patient is enrolled. It is described inside Clinical Development because it hands its design to the study that runs it. Its object types, state dimensions and relationships are built (sections 3.5 and 3.6). Its methods are specified and not yet built (section 3.7). The model follows the design note *Authoring the Protocol as Structure* (October 31, 2026) and the product direction of November 20, 2026. Where those are silent, common industry practice fills the gap.
 
-#### 3.4.1 The principle
+#### 3.4.1 Simulate the trial before it runs
 
-A protocol is written as prose but consumed as data. That gap causes most of the waste in study startup. Contributors each own a section and send it to a medical writer, who merges the pieces by hand. Then data managers rebuild the protocol as case report forms, sites rebuild it as visit schedules and finance rebuilds it as budgets. Each one reinterprets the prose, and each one finds problems the authors never saw. What they find becomes an amendment, and amendments cost months.
+An aircraft is flown in simulation long before it flies. A trial can be run the same way. A sponsor brings its study design, its budget and its plan for sites. Historical study data and models then predict how the trial will turn out before anyone is enrolled: when enrollment will finish, what it will cost, how much it will ask of patients and sites, what safety events to expect, and how likely it is to succeed. Each choice is tested in simulation while it is still cheap to change, not discovered in an amendment.
 
-So the protocol is authored as structure from the first word. The narrative still matters, but it sits on top of a model rather than replacing one. Three things follow:
+This rests on one condition: the design must be data. A protocol written only as prose cannot be simulated, so the protocol is authored as structure from the first word.
 
-1. **One source, many contributors.** Contributors work how they already work: some write directly in the structured protocol, while others import a Word file, a Google Doc or plain text. Every path lands in the same structure. The medical writer stays accountable for the whole. Their work moves from assembling pieces to judging them.
-2. **Operations shape the design while it is soft.** Data management, clinical operations and site-facing teams can see the protocol from its first draft and comment on its objects. Their comments sit beside signals drawn from historical study data, while change is still cheap.
-3. **Design, budget and sites move together.** The protocol is completed inside a planning triad of protocol, budget and site plan, with a forecast that reads all three and feeds back into each. A design choice shows its cost and site implications at once. A budget ceiling or a site constraint flows back to the author.
+#### 3.4.2 Three spaces
 
-The output is data by construction. Protocol objects map to ICH M11, CDISC USDM and, downstream, SDTM. When a version is approved, the EDC build, the schedule of activities, budgets and site plans draw on the same objects. Nothing is retyped and nothing is reinterpreted. An amendment travels the same path, so every downstream artifact knows exactly what moved.
-
-#### 3.4.2 Where work begins: Concept, Scenario and Study
-
-The **Concept** is where exploration happens: a research opportunity being explored, with its own lifecycle. It can lead to one study, several studies or none, and a no is still a result worth keeping. A traditional study concept, the short proposal written for governance review, is one kind of Concept.
-
-The **Scenario** is the unit of work and of comparison. Each scenario is one possible approach. It references one version each of a protocol, a budget and a site plan, and any number of forecasts. Scenarios live in a Concept while an opportunity is explored, or in a Study once one exists, for example to test a change before an amendment. A scenario has one parent, never both.
-
-Inside a scenario nothing leads by default. A team with a protocol in hand starts there. A team constrained by budget or by sites sets that first, as a constraint the protocol must meet. The forecast reads all three inputs and projects enrollment, timeline, cost, patient burden and site burden. A scenario can be forecast with partial inputs, and its forecasts sharpen as the inputs fill in. Copying a scenario is the natural way to explore a variation: change one criterion, forecast again and compare the two side by side.
-
-A decision on the Concept closes the exploration. If the team pursues it, the selected scenario seeds a new Study, which receives a copy as its baseline design, so the Concept's history stays intact. One Concept can seed more than one Study. If the team parks or stops it, the Concept closes with its full history. A Study can also start from scratch, with no Concept.
-
-#### 3.4.3 What a design must decide (from practice)
-
-The protocol objects carry these decisions. The table says what practice expects of each, so the platform can check a design for gaps.
-
-| Decision | What it settles | Practice it follows |
+| Space | What happens there | Where it lives |
 |---|---|---|
-| Objectives and endpoints | Primary, secondary and exploratory questions, and the variable that answers each | ICH E8(R1), E9 |
-| Estimands | For each key objective, exactly what effect is estimated: treatment, population, variable, how intercurrent events (such as rescue medication or stopping treatment) are handled, and the population-level summary | ICH E9(R1) |
-| Population and eligibility | Who the study is for, as inclusion and exclusion criteria, each testable at screening | ICH E8(R1), E17 |
-| Arms and interventions | Investigational product, dose and regimen, comparator or placebo, background therapy | ICH E10 |
-| Design type and allocation | Parallel, crossover, adaptive, seamless II/III or a master protocol; randomization ratio, stratification and blinding | ICH E9; FDA and EMA adaptive and master protocol guidance |
-| Visits and assessments | The visit schedule with its windows, and the procedures and measurements at each | ICH M11, CDISC USDM |
-| Sample size and analysis | Power, alpha, effect size, dropout and the non-inferiority margin, each with its source; analysis sets, multiplicity control and interim analyses | ICH E9 |
-| Safety oversight | Data monitoring committee, stopping rules, dose-escalation rules and sentinel dosing | ICH E6(R3) |
+| Protocol authoring | A protocol is brought in, either digitized from an existing document or written in the structured authoring tool. Either way it becomes the source of truth as structured objects that map to CDISC USDM and ICH M11. | Every Protocol, inside a study scenario or governing a study |
+| Trial simulation | Parameters and assumptions are entered, and a study scenario is simulated many times to predict outcomes. | Every study scenario |
+| Concept | Open exploration: a research opportunity or scientific question, with as many study scenarios as it needs. | Inside a program, across several programs, or outside any program |
 
-Phase changes what dominates the design. Phase I studies are first-in-human, with single and multiple ascending doses, often in healthy volunteers (participants, by the Terminology rule); the starting dose comes from nonclinical results. Phase II studies are proof of concept and dose-ranging in patients. Phase III studies are confirmatory: powered for the primary estimand, with strict multiplicity control, multi-regional enrollment and a diversity action plan where one is required.
+**Protocol authoring.** Contributors work how they already work. A statistician writes directly in the structured protocol, a safety lead imports a Word file, a clinical scientist pastes from a Google Doc. Every path lands in the same structure. Imported content is a proposal until someone confirms how it maps to protocol objects. The medical writer stays accountable for the whole protocol, and their work moves from merging pieces to judging them. Data management, clinical operations and site-facing teams see the protocol from its first draft and comment on its objects while change is still cheap. When a version is approved, the EDC build, the schedule of activities, budgets and site plans draw on the same objects, so nothing is retyped.
 
-#### 3.4.4 How the triad pushes on the design
+**Trial simulation.** A trial simulation runs on a study scenario as it stood at one moment. The platform keeps every object's history (platform spec section 3.2), so the moment identifies exactly what was simulated. The simulation records its assumptions, such as recruitment rate, screen failure rate, dropout rate and the assumed treatment effect with its source. It runs thousands of virtual trials and produces forecasts: one per outcome measure, each a median with a range. Each forecast is measured against the outcome target for that measure, if one is set. Once the scenario changes, the forecasts are out of date, and a new simulation is needed for a fair comparison.
 
-| The design sets | Through | The triad answers with |
-|---|---|---|
-| Per-patient cost | Visits and assessments | Budget, and the objects driving any gap to a budget ceiling |
-| Study scale and length | Sample size, enrollment duration | Budget and forecast timeline |
-| The patient pool | Eligibility criteria | Fewer qualified sites, and an enrollment forecast that shows when a criterion will stall recruitment |
-| Site capability needs | Specialized assessments | Sites ruled out for want of equipment or staff |
-| Site burden | Visit frequency and length | Lower site capacity; history of which designs similar sites struggled with |
-| Where the study can run | Comparators, standard of care | A country mix that may change the design: remote visits, local labs, a different comparator |
+**Concept.** A concept is a research opportunity being explored: an indication, a design question or a scientific question. It can lead to one study, several or none, and a no is still a result worth keeping. A concept can sit inside a program, inform several programs, or sit outside any program, for example a question that would change how a whole class of studies is designed. A traditional study concept, the short proposal written for governance review, is one kind of Concept.
 
-Historical study data make the forecast an advisor rather than a calculator. Real enrollment rates, startup times, amendment patterns and visit burden from past studies show which designs raise patient burden, strain sites or slow enrollment. That knowledge reaches the author as a signal on the object that causes it. The author still decides, now with evidence.
+#### 3.4.3 The study scenario
 
-#### 3.4.5 Proposed object types
+A **study scenario** is one possible approach to a study. It is named apart from other uses of "scenario" across the company. It has three elements, which are worked on together because each moves the others:
 
-Program, Concept, Scenario and Study frame the work. The protocol objects are the design. The triad objects plan it. The collaboration objects carry the people around it.
+1. **Protocol.** The structured study design.
+2. **Study budget.** The cost of the scenario, or a ceiling set first as a constraint the design must meet.
+3. **Site selection.** A list of proposed sites, each with its country, expected enrollment and start-up time.
+
+Nothing inside a scenario has to come first. A team with a protocol in hand starts there; a team constrained by budget or by sites sets that first. Pulling one lever shows its effect on the other two. A narrower eligibility criterion shrinks the patient pool and the sites that can fill it. An added visit raises the cost per patient and the burden on patients and sites. A cheaper country mix may change the comparator, the visits or the labs.
+
+A study scenario lives in a concept or in a study, never both. People build several scenarios, often by copying one and changing a single lever, then simulate each and compare their forecasts side by side. The best is selected. When a concept is pursued, its selected scenario is copied into the new study as the study's baseline, so the concept keeps its full history. A study can also run scenarios of its own, for example to test a change before an amendment.
+
+The forecasts are what make a scenario comparable. Historical study data turn them from a calculation into advice. They hold real enrollment rates, startup times, amendment patterns and visit burden, so a simulation can flag the criterion or procedure that caused trouble in similar studies. That flag reaches the author as a **design signal** on the object that causes it. The author still decides, now with evidence.
+
+#### 3.4.4 What a design must decide
+
+The protocol objects carry these decisions, which follow ICH M11 and the CDISC Unified Study Definitions Model (USDM). The platform checks a design for gaps against them.
+
+| Decision | What it settles | Objects | Practice it follows |
+|---|---|---|---|
+| Objectives and endpoints | Primary, secondary and exploratory questions, and the variable that answers each | Objective, Endpoint | ICH E8(R1), E9 |
+| Estimands | For each primary objective, exactly what effect is estimated: treatment, population, variable, how intercurrent events (such as rescue medication or stopping treatment) are handled, and the population-level summary | Estimand | ICH E9(R1) |
+| Population and eligibility | Who the study is for, as inclusion and exclusion criteria, each testable at screening | Population, Eligibility Criterion | ICH E8(R1), E17 |
+| Arms and interventions | Investigational product, dose and regimen, comparator or placebo, background therapy, allocation | Arm, Intervention | ICH E10 |
+| Visits and assessments | The visit schedule with its windows, and the procedures and measurements at each, with their burden and cost | Planned Visit, Assessment | ICH M11, USDM |
+| Sample size and analysis | Power, effect size, dropout, the non-inferiority margin, multiplicity, interim analyses | Trial Simulation assumptions; the statistical analysis plan | ICH E9 |
+
+The schedule of activities is a view of planned visits and their assessments, not an object of its own. The protocol document is a view too: one source with two faces, a readable document and a connected model.
+
+Phase changes what dominates a design. Phase I studies are first-in-human, with single and multiple ascending doses, often in healthy volunteers (participants, by the Terminology rule), and a starting dose justified from nonclinical results. Phase II studies are proof of concept and dose-ranging in patients. Phase III studies are confirmatory: powered for the primary estimand, multi-regional, with a diversity action plan where one is required.
+
+#### 3.4.5 Built for now, and what is left out
+
+- **Protocol** is the existing type: the versioned, signed record. A protocol version being authored is a Protocol in draft. Its design objects are part of it.
+- **Contributor and Comment are platform concerns, not domain types.** A contributor is a person with roles (platform spec section 3.3). Comments and design signals should share one annotation model attached to any object; the platform spec does not have one yet (section 12).
+- **Trial Simulation is named apart from Simulation**, the in silico compound run in Scientific Innovation. **Design Signal is named apart from Signal**, the safety signal in section 4. **Planned Visit is named apart from Visit**, a patient's actual encounter, which is scheduled from it.
+- **Sample size** is a trial simulation output (probability of success) and its assumptions, not a separate object.
+- **Clinical supply, risk-based quality and feasibility surveys** are part of planning in practice but not part of a study scenario yet (section 12).
+
+### 3.5 Design and Plan object types
 
 | Type | What it is | State dimensions |
 |---|---|---|
-| Program | Groups research initiatives at the organizational level, such as the development of one candidate. Persists across initiatives | None |
-| Target Product Profile | From practice. The labeling a program aims for: indication, population, dosing, and its target and minimum efficacy and safety claims | Status: draft, endorsed, superseded. |
-| Concept | A research opportunity being explored: its rationale, intended direction and preliminary objectives | Status: exploring, pursued, parked, not pursued. |
-| Scenario | One possible approach to a concept or a study, referencing one version each of protocol, budget and site plan | Status: draft, selected, set aside. |
-| Population | Who the study is for | None |
-| Objective | A question the study asks | Level: primary, secondary, exploratory. |
-| Estimand | From practice. The precise treatment effect an objective targets, with its five ICH E9(R1) attributes | Completeness: incomplete, complete. |
+| Program | Groups research at the organizational level, such as the development of one candidate. Persists across concepts and studies | Status: active, on hold, discontinued. |
+| Target Product Profile | The labeling a program aims for: indication, and its target and minimum efficacy and safety claims | Status: draft, endorsed, superseded. |
+| Concept | A research opportunity being explored, with its rationale. Inside a program, across programs or outside any | Status: exploring, pursued, parked, not pursued. |
+| Study Scenario | One possible approach to a concept or a study: a protocol, a study budget and a site selection, worked on together and simulated as one | Status: draft, selected, set aside. |
+| Population | Who a study is for, defined by its eligibility criteria | None |
+| Objective | A question a study asks | Level: primary, secondary, exploratory. |
+| Estimand | The precise treatment effect an objective targets, with its five ICH E9(R1) attributes | Completeness: incomplete, complete. |
 | Endpoint | How an objective is measured | Type: efficacy, safety, pharmacokinetic, patient-reported. |
-| Eligibility Criterion | One inclusion or exclusion rule, with the data that tests it | Kind: inclusion, exclusion. Testability: testable, needs data. |
-| Arm | A treatment group | Role: experimental, active control, placebo control. |
-| Intervention | A drug, device or comparator, with its dosing and timing | None |
-| Planned Visit | A point in the study timeline, with its window. A patient's Visit is scheduled from one | None |
-| Assessment | A procedure or measurement, with its burden and cost | Purpose: endpoint, eligibility, safety, regulatory, none recorded. |
-| Sample Size Calculation | From practice. The number of patients needed, from its assumptions, each with its source | Run: not run, current, out of date. |
-| Budget | The cost of a scenario, or a ceiling set first as a constraint | Status: draft, approved. Fit: within ceiling, over ceiling. |
-| Site Plan | The countries and candidate sites for a scenario, with their capacity and fit | Status: draft, approved. |
-| Forecast | A projection run on a scenario: enrollment, timeline, cost, patient burden and site burden | Run: running, complete, failed. Currency: current, out of date. |
-| Contribution | Content a contributor authored or imported, with its author and version, mapped to protocol objects | Mapping: proposed, confirmed. |
-| Design Signal | Feedback from historical study data on the object it concerns, such as a criterion that slowed enrollment in similar studies | Status: raised, acknowledged, dismissed. |
-| Decision | A recorded choice: on a concept, pursue, park or stop, and which scenario seeds a study; on a study, the approved baseline | None |
+| Eligibility Criterion | One inclusion or exclusion rule, with the data that tests it at screening | Kind: inclusion, exclusion. Testability: testable, needs data. |
+| Arm | A planned treatment group, with its allocation | Role: experimental, active control, placebo control. |
+| Intervention | A drug, device or comparator given in an arm, with its dose and regimen | None |
+| Planned Visit | A point in the study timeline, with its study day and window. Each patient's Visit is scheduled from one | None |
+| Assessment | A procedure or measurement, with its cost per visit and time on site | Purpose: endpoint, eligibility, safety, regulatory, none recorded. Burden: low, moderate, high. |
+| Study Budget | The cost of a study scenario, in millions of US dollars, with its ceiling | Status: draft, approved. Fit: within ceiling, over ceiling. |
+| Site Selection | The proposed sites of a study scenario | Status: draft, approved. |
+| Proposed Site | A site proposed in a site selection, with its country, patients per month and days to activate | Status: proposed, shortlisted, rejected. |
+| Trial Simulation | A simulation of a study scenario as it stood at one moment, run many times under stated assumptions | Run: queued, running, complete, failed. |
+| Forecast | One predicted outcome of a trial simulation, as a median with a 10th to 90th percentile range | Currency: current, out of date. Measure: last patient in, probability of success, total cost, serious adverse events, patient burden, site burden. Against target: met, missed, no target. |
+| Outcome Target | What success means for a concept or a study on one measure, as a threshold the forecast must be at most or at least | Status: proposed, agreed. Measure: last patient in, probability of success, total cost, serious adverse events, patient burden, site burden. |
+| Contribution | Protocol content a contributor authored or imported, with where it came from | Mapping: proposed, confirmed. |
+| Design Signal | What historical study data show about a design or plan object | Status: raised, acknowledged, dismissed. |
+| Decision | A recorded choice on a concept or study: pursue, park or stop a concept, select a scenario, approve a baseline. With its rationale and date | Kind: pursue, park, stop, select scenario, approve baseline. |
 
-Notes on the model:
+### 3.6 Design and Plan relationships
 
-- **Protocol** is the existing type: the versioned, signed record. The design note calls a version being authored a Protocol Draft, which is a Protocol in draft. The design objects above are its structured content, and the narrative wraps around them. A name in the prose, such as a lab test, is a link to its object.
-- **The schedule of activities is a view** of planned visits and their assessments, not its own object. So is the protocol document: a protocol has two faces, a readable document and a connected model, both edited in one place.
-- **Contributor and Comment are platform concerns, not domain types.** A contributor is a person and their roles (platform spec section 3.3). Comments and design signals should share one model, attached to any object, so human and historical input appear side by side. That needs a platform spec change (open question).
-- **Design Signal is named apart from Signal**, the safety signal in section 4, so the two never share a label.
-- **Standards mappings** (USDM, SDTM) are properties of objects that people never manage.
-- **Clinical supply** (kits, blinding, comparator sourcing, expiry) and **risk-based quality** (critical-to-quality factors, quality tolerance limits) are part of planning in practice but not part of the triad. They are left for later (open question).
+- Concept **informs** Program or Study. Study **belongs to** Program. Program **aims at** Target Product Profile. Program **develops** Compound (cross-domain).
+- Study Scenario **explores** Concept or Study: its one parent. Study Scenario **uses** one Protocol, one Study Budget and one Site Selection. Study **began from** Study Scenario: its baseline.
+- Trial Simulation **simulates** Study Scenario. Forecast **comes from** Trial Simulation. Forecast **is measured against** Outcome Target. Outcome Target **sets success for** Concept or Study.
+- Population, Objective, Arm and Planned Visit are **specified in** Protocol. Eligibility Criterion **defines** Population. Estimand **is the estimand of** Objective. Endpoint **measures** Objective. Endpoint **requires** Assessment. Assessment **performed at** Planned Visit. Intervention **given in** Arm. Intervention **administers** Formulation (cross-domain). Visit **scheduled from** Planned Visit.
+- Proposed Site **proposed in** Site Selection. Proposed Site **proposes** Site.
+- Contribution **contributes to** Protocol. Design Signal **is about** an Eligibility Criterion, Assessment, Planned Visit, Objective, Endpoint, Proposed Site or Study Budget. Decision **decides on** Concept or Study, and **chooses** a Study Scenario.
+- Eligibility Criterion **justified by** Assay Result or Safety Case (cross-domain).
 
-#### 3.4.6 Proposed relationships
+### 3.7 Design and Plan methods
 
-| Relationship | From → To | Reads back as | Containment | At most |
-|---|---|---|---|---|
-| informs | Concept → Program | is informed by | Related only | Many |
-| explores | Scenario → Concept or Study | is explored by | The scenario is part of its concept or study | one parent, a concept or a study |
-| informs | Concept → Study | was informed by | Related only | Many |
-| includes | Program → Study | belongs to | Related only | one program, for a study |
-| aims at | Program → Target Product Profile | is the aim of | Related only | one profile |
-| develops | Program → Compound (cross-domain) | is developed in | Related only | Many |
-| references | Scenario → Protocol, Budget, Site Plan | is referenced by | Related only | one of each |
-| forecasts | Forecast → Scenario | is forecast by | The forecast is part of the scenario | one scenario |
-| seeded | Scenario → Study | was seeded by | Related only | one study |
-| specifies | Protocol → Population, Objective, Arm, Planned Visit | is specified by | Part of the protocol version | one protocol |
-| defined by | Population → Eligibility Criterion | defines | The criterion is part of the population | Many |
-| measured by | Objective → Endpoint | measures | Related only | Many |
-| targets | Objective → Estimand | is targeted by | The estimand is part of the objective | one estimand |
-| requires | Endpoint → Assessment | produces data for | Related only | Many |
-| holds | Arm → Intervention; Planned Visit → Assessment | is held in | Related only | Many |
-| administers | Intervention → Formulation (cross-domain) | is administered as | Related only | one formulation |
-| scheduled from | Visit → Planned Visit | schedules | Related only | one planned visit |
-| sizes | Sample Size Calculation → Estimand | is sized by | Related only | one estimand |
-| proposes | Site Plan → Site | is proposed in | Related only | Many |
-| maps to | Contribution → any protocol object | is drawn from | Related only | Many |
-| concerns | Design Signal → any protocol or triad object | has signals | Related only | one object |
-| records | Decision → Concept or Study, and the Scenario chosen | is decided by | The decision is part of its concept or study | one subject |
-| justified by | Eligibility Criterion → Assay Result or Safety Case (cross-domain) | justifies | Related only | Many |
-
-#### 3.4.7 Proposed methods
+**Specified, not yet built.** These are the skills that act on the objects above. The conformance tests read sections 3.1 to 3.6 and not this table. Several need the platform spec first (section 12): a deep copy for Copy study scenario and Pursue concept, and connected models for Import protocol and Run trial simulation. Until a model is connected, the gateway refuses those methods, as it refuses Run simulation.
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
-| Create concept | Program | Rationale, direction | None | Creates a Concept in exploring that informs the program |
-| Create scenario | Concept or Study | Name | A concept in exploring, or a study | Creates a Scenario in draft with an empty protocol, budget and site plan |
-| Copy scenario | Scenario | What the copy is for | Its parent is a concept in exploring, or a study | Creates a Scenario in draft that references copies of its protocol, budget and site plan versions |
-| Import contribution | Protocol | A file or text | Status is draft | A connected model recognizes sections and proposes the objects inside them, as a Contribution in proposed, recorded with its author and version |
+| Create concept | Program | Name, rationale | None | Creates a Concept in exploring that informs the program |
+| Start concept | Concept | Name, rationale | None | Creates a Concept in exploring outside any program (on demand) |
+| Set outcome target | Concept | Measure, comparison, threshold, unit | Status is exploring | Creates an Outcome Target in proposed for the concept |
+| Agree outcome target | Outcome Target | None | Status is proposed | Status: agreed |
+| Create study scenario | Concept | Name | Status is exploring | Creates a Study Scenario in draft that explores it, with an empty draft protocol, study budget and site selection |
+| Copy study scenario | Study Scenario | What the copy changes | Its parent is a concept in exploring, or a study | Creates a Study Scenario in draft with copies of its protocol, study budget and site selection |
+| Import protocol | Protocol | A file or text | Status is draft | A connected model recognizes sections and proposes the objects in them, as a Contribution in proposed |
 | Confirm mapping | Contribution | Corrections | Mapping is proposed | Mapping: confirmed. Creates or updates the protocol objects it maps to (rule D11) |
-| Add objective | Protocol | Statement, level | Status is draft | Creates an Objective the protocol specifies |
-| Define estimand | Objective | Treatment, population, variable, intercurrent event strategies, summary | Level is primary | Creates the Estimand the objective targets. Completeness: complete when all five attributes are given |
-| Add eligibility criterion | Population | Text, kind, the data that tests it | Its protocol is draft | Creates an Eligibility Criterion. Testability: testable when it names its data |
-| Add assessment | Planned Visit | Procedure, purpose | Its protocol is draft | Creates an Assessment held at the visit |
-| Calculate sample size | Estimand | Effect size, variability, power, alpha, dropout, and the source of each | Completeness is complete | Runs in the background: the Sample Size Calculation becomes current |
-| Set budget ceiling | Budget | Amount | Status is draft | Records the ceiling. Fit is set from the latest forecast |
-| Run forecast | Scenario | None | Status is draft or selected | Runs in the background: creates a Forecast from the scenario's inputs and historical study data, and raises a Design Signal on each object history flags |
-| Compare scenarios | Scenario | Other scenarios with the same parent | Each has a current forecast | Shows enrollment, timeline, cost, patient burden and site burden side by side |
-| Select scenario | Scenario | Rationale | Status is draft, and it has a current forecast | Status: selected. Records a Decision |
-| Set aside scenario | Scenario | Reason | Status is draft | Status: set aside |
-| Pursue concept | Concept | Selected scenario, study name | Status is exploring, and a scenario is selected | Status: pursued. Creates a Study in planned, informed by the concept, with a copy of the scenario as its baseline. Records a Decision |
+| Add objective | Protocol | Statement, level | Status is draft | Creates an Objective specified in the protocol |
+| Define estimand | Objective | Treatment, population, variable, intercurrent events, summary | Level is primary | Creates the Estimand of the objective. Completeness: complete when all five are given |
+| Add eligibility criterion | Population | Criterion, kind, tested by | Its protocol is draft | Creates an Eligibility Criterion that defines the population |
+| Add assessment | Planned Visit | Name, purpose, cost per visit, time on site | Its protocol is draft | Creates an Assessment performed at the visit |
+| Propose site | Site Selection | Site, country, patients per month, days to activate | Status is draft | Creates a Proposed Site in proposed |
+| Set budget ceiling | Study Budget | Ceiling | Status is draft | Records the ceiling. Fit follows the latest forecast of total cost |
+| Run trial simulation | Study Scenario | Assumptions: recruitment rate, screen failure rate, dropout rate, assumed effect, simulated trials | Status is draft or selected | Runs in the background on the scenario as it is now: creates a Trial Simulation and its Forecasts, measures each against its outcome target, and raises a Design Signal on each object history flags. The scenario's earlier forecasts: out of date |
+| Compare study scenarios | Study Scenario | Other scenarios with the same parent | Each has a complete simulation with current forecasts | Shows their forecasts side by side, against the outcome targets (Compare and decide) |
+| Select study scenario | Study Scenario | Rationale | Status is draft, with current forecasts | Status: selected. Records a Decision |
+| Set aside study scenario | Study Scenario | Reason | Status is draft | Status: set aside |
+| Acknowledge design signal | Design Signal | None | Status is raised | Status: acknowledged |
+| Dismiss design signal | Design Signal | Why | Status is raised | Status: dismissed (rule D9) |
+| Pursue concept | Concept | Study name | Status is exploring, and a study scenario is selected | Status: pursued. Creates a Study in planned, informed by the concept, that began from a copy of the selected scenario. Records a Decision |
 | Park concept | Concept | Reason | Status is exploring | Status: parked. Records a Decision |
 | Stop concept | Concept | Reason | Status is exploring or parked | Status: not pursued. Records a Decision |
-| Approve baseline | Study | Electronic signature (approval) | The study's selected scenario references a protocol in review | Approves the protocol (as Approve protocol) and records the scenario as the study's approved baseline |
 
-#### 3.4.8 Proposed rules
+**Rules for Design and Plan.** These become numbered rules in section 7 as their methods are built. One is built already: a protocol used by a concept's study scenario cannot be sent for review (D1, a precondition of Send protocol for review).
 
-These become numbered rules in section 7 when built.
-
-- **D1. One parent.** A scenario belongs to one concept or one study, never both. Pursuing a concept copies its selected scenario into the new study, so the concept's history is never changed by the study.
-- **D2. Changes make forecasts out of date.** Any change to a scenario's protocol, budget or site plan marks its forecasts out of date. Comparing scenarios and selecting one need a current forecast.
-- **D3. Every assessment has a reason.** Each assessment serves an endpoint, an eligibility criterion, a safety need or a regulatory requirement. One with no recorded purpose is flagged as burden without evidence and needs a justification to stay.
-- **D4. Estimands before review.** From practice. A protocol version cannot be sent for review until every primary objective targets a complete estimand.
+- **D1. Exploration stays with the concept.** A study scenario has one parent. A concept's protocols cannot be sent for review; pursuing the concept copies its selected scenario into the new study, so the concept's history never changes.
+- **D2. Changes make forecasts out of date.** Any change to a scenario's protocol, budget or site selection after a simulation's moment makes its forecasts out of date. Compare and Select need current forecasts.
+- **D3. Every assessment has a reason.** An assessment with no recorded purpose is flagged as burden without evidence, and needs a justification to stay.
+- **D4. Estimands before review.** A protocol version cannot be sent for review until every primary objective has a complete estimand.
 - **D5. Testable eligibility.** Each eligibility criterion names the data that tests it at screening.
-- **D6. Traceable assumptions.** From practice. Each sample size assumption records its source. Changing one makes the calculation out of date.
-- **D7. Starting dose from evidence.** From practice. A first-in-human protocol links its starting dose to the nonclinical results that justify it (NOAEL or MABEL).
+- **D6. Traceable assumptions.** Each simulation assumption records its source.
+- **D7. Starting dose from evidence.** A first-in-human protocol links its starting dose to the nonclinical results that justify it (NOAEL or MABEL).
 - **D8. Budget ceiling.** When a forecast puts a scenario over its budget ceiling, the platform names the objects driving the gap.
-- **D9. History advises, the author decides.** Design signals are advice. They never block a method, and dismissing one records why.
+- **D9. History advises, the author decides.** Design signals never block a method. Dismissing one records why.
 - **D10. The medical writer is accountable.** A protocol version is sent for review by its medical writer, and its author cannot be its only approver (as rule 5).
-- **D11. Imports are proposals.** Objects proposed from an imported contribution are drafts until a person confirms the mapping (as rule 6).
+- **D11. Imports are proposals.** Objects proposed from an imported protocol are drafts until a person confirms the mapping (as rule 6).
 
-#### 3.4.9 Proposed personas
+**Journeys for Design and Plan.** These run once their methods are built.
 
-| Persona | Works mainly in | Goal | Can | Cannot |
-|---|---|---|---|---|
-| Clinical Scientist | Clinical Development | A design that answers the right question for the program | Create concepts and scenarios, add objectives, criteria and assessments, run forecasts, select scenarios, pursue, park and stop concepts | Approve a protocol they authored |
-| Biostatistician | Clinical Development | A design that answers the question reliably and efficiently | Define estimands, calculate sample size, add contributions | Select sites |
-| Medical Writer | Clinical Development | One coherent, approvable protocol | Import contributions, confirm mappings, edit the narrative, send protocol versions for review | Change estimands |
-| Clinical Operations Lead | Clinical Development | A plan that delivers on time and on budget | Build site plans and budgets, set budget ceilings, run forecasts, copy and compare scenarios, comment on any protocol object | Change objectives or estimands |
-| Regulatory Strategist | Safety and Regulatory | A design the agencies will accept | Review designs against agency advice, comment on any protocol object | Approve a protocol alone |
+- **J4. From concept to study.** Clinical Scientist, with the Biostatistician, the Medical Writer and the Clinical Operations Lead. A Phase III concept is being explored under the program, with agreed targets for last patient in and probability of success. The scientist creates a study scenario and imports last year's synopsis, and the medical writer confirms the proposed objects. The biostatistician defines the primary estimand. The operations lead proposes sites and sets a budget ceiling. A trial simulation forecasts the last patient in at 23 months against a 20-month target, and the budget over its ceiling. It raises design signals on an exclusion criterion and on hand MRI. The scientist copies the scenario twice, changing one lever each time, and simulates both. Compare shows all three against the targets. The scientist selects one and pursues the concept, and the new study begins from that scenario.
+- **J5. Testing an amendment before making it.** Clinical Operations Lead, then Clinical Scientist. A running study creates a scenario that uses its draft amendment and simulates it against the baseline. The scientist selects it, and the amendment goes for review.
+- **J6. From a confirmed safety signal to a design change.** Continues J2. A confirmed Signal reaches the study's design through Formulation and Intervention. The scientist adds liver function tests in a study scenario, simulates the added burden and cost, and amends the protocol.
 
-The Clinical Data Manager, already in section 6, gains read and comment access to protocols from the first draft, so a hard-to-capture assessment is flagged before it is locked. Safety and pharmacology contribute their sections as contributions.
-
-#### 3.4.10 Cross-domain links
-
-| Link | From | To | Why it matters |
-|---|---|---|---|
-| develops | Program | Compound | A program is anchored to the candidate it develops |
-| administers | Intervention | Formulation | Each arm traces to what was designed and made |
-| justified by | Eligibility Criterion | Assay Result or Safety Case | Why a criterion exists is in the graph, not in someone's memory |
-| scheduled from | Visit | Planned Visit | Each patient's visit traces to the design that required it |
-
-A confirmed safety Signal reaches back into design. The platform traverses Product to Formulation to the Interventions that administer it, then to their Protocols and Studies, and suggests a study scenario that tests the change before Amend protocol.
-
-#### 3.4.11 Proposed journeys
-
-**J4. From concept to study.** Clinical Scientist, with the Biostatistician and the Clinical Operations Lead. A Concept for a Phase III study is being explored under the program. The scientist creates a scenario and imports last year's synopsis; the medical writer confirms the proposed objectives and criteria. The biostatistician defines the primary estimand and sizes it. The operations lead builds a site plan and sets a budget ceiling. The forecast flags one exclusion criterion that slowed enrollment in similar studies, and the scenario comes in over budget, with the visits driving the gap named. The scientist copies the scenario, relaxes the criterion and drops a visit, and forecasts again. Compare scenarios shows both. They select the copy and pursue the concept. A Study is created with the selected scenario as its baseline.
-
-**J5. Testing an amendment before making it.** Clinical Operations Lead, then Clinical Scientist. A running study's enrollment is behind. The lead creates a study scenario that relaxes one criterion and forecasts it against the baseline. The scientist reviews the comparison, selects the scenario, and its protocol becomes an amendment through Amend protocol.
-
-**J6. From a confirmed signal to a protocol change.** Continues J2. A confirmed safety Signal reaches the study through Formulation and Intervention. The Clinical Scientist is asked to review the eligibility criteria and the safety assessments, adds liver function tests to the planned visits in a study scenario, forecasts the added burden and cost, and amends the protocol.
-
-#### 3.4.12 Proposed seed
-
-A program for LSH-4471, aiming at a target product profile in rheumatoid arthritis. Under it:
-
-- A Concept for a Phase III study, in exploring, with three scenarios: a baseline, a copy with one exclusion criterion relaxed, and a copy with a broader country mix. Each has a protocol in draft, a budget, a site plan and a forecast. One is over its budget ceiling and one carries a design signal.
-- A parked Concept for a psoriatic arthritis study, with its decision and reason.
-- VELOCITY-2, the existing study, gains one study scenario testing a relaxed criterion before an amendment (J5).
-
-All of it is invented.
-
-#### 3.4.13 Regulatory obligations for design and plan
+**Regulatory obligations for Design and Plan.**
 
 | Obligation | What the platform must do |
 |---|---|
 | Quality by design (ICH E8(R1)) | Record the critical-to-quality factors of each design |
-| Statistical principles and estimands (ICH E9, E9(R1)) | Hold estimands as structured objects and trace sample size and analysis to them |
+| Statistical principles and estimands (ICH E9, E9(R1)) | Hold estimands as structured objects, and trace simulation assumptions to their sources |
 | Choice of control group (ICH E10) | Record each control arm and its justification |
-| Good clinical practice (ICH E6(R3)) | Risk-proportionate design, and every design decision logged with who made it and why |
+| Good clinical practice (ICH E6(R3)) | Risk-proportionate design, with every design decision logged with who made it and why |
 | Structured protocol (ICH M11; CDISC USDM) | Export a protocol version as an M11 protocol and as USDM data |
-| Multi-regional trials (ICH E17) | Record regional sample size and consistency assumptions |
+| Multi-regional trials (ICH E17) | Record regional enrollment and consistency assumptions |
 | Diversity action plans (FDA, under FDORA 2022) | Record enrollment goals by demographic group where a plan is required |
-| EU Clinical Trials Regulation (536/2014) | Produce the application content for CTIS |
-| Trial registration (42 CFR Part 11; EU CT register) | Register before the first patient is enrolled |
+| Models used for decisions | Each simulation model is validated for its intended use, and every forecast records the model and data it came from (platform spec section 7) |
 
 ---
 
@@ -405,6 +354,11 @@ These links are the main proof that domains connect through the graph, not throu
 | is | Product | Formulation | The safety view and the lab view are the same thing |
 | may involve | Safety Case | Batch | A safety problem can be traced to manufacturing |
 | raised on | Quality Event | Batch | Quality and manufacturing share one record of a lot |
+| develops | Program | Compound | A program is anchored to the candidate it develops |
+| administers | Intervention | Formulation | Each arm of a design traces to what was designed and made |
+| justified by | Eligibility Criterion | Assay Result or Safety Case | Why a criterion exists is in the graph, not in someone's memory |
+
+A confirmed Signal on a Product also reaches back into design: through its Formulation to the Interventions that administer it, then to their Arms, Protocols and Studies (journey J6).
 
 Confirming a Signal on a Product lets agents traverse back to the Formulation, its Compound and its Batches. Nothing in the code knows this path. It exists because the links exist.
 
@@ -421,7 +375,13 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Clinical Research Associate | Clinical Development | Make sure site data match their sources | Verify data records and adverse events against source documents, raise queries | Enter or change site data. Answer queries. See unblinded arms |
 | Clinical Data Manager | Clinical Development | Get clean data to study lock | Raise, close and re-query queries, report adverse events to safety and reconcile them with their safety cases, lock studies, and send, approve and amend protocol versions | See unblinded arms. Change safety assessments |
 | Drug Safety Physician | Safety and Regulatory | Protect patients and meet reporting deadlines | Triage, assess, flag and merge cases, run detection and evaluate, confirm and refute signals, request unblinding, prepare submissions and approve those they did not prepare | Change clinical data. Release batches |
+| Clinical Scientist | Design and Plan and Clinical Development | A design that answers the right question for the program | Explore concepts and study scenarios, shape objectives, criteria and assessments, amend protocol versions | See unblinded arms |
+| Biostatistician | Design and Plan and Clinical Development | A design that answers its question reliably and efficiently | Define estimands and the assumptions of trial simulations | See unblinded arms |
+| Medical Writer | Design and Plan and Clinical Development | One coherent, approvable protocol | Confirm contributions, write the narrative, send protocol versions for review | See unblinded arms |
+| Clinical Operations Lead | Design and Plan and Clinical Development | A plan that delivers on time and on budget | Build study budgets and site selections, run and compare trial simulations | See unblinded arms |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
+
+The four Design and Plan personas run only the protocol methods named for them until the methods of section 3.7 are built; they read and navigate the design and plan graph now.
 
 An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
 
@@ -576,6 +536,22 @@ The domain is written in the platform's ontology format (platform spec section 3
   | Quality Event | Its description | Tablet hardness below specification in lot VL25-2410-02 |
   | CAPA | Its action | (none in the seed) |
   | Medical Inquiry | The question | Rash and nausea in the first week of Velcorin: report or wait? |
+  | Program | Its name | Velcorin in immune-mediated inflammatory disease |
+  | Target Product Profile | "Target product profile:" and its indication | Target product profile: moderate to severe rheumatoid arthritis |
+  | Concept | Its name | Phase III of Velcorin in moderate to severe rheumatoid arthritis |
+  | Study Scenario | Its name | VELOCITY-3 baseline: 640 patients, 9 countries |
+  | Population | Its description | Adults with moderate to severe rheumatoid arthritis and an inadequate response to methotrexate |
+  | Objective, Endpoint, Eligibility Criterion | Its statement | ACR20 response at Week 24 |
+  | Estimand | "Estimand:" and its variable | Estimand: ACR20 response at Week 24 |
+  | Arm, Intervention, Planned Visit, Assessment | Its name | Week 12 |
+  | Study Budget, Site Selection | Its name | VELOCITY-3 baseline budget |
+  | Proposed Site | The site it proposes, or "Proposed site in" its country | Northfield General Hospital |
+  | Trial Simulation | "Simulation of" its scenario | Simulation of VELOCITY-3 baseline: 640 patients, 9 countries |
+  | Forecast | Measure, median and unit | Last patient in: 23 months |
+  | Outcome Target | Measure, comparison, threshold and unit | Last patient in at most 20 months |
+  | Contribution | Its name | Safety monitoring section, imported from Word |
+  | Design Signal | What history shows | Hand MRI at three visits served no endpoint, and studies like it took about 2 months longer to activate sites |
+  | Decision | Its rationale | Parked until VELOCITY-3 is designed, so the program does not run two Phase III studies at once |
 
   Methods that create objects record what the person typed where a title needs it: the model type, the query's question, the quality event's description and the CAPA's action.
 - **Relationships.** Each relationship reads both ways, as verb phrases that complete "this object ... these objects", says which end is part of the other, and, where the domain is certain, says that an object links to at most one object along it (platform spec section 3.1). From these, every object's panel takes its tabs: a study's Sites and Patients, a patient's Visits and Adverse Events, a data record's Data Queries (platform spec section 5.1, Within an object).
@@ -607,11 +583,38 @@ The domain is written in the platform's ontology format (platform spec section 3
   | reports | Submission → Safety Case or Signal | is reported in | Related only | Many |
   | resolves | CAPA → Quality Event | is resolved by | The CAPA is part of the quality event | one quality event |
   | duplicate of | Safety Case → Safety Case | is duplicated by | Related only | one case |
+  | informs | Concept → Program or Study | is informed by | Related only | Many |
+  | belongs to | Study → Program | includes | Related only | one program |
+  | aims at | Program → Target Product Profile | is the aim of | Related only | Many |
+  | develops | Program → Compound | is developed in | Related only | Many |
+  | explores | Study Scenario → Concept or Study | is explored by | The scenario is part of its concept or study | one parent |
+  | uses | Study Scenario → Protocol; Study Budget; Site Selection | is used in | Related only | one of each |
+  | began from | Study → Study Scenario | seeded | Related only | one scenario |
+  | simulates | Trial Simulation → Study Scenario | is simulated by | The simulation is part of its scenario | one scenario |
+  | comes from | Forecast → Trial Simulation | forecasts | The forecast is part of its simulation | one simulation |
+  | is measured against | Forecast → Outcome Target | measures | Related only | one target |
+  | sets success for | Outcome Target → Concept or Study | has targets | The target is part of its concept or study | one parent |
+  | specified in | Population, Objective, Arm, Planned Visit → Protocol | specifies | Part of the protocol version | one protocol |
+  | defines | Eligibility Criterion → Population | is defined by | The criterion is part of the population | one population |
+  | is the estimand of | Estimand → Objective | targets | The estimand is part of the objective | one objective |
+  | measures | Endpoint → Objective | is measured by | Related only | one objective |
+  | requires | Endpoint → Assessment | produces data for | Related only | Many |
+  | given in | Intervention → Arm | gives | Related only | Many |
+  | administers | Intervention → Formulation | is administered as | Related only | one formulation |
+  | performed at | Assessment → Planned Visit | performs | Related only | Many |
+  | scheduled from | Visit → Planned Visit | schedules | Related only | one planned visit |
+  | proposed in | Proposed Site → Site Selection | proposes | The proposed site is part of the selection | one selection |
+  | proposes | Proposed Site → Site | is proposed as | Related only | one site |
+  | contributes to | Contribution → Protocol | has contributions | Related only | one protocol |
+  | is about | Design Signal → a design or plan object | has design signals | Related only | one object |
+  | decides on | Decision → Concept or Study | is decided by | The decision is part of its concept or study | one parent |
+  | chooses | Decision → Study Scenario | is chosen by | Related only | one scenario |
+  | justified by | Eligibility Criterion → Assay Result or Safety Case | justifies | Related only | Many |
 
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
-- **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service. MedDRA and WHODrug follow once licensed.
-- **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4 must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
+- **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service; the Design and Plan mappings (Population, Estimand, Arm and its roles, Endpoint, Intervention, Planned Visit, Eligibility Criterion and its kinds, objective levels and patient-reported endpoints) on November 20, 2026. Concept, Study Scenario, Trial Simulation, Forecast and the planning types have no NCIt match and are minted here. CDISC USDM mappings follow with protocol export. MedDRA and WHODrug follow once licensed.
+- **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4, and every Design and Plan object type and state value in section 3.5, must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
 
 ---
 
@@ -682,8 +685,14 @@ Small and fictional. Used for development and automated testing, and enough to r
 - 1 approved product, the comparator for signal detection, with 20 closed historical cases. All are post-market reports, so they originate from neither a trial nor an inquiry in the seed.
 - 1 detected signal aggregating 3 cases.
 - 1 open quality event and 1 submission in draft.
-- Six people, one for each persona, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
+- Eight people, one for each persona of the three domains, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
 - One external agent, a contract research organization's, for the External agent journey.
+- **Design and Plan.** One active program for the candidate, with an endorsed target product profile; the Phase II study belongs to it. Three concepts: a Phase III concept being explored in the program, a parked concept with its decision, and a concept outside any program, on liver monitoring across the class.
+- The Phase III concept has three outcome targets (last patient in, probability of success, total cost) and three study scenarios: a baseline and two copies, each changing one lever. Each uses a draft protocol, a study budget and a site selection; two budgets are over their ceiling. Seven proposed sites, two of them at new sites in Poland and Brazil.
+- The baseline protocol is structured: a population with 7 eligibility criteria (one not yet testable), 3 objectives with a complete estimand for the primary, 4 endpoints, 2 arms with their interventions, 6 planned visits and 6 assessments, one with no recorded purpose. Two contributions, one awaiting confirmation. The two variant protocols record only what they change; their structure is copied once Copy study scenario is built.
+- Three trial simulations: two complete with 7 forecasts, 4 of which miss their target, and one queued. Two design signals raised, on an exclusion criterion and on hand MRI.
+- The Phase II study runs one study scenario of its own, using its draft amendment (J5).
+- Four more people, one for each Design and Plan persona.
 
 All names, compounds, products, sites, lots, studies and people are invented. Product names, such as Velcorin and Duxalate, belong to no real medicine.
 
@@ -714,14 +723,17 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 - How are a Clinical Research Coordinator and a Clinical Research Associate limited to their own sites? Like the external agent, this needs scoped permissions (platform spec section 3.3).
 - Should a visit's window, rather than a single date, set its deadline, as protocols define visit windows?
 - How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
-- Comments and design signals should share one model and attach to any object (section 3.4.5). The platform spec has no such annotation yet. Should it be added there, domain-free, before it is built?
-- Copy scenario and Pursue concept copy an object together with its parts. The platform spec's effects create and change objects but do not copy them. How is a deep copy declared?
+- Comments and design signals should share one annotation model, attached to any object (section 3.4.5). The platform spec has none yet. Should it be added there, domain-free, before Design and Plan builds on it?
+- Copy study scenario and Pursue concept copy an object together with its parts. The platform spec's effects create and change objects but do not copy them. How is a deep copy declared?
 - A protocol has two faces, a readable document and a connected model. The platform spec composes views of objects, not a document that people write in. What does the experience layer need to offer a document view of an object and its parts?
-- Which historical study data back Run forecast, and how is the forecast model validated for its intended use? Until one is connected, the gateway refuses Run forecast, as it refuses Run simulation.
-- Which models back Import contribution, and how is a proposed mapping checked?
+- A trial simulation runs on a study scenario as it stood at one moment, read from object history. Should the platform spec define reading a set of linked objects as of a moment, so the snapshot can be reproduced and inspected?
+- Which models and historical study data back Run trial simulation, and how is each validated for its intended use? Until one is connected, the gateway refuses it, as it refuses Run simulation.
+- Which models back Import protocol, and how is a proposed mapping checked?
 - Should design objects belong to one protocol version and be copied when it is amended, as USDM study versions do, or be versioned one by one? Copying keeps each version a complete, signed whole and is recommended.
-- Where do clinical supply, risk-based quality and feasibility surveys fit: as further triad inputs, or as plans that follow the selected scenario?
+- Which outcome measures does the business define beyond the six in section 3.5, and should a concept's targets pass to the study it seeds?
+- Where do clinical supply, risk-based quality and feasibility surveys fit: as further elements of a study scenario, or as plans that follow the selected one?
 - How are patient burden and site burden scored? Counting visits and procedures is a start; published scores weight invasive procedures and time on site.
+- Program is a type here and also a word used elsewhere in the company. Does it mean the same thing everywhere it is used?
 - Some effects are not yet declarative: re-evaluating promotions after a result is invalidated, merging cases, running a simulation model, generating analogs and suggesting follow-up. Drafting a narrative is now declared, as a drafting effect, and detecting signals as a disproportionality analysis (platform spec section 3.4). The ontology describes them in words, and the gateway will implement them. How should they be declared?
 
 ---
@@ -750,3 +762,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.18 | 2026-11-15 | No property identifies a person directly, so none is marked as identifying one for a model answering questions; free text may still name someone. |
 | 0.19 | 2026-11-20 | Added section 3.4, Design and Plan, specified and not yet built: what a design starts from and decides, what a plan decides, and proposed object types, relationships, methods, rules D1 to D8, personas, cross-domain links, journeys J4 to J6, a seed and regulatory obligations. Six open questions. |
 | 0.20 | 2026-11-20 | Section 3.4 follows the design note Authoring the Protocol as Structure: Program, Concept, Scenario and Study frame the work; protocol objects are the design; a triad of protocol, budget and site plan is forecast together from historical study data; contributions, design signals and decisions carry the people. Practice fills the gaps the note leaves, marked from practice. Rules D1 to D11, a Medical Writer persona, journeys J4 to J6 and the seed are rewritten. Eight open questions replace the six of 0.19, three of them for the platform spec. |
+| 0.21 | 2026-11-20 | Design and Plan is built as a work domain: its 22 object types, state dimensions and relationships (sections 3.5 and 3.6) are in the ontology, with titles, NCIt mappings checked at the source, four personas and a seed. Section 3.4 frames the offering as simulating a trial before it runs, in three spaces: protocol authoring, trial simulation and concepts. Scenario is renamed Study Scenario, with protocol, study budget and site selection; Trial Simulation produces Forecasts measured against Outcome Targets. Methods are specified in section 3.7, not yet built. Send protocol for review now refuses a concept's protocol (rule D1). Open questions updated. |

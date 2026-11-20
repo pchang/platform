@@ -1250,3 +1250,660 @@ d:QE-1 a ls:QualityEvent ;
   ls:qualityEventStatus lst:QualityEventStatus-open ;
   ls:qualityEventSeverity lst:QualityEventSeverity-major ;
   ls:eventDescription "Tablet hardness below specification in lot VL25-2410-02" .
+
+# ---------------------------------------------------------------------------
+# Design and Plan (domain spec section 3.4)
+# One program for LSH-4471. Under it, a Phase III concept being explored in three study scenarios,
+# a parked concept, and a concept outside any program. VELOCITY-2 belongs to the program and runs one
+# study scenario of its own, testing its draft amendment.
+# ---------------------------------------------------------------------------
+
+d:person-nadia a p:Person ;
+  rdfs:label "Nadia Haddad" ;
+  p:actsAs ls:ClinicalScientist .
+
+d:person-tomas a p:Person ;
+  rdfs:label "Tomás Lindqvist" ;
+  p:actsAs ls:Biostatistician .
+
+d:person-grace a p:Person ;
+  rdfs:label "Grace Oyelaran" ;
+  p:actsAs ls:MedicalWriter .
+
+d:person-marcus a p:Person ;
+  rdfs:label "Marcus Bell" ;
+  p:actsAs ls:ClinicalOperationsLead .
+
+d:PRG-1 a ls:Program ;
+  ls:identifier "PRG-1" ;
+  ls:programStatus lst:ProgramStatus-active ;
+  ls:programName "Velcorin in immune-mediated inflammatory disease" ;
+  ls:develops d:C-101 ;
+  ls:aimsAt d:TPP-1 .
+
+d:TPP-1 a ls:TargetProductProfile ;
+  ls:identifier "TPP-1" ;
+  ls:targetProductProfileStatus lst:TargetProductProfileStatus-endorsed ;
+  ls:tppIndication "moderate to severe rheumatoid arthritis" ;
+  ls:targetClaim "ACR20 response at Week 24 at least 20 points above placebo on background methotrexate, once-daily oral dosing, no routine liver monitoring after Week 12" ;
+  ls:minimumClaim "ACR20 response at Week 24 at least 12 points above placebo, with a liver safety profile no worse than approved JAK inhibitors" .
+
+d:ST-01 ls:belongsTo d:PRG-1 .
+
+# Concept 1: the Phase III study, being explored.
+
+d:CON-1 a ls:Concept ;
+  ls:identifier "CON-1" ;
+  ls:conceptStatus lst:ConceptStatus-exploring ;
+  ls:conceptName "Phase III of Velcorin in moderate to severe rheumatoid arthritis" ;
+  ls:rationale "VELOCITY-2 shows a dose response at 25 mg. A confirmatory study on background methotrexate is the next step to the target product profile." ;
+  ls:informs d:PRG-1 .
+
+d:OT-1 a ls:OutcomeTarget ;
+  ls:identifier "OT-1" ;
+  ls:outcomeTargetStatus lst:OutcomeTargetStatus-agreed ;
+  ls:targetMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:targetComparison "at most" ;
+  ls:targetThreshold 20.0 ;
+  ls:targetUnit "months" ;
+  ls:targetFor d:CON-1 .
+
+d:OT-2 a ls:OutcomeTarget ;
+  ls:identifier "OT-2" ;
+  ls:outcomeTargetStatus lst:OutcomeTargetStatus-agreed ;
+  ls:targetMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:targetComparison "at least" ;
+  ls:targetThreshold 60.0 ;
+  ls:targetUnit "percent" ;
+  ls:targetFor d:CON-1 .
+
+d:OT-3 a ls:OutcomeTarget ;
+  ls:identifier "OT-3" ;
+  ls:outcomeTargetStatus lst:OutcomeTargetStatus-proposed ;
+  ls:targetMeasure lst:OutcomeMeasure-totalCost ;
+  ls:targetComparison "at most" ;
+  ls:targetThreshold 85.0 ;
+  ls:targetUnit "million USD" ;
+  ls:targetFor d:CON-1 .
+
+d:SSC-1 a ls:StudyScenario ;
+  ls:identifier "SSC-1" ;
+  ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
+  ls:scenarioName "VELOCITY-3 baseline: 640 patients, 9 countries" ;
+  ls:explores d:CON-1 ;
+  ls:usesProtocol d:PROT-31 ;
+  ls:usesBudget d:SB-1 ;
+  ls:usesSiteSelection d:SS-1 .
+
+d:SSC-2 a ls:StudyScenario ;
+  ls:identifier "SSC-2" ;
+  ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
+  ls:scenarioName "VELOCITY-3 with prior biologic use allowed" ;
+  ls:scenarioChange "Copied from SSC-1. Allows patients who failed one prior biologic, instead of excluding them." ;
+  ls:explores d:CON-1 ;
+  ls:usesProtocol d:PROT-32 ;
+  ls:usesBudget d:SB-2 ;
+  ls:usesSiteSelection d:SS-2 .
+
+d:SSC-3 a ls:StudyScenario ;
+  ls:identifier "SSC-3" ;
+  ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
+  ls:scenarioName "VELOCITY-3 without hand MRI, broader country mix" ;
+  ls:scenarioChange "Copied from SSC-1. Drops hand MRI at Weeks 12 and 24, and adds sites in Poland and Brazil." ;
+  ls:explores d:CON-1 ;
+  ls:usesProtocol d:PROT-33 ;
+  ls:usesBudget d:SB-3 ;
+  ls:usesSiteSelection d:SS-3 .
+
+# The baseline protocol, structured. The two variant protocols record only what they change from it;
+# their structured content is copied once Copy study scenario is built (domain spec section 12).
+
+d:PROT-31 a ls:Protocol ;
+  ls:identifier "PROT-31" ;
+  ls:protocolStatus lst:ProtocolStatus-draft ;
+  ls:protocolName "VELOCITY-3 protocol" ;
+  ls:protocolVersion "0.1" ;
+  ls:primaryObjective "Show that Velcorin 25 mg once daily improves ACR20 response at Week 24 compared with placebo, both on background methotrexate" ;
+  ls:plannedEnrollment 640 .
+
+d:PROT-32 a ls:Protocol ;
+  ls:identifier "PROT-32" ;
+  ls:protocolStatus lst:ProtocolStatus-draft ;
+  ls:protocolName "VELOCITY-3 protocol, prior biologic variant" ;
+  ls:protocolVersion "0.1" ;
+  ls:primaryObjective "Show that Velcorin 25 mg once daily improves ACR20 response at Week 24 compared with placebo, both on background methotrexate" ;
+  ls:plannedEnrollment 700 .
+
+d:PROT-33 a ls:Protocol ;
+  ls:identifier "PROT-33" ;
+  ls:protocolStatus lst:ProtocolStatus-draft ;
+  ls:protocolName "VELOCITY-3 protocol, reduced imaging variant" ;
+  ls:protocolVersion "0.1" ;
+  ls:primaryObjective "Show that Velcorin 25 mg once daily improves ACR20 response at Week 24 compared with placebo, both on background methotrexate" ;
+  ls:plannedEnrollment 640 .
+
+d:POP-1 a ls:Population ;
+  ls:identifier "POP-1" ;
+  ls:populationText "Adults with moderate to severe rheumatoid arthritis and an inadequate response to methotrexate" ;
+  ls:specifiedIn d:PROT-31 .
+
+d:EC-1 a ls:EligibilityCriterion ;
+  ls:identifier "EC-1" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-inclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "Aged 18 or over, with rheumatoid arthritis by the 2010 ACR/EULAR criteria for at least 6 months" ;
+  ls:testedBy "Date of birth; diagnosis date and classification score from the medical history" ;
+  ls:defines d:POP-1 .
+
+d:EC-2 a ls:EligibilityCriterion ;
+  ls:identifier "EC-2" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-inclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "At least 6 swollen and 6 tender joints at screening and baseline" ;
+  ls:testedBy "Joint count at the screening and baseline visits" ;
+  ls:defines d:POP-1 .
+
+d:EC-3 a ls:EligibilityCriterion ;
+  ls:identifier "EC-3" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-inclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "Inadequate response to methotrexate at a stable dose of 15 to 25 mg weekly for at least 12 weeks" ;
+  ls:testedBy "Methotrexate dose history from the concomitant medication record" ;
+  ls:defines d:POP-1 .
+
+d:EC-4 a ls:EligibilityCriterion ;
+  ls:identifier "EC-4" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-exclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "Any prior biologic disease-modifying treatment" ;
+  ls:testedBy "Prior medication history" ;
+  ls:defines d:POP-1 .
+
+d:EC-5 a ls:EligibilityCriterion ;
+  ls:identifier "EC-5" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-exclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "Any prior JAK inhibitor" ;
+  ls:testedBy "Prior medication history" ;
+  ls:defines d:POP-1 .
+
+d:EC-6 a ls:EligibilityCriterion ;
+  ls:identifier "EC-6" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-exclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-testable ;
+  ls:criterionText "ALT or AST above 1.5 times the upper limit of normal at screening" ;
+  ls:testedBy "Liver function tests at the screening visit" ;
+  ls:defines d:POP-1 ;
+  ls:justifiedBy d:SC-001, d:SC-003 .
+
+d:EC-7 a ls:EligibilityCriterion ;
+  ls:identifier "EC-7" ;
+  ls:eligibilityCriterionKind lst:EligibilityCriterionKind-exclusion ;
+  ls:eligibilityCriterionTestability lst:EligibilityCriterionTestability-needsData ;
+  ls:criterionText "Clinically significant cardiovascular disease" ;
+  ls:defines d:POP-1 .
+
+d:OBJ-1 a ls:Objective ;
+  ls:identifier "OBJ-1" ;
+  ls:objectiveLevel lst:ObjectiveLevel-primary ;
+  ls:objectiveText "Compare ACR20 response at Week 24 between Velcorin 25 mg and placebo, both on background methotrexate" ;
+  ls:specifiedIn d:PROT-31 .
+
+d:OBJ-2 a ls:Objective ;
+  ls:identifier "OBJ-2" ;
+  ls:objectiveLevel lst:ObjectiveLevel-secondary ;
+  ls:objectiveText "Compare disease activity and physical function at Week 24" ;
+  ls:specifiedIn d:PROT-31 .
+
+d:OBJ-3 a ls:Objective ;
+  ls:identifier "OBJ-3" ;
+  ls:objectiveLevel lst:ObjectiveLevel-secondary ;
+  ls:objectiveText "Describe safety and tolerability over 52 weeks" ;
+  ls:specifiedIn d:PROT-31 .
+
+d:EST-1 a ls:Estimand ;
+  ls:identifier "EST-1" ;
+  ls:estimandCompleteness lst:EstimandCompleteness-complete ;
+  ls:estimandTreatment "Velcorin 25 mg once daily with methotrexate, against placebo with methotrexate" ;
+  ls:estimandPopulation "Randomized patients meeting the eligibility criteria" ;
+  ls:estimandVariable "ACR20 response at Week 24" ;
+  ls:intercurrentEvents "Rescue therapy or stopping study treatment before Week 24: counted as non-response (composite strategy)" ;
+  ls:populationSummary "Difference in the proportion of responders" ;
+  ls:estimandOf d:OBJ-1 .
+
+d:EP-1 a ls:Endpoint ;
+  ls:identifier "EP-1" ;
+  ls:endpointType lst:EndpointType-efficacy ;
+  ls:endpointText "ACR20 response at Week 24" ;
+  ls:measures d:OBJ-1 ;
+  ls:requires d:AS-1, d:AS-2, d:AS-3 .
+
+d:EP-2 a ls:Endpoint ;
+  ls:identifier "EP-2" ;
+  ls:endpointType lst:EndpointType-efficacy ;
+  ls:endpointText "Change from baseline in DAS28-CRP at Week 24" ;
+  ls:measures d:OBJ-2 ;
+  ls:requires d:AS-1, d:AS-2 .
+
+d:EP-3 a ls:Endpoint ;
+  ls:identifier "EP-3" ;
+  ls:endpointType lst:EndpointType-patientReported ;
+  ls:endpointText "Change from baseline in HAQ-DI at Week 24" ;
+  ls:measures d:OBJ-2 ;
+  ls:requires d:AS-3 .
+
+d:EP-4 a ls:Endpoint ;
+  ls:identifier "EP-4" ;
+  ls:endpointType lst:EndpointType-safety ;
+  ls:endpointText "Incidence of treatment-emergent adverse events through Week 52" ;
+  ls:measures d:OBJ-3 ;
+  ls:requires d:AS-4 .
+
+d:ARM-1 a ls:Arm ;
+  ls:identifier "ARM-1" ;
+  ls:armRole lst:ArmRole-experimental ;
+  ls:armName "Velcorin 25 mg with methotrexate" ;
+  ls:allocationRatio 1 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:ARM-2 a ls:Arm ;
+  ls:identifier "ARM-2" ;
+  ls:armRole lst:ArmRole-placeboControl ;
+  ls:armName "Placebo with methotrexate" ;
+  ls:allocationRatio 1 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:INT-1 a ls:Intervention ;
+  ls:identifier "INT-1" ;
+  ls:interventionName "Velcorin 25 mg film-coated tablet" ;
+  ls:regimen "25 mg by mouth once daily for 52 weeks" ;
+  ls:givenIn d:ARM-1 ;
+  ls:administers d:F-101 .
+
+d:INT-2 a ls:Intervention ;
+  ls:identifier "INT-2" ;
+  ls:interventionName "Matching placebo tablet" ;
+  ls:regimen "One tablet by mouth once daily for 24 weeks, then Velcorin 25 mg to Week 52" ;
+  ls:givenIn d:ARM-2 .
+
+d:PV-1 a ls:PlannedVisit ;
+  ls:identifier "PV-1" ;
+  ls:plannedVisitName "Screening" ;
+  ls:studyDay -28 ;
+  ls:windowDays 0 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:PV-2 a ls:PlannedVisit ;
+  ls:identifier "PV-2" ;
+  ls:plannedVisitName "Baseline" ;
+  ls:studyDay 1 ;
+  ls:windowDays 0 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:PV-3 a ls:PlannedVisit ;
+  ls:identifier "PV-3" ;
+  ls:plannedVisitName "Week 4" ;
+  ls:studyDay 29 ;
+  ls:windowDays 3 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:PV-4 a ls:PlannedVisit ;
+  ls:identifier "PV-4" ;
+  ls:plannedVisitName "Week 12" ;
+  ls:studyDay 85 ;
+  ls:windowDays 5 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:PV-5 a ls:PlannedVisit ;
+  ls:identifier "PV-5" ;
+  ls:plannedVisitName "Week 24" ;
+  ls:studyDay 169 ;
+  ls:windowDays 7 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:PV-6 a ls:PlannedVisit ;
+  ls:identifier "PV-6" ;
+  ls:plannedVisitName "Week 52" ;
+  ls:studyDay 365 ;
+  ls:windowDays 14 ;
+  ls:specifiedIn d:PROT-31 .
+
+d:AS-1 a ls:Assessment ;
+  ls:identifier "AS-1" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-endpoint ;
+  ls:assessmentBurden lst:AssessmentBurden-low ;
+  ls:assessmentName "Swollen and tender joint count" ;
+  ls:costPerVisit 180.0 ;
+  ls:minutesOnSite 20 ;
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+
+d:AS-2 a ls:Assessment ;
+  ls:identifier "AS-2" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-endpoint ;
+  ls:assessmentBurden lst:AssessmentBurden-low ;
+  ls:assessmentName "C-reactive protein" ;
+  ls:costPerVisit 45.0 ;
+  ls:minutesOnSite 10 ;
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+
+d:AS-3 a ls:Assessment ;
+  ls:identifier "AS-3" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-endpoint ;
+  ls:assessmentBurden lst:AssessmentBurden-low ;
+  ls:assessmentName "HAQ-DI and patient global assessment questionnaires" ;
+  ls:costPerVisit 60.0 ;
+  ls:minutesOnSite 15 ;
+  ls:performedAt d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+
+d:AS-4 a ls:Assessment ;
+  ls:identifier "AS-4" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-safety ;
+  ls:assessmentBurden lst:AssessmentBurden-moderate ;
+  ls:assessmentName "Liver function tests" ;
+  ls:costPerVisit 70.0 ;
+  ls:minutesOnSite 10 ;
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+
+d:AS-5 a ls:Assessment ;
+  ls:identifier "AS-5" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-eligibility ;
+  ls:assessmentBurden lst:AssessmentBurden-moderate ;
+  ls:assessmentName "Chest X-ray and tuberculosis screening" ;
+  ls:costPerVisit 310.0 ;
+  ls:minutesOnSite 45 ;
+  ls:performedAt d:PV-1 .
+
+d:AS-6 a ls:Assessment ;
+  ls:identifier "AS-6" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-noneRecorded ;
+  ls:assessmentBurden lst:AssessmentBurden-high ;
+  ls:assessmentName "MRI of both hands" ;
+  ls:costPerVisit 1450.0 ;
+  ls:minutesOnSite 90 ;
+  ls:performedAt d:PV-2, d:PV-4, d:PV-5 .
+
+d:CTB-1 a ls:Contribution ;
+  ls:identifier "CTB-1" ;
+  ls:contributionMapping lst:ContributionMapping-confirmed ;
+  ls:contributionName "Statistical methods, written in the protocol" ;
+  ls:sourceFormat "authored" ;
+  ls:contributesTo d:PROT-31 .
+
+d:CTB-2 a ls:Contribution ;
+  ls:identifier "CTB-2" ;
+  ls:contributionMapping lst:ContributionMapping-proposed ;
+  ls:contributionName "Safety monitoring section, imported from Word" ;
+  ls:sourceFormat "Word" ;
+  ls:contributesTo d:PROT-31 .
+
+d:DS-1 a ls:DesignSignal ;
+  ls:identifier "DS-1" ;
+  ls:designSignalStatus lst:DesignSignalStatus-raised ;
+  ls:designSignalText "In 14 similar rheumatoid arthritis studies, excluding all prior biologic use caused about a third of screen failures" ;
+  ls:isAbout d:EC-4 .
+
+d:DS-2 a ls:DesignSignal ;
+  ls:identifier "DS-2" ;
+  ls:designSignalStatus lst:DesignSignalStatus-raised ;
+  ls:designSignalText "Hand MRI at three visits served no endpoint, and studies like it took about 2 months longer to activate sites" ;
+  ls:isAbout d:AS-6 .
+
+d:SB-1 a ls:StudyBudget ;
+  ls:identifier "SB-1" ;
+  ls:studyBudgetStatus lst:StudyBudgetStatus-draft ;
+  ls:studyBudgetFit lst:StudyBudgetFit-overCeiling ;
+  ls:budgetName "VELOCITY-3 baseline budget" ;
+  ls:budgetTotal 92.4 ;
+  ls:budgetCeiling 85.0 .
+
+d:SB-2 a ls:StudyBudget ;
+  ls:identifier "SB-2" ;
+  ls:studyBudgetStatus lst:StudyBudgetStatus-draft ;
+  ls:studyBudgetFit lst:StudyBudgetFit-overCeiling ;
+  ls:budgetName "VELOCITY-3 budget, prior biologic variant" ;
+  ls:budgetTotal 96.1 ;
+  ls:budgetCeiling 85.0 .
+
+d:SB-3 a ls:StudyBudget ;
+  ls:identifier "SB-3" ;
+  ls:studyBudgetStatus lst:StudyBudgetStatus-draft ;
+  ls:studyBudgetFit lst:StudyBudgetFit-withinCeiling ;
+  ls:budgetName "VELOCITY-3 budget, reduced imaging variant" ;
+  ls:budgetTotal 79.6 ;
+  ls:budgetCeiling 85.0 .
+
+d:SITE-4 a ls:Site ;
+  ls:identifier "SITE-4" ;
+  ls:siteName "Vistula Rheumatology Institute" .
+
+d:SITE-5 a ls:Site ;
+  ls:identifier "SITE-5" ;
+  ls:siteName "Centro de Pesquisa Clínica Ipê" .
+
+d:SS-1 a ls:SiteSelection ;
+  ls:identifier "SS-1" ;
+  ls:siteSelectionStatus lst:SiteSelectionStatus-draft ;
+  ls:selectionName "VELOCITY-3 baseline sites" .
+
+d:SS-2 a ls:SiteSelection ;
+  ls:identifier "SS-2" ;
+  ls:siteSelectionStatus lst:SiteSelectionStatus-draft ;
+  ls:selectionName "VELOCITY-3 sites, prior biologic variant" .
+
+d:SS-3 a ls:SiteSelection ;
+  ls:identifier "SS-3" ;
+  ls:siteSelectionStatus lst:SiteSelectionStatus-draft ;
+  ls:selectionName "VELOCITY-3 sites, broader country mix" .
+
+d:PS-1 a ls:ProposedSite ;
+  ls:identifier "PS-1" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-shortlisted ;
+  ls:siteCountry "United States" ;
+  ls:patientsPerMonth 0.6 ;
+  ls:activationDays 120 ;
+  ls:candidateSite d:SITE-1 ;
+  ls:proposedIn d:SS-1 .
+
+d:PS-2 a ls:ProposedSite ;
+  ls:identifier "PS-2" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-shortlisted ;
+  ls:siteCountry "United Kingdom" ;
+  ls:patientsPerMonth 0.4 ;
+  ls:activationDays 150 ;
+  ls:candidateSite d:SITE-2 ;
+  ls:proposedIn d:SS-1 .
+
+d:PS-3 a ls:ProposedSite ;
+  ls:identifier "PS-3" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-proposed ;
+  ls:siteCountry "Ireland" ;
+  ls:patientsPerMonth 0.3 ;
+  ls:activationDays 140 ;
+  ls:candidateSite d:SITE-3 ;
+  ls:proposedIn d:SS-1 .
+
+d:PS-4 a ls:ProposedSite ;
+  ls:identifier "PS-4" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-shortlisted ;
+  ls:siteCountry "United States" ;
+  ls:patientsPerMonth 0.7 ;
+  ls:activationDays 120 ;
+  ls:candidateSite d:SITE-1 ;
+  ls:proposedIn d:SS-2 .
+
+d:PS-5 a ls:ProposedSite ;
+  ls:identifier "PS-5" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-shortlisted ;
+  ls:siteCountry "Poland" ;
+  ls:patientsPerMonth 0.9 ;
+  ls:activationDays 100 ;
+  ls:candidateSite d:SITE-4 ;
+  ls:proposedIn d:SS-3 .
+
+d:PS-6 a ls:ProposedSite ;
+  ls:identifier "PS-6" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-proposed ;
+  ls:siteCountry "Brazil" ;
+  ls:patientsPerMonth 0.8 ;
+  ls:activationDays 180 ;
+  ls:candidateSite d:SITE-5 ;
+  ls:proposedIn d:SS-3 .
+
+d:PS-7 a ls:ProposedSite ;
+  ls:identifier "PS-7" ;
+  ls:proposedSiteStatus lst:ProposedSiteStatus-rejected ;
+  ls:siteCountry "Ireland" ;
+  ls:patientsPerMonth 0.2 ;
+  ls:activationDays 200 ;
+  ls:candidateSite d:SITE-3 ;
+  ls:proposedIn d:SS-3 .
+
+# Trial simulations: two complete with their forecasts, and one queued.
+
+d:TS-1 a ls:TrialSimulation ;
+  ls:identifier "TS-1" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:SSC-1 ;
+  ls:scenarioAsOf "2026-11-16"^^xsd:date ;
+  ls:simulatedTrials 10000 ;
+  ls:recruitmentRate 0.45 ;
+  ls:screenFailureRate 48.0 ;
+  ls:dropoutRate 12.0 ;
+  ls:assumedEffect "ACR20 difference of 18 points, from VELOCITY-2 at 25 mg" .
+
+d:TS-2 a ls:TrialSimulation ;
+  ls:identifier "TS-2" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:SSC-2 ;
+  ls:scenarioAsOf "2026-11-17"^^xsd:date ;
+  ls:simulatedTrials 10000 ;
+  ls:recruitmentRate 0.55 ;
+  ls:screenFailureRate 33.0 ;
+  ls:dropoutRate 13.0 ;
+  ls:assumedEffect "ACR20 difference of 15 points: VELOCITY-2 at 25 mg, lowered for patients with a prior biologic" .
+
+d:TS-3 a ls:TrialSimulation ;
+  ls:identifier "TS-3" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-queued ;
+  ls:simulates d:SSC-3 ;
+  ls:scenarioAsOf "2026-11-19"^^xsd:date ;
+  ls:simulatedTrials 10000 ;
+  ls:recruitmentRate 0.55 ;
+  ls:screenFailureRate 48.0 ;
+  ls:dropoutRate 11.0 ;
+  ls:assumedEffect "ACR20 difference of 18 points, from VELOCITY-2 at 25 mg" .
+
+d:FC-1 a ls:Forecast ;
+  ls:identifier "FC-1" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 23.0 ;
+  ls:forecastLow 20.5 ;
+  ls:forecastHigh 26.0 ;
+  ls:forecastUnit "months" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-1 .
+
+d:FC-2 a ls:Forecast ;
+  ls:identifier "FC-2" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 71.0 ;
+  ls:forecastLow 64.0 ;
+  ls:forecastHigh 77.0 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-2 .
+
+d:FC-3 a ls:Forecast ;
+  ls:identifier "FC-3" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-totalCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 92.4 ;
+  ls:forecastLow 88.0 ;
+  ls:forecastHigh 98.5 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-3 .
+
+d:FC-4 a ls:Forecast ;
+  ls:identifier "FC-4" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-patientBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 14.5 ;
+  ls:forecastLow 13.0 ;
+  ls:forecastHigh 16.0 ;
+  ls:forecastUnit "hours on site per patient" ;
+  ls:forecastFrom d:TS-1 .
+
+d:FC-5 a ls:Forecast ;
+  ls:identifier "FC-5" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 18.0 ;
+  ls:forecastLow 16.0 ;
+  ls:forecastHigh 20.5 ;
+  ls:forecastUnit "months" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-1 .
+
+d:FC-6 a ls:Forecast ;
+  ls:identifier "FC-6" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 58.0 ;
+  ls:forecastLow 50.0 ;
+  ls:forecastHigh 66.0 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-2 .
+
+d:FC-7 a ls:Forecast ;
+  ls:identifier "FC-7" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-totalCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 96.1 ;
+  ls:forecastLow 91.0 ;
+  ls:forecastHigh 102.0 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-3 .
+
+# Concept 2: parked. Concept 3: a scientific question outside any program.
+
+d:CON-2 a ls:Concept ;
+  ls:identifier "CON-2" ;
+  ls:conceptStatus lst:ConceptStatus-parked ;
+  ls:conceptName "Velcorin in active psoriatic arthritis" ;
+  ls:rationale "JAK1 selectivity may suit psoriatic arthritis, where two JAK inhibitors are approved." ;
+  ls:informs d:PRG-1 .
+
+d:DEC-1 a ls:Decision ;
+  ls:identifier "DEC-1" ;
+  ls:decisionKind lst:DecisionKind-park ;
+  ls:decisionRationale "Parked until VELOCITY-3 is designed, so the program does not run two Phase III studies at once" ;
+  ls:decidedOn "2026-10-28"^^xsd:date ;
+  ls:decidesOn d:CON-2 .
+
+d:CON-3 a ls:Concept ;
+  ls:identifier "CON-3" ;
+  ls:conceptStatus lst:ConceptStatus-exploring ;
+  ls:conceptName "Liver enzyme monitoring across JAK1 inhibitor studies" ;
+  ls:rationale "SIG-1 raises the question of how often liver tests are needed. The answer would shape the schedule of every study in the class, in and beyond this program." .
+
+# VELOCITY-2 runs a study scenario of its own, testing its draft amendment before it goes for review.
+
+d:SSC-4 a ls:StudyScenario ;
+  ls:identifier "SSC-4" ;
+  ls:studyScenarioStatus lst:StudyScenarioStatus-draft ;
+  ls:scenarioName "VELOCITY-2 with the Week 16 safety visit" ;
+  ls:scenarioChange "Tests protocol version 3.0, which adds a Week 16 safety visit, before it is sent for review." ;
+  ls:explores d:ST-01 ;
+  ls:usesProtocol d:PROT-3 .

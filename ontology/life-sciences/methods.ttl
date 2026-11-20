@@ -353,7 +353,7 @@ ls:SendProtocolForReview a p:Method ;
   rdfs:label "Send protocol for review" ;
   rdfs:comment "Sends a draft protocol version for review." ;
   p:appliesTo ls:Protocol ;
-  p:precondition lsh:SendProtocolForReview-pre ;
+  p:precondition lsh:SendProtocolForReview-pre, lsh:SendProtocolForReview-pre-notExploration ;
   p:effect ls:SendProtocolForReview-effect1 .
 
 ls:ApproveProtocol-effect1 a p:StateChange ;
@@ -1198,6 +1198,17 @@ lsh:SendProtocolForReview-pre-status a sh:PropertyShape ;
 lsh:SendProtocolForReview-pre a sh:NodeShape ;
   rdfs:label "Precondition of Send protocol for review" ;
   sh:property lsh:SendProtocolForReview-pre-status .
+
+lsh:SendProtocolForReview-pre-notExploration a sh:NodeShape ;
+  rdfs:label "The protocol belongs to a concept's study scenario, which is still exploration" ;
+  sh:sparql lsh:SendProtocolForReview-pre-notExploration-query .
+lsh:SendProtocolForReview-pre-notExploration-query a sh:SPARQLConstraint ;
+  sh:message "The protocol belongs to a concept's study scenario, which is still exploration: pursue the concept first" ;
+  sh:prefixes lsh:prefixes ;
+  sh:select """
+    SELECT $this WHERE {
+      ?scenario ls:usesProtocol $this ; ls:explores ?concept . ?concept a ls:Concept .
+    }""" .
 
 lsh:ApproveProtocol-pre-status a sh:PropertyShape ;
   sh:path ls:protocolStatus ;

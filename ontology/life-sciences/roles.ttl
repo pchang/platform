@@ -13,9 +13,9 @@
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
 <https://w3id.org/lsh-platform/life-sciences/roles> a owl:Ontology ;
   dcterms:title "LS&H life sciences roles" ;
-  rdfs:comment "The personas of domain spec section 6 and the external agent role." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.1.0> ;
+  rdfs:comment "The personas of domain spec section 6, the Design and Plan personas of section 3.4 and the external agent role." ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
@@ -65,4 +65,33 @@ ls:ExternalCROAgent a p:Role ;
   rdfs:label "External CRO agent" ;
   rdfs:comment "A contract research organization's agent. Answers and closes data queries at its own sites, through the gateway, under the same policy as people." ;
   p:mayRun ls:AnswerQuery, ls:CloseQuery ;
+  p:mayNotRead ls:assignedArm .
+
+# Design and Plan (domain spec section 3.4). Their methods are specified in section 3.7 and not yet built,
+# so until then these roles read and navigate the design and plan graph and run only the protocol methods named here.
+
+ls:ClinicalScientist a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Scientist" ;
+  rdfs:comment "Shapes a design that answers the right question for the program: concepts, scenarios, objectives, criteria and assessments." ;
+  p:mayRun ls:AmendProtocol ;
+  p:mayNotRead ls:assignedArm .
+
+ls:Biostatistician a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Biostatistician" ;
+  rdfs:comment "Makes a design answer its question reliably and efficiently: estimands, sample size, allocation and the assumptions of trial simulations." ;
+  p:mayNotRead ls:assignedArm .
+
+ls:MedicalWriter a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Medical Writer" ;
+  rdfs:comment "Accountable for one coherent, approvable protocol: confirms contributions, writes the narrative and sends each version for review." ;
+  p:mayRun ls:SendProtocolForReview ;
+  p:mayNotRead ls:assignedArm .
+
+ls:ClinicalOperationsLead a p:Role ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Operations Lead" ;
+  rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
   p:mayNotRead ls:assignedArm .

@@ -123,7 +123,8 @@ describe('search through the gateway', () => {
 
   it('never matches what the principal may not read', async () => {
     // Patients' arms are hidden while the study is blinded (rule 2), and the chemist may not read clinical records.
-    expect(await ids('arm')).toEqual([]);
+    // The arms a protocol designs (section 3.4) are not assignments, so they may match; no patient does.
+    expect((await ids('arm')).filter((id) => id.startsWith('PT-'))).toEqual([]);
     expect((await g.search(cdm, 'B')).results.some((r) => r.object.type === `${NS.ls}Patient` && r.matched.some((m) => m.startsWith('assigned arm')))).toBe(false);
     expect(await ids('pneumonia', chemist)).toEqual([]);
     expect(await ids('AE-005', chemist)).toEqual([]);

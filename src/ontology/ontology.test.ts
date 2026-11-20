@@ -67,7 +67,7 @@ describe('model', () => {
 
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
-    expect(dims.length).toBe(41);
+    expect(dims.length).toBe(66);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
       const allowed = q(`SELECT ?c WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
@@ -83,15 +83,18 @@ describe('model', () => {
   it('reads every relationship both ways, in order, with at most one end contained (platform spec 3.1)', () => {
     expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship FILTER NOT EXISTS { ?rel p:inverseLabel ?inverse ; p:order ?order } }`)).toEqual([]);
     expect(q(`SELECT ?rel WHERE { ?rel a p:Relationship ; p:partOf true ; p:hasPart true }`)).toEqual([]);
-    // The domain spec's containment: a study's patients, a patient's visits and adverse events, a visit's records, a record's queries.
+    // The domain spec's containment: a study's patients, a patient's visits and adverse events, a visit's records, a record's queries;
+    // and in Design and Plan (section 3.4), a parent's scenarios, targets and decisions, a scenario's simulations, a simulation's forecasts,
+    // a protocol's design objects, a population's criteria, an objective's estimand and a site selection's proposed sites.
     const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true }`).map((r) => r.rel.split('#').pop()).sort();
-    expect(partOf).toEqual(['capturedAt', 'enrolledIn', 'experiencedBy', 'raisedOn', 'resolves', 'visitFor']);
+    expect(partOf).toEqual(['capturedAt', 'decidesOn', 'defines', 'enrolledIn', 'estimandOf', 'experiencedBy', 'explores', 'forecastFrom', 'proposedIn',
+      'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
     expect(q(`SELECT ?rel WHERE { ?rel p:hasPart true }`).map((r) => r.rel.split('#').pop())).toEqual(['produces']);
   });
 
   it('says an end holds at most one object only where the domain is certain', () => {
     const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
-    expect(one.length).toBe(18);
+    expect(one.length).toBe(43);
     expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
     expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
   });
@@ -164,8 +167,9 @@ describe('rules and roles', () => {
   });
 
   it('use only NCIt codes checked against the NCI Thesaurus service', () => {
-    // Verified on 2026-11-08, the reactions on 2026-11-11, and Study Protocol (C70817) on 2026-11-14. Add a code here only after checking its name and definition at the source.
-    const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70817', 'C70885', 'C85838', 'C191214', 'C221818'];
+    // Verified on 2026-11-08, the reactions on 2026-11-11, Study Protocol (C70817) on 2026-11-14, and the Design and Plan codes on 2026-11-20. Add a code here only after checking its name and definition at the source.
+    const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70817', 'C70885', 'C85838', 'C191214', 'C221818',
+      'C16112', 'C16197', 'C25212', 'C25370', 'C25532', 'C70833', 'C85826', 'C85827', 'C95401', 'C163559', 'C174266', 'C174267', 'C174268', 'C174447', 'C188813'];
     const used = q(`SELECT DISTINCT ?code WHERE { ?s ?match ?code FILTER(STRSTARTS(STR(?code), "http://purl.obolibrary.org/obo/NCIT_")) }`)
       .map((r) => r.code.replace('http://purl.obolibrary.org/obo/NCIT_', ''));
     expect(used.length).toBeGreaterThan(10);
@@ -180,7 +184,7 @@ describe('agrees with the domain spec', () => {
     return section.split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| ---') && !/^\| (Type|Method) \|/.test(l))
       .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()));
   };
-  const typeSections = ['### 2.1 Object types', '### 3.1 Object types', '### 4.1 Object types'];
+  const typeSections = ['### 2.1 Object types', '### 3.1 Object types', '### 3.5 Design and Plan object types', '### 4.1 Object types'];
   const methodSections = ['### 2.3 Methods', '### 3.3 Methods', '### 4.3 Methods'];
 
   it('has every object type, state dimension and state value', () => {
