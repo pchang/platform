@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.43. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.44. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -148,7 +148,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -444,3 +444,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.41 | 2026-11-16 | The object panel's tabs list their objects as object lists like any other, with the list bar and the choice of cards or a list. Expanding the panel covers the sidebar too, so a destination is never chosen behind it; Restore, or opening the sidebar, brings the sidebar back. An object opened from the page always opens at three quarters, as in Notion; Expand is no longer kept on the device. |
 | 0.42 | 2026-11-20 | An input that takes many values from a scheme gives a group of checkboxes; a Checkbox bound to a field adds or removes its value. |
 | 0.43 | 2026-11-20 | Set actions in the list bar, before batch actions: the set methods the selection qualifies for, each opening its pattern once for the whole selection. Compare and decide over a set: the objects as columns, the comparison's rows first. |
+| 0.44 | 2026-11-20 | The list bar's shadow shows only once the list has scrolled under it. |

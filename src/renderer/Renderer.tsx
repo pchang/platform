@@ -237,6 +237,35 @@ function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
   );
 }
 
+/**
+ * A sticky Toolbar, such as an object list's bar (design system spec 4.3), shows its shadow only once the list has
+ * scrolled under it. A marker just above the bar leaves view as the bar sticks; until then the bar has no shadow.
+ */
+function StickyToolbar({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const { Toolbar } = library;
+  const marker = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = marker.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => {
+      // Out of view above the bar means the bar has stuck; out of view below it means the list is not yet in view.
+      const bar = el.nextElementSibling;
+      setStuck(!entry.isIntersecting && bar !== null && entry.boundingClientRect.top < bar.getBoundingClientRect().top);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <>
+      <div ref={marker} className="app-sticky-marker" aria-hidden="true" />
+      <Toolbar {...(node.props ?? {})} className={stuck ? 'app-is-stuck' : undefined}>
+        {node.children?.map((child, i) => <Node key={i} node={child} host={host} />)}
+      </Toolbar>
+    </>
+  );
+}
+
 /** Tabs bound to a field (design system spec 4.4): the chosen tab is the field's value, the first tab when it has none. */
 function BoundTabs({ node, host }: { node: ViewNode; host: RenderHost }) {
   const { Tabs, Tab, Badge } = library;
@@ -414,6 +443,7 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Tr') return <TableRow node={node} host={host} />;
   if (entry.id === 'Dropdown') return <ActionsMenu node={node} host={host} />;
   if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
+  if (entry.id === 'Toolbar' && (node.props as { isSticky?: boolean } | undefined)?.isSticky) return <StickyToolbar node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
   // Radios and field-bound checkboxes come in sets, so each needs its own id, not the group's.

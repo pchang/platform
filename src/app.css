@@ -50,6 +50,16 @@ html:root {
   --pf-v6-c-toolbar--m-sticky--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
 }
 
+/* Its shadow shows only once the list has scrolled under it (design system spec 4.3); the renderer marks it stuck. */
+.pf-v6-c-toolbar.pf-m-sticky:not(.app-is-stuck) {
+  box-shadow: none;
+}
+
+/* The marker the renderer watches to tell when the bar sticks: just above it, taking no room. */
+.app-sticky-marker {
+  block-size: 0;
+}
+
 .app-page .pf-v6-c-page__main-container {
   border-width: 0;
 }
