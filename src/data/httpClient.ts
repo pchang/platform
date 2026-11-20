@@ -34,6 +34,10 @@ export function httpClient(base = '/api'): GatewayClient {
     getDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}`, p),
     discardDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}/discard`, p, {}),
     methods: (p, object) => request(`/objects/${encodeURIComponent(object)}/methods`, p),
+    setMethods: (p, objects) => request('/sets', p, { objects }),
+    composeSet: (p, objects, method) => request(`/sets/${encodeURIComponent(method)}`, p, { objects }),
+    previewSet: (p, objects, method, inputs) => request(`/sets/${encodeURIComponent(method)}/preview`, p, { objects, inputs }),
+    commitSet: (p, objects, method, inputs) => request(`/sets/${encodeURIComponent(method)}/commit`, p, { objects, inputs }),
     runs: (p, filter = {}) => {
       const query = new URLSearchParams({ ...(filter.object ? { object: filter.object } : {}), ...(filter.active ? { active: 'true' } : {}) }).toString();
       return request(`/runs${query ? `?${query}` : ''}`, p);

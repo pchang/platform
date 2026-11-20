@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, ComparisonView, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationD
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -60,6 +60,13 @@ export interface GatewayClient {
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
   commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }): Promise<CommitResult>;
+  /** The set methods a selection qualifies for (platform spec 5.4, Acting on a set). */
+  setMethods(principal: Principal, objects: string[]): Promise<SetMethodOption[]>;
+  /** Compose a set method for a selection, with its comparison. Rejects with RefusedError when the set does not qualify. */
+  composeSet(principal: Principal, objects: string[], method: string): Promise<MethodComposition>;
+  previewSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
+  /** Commits a set method once, on the chosen object. */
+  commitSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>): Promise<CommitResult>;
   /** A connected model drafts the method. Rejects with RefusedError when no model is connected or it declines. */
   draft(principal: Principal, object: string, method: string): Promise<DraftView>;
   discardDraft(principal: Principal, draft: string): Promise<DraftView>;

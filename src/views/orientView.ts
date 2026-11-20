@@ -171,6 +171,8 @@ export interface ListControls {
   /** Cards show their select control; list rows always have their checkbox. */
   selecting: boolean;
   selected: ReadonlySet<string>;
+  /** The set methods the chosen objects qualify for together, from the gateway (platform spec 5.4, Acting on a set). */
+  setActions?: { method: string; label: string }[];
 }
 export const NO_CONTROLS: ListControls = { mode: 'cards', selecting: false, selected: new Set() };
 
@@ -227,7 +229,10 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
     );
   }
   if (chosen) {
-    const batch = commonMethods(entries, controls.selected);
+    // Set actions first: methods on the chosen objects as one set (platform spec 5.4, Acting on a set). Then batch
+    // actions: the per-object methods every chosen object has, run once for each.
+    const sets = chosen > 1 ? (controls.setActions ?? []) : [];
+    const batch = [...sets, ...commonMethods(entries, controls.selected)];
     start.push(separator);
     if (!batch.length) start.push(barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small')));
     for (const m of batch.slice(0, SHOWN_BATCH_ACTIONS)) start.push(barItem({ component: 'Button', props: { label: m.label, variant: 'plain' }, batch: m.method }));

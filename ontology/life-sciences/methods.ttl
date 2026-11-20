@@ -1691,3 +1691,66 @@ lsh:RunTrialSimulation-pre-sites-query a sh:SPARQLConstraint ;
     SELECT $this WHERE {
       FILTER NOT EXISTS { $this ls:usesSiteSelection ?s . ?ps ls:proposedIn ?s FILTER NOT EXISTS { ?ps ls:proposedSiteStatus lst:ProposedSiteStatus-rejected } }
     }""" .
+
+# Comparing study scenarios: a set method (platform spec 5.4, Acting on a set; domain spec 3.7).
+
+ls:CompareStudyScenarios-chosen a p:Input ;
+  p:inputName "chosen" ;
+  rdfs:label "Scenario to select" ;
+  p:order 1 ;
+  p:objectOf ls:StudyScenario ;
+  p:amongSet true .
+
+ls:CompareStudyScenarios-rationale a p:Input ;
+  p:inputName "rationale" ;
+  rdfs:label "Rationale" ;
+  p:order 2 ;
+  p:datatype xsd:string ;
+  p:recordedAs ls:decisionRationale .
+
+ls:CompareStudyScenarios-effect1 a p:StateChange ;
+  p:dimension ls:studyScenarioStatus ;
+  p:value lst:StudyScenarioStatus-selected .
+
+ls:CompareStudyScenarios-effect2 a p:StateChange ;
+  p:dimension ls:studyScenarioStatus ;
+  p:value lst:StudyScenarioStatus-setAside ;
+  p:onOthers true .
+
+ls:CompareStudyScenarios-effect3 a p:Creation ;
+  p:createsType ls:Decision ;
+  p:linkedBy ls:chooses ;
+  p:alsoLinkedBy ls:decidesOn ;
+  p:alsoLinkedTo ls:explores ;
+  p:initialState lst:DecisionKind-select ;
+  p:setsDate ls:decidedOn .
+
+ls:CompareStudyScenarios-comparison a p:Comparison ;
+  p:rowPath "^ls:simulates/^ls:forecastFrom" ;
+  p:rowKey ls:forecastMeasure ;
+  p:rowWhen lst:ForecastCurrency-current ;
+  p:rowStatus ls:forecastAgainstTarget .
+
+ls:CompareStudyScenarios a p:Method ;
+  rdfs:label "Compare study scenarios" ;
+  rdfs:comment "Compares two to four study scenarios of one study concept or study by their current forecasts, and selects one; the others are set aside." ;
+  p:appliesTo ls:StudyScenario ;
+  p:onSet true ;
+  p:minObjects 2 ;
+  p:maxObjects 4 ;
+  p:sameAlong ls:explores ;
+  p:comparison ls:CompareStudyScenarios-comparison ;
+  p:input ls:CompareStudyScenarios-chosen, ls:CompareStudyScenarios-rationale ;
+  p:precondition lsh:CompareStudyScenarios-pre ;
+  p:effect ls:CompareStudyScenarios-effect1, ls:CompareStudyScenarios-effect2, ls:CompareStudyScenarios-effect3 ;
+  p:onDemand true .
+
+lsh:CompareStudyScenarios-pre-status a sh:PropertyShape ;
+  sh:path ls:studyScenarioStatus ;
+  sh:in ( lst:StudyScenarioStatus-draft lst:StudyScenarioStatus-selected ) ;
+  sh:minCount 1 ;
+  sh:message "The study scenario has been set aside" .
+
+lsh:CompareStudyScenarios-pre a sh:NodeShape ;
+  rdfs:label "Precondition of Compare study scenarios" ;
+  sh:property lsh:CompareStudyScenarios-pre-status .

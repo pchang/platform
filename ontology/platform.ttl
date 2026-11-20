@@ -121,6 +121,76 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
   rdfs:subClassOf p:Analysis .
 
+p:Comparison a rdfs:Class ;
+  rdfs:label "comparison" ;
+  rdfs:comment "What a set method shows side by side: rows read from each object along a path, keyed by a state dimension, each cell the row object's title and its status (platform spec 5.4, Acting on a set)." .
+
+p:onSet a rdf:Property ;
+  rdfs:label "on a set" ;
+  rdfs:comment "True when a method takes the selection as its one object: it runs once for the set and commits once, on the chosen object (platform spec 5.4, Acting on a set)." ;
+  rdfs:domain p:Method .
+
+p:minObjects a rdf:Property ;
+  rdfs:label "minimum objects" ;
+  rdfs:comment "The fewest objects a set method takes." ;
+  rdfs:domain p:Method .
+
+p:maxObjects a rdf:Property ;
+  rdfs:label "maximum objects" ;
+  rdfs:comment "The most objects a set method takes." ;
+  rdfs:domain p:Method .
+
+p:sameAlong a rdf:Property ;
+  rdfs:label "same along" ;
+  rdfs:comment "A relationship every object of a set must share the same value along, such as the same parent." ;
+  rdfs:domain p:Method .
+
+p:amongSet a rdf:Property ;
+  rdfs:label "among the set" ;
+  rdfs:comment "True when an object input of a set method chooses one of the set; the method commits on the chosen one." ;
+  rdfs:domain p:Input .
+
+p:onOthers a rdf:Property ;
+  rdfs:label "on the others" ;
+  rdfs:comment "True when a state change of a set method applies to the set's other objects, not the chosen one." ;
+  rdfs:domain p:StateChange .
+
+p:alsoLinkedBy a rdf:Property ;
+  rdfs:label "also linked by" ;
+  rdfs:comment "A second relationship a created object is linked by, to the value the method's object has along p:alsoLinkedTo." ;
+  rdfs:domain p:Creation .
+
+p:alsoLinkedTo a rdf:Property ;
+  rdfs:label "also linked to" ;
+  rdfs:comment "The relationship of the method's object whose value a created object is also linked to." ;
+  rdfs:domain p:Creation .
+
+p:comparison a rdf:Property ;
+  rdfs:label "comparison" ;
+  rdfs:comment "The comparison a set method shows." ;
+  rdfs:domain p:Method ;
+  rdfs:range p:Comparison .
+
+p:rowPath a rdf:Property ;
+  rdfs:label "row path" ;
+  rdfs:comment "A SPARQL property path from each compared object to its row objects." ;
+  rdfs:domain p:Comparison .
+
+p:rowKey a rdf:Property ;
+  rdfs:label "row key" ;
+  rdfs:comment "The state dimension of the row objects that names each row, in its values' order." ;
+  rdfs:domain p:Comparison .
+
+p:rowWhen a rdf:Property ;
+  rdfs:label "row when" ;
+  rdfs:comment "A state value a row object must have to be compared, such as current." ;
+  rdfs:domain p:Comparison .
+
+p:rowStatus a rdf:Property ;
+  rdfs:label "row status" ;
+  rdfs:comment "The state dimension of a row object shown as its cell's status; a value with an urgency is marked." ;
+  rdfs:domain p:Comparison .
+
 p:ModelRun a rdfs:Class ;
   rdfs:label "model run" ;
   rdfs:comment "Runs a model the gateway connects, named by p:model, on the method's object as it stands when the run starts, with the person's inputs. The model reads the object and what it links to, and returns objects to create, values to set and a message; the gateway validates and commits them as the run's result (platform spec 3.4, Model runs)." ;

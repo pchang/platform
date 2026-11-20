@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
+import type { ViewNode } from '../design-system/catalog';
 import type { AskResult, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useChat } from '../chat/ChatProvider';
@@ -8,6 +9,7 @@ import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
+import { SetDialog } from './SetDialog';
 import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
@@ -39,8 +41,31 @@ export function useObjectList(listed: ObjectSummary[]) {
     });
   }, [key]);
 
+  // The set methods the chosen objects qualify for together, asked of the gateway as the choice changes (platform spec 5.4).
+  const { client, principal } = usePrincipal();
+  const [setActions, setSetActions] = useState<{ method: string; label: string }[]>([]);
+  const selectedKey = [...selected].sort().join('|');
+  useEffect(() => {
+    const ids = selectedKey ? selectedKey.split('|') : [];
+    if (ids.length < 2) {
+      setSetActions([]);
+      return;
+    }
+    let cancelled = false;
+    client.setMethods(principal, ids).then(
+      (methods) => !cancelled && setSetActions(methods.map((m) => ({ method: m.method, label: m.label }))),
+      () => !cancelled && setSetActions([]),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, selectedKey]);
+
   // Cards with something chosen are in select mode, so the choice shows; Done ends it and clears the choice.
-  const controls: ListControls = useMemo(() => ({ mode, selecting: mode === 'cards' && (selecting || selected.size > 0), selected }), [mode, selecting, selected]);
+  const controls: ListControls = useMemo(
+    () => ({ mode, selecting: mode === 'cards' && (selecting || selected.size > 0), selected, setActions }),
+    [mode, selecting, selected, setActions],
+  );
   const host: RenderHost = {
     selection: {
       selecting: controls.selecting,
@@ -73,7 +98,16 @@ export function useObjectList(listed: ObjectSummary[]) {
     }
     return true;
   };
-  const dialog = batch && (
+  const done = (notice: ViewNode) => {
+    setBatch(undefined);
+    setSelected(new Set());
+    setSelecting(false);
+    processes.report(notice);
+  };
+  const isSet = batch && setActions.some((m) => m.method === batch.method);
+  const dialog = batch && isSet ? (
+    <SetDialog objects={batch.objects} method={batch.method} onCancel={() => setBatch(undefined)} onDone={done} />
+  ) : batch && (
     <BatchDialog
       objects={batch.objects}
       method={batch.method}

@@ -152,6 +152,22 @@ export interface MethodComposition {
   inputs: ComposedInput[];
   /** Present when the method requires a signature. */
   signature?: SignatureRequest;
+  /** For a set method (spec 5.4, Acting on a set): the objects of the set, in the order chosen. */
+  objects?: ObjectSummary[];
+  /** For a set method that declares a comparison: its rows, one cell per object of the set. */
+  comparison?: ComparisonView;
+}
+
+/** A set method's comparison (spec 5.4, Acting on a set): rows keyed by a state value, a cell per object of the set. */
+export interface ComparisonView {
+  rows: { key: string; label: string; cells: ({ identifier: string; title: string; status?: string; urgent?: boolean } | null)[] }[];
+}
+
+/** A set method a selection qualifies for (spec 5.4, Acting on a set). */
+export interface SetMethodOption {
+  method: string;
+  label: string;
+  archetype: Archetype;
 }
 
 export interface CommitResult {
@@ -576,6 +592,7 @@ export class Gateway {
     const hidden = this.unreadable(principal.role);
     const methods = this.q(`SELECT ?method ?label ?type ?onDemand WHERE {
         <${principal.role}> p:mayRun ?method . ?method p:appliesTo ?type ; rdfs:label ?label .
+        FILTER NOT EXISTS { ?method p:onSet true }
         OPTIONAL { ?method p:onDemand ?onDemand } } ORDER BY ?label`).filter((m) => !hidden.has(m.type));
     const preconditions = new Map<string, string[]>();
     for (const { method } of methods) preconditions.set(method, this.q(`SELECT ?pre WHERE { <${method}> p:precondition ?pre }`).map((r) => r.pre));
@@ -1142,15 +1159,146 @@ export class Gateway {
     return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft));
   }
 
+  // ---------------------------------------------------------------- acting on a set (spec 5.4)
+
+  /** Why a set of objects does not qualify for a set method: empty when it does. */
+  private async setBlocks(principal: Principal, objects: string[], method: string): Promise<string[]> {
+    const m = this.q(`SELECT ?type ?min ?max ?same WHERE { <${method}> a p:Method ; p:onSet true ; p:appliesTo ?type .
+        OPTIONAL { <${method}> p:minObjects ?min } OPTIONAL { <${method}> p:maxObjects ?max } OPTIONAL { <${method}> p:sameAlong ?same } }`)[0];
+    if (!m) return ['This method does not act on a set'];
+    const blocks: string[] = [];
+    if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) blocks.push('Your role cannot run this method');
+    if (new Set(objects).size !== objects.length) blocks.push('An object is chosen twice');
+    if (m.min && objects.length < Number(m.min)) blocks.push(`Choose at least ${m.min}`);
+    if (m.max && objects.length > Number(m.max)) blocks.push(`Choose at most ${m.max}`);
+    for (const o of objects) {
+      if (!ask(this.graph.store, `ASK { <${o}> a <${m.type}> }`)) blocks.push(`${this.summary(o).identifier} is not the right kind of object`);
+      else if (!this.canRead(principal, m.type)) blocks.push('Your role cannot read these objects');
+    }
+    if (m.same) {
+      const values = new Set(objects.map((o) => this.q(`SELECT ?v WHERE { <${o}> <${m.same}> ?v }`)[0]?.v ?? ''));
+      if (values.size !== 1 || values.has('')) blocks.push(`They do not share the same ${this.q(`SELECT ?l WHERE { <${m.same}> rdfs:label ?l }`)[0]?.l ?? 'parent'}`);
+    }
+    const preconditions = this.q(`SELECT ?pre WHERE { <${method}> p:precondition ?pre }`).map((r) => r.pre);
+    if (!blocks.length) {
+      const validator = validatorFor(this.graph);
+      for (const o of objects) blocks.push(...(await conformanceProblems(this.graph, o, preconditions, validator)).map((b) => `${this.summary(o).identifier}: ${b}`));
+    }
+    return [...new Set(blocks)];
+  }
+
+  /** The set methods a selection qualifies for (spec 5.4, Acting on a set). */
+  async setMethods(principal: Principal, ids: string[]): Promise<SetMethodOption[]> {
+    this.authorize(principal);
+    const objects = ids.map((id) => this.resolve(id));
+    if (objects.length < 2) return [];
+    const types = new Set(objects.map((o) => this.typeOf(o).type));
+    if (types.size !== 1) return [];
+    const options: SetMethodOption[] = [];
+    for (const { method, label } of this.q(`SELECT ?method ?label WHERE { ?method a p:Method ; p:onSet true ; p:appliesTo <${[...types][0]}> ; rdfs:label ?label } ORDER BY ?label`)) {
+      if (!(await this.setBlocks(principal, objects, method)).length) options.push({ method, label, archetype: archetypeOf(this.graph.store, method) });
+    }
+    return options;
+  }
+
+  /** Compose a set method: its inputs, the input that chooses among the set offering the set, and its comparison. */
+  async composeSet(principal: Principal, ids: string[], method: string): Promise<MethodComposition> {
+    this.authorize(principal);
+    const objects = ids.map((id) => this.resolve(id));
+    const blocks = await this.setBlocks(principal, objects, method);
+    if (blocks.length) throw new GatewayError(400, blocks);
+    const label = this.q(`SELECT ?l WHERE { <${method}> rdfs:label ?l }`)[0].l;
+    const summaries = objects.map((o) => this.summary(o));
+    const among = new Set(this.q(`SELECT ?name WHERE { <${method}> p:input ?i . ?i p:amongSet true ; p:inputName ?name }`).map((r) => r.name));
+    const inputs: ComposedInput[] = this.inputs(method).map((input) => {
+      const base = { name: input.name, label: input.label, ...(input.perObject === 'true' ? { perObject: true } : {}) };
+      if (among.has(input.name)) return { ...base, kind: 'object', choices: summaries.map((o) => ({ value: o.iri, label: `${o.identifier} · ${o.title}` })) };
+      if (input.datatype === `${NS.xsd}anyURI`) return { ...base, kind: 'url' };
+      if (input.datatype === `${NS.xsd}decimal` || input.datatype === `${NS.xsd}integer`) return { ...base, kind: 'number' };
+      return { ...base, kind: 'text' };
+    });
+    if (this.inputs(method).some((i) => !among.has(i.name) && !i.datatype)) throw new GatewayError(400, ['A set method takes only the choice among its set and plain values for now']);
+    return {
+      method,
+      label,
+      archetype: archetypeOf(this.graph.store, method),
+      object: summaries[0],
+      objects: summaries,
+      inputs,
+      ...(this.comparison(method, objects) ?? {}),
+    };
+  }
+
+  /** A set method's comparison: for each declared row key, each object's row object, its title and status (spec 5.4). */
+  private comparison(method: string, objects: string[]): { comparison: ComparisonView } | undefined {
+    const c = this.q(`SELECT ?path ?key ?when ?status WHERE { <${method}> p:comparison ?c . ?c p:rowPath ?path ; p:rowKey ?key .
+        OPTIONAL { ?c p:rowWhen ?when } OPTIONAL { ?c p:rowStatus ?status } }`)[0];
+    if (!c) return undefined;
+    const keys = this.q(`SELECT ?k ?label ?order WHERE { <${c.key}> p:valuesFrom ?s . ?k skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`);
+    const byObject = objects.map((o) => {
+      const rows = this.q(`SELECT ?row ?key ?status ?statusLabel ?urgency WHERE { <${o}> ${c.path} ?row . ?row <${c.key}> ?key .
+          ${c.when ? `?row ?whenDim <${c.when}> .` : ''}
+          ${c.status ? `OPTIONAL { ?row <${c.status}> ?status . ?status skos:prefLabel ?statusLabel OPTIONAL { ?status p:urgency ?urgency } }` : ''} }`);
+      return new Map(rows.map((r) => [r.key, r]));
+    });
+    const statusLabel = c.status ? this.q(`SELECT ?l WHERE { <${c.status}> rdfs:label ?l }`)[0]?.l : undefined;
+    const rows = keys
+      .filter((k) => byObject.some((m) => m.has(k.k)))
+      .map((k) => ({
+        key: k.k,
+        label: k.label[0].toUpperCase() + k.label.slice(1),
+        cells: byObject.map((m) => {
+          const r = m.get(k.k);
+          if (!r) return null;
+          const s = this.summary(r.row);
+          return { identifier: s.identifier, title: s.title, ...(r.statusLabel ? { status: `${statusLabel}: ${r.statusLabel}` } : {}), ...(Number(r.urgency ?? 0) > 0 ? { urgent: true } : {}) };
+        }),
+      }));
+    return { comparison: { rows } };
+  }
+
+  /** The chosen object and the others of a set, from the input that chooses among the set. */
+  private async setPlan(principal: Principal, ids: string[], method: string, inputs: Record<string, string>) {
+    const objects = ids.map((id) => this.resolve(id));
+    const blocks = await this.setBlocks(principal, objects, method);
+    if (blocks.length) throw new GatewayError(400, blocks);
+    const among = this.q(`SELECT ?name ?label WHERE { <${method}> p:input ?i . ?i p:amongSet true ; p:inputName ?name ; rdfs:label ?label }`)[0];
+    if (!among) throw new GatewayError(400, ['This set method chooses none of the set']);
+    const raw = inputs[among.name];
+    if (!raw) throw new GatewayError(400, [`${among.label} is required`]);
+    const chosen = this.tryResolve(raw);
+    if (!objects.includes(chosen)) throw new GatewayError(400, [`${among.label} must be one of the set`]);
+    return { chosen, others: objects.filter((o) => o !== chosen), inputs: { ...inputs, [among.name]: chosen } };
+  }
+
+  /** Preview a set method: its effects on the chosen object and on the others (spec 5.4, Acting on a set). */
+  async previewSet(principal: Principal, ids: string[], method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
+    this.authorize(principal);
+    const set = await this.setPlan(principal, ids, method, inputs);
+    const { changes, created, pending, work } = await this.plan(principal, set.chosen, method, set.inputs, undefined, set.others);
+    return { changes: changes.map((c) => this.changeView(c, work)), created, pending, pendingDescriptions: this.describe_(pending), background: analysisDescriptions(this.graph.store, method) };
+  }
+
+  /** Commit a set method once, on the chosen object, with the others named in the same commit (spec 5.4, Acting on a set). */
+  commitSet(principal: Principal, ids: string[], method: string, inputs: Record<string, string> = {}): Promise<CommitResult> {
+    return this.enqueue(async () => {
+      this.authorize(principal);
+      const set = await this.setPlan(principal, ids, method, inputs);
+      return this.runCommit(principal, set.chosen, method, set.inputs, undefined, undefined, set.others);
+    });
+  }
+
   /**
    * Commit steps 1 to 5 (spec 3.4) on a working copy: role, inputs, preconditions, effects and validation.
    * Throws with the reasons at the first failure. Nothing reaches the live graph.
    */
-  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, draftText?: string) {
+  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, draftText?: string, others: string[] = []) {
     this.authorize(principal);
     const object = this.resolve(idOrIri);
     const { type } = this.typeOf(object);
     if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
+    // A set method runs only on a set, through the set requests (spec 5.4, Acting on a set).
+    if (!others.length && ask(this.graph.store, `ASK { <${method}> p:onSet true }`)) throw new GatewayError(400, ['This method acts on a set of objects chosen together']);
 
     // A background method no worker can do is refused before anything else (spec 3.4, Background runs).
     const noWorker = backgroundBlocks(this.graph.store, method);
@@ -1179,7 +1327,9 @@ export class Gateway {
     const pending: string[] = [];
     for (const effect of this.q(`SELECT ?e ?kind WHERE { <${method}> p:effect ?e . ?e a ?kind FILTER(STRSTARTS(STR(?kind), "${NS.p}")) } ORDER BY ?e`)) {
       const kind = effect.kind.slice(NS.p.length);
-      if (kind === 'StateChange') this.applyStateChange(work, object, effect.e, resolvedInputs, changes);
+      if (kind === 'StateChange' && ask(this.graph.store, `ASK { <${effect.e}> p:onOthers true }`)) {
+        for (const other of others) this.applyStateChange(work, other, effect.e, resolvedInputs, changes);
+      } else if (kind === 'StateChange') this.applyStateChange(work, object, effect.e, resolvedInputs, changes);
       else if (kind === 'Creation') created.push(this.applyCreation(work, object, effect.e, resolvedInputs, principal, at, changes));
       else if (kind === 'Link') this.applyLink(work, object, effect.e, resolvedInputs, changes);
       else if (kind === 'DescribedEffect') pending.push(effect.e);
@@ -1216,14 +1366,16 @@ export class Gateway {
     };
   }
 
-  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven): Promise<CommitResult> {
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven, others: string[] = []): Promise<CommitResult> {
     const accepted = draftGiven ? this.checkDraft(principal, this.resolve(idOrIri), method, draftGiven) : undefined;
-    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text);
+    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text, others);
     const signature = this.checkSignature(principal, method, given);
 
     // 6. Record the commit: journal first, flushed to disk, then the live graph.
     const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
     const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at, signature);
+    // A set method's commit names the set's other objects (spec 5.4, Acting on a set).
+    for (const other of others) record.push(quad(namedNode(commit), namedNode(`${NS.p}alongWith`), namedNode(other), namedNode(commit)));
     const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
     const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
     // A background method's commit also starts its run, in the same entry (spec 3.4, Background runs).
@@ -1470,6 +1622,7 @@ export class Gateway {
     const m = this.q(`SELECT ?label WHERE { <${method}> a p:Method ; p:appliesTo <${type}> ; rdfs:label ?label }`)[0];
     if (!m) throw new GatewayError(400, ['This method does not apply to this object']);
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    if (ask(this.graph.store, `ASK { <${method}> p:onSet true }`)) throw new GatewayError(400, ['This method acts on a set of objects chosen together']);
 
     const validator = validatorFor(this.graph);
     const signature = this.signatureRequest(principal, method);
@@ -1603,6 +1756,10 @@ export class Gateway {
         OPTIONAL { <${effect}> p:fromDate ?fromDate } OPTIONAL { <${effect}> p:plusDays/p:parameterValue ?days } }`)[0];
     const created = this.mint(work, e.type, changes);
     if (e.link) this.set(work, created, e.link, namedNode(object), changes, false);
+    // A second link, to what the method's object links to, such as a decision on the scenario's parent.
+    for (const { by, to } of this.q(`SELECT ?by ?to WHERE { <${effect}> p:alsoLinkedBy ?by ; p:alsoLinkedTo ?to }`)) {
+      for (const { v } of this.q(`SELECT ?v WHERE { <${object}> <${to}> ?v }`, work)) this.set(work, created, by, namedNode(v), changes, false);
+    }
     const states = [
       ...this.q(`SELECT ?v WHERE { <${effect}> p:initialState ?v }`).map((r) => r.v),
       ...this.q(`SELECT ?i WHERE { <${effect}> p:initialFromInput ?i }`).map((r) => inputs.get(r.i)!.value),
@@ -1955,10 +2112,14 @@ export class Gateway {
   }
 
   /** Every commit, oldest first. */
-  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string; account?: string }[] {
-    return this.q(`SELECT ?commit ?method ?target ?person ?role ?at ?account WHERE { GRAPH ?commit {
+  commits(): { commit: string; method: string; target: string; person: string; role: string; at: string; account?: string; alongWith?: string[] }[] {
+    const rows = this.q(`SELECT ?commit ?method ?target ?person ?role ?at ?account WHERE { GRAPH ?commit {
         ?commit a p:Commit ; p:method ?method ; p:target ?target ; prov:wasAssociatedWith ?person ; p:actedAs ?role ; prov:startedAtTime ?at .
         OPTIONAL { ?commit p:signedInAs ?account } } }
-        ORDER BY ?at STRLEN(STR(?commit)) ?commit`) as never;
+        ORDER BY ?at STRLEN(STR(?commit)) ?commit`);
+    // A set method's commit also names the set's other objects (spec 5.4, Acting on a set).
+    const along = new Map<string, string[]>();
+    for (const r of this.q(`SELECT ?commit ?o WHERE { GRAPH ?commit { ?commit p:alongWith ?o } } ORDER BY ?o`)) along.set(r.commit, [...(along.get(r.commit) ?? []), r.o]);
+    return rows.map((r) => (along.has(r.commit) ? { ...r, alongWith: along.get(r.commit) } : r)) as never;
   }
 }

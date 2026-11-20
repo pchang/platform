@@ -23,6 +23,10 @@ import { createMcpServer } from './mcp';
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." }, "draft": { "draft": "...", "text": "..." } }
  *   POST /api/objects/:id/methods/:method/draft     a connected model drafts the method; recorded, changes nothing
+ *   POST /api/sets                           the set methods a selection qualifies for; body { "objects": [...] }
+ *   POST /api/sets/:method                   compose a set method for a selection; body { "objects": [...] }
+ *   POST /api/sets/:method/preview           preview a set method; body { "objects": [...], "inputs": { ... } }
+ *   POST /api/sets/:method/commit            commit a set method once; body { "objects": [...], "inputs": { ... } }
  *   GET  /api/drafts/:draft                  read a draft back, such as /api/drafts/1
  *   POST /api/drafts/:draft/discard          discard a draft, such as /api/drafts/1/discard
  *   GET  /api/runs?object=P-101&active=true  track background runs, optionally on one object, or only those not ended
@@ -192,6 +196,19 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
       }
+      case 'POST sets':
+        return send(res, 200, await gateway.setMethods(principal, checkObjects(await body(req))));
+      case 'POST sets/:': {
+        return send(res, 200, await gateway.composeSet(principal, checkObjects(await body(req)), expand(parts[2], NS.ls)));
+      }
+      case 'POST sets/:/preview': {
+        const given = await body(req);
+        return send(res, 200, await gateway.previewSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given)));
+      }
+      case 'POST sets/:/commit': {
+        const given = await body(req);
+        return send(res, 201, await gateway.commitSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given)));
+      }
       case 'GET drafts/:':
         return send(res, 200, gateway.getDraft(principal, parts[2]));
       case 'POST drafts/:/discard':
@@ -263,4 +280,17 @@ async function mcp(gateway: Gateway, principal: Principal, req: IncomingMessage,
 
 export function createGatewayServer(gateway: Gateway, options: HttpOptions): Server {
   return createServer((req, res) => void handle(gateway, options, req, res));
+}
+
+/** The objects of a set, from a request body: identifiers or IRIs (spec 5.4, Acting on a set). */
+function checkObjects(given: unknown): string[] {
+  const objects = (given as { objects?: unknown })?.objects;
+  if (!Array.isArray(objects) || !objects.every((o) => typeof o === 'string') || objects.length > 50) throw new GatewayError(400, ['Give the objects as a list of identifiers']);
+  return objects;
+}
+
+function checkInputs(given: unknown): Record<string, string> {
+  const inputs = (given as { inputs?: unknown })?.inputs ?? {};
+  if (typeof inputs !== 'object' || inputs === null || !Object.values(inputs).every((v) => typeof v === 'string')) throw new GatewayError(400, ['Give the inputs as text values']);
+  return inputs as Record<string, string>;
 }

@@ -82,7 +82,7 @@
     },
     {
       "id": "compare-and-decide",
-      "purpose": "Shows the object and another of the same type side by side, differences marked, then previews and runs the method (archetype Compare and decide).",
+      "purpose": "Shows the object and another of the same type side by side, or a chosen set of them, differences marked, then previews and runs the method (archetype Compare and decide). For a set it opens as a modal, with the comparison's rows first.",
       "template": "page",
       "coreLoopSteps": [
         "compose",
@@ -99,7 +99,7 @@
           ]
         }
       ],
-      "responsive": "The two cards sit side by side from md up and stack on phones."
+      "responsive": "The cards sit side by side from md up, two or more to a row for a set, and stack on phones."
     },
     {
       "id": "review-and-sign",

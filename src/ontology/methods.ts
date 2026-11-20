@@ -29,6 +29,8 @@ export async function methodsFor(graph: Graph, object: string, role?: string): P
     `SELECT ?method ?label ?pre WHERE {
        <${object}> a ?type .
        ?method a p:Method ; p:appliesTo ?type ; rdfs:label ?label .
+       # A set method acts on a selection, never on one object alone (platform spec 5.4, Acting on a set).
+       FILTER NOT EXISTS { ?method p:onSet true }
        OPTIONAL { ?method p:precondition ?pre }
      } ORDER BY ?label ?pre`,
   );

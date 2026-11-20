@@ -1341,9 +1341,10 @@
           "variant": {
             "enum": [
               "small",
-              "medium"
+              "medium",
+              "large"
             ],
-            "description": "Small for Confirm, medium for Fill in"
+            "description": "Small for Confirm, medium for Fill in, large to compare a set side by side"
           },
           "aria-label": {
             "type": "string",

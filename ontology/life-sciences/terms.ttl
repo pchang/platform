@@ -1376,7 +1376,8 @@ lst:ForecastAgainstTarget-met a skos:Concept ;
 lst:ForecastAgainstTarget-missed a skos:Concept ;
   skos:inScheme lst:ForecastAgainstTarget ;
   skos:prefLabel "missed" ;
-  p:order 2 .
+  p:order 2 ;
+  p:urgency 2 .
 
 lst:ForecastAgainstTarget-noTarget a skos:Concept ;
   skos:inScheme lst:ForecastAgainstTarget ;

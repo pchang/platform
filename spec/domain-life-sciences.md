@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.24. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.32.
+Version 0.25. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.33.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -312,6 +312,7 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
 | Run trial simulation | Study Scenario | Outcome measures (many, of one study), screen failure rate, dropout rate, response on control and on treatment, serious adverse events per 100 patient-years | Its protocol has a planned enrollment and planned visits, and its site selection proposes a site that is not rejected | Runs the reference trial model in the background (section 3.4.4): creates a Trial Simulation and a Forecast for each chosen measure, against its target; sets the study budget's total and fit; makes earlier forecasts out of date; raises a Design Signal on each proposed site that cannot perform an assessment the protocol needs |
+| Compare study scenarios | Study Scenario | A set of 2 to 4 study scenarios with the same parent (platform spec 5.4, Acting on a set); the chosen scenario, from the set; rationale | Each is a draft or selected | Shows the set side by side, each scenario's current forecasts by measure against their targets (Compare and decide). The chosen scenario: selected; the others: set aside. Creates a Decision to select, choosing it and decided on their parent, with the rationale and the date |
 
 ### 3.8 Design and Plan methods to come
 
@@ -341,8 +342,6 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 | Add assessment | Planned Visit | Name, purpose, cost per visit, time on site | Its protocol is draft | Creates an Assessment performed at the visit |
 | Propose site | Site Selection | Site, country, patients per month, days to activate | Status is draft | Creates a Proposed Site in proposed |
 | Set budget ceiling | Study Budget | Ceiling | Status is draft | Records the ceiling. Fit follows the latest forecast of total cost |
-| Compare study scenarios | Study Scenario | Other scenarios with the same parent | Each has a complete simulation with current forecasts | Shows their forecasts side by side, against the outcome targets (Compare and decide) |
-| Select study scenario | Study Scenario | Rationale | Status is draft, with current forecasts | Status: selected. Records a Decision |
 | Set aside study scenario | Study Scenario | Reason | Status is draft | Status: set aside |
 | Acknowledge design signal | Design Signal | None | Status is raised | Status: acknowledged |
 | Dismiss design signal | Design Signal | Why | Status is raised | Status: dismissed (rule D9) |
@@ -354,7 +353,7 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 **Rules for Design and Plan.** These become numbered rules in section 7 as their methods are built. One is built already: a protocol used by a study concept's scenario cannot be sent for review (D1, a precondition of Send protocol for review).
 
 - **D1. Exploration stays with the study concept.** A study scenario has one parent. A study concept's protocols cannot be sent for review; approving the study concept copies its selected scenario into the new study, so the study concept's history never changes.
-- **D2. Changes make forecasts out of date.** Any change to a scenario's protocol, budget or site selection, or to an option's study concepts, after a simulation's moment makes its forecasts out of date. Compare and Select need current forecasts.
+- **D2. Changes make forecasts out of date.** Any change to a scenario's protocol, budget or site selection, or to an option's study concepts, after a simulation's moment makes its forecasts out of date, and a new simulation does too. A comparison shows only current forecasts; a scenario with none reads as not simulated.
 - **D3. Every assessment has a reason.** An assessment with no recorded purpose is flagged as burden without evidence, and needs a justification to stay.
 - **D4. Estimands before review.** A protocol version cannot be sent for review until every primary objective has a complete estimand.
 - **D5. Testable eligibility.** Each eligibility criterion names the data that tests it at screening.
@@ -497,7 +496,7 @@ The same object must look different to each persona. A Batch is a production rec
 
 These make To do work for this domain (platform spec section 5.1).
 
-- **On-demand methods**, which a person chooses to run rather than work waiting: Run trial simulation, Amend protocol, Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
+- **On-demand methods**, which a person chooses to run rather than work waiting: Run trial simulation, Compare study scenarios, Amend protocol, Run simulation, Generate analogs, Invalidate result, Quarantine batch, Open quality event, Record data, Record adverse event, Raise query, Unblind patient, Flag duplicate, Generate narrative, Run signal detection.
 - **Urgent values:** high deviation risk (high), elevated deviation risk (medium), a serious adverse event or case (high), a critical quality event (high), a major quality event (medium), a submission due soon (high) or overdue (highest).
 - **Deadlines:** a submission's due date, and the date a visit is scheduled for.
 
@@ -513,6 +512,7 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Run signal detection | Product | Start and track |
 | Run simulation | Compound | Start and track |
 | Run trial simulation | Study Scenario | Start and track |
+| Compare study scenarios | Study Scenario | Compare and decide |
 | Flag duplicate | Safety Case | Compare and decide |
 | Merge duplicate | Safety Case | Compare and decide |
 | Generate analogs | Compound | Review a draft |
@@ -555,7 +555,7 @@ Each method's interaction archetype, derived by the rules in platform spec secti
 | Register | Compound | Confirm |
 | Start CAPA | CAPA | Confirm |
 
-No method in this domain needs Choose an object or Step by step yet.
+No method in this domain needs Choose an object or Step by step yet. Compare study scenarios is a set method (platform spec 5.4, Acting on a set): it is offered when two to four scenarios with the same parent are chosen together, and never on one scenario alone.
 
 **Run for many objects.** Free text and links describe one object, so every such input is marked as about each object (platform spec 5.4) and a batch of its method runs one after another: a note to safety, a reason, a justification, a question, an answer or a summary is given for each object in turn. The exceptions are a simulation's model type and analogs' target property, settings that hold for every compound. Choices, such as seriousness or causality, and people are shared, so Triage or Assess runs together. Reporting two adverse events to safety therefore goes through each event in turn for its note.
 
@@ -882,3 +882,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.22 | 2026-11-20 | Navigation lists entry types (platform spec 0.31): in Design and Plan, Programs and Concepts. Study scenarios open inside their concept or study; endpoints are part of their objective; interventions and assessments of their protocol; contributions of their protocol; design signals of the object they are about; target product profiles of their program; a scenario's budget and site selection of the scenario. Each role names the contained types it works across, so clinical, safety, quality and discovery navigation is unchanged. Section 3.6 shows where each object lives. |
 | 0.23 | 2026-11-20 | Portfolio and asset decisions join Design and Plan. Concept (0.21–0.22, not yet merged) is replaced by Opportunity, a new asset from discovery, a new indication or a scientific question across programs, with Development Options simulated for chance of technical and regulatory success, time to submission and cost; and Study Concept, in its industry meaning, holding study scenarios until governance approves it. Section 3.4.2 lays out the stages from discovery to protocol and who works each. Two personas: Portfolio Strategist and Program Leader. Methods, rules, journey J7, seed and four open questions follow. |
 | 0.24 | 2026-11-20 | The study scenario's three elements and how they move each other (section 3.4.4), the outcome measures a sponsor can simulate, and the reference trial model: a transparent, seeded Monte Carlo over the scenario's own objects. Run trial simulation is built (section 3.7) as a model run (platform spec 0.32), with the measures chosen as checkboxes. Proposed sites carry their equipment, site count and costs; assessments the equipment they need. The seed's variant protocols are structured, and its study scenarios are simulated live. |
+| 0.25 | 2026-11-20 | Compare study scenarios is built as a set method (platform spec 0.33): choose two to four scenarios with the same parent, compare their current forecasts against their targets side by side, choose one with a rationale; the others are set aside and a Decision is recorded on the parent. It replaces the unbuilt Compare and Select study scenario. A forecast that misses its target is urgent. |
