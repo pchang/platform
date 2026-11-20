@@ -19,6 +19,7 @@
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
+  p:worksAcross ls:AssayResult ;
   p:worksIn ls:ScientificInnovation ;
   rdfs:label "Computational Chemist" ;
   rdfs:comment "Finds a better compound." ;
@@ -26,6 +27,7 @@ ls:ComputationalChemist a p:Role ;
   p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
 
 ls:ClinicalDataManager a p:Role ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
   rdfs:comment "Gets clean data to study lock." ;
@@ -34,6 +36,7 @@ ls:ClinicalDataManager a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchAssociate a p:Role ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Research Associate" ;
   rdfs:comment "Monitors sites for the sponsor: verifies data against source documents and raises queries." ;
@@ -41,6 +44,7 @@ ls:ClinicalResearchAssociate a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchCoordinator a p:Role ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Research Coordinator" ;
   rdfs:comment "Runs the study at a site: consents and randomizes patients, holds visits, records data and adverse events, and answers queries." ;
@@ -48,6 +52,7 @@ ls:ClinicalResearchCoordinator a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;
+  p:worksAcross ls:QualityEvent ;
   p:worksIn ls:SafetyAndRegulatory ;
   rdfs:label "Drug Safety Physician" ;
   rdfs:comment "Protects patients and meets reporting deadlines." ;
@@ -55,12 +60,14 @@ ls:DrugSafetyPhysician a p:Role ;
     ls:SendForReview, ls:Submit, ls:RunSignalDetection, ls:EvaluateSignal, ls:ConfirmSignal, ls:RefuteSignal, ls:UnblindPatient .
 
 ls:QualityLead a p:Role ;
+  p:worksAcross ls:QualityEvent, ls:CAPA ;
   p:worksIn ls:ScientificInnovation, ls:SafetyAndRegulatory ;
   rdfs:label "Quality Lead" ;
   rdfs:comment "Keeps every batch compliant." ;
   p:mayRun ls:ReleaseBatch, ls:QuarantineBatch, ls:OpenQualityEvent, ls:StartInvestigation, ls:AssignCAPA, ls:RecordCAPAOutcome, ls:CloseQualityEvent .
 
 ls:ExternalCROAgent a p:Role ;
+  p:worksAcross ls:DataQuery ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "External CRO agent" ;
   rdfs:comment "A contract research organization's agent. Answers and closes data queries at its own sites, through the gateway, under the same policy as people." ;

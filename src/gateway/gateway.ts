@@ -540,10 +540,18 @@ export class Gateway {
 
   // ---------------------------------------------------------------- navigation and to do
 
-  /** The object world of the principal's work: their roles' work domains, limited to what they may read (spec 5.1). */
+  /**
+   * The object world of the principal's work: the entry types of their roles' work domains, limited to what they may
+   * read (spec 5.1). A type whose objects are part of another object is reached inside it, unless the role works across it.
+   */
   navigation(principal: Principal): NavigationDomain[] {
     this.authorize(principal);
     const hidden = this.unreadable(principal.role);
+    const contained = new Set(this.q(`SELECT DISTINCT ?type WHERE {
+        { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true }
+        UNION { ?ps sh:path ?rel . ?rel p:hasPart true . ?ps (sh:class|sh:or/rdf:rest*/rdf:first/sh:class) ?type }
+      }`).map((r) => r.type));
+    for (const { type } of this.q(`SELECT ?type WHERE { <${principal.role}> p:worksAcross ?type }`)) contained.delete(type);
     const domains = this.q(`SELECT ?domain ?label WHERE { <${principal.role}> p:worksIn ?domain . ?domain rdfs:label ?label } ORDER BY ?label`);
     return domains.map(({ domain, label }) => ({
       domain,
@@ -551,9 +559,9 @@ export class Gateway {
       types: this.q(`SELECT ?type ?label ?pluralLabel (COUNT(?o) AS ?count) WHERE {
           ?type a p:ObjectType ; p:inDomain <${domain}> ; rdfs:label ?label ; p:pluralLabel ?pluralLabel .
           OPTIONAL { ?o a ?type } } GROUP BY ?type ?label ?pluralLabel ORDER BY ?label`)
-        .filter((t) => !hidden.has(t.type))
+        .filter((t) => !hidden.has(t.type) && !contained.has(t.type))
         .map((t) => ({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, count: Number(t.count) })),
-    }));
+    })).filter((d) => d.types.length > 0);
   }
 
   /**

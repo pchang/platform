@@ -37,7 +37,7 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(heading).toBeFocused();
   await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
-  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Formulations 1', 'Sites 3']);
+  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Concepts 0']);
 
   // Patients: the relationship in words, then cards that open in turn.
   await panel(page).getByRole('tab', { name: 'Patients 12' }).click();

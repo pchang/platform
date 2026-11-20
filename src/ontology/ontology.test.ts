@@ -87,14 +87,15 @@ describe('model', () => {
     // and in Design and Plan (section 3.4), a parent's scenarios, targets and decisions, a scenario's simulations, a simulation's forecasts,
     // a protocol's design objects, a population's criteria, an objective's estimand and a site selection's proposed sites.
     const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true }`).map((r) => r.rel.split('#').pop()).sort();
-    expect(partOf).toEqual(['capturedAt', 'decidesOn', 'defines', 'enrolledIn', 'estimandOf', 'experiencedBy', 'explores', 'forecastFrom', 'proposedIn',
-      'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
-    expect(q(`SELECT ?rel WHERE { ?rel p:hasPart true }`).map((r) => r.rel.split('#').pop())).toEqual(['produces']);
+    expect(partOf).toEqual(['capturedAt', 'contributesTo', 'decidesOn', 'defines', 'enrolledIn', 'estimandOf', 'experiencedBy', 'explores', 'forecastFrom',
+      'isAbout', 'measures', 'proposedIn', 'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
+    // An experiment's results, a program's target product profiles, and a study scenario's budget and site selection.
+    expect(q(`SELECT ?rel WHERE { ?rel p:hasPart true }`).map((r) => r.rel.split('#').pop()).sort()).toEqual(['aimsAt', 'produces', 'usesBudget', 'usesSiteSelection']);
   });
 
   it('says an end holds at most one object only where the domain is certain', () => {
     const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
-    expect(one.length).toBe(43);
+    expect(one.length).toBe(45);
     expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
     expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
   });

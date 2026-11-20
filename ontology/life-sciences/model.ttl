@@ -2150,6 +2150,7 @@ ls:aimsAt a p:Relationship, owl:ObjectProperty ;
   rdfs:label "aims at" ;
   p:inverseLabel "is the aim of" ;
   p:order 28 ;
+  p:hasPart true ;
   rdfs:comment "A program aims at a target product profile." .
 
 ls:develops a p:Relationship, owl:ObjectProperty ;
@@ -2175,12 +2176,14 @@ ls:usesBudget a p:Relationship, owl:ObjectProperty ;
   rdfs:label "uses" ;
   p:inverseLabel "is used in" ;
   p:order 32 ;
+  p:hasPart true ;
   rdfs:comment "A study scenario uses one study budget." .
 
 ls:usesSiteSelection a p:Relationship, owl:ObjectProperty ;
   rdfs:label "uses" ;
   p:inverseLabel "is used in" ;
   p:order 33 ;
+  p:hasPart true ;
   rdfs:comment "A study scenario uses one site selection." .
 
 ls:baselineFrom a p:Relationship, owl:ObjectProperty ;
@@ -2221,7 +2224,7 @@ ls:specifiedIn a p:Relationship, owl:ObjectProperty ;
   p:inverseLabel "specifies" ;
   p:order 39 ;
   p:partOf true ;
-  rdfs:comment "A protocol version specifies its population, objectives, arms and planned visits." .
+  rdfs:comment "A protocol version specifies its population, objectives, arms, interventions, planned visits and assessments." .
 
 ls:defines a p:Relationship, owl:ObjectProperty ;
   rdfs:label "defines" ;
@@ -2234,6 +2237,7 @@ ls:measures a p:Relationship, owl:ObjectProperty ;
   rdfs:label "measures" ;
   p:inverseLabel "is measured by" ;
   p:order 41 ;
+  p:partOf true ;
   rdfs:comment "An endpoint measures an objective." .
 
 ls:estimandOf a p:Relationship, owl:ObjectProperty ;
@@ -2290,12 +2294,14 @@ ls:contributesTo a p:Relationship, owl:ObjectProperty ;
   rdfs:label "contributes to" ;
   p:inverseLabel "has contributions" ;
   p:order 50 ;
+  p:partOf true ;
   rdfs:comment "A contribution contributes to a protocol version." .
 
 ls:isAbout a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is about" ;
   p:inverseLabel "has design signals" ;
   p:order 51 ;
+  p:partOf true ;
   rdfs:comment "A design signal is about the design or plan object it concerns." .
 
 ls:decidesOn a p:Relationship, owl:ObjectProperty ;
@@ -3122,7 +3128,7 @@ lsh:Arm a sh:NodeShape ;
 
 lsh:Intervention a sh:NodeShape ;
   sh:targetClass ls:Intervention ;
-  sh:property lsh:Intervention-identifier, lsh:Intervention-interventionName, lsh:Intervention-regimen, lsh:Intervention-givenIn, lsh:Intervention-administers .
+  sh:property lsh:Intervention-specifiedIn, lsh:Intervention-identifier, lsh:Intervention-interventionName, lsh:Intervention-regimen, lsh:Intervention-givenIn, lsh:Intervention-administers .
 
 lsh:PlannedVisit a sh:NodeShape ;
   sh:targetClass ls:PlannedVisit ;
@@ -3130,7 +3136,7 @@ lsh:PlannedVisit a sh:NodeShape ;
 
 lsh:Assessment a sh:NodeShape ;
   sh:targetClass ls:Assessment ;
-  sh:property lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-performedAt .
+  sh:property lsh:Assessment-specifiedIn, lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-performedAt .
 
 lsh:StudyBudget a sh:NodeShape ;
   sh:targetClass ls:StudyBudget ;
@@ -3200,3 +3206,15 @@ lsh:IsStudy a sh:NodeShape ;
 
 lsh:IsStudyBudget a sh:NodeShape ;
   sh:class ls:StudyBudget .
+
+lsh:Intervention-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Assessment-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .

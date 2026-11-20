@@ -25,6 +25,21 @@ describe('navigation shows each person the object world of their work (spec 5.1)
     ]);
   });
 
+  it('lists entry types, and reaches contained types inside the objects they belong to (spec 5.1, Entry types)', () => {
+    // Every Design and Plan type but Program and Concept is part of another object, so the Clinical Scientist starts from those.
+    const scientist = as('person-nadia', 'ClinicalScientist');
+    expect(nav(scientist)).toEqual([
+      ['Clinical Development', ['Protocols', 'Sites', 'Studies']],
+      ['Design and Plan', ['Concepts', 'Programs']],
+    ]);
+  });
+
+  it('keeps the contained types a role works across, such as a coordinator\'s patients and visits', () => {
+    expect(nav(coordinator)).toEqual(nav(dataManager));
+    expect(nav(chemist)[0][1]).toContain('Assay Results');
+    expect(nav(quality).flatMap(([, types]) => types)).toContain('CAPAs');
+  });
+
   it('gives the Drug Safety Physician only Safety and Regulatory', () => {
     expect(nav(physician).map(([domain]) => domain)).toEqual(['Safety and Regulatory']);
   });

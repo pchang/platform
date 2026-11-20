@@ -482,6 +482,12 @@ p:worksIn a rdf:Property ;
   rdfs:domain p:Role ;
   rdfs:range p:Domain .
 
+p:worksAcross a rdf:Property ;
+  rdfs:label "works across" ;
+  rdfs:comment "A contained object type the role works through across many containers, so it is an entry type in the role's navigation (platform spec 5.1, Entry types)." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
 p:onDemand a rdf:Property ;
   rdfs:label "on demand" ;
   rdfs:comment "True when the method is an action a person chooses to take, not work waiting. On-demand methods do not put an object on To do." ;

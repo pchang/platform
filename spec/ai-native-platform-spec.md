@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.30. November 15, 2026. Author: Paul Chang.
+Version 0.31. November 20, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -241,7 +241,9 @@ Every interaction follows the same loop. The platform supports it end to end, fo
 - Adapts to user and business context.
 - Offers multiple views of the same graph.
 - Surfaces proactive starting points.
-- **Each person sees the object world of their work.** Navigation lists the object types of the domains their roles work in, grouped by domain, limited to what they may read. A clinical role does not see discovery or safety navigation. Objects outside that world stay reachable through links and search when the person may read them.
+- **Each person sees the object world of their work.** Navigation lists the entry types of the domains their roles work in, grouped by domain, limited to what they may read. A clinical role does not see discovery or safety navigation. Objects outside that world stay reachable through links and search when the person may read them.
+- **Entry types, not every type.** A flat list of every type buries the few objects people start from among the many that only make sense inside another. So navigation lists a domain's entry types. A type is an entry type unless its objects are part of another object: it is the part end of a containment relationship (section 3.1). Contained objects are reached inside the object they belong to, as its tabs (Within an object), and through links, search and To do. Nothing is configured per screen: containment in the ontology decides it.
+- **Types a role works across.** Some roles work through contained objects across many containers, such as a coordinator's patients and visits across a study. A role may name the contained types it works across, and those are entry types for that role. This is part of the role's default permissions, so organizations may vary it like any other.
 
 #### To do
 
@@ -473,3 +475,4 @@ To resolve in future versions of this spec.
 | 0.28 | 2026-11-15 | Asking about an object (section 5.2): the gateway reads the objects a question is asked from as the principal, audited, and gives them to the model as data, citable; an unreadable object is refused. |
 | 0.29 | 2026-11-15 | A person may hold several conversations and return to any of them; they last for the session until retention is decided (section 5.2). |
 | 0.30 | 2026-11-15 | Identity (section 3.4): sign-in through an OpenID Connect provider, Google first, run by the gateway with a signed session cookie; access by allowed emails and domains; accounts act as their person, or in a demo deployment as any person, with the account recorded; JSON-only changes against forgery. Demo deployments may take development signatures. The deployment is described in `deployment.md`. Two open questions replaced. |
+| 0.31 | 2026-11-20 | Navigation lists entry types, not every type (section 5.1): a type whose objects are part of another object is reached inside it, unless a role names it as a type it works across. |

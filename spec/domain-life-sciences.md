@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.21. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.26.
+Version 0.22. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.31.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -219,10 +219,23 @@ Phase changes what dominates a design. Phase I studies are first-in-human, with 
 - Concept **informs** Program or Study. Study **belongs to** Program. Program **aims at** Target Product Profile. Program **develops** Compound (cross-domain).
 - Study Scenario **explores** Concept or Study: its one parent. Study Scenario **uses** one Protocol, one Study Budget and one Site Selection. Study **began from** Study Scenario: its baseline.
 - Trial Simulation **simulates** Study Scenario. Forecast **comes from** Trial Simulation. Forecast **is measured against** Outcome Target. Outcome Target **sets success for** Concept or Study.
-- Population, Objective, Arm and Planned Visit are **specified in** Protocol. Eligibility Criterion **defines** Population. Estimand **is the estimand of** Objective. Endpoint **measures** Objective. Endpoint **requires** Assessment. Assessment **performed at** Planned Visit. Intervention **given in** Arm. Intervention **administers** Formulation (cross-domain). Visit **scheduled from** Planned Visit.
+- Population, Objective, Arm, Intervention, Planned Visit and Assessment are **specified in** Protocol. Eligibility Criterion **defines** Population. Estimand **is the estimand of** Objective. Endpoint **measures** Objective. Endpoint **requires** Assessment. Assessment **performed at** Planned Visit. Intervention **given in** Arm. Intervention **administers** Formulation (cross-domain). Visit **scheduled from** Planned Visit.
 - Proposed Site **proposed in** Site Selection. Proposed Site **proposes** Site.
 - Contribution **contributes to** Protocol. Design Signal **is about** an Eligibility Criterion, Assessment, Planned Visit, Objective, Endpoint, Proposed Site or Study Budget. Decision **decides on** Concept or Study, and **chooses** a Study Scenario.
 - Eligibility Criterion **justified by** Assay Result or Safety Case (cross-domain).
+
+**Where each object lives.** Containment decides navigation (platform spec section 5.1, Entry types). Only Programs and Concepts are entry types in Design and Plan; every other type is part of something and opens inside it:
+
+| Starting from | You reach |
+|---|---|
+| Program | its target product profiles, and the concepts and studies tied to it |
+| Concept (or Study) | its study scenarios, outcome targets and decisions |
+| Study Scenario | its study budget and site selection (both part of it), its protocol (shared with the study it may seed) and its trial simulations |
+| Trial Simulation | its forecasts |
+| Site Selection | its proposed sites |
+| Protocol | its population, objectives, arms, interventions, planned visits, assessments and contributions |
+| Population, Objective | eligibility criteria; endpoints and the estimand |
+| Any design or plan object | the design signals about it |
 
 ### 3.7 Design and Plan methods
 
@@ -380,6 +393,8 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Medical Writer | Design and Plan and Clinical Development | One coherent, approvable protocol | Confirm contributions, write the narrative, send protocol versions for review | See unblinded arms |
 | Clinical Operations Lead | Design and Plan and Clinical Development | A plan that delivers on time and on budget | Build study budgets and site selections, run and compare trial simulations | See unblinded arms |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
+
+Each role's navigation lists the entry types of its work domains (platform spec section 5.1). A role also works across some contained types, which stay in its navigation: the clinical roles across patients, visits, data records, data queries and adverse events; the external agent across data queries; the Quality Lead across quality events and CAPAs; the Drug Safety Physician across quality events; the Computational Chemist across assay results. The Design and Plan personas work across none: they start from programs, concepts, studies and protocols.
 
 The four Design and Plan personas run only the protocol methods named for them until the methods of section 3.7 are built; they read and navigate the design and plan graph now.
 
@@ -585,19 +600,19 @@ The domain is written in the platform's ontology format (platform spec section 3
   | duplicate of | Safety Case → Safety Case | is duplicated by | Related only | one case |
   | informs | Concept → Program or Study | is informed by | Related only | Many |
   | belongs to | Study → Program | includes | Related only | one program |
-  | aims at | Program → Target Product Profile | is the aim of | Related only | Many |
+  | aims at | Program → Target Product Profile | is the aim of | The profile is part of the program | Many |
   | develops | Program → Compound | is developed in | Related only | Many |
   | explores | Study Scenario → Concept or Study | is explored by | The scenario is part of its concept or study | one parent |
-  | uses | Study Scenario → Protocol; Study Budget; Site Selection | is used in | Related only | one of each |
+  | uses | Study Scenario → Protocol; Study Budget; Site Selection | is used in | The budget and site selection are part of the scenario; the protocol is related only | one of each |
   | began from | Study → Study Scenario | seeded | Related only | one scenario |
   | simulates | Trial Simulation → Study Scenario | is simulated by | The simulation is part of its scenario | one scenario |
   | comes from | Forecast → Trial Simulation | forecasts | The forecast is part of its simulation | one simulation |
   | is measured against | Forecast → Outcome Target | measures | Related only | one target |
   | sets success for | Outcome Target → Concept or Study | has targets | The target is part of its concept or study | one parent |
-  | specified in | Population, Objective, Arm, Planned Visit → Protocol | specifies | Part of the protocol version | one protocol |
+  | specified in | Population, Objective, Arm, Intervention, Planned Visit, Assessment → Protocol | specifies | Part of the protocol version | one protocol |
   | defines | Eligibility Criterion → Population | is defined by | The criterion is part of the population | one population |
   | is the estimand of | Estimand → Objective | targets | The estimand is part of the objective | one objective |
-  | measures | Endpoint → Objective | is measured by | Related only | one objective |
+  | measures | Endpoint → Objective | is measured by | The endpoint is part of the objective | one objective |
   | requires | Endpoint → Assessment | produces data for | Related only | Many |
   | given in | Intervention → Arm | gives | Related only | Many |
   | administers | Intervention → Formulation | is administered as | Related only | one formulation |
@@ -605,8 +620,8 @@ The domain is written in the platform's ontology format (platform spec section 3
   | scheduled from | Visit → Planned Visit | schedules | Related only | one planned visit |
   | proposed in | Proposed Site → Site Selection | proposes | The proposed site is part of the selection | one selection |
   | proposes | Proposed Site → Site | is proposed as | Related only | one site |
-  | contributes to | Contribution → Protocol | has contributions | Related only | one protocol |
-  | is about | Design Signal → a design or plan object | has design signals | Related only | one object |
+  | contributes to | Contribution → Protocol | has contributions | The contribution is part of the protocol | one protocol |
+  | is about | Design Signal → a design or plan object | has design signals | The signal is part of the object it is about | one object |
   | decides on | Decision → Concept or Study | is decided by | The decision is part of its concept or study | one parent |
   | chooses | Decision → Study Scenario | is chosen by | Related only | one scenario |
   | justified by | Eligibility Criterion → Assay Result or Safety Case | justifies | Related only | Many |
@@ -614,6 +629,7 @@ The domain is written in the platform's ontology format (platform spec section 3
 - **Drafting instructions.** The instructions a model follows to draft a case narrative are in `methods.ttl`, with the method. They ask for an ICH E2B(R3) case narrative built only from the records given, with what is not recorded said plainly, the patient never called a subject, and identifiers instead of names.
 - **Reactions.** A case's reactions, and a signal's reaction, are SKOS concepts mapped to NCIt. They stand in for MedDRA preferred terms, the standard for coding reactions, until MedDRA is licensed.
 - **Terminologies.** NCIt first, because it is free. Every NCIt mapping was checked against the NCI Thesaurus service; the Design and Plan mappings (Population, Estimand, Arm and its roles, Endpoint, Intervention, Planned Visit, Eligibility Criterion and its kinds, objective levels and patient-reported endpoints) on November 20, 2026. Concept, Study Scenario, Trial Simulation, Forecast and the planning types have no NCIt match and are minted here. CDISC USDM mappings follow with protocol export. MedDRA and WHODrug follow once licensed.
+- **Works across.** Each role's contained types it works across are in `roles.ttl`, as `p:worksAcross` (section 6).
 - **Tests** keep the ontology and this spec in step: every object type, state value and method in sections 2 to 4, and every Design and Plan object type and state value in section 3.5, must exist in the ontology, and the journeys' preconditions are tested against small example graphs.
 
 ---
@@ -763,3 +779,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.19 | 2026-11-20 | Added section 3.4, Design and Plan, specified and not yet built: what a design starts from and decides, what a plan decides, and proposed object types, relationships, methods, rules D1 to D8, personas, cross-domain links, journeys J4 to J6, a seed and regulatory obligations. Six open questions. |
 | 0.20 | 2026-11-20 | Section 3.4 follows the design note Authoring the Protocol as Structure: Program, Concept, Scenario and Study frame the work; protocol objects are the design; a triad of protocol, budget and site plan is forecast together from historical study data; contributions, design signals and decisions carry the people. Practice fills the gaps the note leaves, marked from practice. Rules D1 to D11, a Medical Writer persona, journeys J4 to J6 and the seed are rewritten. Eight open questions replace the six of 0.19, three of them for the platform spec. |
 | 0.21 | 2026-11-20 | Design and Plan is built as a work domain: its 22 object types, state dimensions and relationships (sections 3.5 and 3.6) are in the ontology, with titles, NCIt mappings checked at the source, four personas and a seed. Section 3.4 frames the offering as simulating a trial before it runs, in three spaces: protocol authoring, trial simulation and concepts. Scenario is renamed Study Scenario, with protocol, study budget and site selection; Trial Simulation produces Forecasts measured against Outcome Targets. Methods are specified in section 3.7, not yet built. Send protocol for review now refuses a concept's protocol (rule D1). Open questions updated. |
+| 0.22 | 2026-11-20 | Navigation lists entry types (platform spec 0.31): in Design and Plan, Programs and Concepts. Study scenarios open inside their concept or study; endpoints are part of their objective; interventions and assessments of their protocol; contributions of their protocol; design signals of the object they are about; target product profiles of their program; a scenario's budget and site selection of the scenario. Each role names the contained types it works across, so clinical, safety, quality and discovery navigation is unchanged. Section 3.6 shows where each object lives. |

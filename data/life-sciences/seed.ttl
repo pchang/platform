@@ -1518,13 +1518,15 @@ d:INT-1 a ls:Intervention ;
   ls:interventionName "Velcorin 25 mg film-coated tablet" ;
   ls:regimen "25 mg by mouth once daily for 52 weeks" ;
   ls:givenIn d:ARM-1 ;
-  ls:administers d:F-101 .
+  ls:administers d:F-101 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:INT-2 a ls:Intervention ;
   ls:identifier "INT-2" ;
   ls:interventionName "Matching placebo tablet" ;
   ls:regimen "One tablet by mouth once daily for 24 weeks, then Velcorin 25 mg to Week 52" ;
-  ls:givenIn d:ARM-2 .
+  ls:givenIn d:ARM-2 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:PV-1 a ls:PlannedVisit ;
   ls:identifier "PV-1" ;
@@ -1575,7 +1577,8 @@ d:AS-1 a ls:Assessment ;
   ls:assessmentName "Swollen and tender joint count" ;
   ls:costPerVisit 180.0 ;
   ls:minutesOnSite 20 ;
-  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:AS-2 a ls:Assessment ;
   ls:identifier "AS-2" ;
@@ -1584,7 +1587,8 @@ d:AS-2 a ls:Assessment ;
   ls:assessmentName "C-reactive protein" ;
   ls:costPerVisit 45.0 ;
   ls:minutesOnSite 10 ;
-  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:AS-3 a ls:Assessment ;
   ls:identifier "AS-3" ;
@@ -1593,7 +1597,8 @@ d:AS-3 a ls:Assessment ;
   ls:assessmentName "HAQ-DI and patient global assessment questionnaires" ;
   ls:costPerVisit 60.0 ;
   ls:minutesOnSite 15 ;
-  ls:performedAt d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+  ls:performedAt d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:AS-4 a ls:Assessment ;
   ls:identifier "AS-4" ;
@@ -1602,7 +1607,8 @@ d:AS-4 a ls:Assessment ;
   ls:assessmentName "Liver function tests" ;
   ls:costPerVisit 70.0 ;
   ls:minutesOnSite 10 ;
-  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 .
+  ls:performedAt d:PV-1, d:PV-2, d:PV-3, d:PV-4, d:PV-5, d:PV-6 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:AS-5 a ls:Assessment ;
   ls:identifier "AS-5" ;
@@ -1611,7 +1617,8 @@ d:AS-5 a ls:Assessment ;
   ls:assessmentName "Chest X-ray and tuberculosis screening" ;
   ls:costPerVisit 310.0 ;
   ls:minutesOnSite 45 ;
-  ls:performedAt d:PV-1 .
+  ls:performedAt d:PV-1 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:AS-6 a ls:Assessment ;
   ls:identifier "AS-6" ;
@@ -1620,7 +1627,8 @@ d:AS-6 a ls:Assessment ;
   ls:assessmentName "MRI of both hands" ;
   ls:costPerVisit 1450.0 ;
   ls:minutesOnSite 90 ;
-  ls:performedAt d:PV-2, d:PV-4, d:PV-5 .
+  ls:performedAt d:PV-2, d:PV-4, d:PV-5 ;
+  ls:specifiedIn d:PROT-31 .
 
 d:CTB-1 a ls:Contribution ;
   ls:identifier "CTB-1" ;
