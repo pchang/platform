@@ -109,6 +109,16 @@ export interface NavigationDomain {
   types: { type: string; label: string; pluralLabel: string; count: number; creatable?: boolean }[];
 }
 
+/** Each person's homepage (spec 5.1, Home): their world's health, where things stand, and how they are keeping up. */
+export interface HomeView {
+  /** The metrics the person's roles watch, as they stand today. */
+  metrics: { metric: string; label: string; comment: string; type: string; pluralLabel: string; count: number; total: number; health?: 'on track' | 'watch' | 'at risk' }[];
+  /** For each type of the person's work with a lifecycle and objects: its objects by lifecycle stage, in order. */
+  lifecycles: { type: string; label: string; pluralLabel: string; dimension: string; total: number; stages: { value: string; label: string; count: number }[] }[];
+  /** The person's commits in the last 7 days, the runs they started included. */
+  doneLast7Days: number;
+}
+
 export interface ToDoItem {
   object: ObjectSummary;
   /** Tasks the principal can run now. Empty for an urgent object with only on-demand methods available. */
@@ -1185,6 +1195,59 @@ export class Gateway {
   /** Commits run one at a time: each waits for the one before it to finish. */
   commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven): Promise<CommitResult> {
     return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft));
+  }
+
+  // ---------------------------------------------------------------- home (spec 5.1)
+
+  /** Each person's homepage: the metrics their roles watch, where things stand, and what they have done lately. */
+  home(principal: Principal): HomeView {
+    this.authorize(principal);
+    const today = this.now().toISOString().slice(0, 10);
+    const metrics: HomeView['metrics'] = [];
+    for (const m of this.q(`SELECT DISTINCT ?m ?label ?comment ?type ?plural ?past ?watch ?risk ?more WHERE { <${principal.role}> p:watches ?m .
+        ?m rdfs:label ?label ; rdfs:comment ?comment ; p:metricOf ?type . ?type p:pluralLabel ?plural .
+        OPTIONAL { ?m p:pastDue ?past } OPTIONAL { ?m p:watchAt ?watch } OPTIONAL { ?m p:riskAt ?risk } OPTIONAL { ?m p:moreIsBetter ?more } }`)) {
+      if (!this.canRead(principal, m.type)) continue;
+      // Values of one dimension are alternatives; dimensions together must all hold.
+      const byDimension = new Map<string, string[]>();
+      for (const { v, d } of this.q(`SELECT ?v ?d WHERE { <${m.m}> p:inState ?v . ?d p:dimensionOf <${m.type}> ; p:valuesFrom ?s . ?v skos:inScheme ?s }`)) {
+        byDimension.set(d, [...(byDimension.get(d) ?? []), v]);
+      }
+      const where = [...byDimension].map(([d, vs], i) => `?o <${d}> ?v${i} FILTER(?v${i} IN (${vs.map((v) => `<${v}>`).join(', ')}))`).join(' . ');
+      const past = m.past ? `?o <${m.past}> ?date FILTER(?date < "${today}"^^xsd:date)` : '';
+      const count = Number(this.q(`SELECT (COUNT(DISTINCT ?o) AS ?n) WHERE { ?o a <${m.type}> . ${where} ${where && past ? '.' : ''} ${past} }`)[0].n);
+      const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
+      let health: HomeView['metrics'][number]['health'];
+      if (m.watch !== undefined) {
+        const [watch, risk, more] = [Number(m.watch), Number(m.risk ?? m.watch), m.more === 'true'];
+        health = more ? (count <= risk ? 'at risk' : count <= watch ? 'watch' : 'on track') : count >= risk ? 'at risk' : count >= watch ? 'watch' : 'on track';
+      }
+      metrics.push({ metric: m.m, label: m.label, comment: m.comment, type: m.type, pluralLabel: m.plural, count, total, ...(health ? { health } : {}) });
+    }
+    // What needs attention first: at risk, then watch, then on track, then information only; by name within each.
+    const severity = (h?: string) => (h === 'at risk' ? 0 : h === 'watch' ? 1 : h === 'on track' ? 2 : 3);
+    metrics.sort((a, b) => severity(a.health) - severity(b.health) || a.label.localeCompare(b.label));
+    // Where things stand: the types of the person's navigation, then those their metrics count, by lifecycle stage.
+    // The lifecycle is the first dimension methods move; a classifying one, such as a study's phase, is not a lifecycle.
+    const lifecycles: HomeView['lifecycles'] = [];
+    const types = new Map(this.navigation(principal).flatMap((d) => d.types).map((t) => [t.type, t]));
+    for (const m of metrics) {
+      if (types.has(m.type)) continue;
+      const t = this.q(`SELECT ?label ?plural WHERE { <${m.type}> rdfs:label ?label ; p:pluralLabel ?plural }`)[0];
+      types.set(m.type, { type: m.type, label: t.label, pluralLabel: t.plural, count: m.total });
+    }
+    for (const t of types.values()) {
+      const dim = this.q(`SELECT ?d ?label WHERE { ?d p:dimensionOf <${t.type}> ; p:order ?order ; rdfs:label ?label FILTER NOT EXISTS { ?d p:chosenOnCreate true } } ORDER BY ?order LIMIT 1`)[0];
+      if (!dim || !t.count) continue;
+      const stages = this.q(`SELECT ?v ?label (COUNT(?o) AS ?n) WHERE { <${dim.d}> p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order .
+          OPTIONAL { ?o a <${t.type}> ; <${dim.d}> ?v } } GROUP BY ?v ?label ?order ORDER BY ?order`).map((r) => ({ value: r.v, label: r.label, count: Number(r.n) }));
+      const total = stages.reduce((a, b) => a + b.count, 0);
+      if (total) lifecycles.push({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, dimension: dim.label, total, stages });
+    }
+    const since = new Date(this.now().getTime() - 7 * 86_400_000).toISOString();
+    const doneLast7Days = Number(this.q(`SELECT (COUNT(DISTINCT ?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit ; prov:wasAssociatedWith <${principal.person}> ; prov:startedAtTime ?at }
+        FILTER(?at >= "${since}"^^xsd:dateTime) }`)[0].n);
+    return { metrics, lifecycles, doneLast7Days };
   }
 
   // ---------------------------------------------------------------- creating and editing (spec 5.3)

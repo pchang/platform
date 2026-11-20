@@ -82,7 +82,7 @@ function AppPage() {
       isContentFilled
     >
       {/* The content area is the object panel's drawer content, so the panel opens over it (design system spec 4.4). */}
-      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
+      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'Home' : route.name === 'search' ? 'Search' : 'Objects'}>
         <ObjectDrawer>
           {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
           {!frontIsPage && route.name === 'todo' && <TodoView />}

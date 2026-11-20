@@ -13,7 +13,7 @@ async function actAs(page: Page, person: string) {
 test('add a study concept inside a program, then edit it', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await actAs(page, 'Nadia Haddad');
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /^Programs/ }).click();
   await page.getByText('Velcorin in immune-mediated inflammatory disease').first().click();
@@ -46,7 +46,7 @@ test('add a study concept inside a program, then edit it', async ({ page }) => {
 test('offers New on a list the person may create, and no Edit on an approved protocol', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await actAs(page, 'Ben Okafor');
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /^Protocols/ }).click();
   await expect(page.getByRole('main').getByRole('button', { name: 'New Protocol' })).toBeVisible();

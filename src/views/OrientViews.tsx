@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
 import type { ViewNode } from '../design-system/catalog';
-import type { AskResult, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
+import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useChat } from '../chat/ChatProvider';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
@@ -204,11 +204,17 @@ export function TodoView() {
     const task = [...(item?.tasks ?? []), ...(item?.actions ?? [])].find((t) => t.method === method);
     return item && task && { object: item.object, method: task };
   });
+  const [home, setHome] = useState<HomeView>();
   const runs = useActiveRuns([processes.changes, changes]);
   useEffect(() => {
     let cancelled = false;
     setItems(undefined);
-    client.todo(principal).then((i) => !cancelled && setItems(i));
+    // Home: To do, and the person's world and keeping up beside it (platform spec 5.1, Home).
+    Promise.all([client.todo(principal), client.home(principal)]).then(([i, h]) => {
+      if (cancelled) return;
+      setHome(h);
+      setItems(i);
+    });
     return () => {
       cancelled = true;
     };
@@ -217,7 +223,7 @@ export function TodoView() {
   const today = useMemo(() => new Date(), [items]);
   const shown = useMemo(() => (items ?? []).filter((i) => matchesFilter(i, filter, today)).map((i) => i.object), [items, filter, today]);
   const list = useObjectList(shown);
-  const view = items ? buildTodoView(items, { name, role: roleLabel }, processes.notice, runs, { filter, today, controls: list.controls }) : loadingView;
+  const view = items ? buildTodoView(items, { name, role: roleLabel }, processes.notice, runs, { filter, today, controls: list.controls, ...(home ? { home } : {}) }) : loadingView;
   return (
     <>
       <ViewRenderer

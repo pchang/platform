@@ -178,6 +178,18 @@ describe('rules and roles', () => {
   });
 });
 
+describe('Home metrics (platform spec 5.1, Home)', () => {
+  it('count a type by values of its own state dimensions, and roles watch only metrics', () => {
+    expect(q(`SELECT ?m WHERE { ?m a p:Metric FILTER NOT EXISTS { ?m rdfs:label ?l ; rdfs:comment ?c ; p:metricOf ?t . ?t a p:ObjectType } }`)).toEqual([]);
+    const strays = q(`SELECT ?m ?v WHERE { ?m a p:Metric ; p:metricOf ?t ; p:inState ?v
+      FILTER NOT EXISTS { ?d p:dimensionOf ?t ; p:valuesFrom ?s . ?v skos:inScheme ?s } }`);
+    expect(strays).toEqual([]);
+    expect(q(`SELECT ?m WHERE { ?m p:pastDue ?p ; p:metricOf ?t FILTER NOT EXISTS { ?shape sh:targetClass ?t ; sh:property ?ps . ?ps sh:path ?p ; sh:datatype xsd:date } }`)).toEqual([]);
+    expect(q(`SELECT ?r WHERE { ?r p:watches ?m FILTER NOT EXISTS { ?m a p:Metric } }`)).toEqual([]);
+    expect(q(`SELECT ?r WHERE { ?r a p:Role FILTER NOT EXISTS { ?r p:watches ?m } }`)).toEqual([]);
+  });
+});
+
 describe('agrees with the domain spec', () => {
   const spec = readFileSync(join(import.meta.dirname, '../../spec/domain-life-sciences.md'), 'utf8');
   const tableRows = (heading: string) => {

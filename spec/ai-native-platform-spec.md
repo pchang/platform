@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.34. November 20, 2026. Author: Paul Chang.
+Version 0.35. November 20, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -62,7 +62,8 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Analysis | Background work the platform computes, such as a disproportionality analysis or a model run, declared in the platform vocabulary with its parameters (section 3.4, Background runs) |
 | Input | What a method needs from the person, declared with its kind. A choice from a concept scheme may take **many values**, such as the measures to simulate; it is sent as its chosen values separated by spaces, and an input's shape may narrow the scheme |
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
-| Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, and what it may not read |
+| Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, the metrics it watches, and what it may not read |
+| Metric | A resource in the platform vocabulary: a count of a type's objects in given states, with its health thresholds (section 5.1, Home) |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
 The platform vocabulary (`ontology/platform.ttl`) adds what SHACL does not describe: methods, inputs, effects, business rules and roles. It is domain-free.
@@ -247,9 +248,18 @@ Every interaction follows the same loop. The platform supports it end to end, fo
 - **Entry types, not every type.** A flat list of every type buries the few objects people start from among the many that only make sense inside another. So navigation lists a domain's entry types. A type is an entry type unless its objects are part of another object: it is the part end of a containment relationship (section 3.1). Contained objects are reached inside the object they belong to, as its tabs (Within an object), and through links, search and To do. Nothing is configured per screen: containment in the ontology decides it.
 - **Types a role works across.** Some roles work through contained objects across many containers, such as a coordinator's patients and visits across a study. A role may name the contained types it works across, and those are entry types for that role. This is part of the role's default permissions, so organizations may vary it like any other.
 
+#### Home
+
+Orient opens on **Home**, each person's homepage. It answers three questions in order: how healthy is my world, how much work do I have, and am I keeping up. Like everything else it is generated from the ontology and the context layer, never designed per role.
+
+- **Your world.** First, the **metrics** the person's roles watch, each with its health. A metric is declared in the ontology, not in code: a count of the objects of one type in given states (values of one dimension are alternatives; dimensions together must all hold), optionally only those past their deadline, with the thresholds at which its health turns from on track to watch and to at risk, and whether more is better. A metric with no thresholds is information only. A role names the metrics it watches (`p:watches`), as defaults each organization may vary like permissions. A metric over a type the person may not read is left out.
+- **Where things stand.** Then, for each type of the person's work (the types their navigation lists, then the types their metrics count) that has a lifecycle and objects, how its objects spread across the lifecycle's stages. It is derived, never declared: the lifecycle is the type's first state dimension that is not classifying (section 5.3), its stages in order.
+- **What needs attention first.** Metrics are shown at risk first, then watch, then on track, then information only.
+- **Your work.** Then the work itself: the To do summary and list below, and how the person is keeping up: what they have done in the last 7 days, their commits and the runs they started, beside what is waiting and overdue.
+
 #### To do
 
-Orient opens on **To do**: the objects where the person has work waiting, as cards. It is generated from the ontology, not designed per role.
+Home's work section lists **To do**: the objects where the person has work waiting, as cards. It is generated from the ontology, not designed per role.
 
 - An object is on the list when the person can run a **task** on it now: a method whose preconditions hold and that their role may run. Methods marked **on demand**, such as running a simulation, are actions a person chooses to take; they do not put an object on the list.
 - An **urgent** object is on the list when the person can run any method on it. State values carry an urgency in the ontology, such as high deviation risk or a serious case.
@@ -497,3 +507,4 @@ To resolve in future versions of this spec.
 | 0.32 | 2026-11-20 | Model runs (section 3.4, Background runs): a background analysis that runs a connected model on an object and what it links to, and commits what it returns; a reference model says so in every result. Inputs may take many values from a concept scheme (section 3.1). |
 | 0.33 | 2026-11-20 | Acting on a set (section 5.4): a set method takes the selection as its one object, offered only when the selection qualifies (type, count, what the objects share, each one's precondition), beside the batch actions. It commits once, on the chosen object, and may change the others; it may declare a comparison read from each object. |
 | 0.34 | 2026-11-20 | Creating and editing objects (section 5.3): Create and Edit are platform methods every type has, permitted by role, never for types that only come through methods. The form asks for the title's properties, the parent and classifying states; lifecycles start at their first value and only methods move them. Frozen objects cannot be edited. New on lists, Add on containing tabs, Edit in the header. |
+| 0.35 | 2026-11-20 | Home (section 5.1): each person's homepage, opening Orient. Their world's health from the metrics their roles watch, declared in the ontology with thresholds; where things stand, derived from each type's lifecycle; then their work, To do, and how they are keeping up. |

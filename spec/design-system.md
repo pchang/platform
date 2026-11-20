@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.45. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.46. November 20, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -95,9 +95,9 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 
 | Position | Content |
 |---|---|
-| Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to To do |
+| Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to Home |
 | Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
-| Sidebar | To do, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
+| Sidebar | Home, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
 
@@ -175,14 +175,20 @@ To do, the list of a type's objects and the search page are object lists (patter
   - The outcome names each object, those changed and those refused, and the choice is cleared.
   - A batch is not set aside in the dock.
 
-**The greeting.** To do opens with a greeting as its main heading, in place of the words "To do": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page To do. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
+**Home** (platform spec 5.1, Home) is each person's homepage, in this order under the greeting: Your world, then Where things stand, then Your work with the To do summary and list. Every section is drawn the same way for every role; only the ontology's metrics and the person's types differ.
+
+- **Your world.** Under the heading "Your world", one tile per metric the person's roles watch, in a gallery: two to a row on phones, four from md up. Each tile is a card with the metric's name, its count large, "of" the type's total in small text beneath when that helps, and its health as a status label with its icon: On track (success), Watch (warning) or At risk (danger). An information-only metric has no label. Status colors are never used for anything else on Home, and the label's word always goes with its color, so health is never told by color alone.
+- **Where things stand.** Under the heading "Where things stand", one row per type: its plural name and total, then a thin segmented bar of its objects by lifecycle stage, then the stages as text, each with its swatch, name and count, such as "draft 3 · in review 1". The bar runs the chart blue ramp from the first stage, step 100, to the last; in dark mode its own steps, from the same ramp against the dark surface. Segments are separated by a 2px surface gap, and the text beside the bar carries every figure, so the bar is never read by color alone. Each bar is an accessible chart, named for its type with its figures in its description. All the bars share one scale, from zero to the largest total, so rows compare.
+- **Your work.** Under the heading "Your work", the To do summary tiles, then a line on keeping up: what the person has done in the last 7 days, such as "You've done 4 things in the last 7 days; 1 item is overdue." Then the To do list.
+
+**The greeting.** Home opens with a greeting as its main heading, in place of the word "Home": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page Home. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
 
 - The time of day comes from the person's own clock: morning from 5:00, afternoon from 12:00, evening from 17:00, and late night from 22:00.
 - Each part of the day has a few greetings, plain or playful, such as "Good evening, Chloé", "Winding down, Chloé?" or "Burning the midnight oil, Chloé?". Some fit a day of the week: "Happy Monday" on a Monday morning, "Happy Friday" on a Friday afternoon, "Weekend shift" on a Saturday or Sunday.
 - Which one shows is chosen by the date, so a part of the day keeps the same greeting all day, and the next day may bring another. It changes only when the part of the day does, never at random while the person works.
 - The greeting is the same in every domain: it names no object or domain.
 
-**The To do summary** sits above the list, under the heading "At a glance", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
+**The To do summary** sits above the list, under the heading "Your work", with the standard gutter between the heading and the tiles, as between any section heading and its content. Four count tiles: waiting, urgent, due within 7 days and overdue, each a number with its name. They are selectable cards that work like one set of radio buttons: choosing urgent, due or overdue narrows the cards to those items, and choosing waiting shows them all again. Two tiles to a row on phones, four from md up.
 
 ### 4.4 The object panel
 
@@ -448,3 +454,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.43 | 2026-11-20 | Set actions in the list bar, before batch actions: the set methods the selection qualifies for, each opening its pattern once for the whole selection. Compare and decide over a set: the objects as columns, the comparison's rows first. |
 | 0.44 | 2026-11-20 | The list bar's shadow shows only once the list has scrolled under it. |
 | 0.45 | 2026-11-20 | New and Add at the end of the list bar, Edit in the object panel's header, and the create and edit form: required fields first, then Optional, as Fill in. |
+| 0.46 | 2026-11-20 | Home replaces To do as each person's homepage: Your world (metric tiles with health), Where things stand (a thin segmented lifecycle bar per type, figures beside it, one shared scale), then Your work (the To do summary, keeping up, the list). |

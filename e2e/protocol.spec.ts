@@ -9,7 +9,7 @@ async function asBen(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
 }
 const panel = (page: Page) => page.locator('.app-object-panel');
 

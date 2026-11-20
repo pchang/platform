@@ -13,7 +13,7 @@ const row = (page: Page, id: string) => page.locator('.app-object-table tbody tr
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await expect(card(page, 'SC-004')).toBeVisible({ timeout: 30_000 });
 }
 

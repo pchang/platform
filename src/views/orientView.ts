@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
+import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
 import { BUILT_ARCHETYPES } from './composeView';
 
@@ -407,7 +408,7 @@ export function buildTodoView(
   who: { name: string; role: string },
   notice?: ViewNode,
   runs: RunView[] = [],
-  options: { filter?: TodoFilter; today?: Date; controls?: ListControls } = {},
+  options: { filter?: TodoFilter; today?: Date; controls?: ListControls; home?: HomeView } = {},
 ): ViewSpec {
   const today = options.today ?? new Date();
   const filter = options.filter ?? 'all';
@@ -419,13 +420,21 @@ export function buildTodoView(
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
-    because: `To do for ${who.name}, ${who.role}: objects with a task they can run now, or urgent objects they can act on`,
+    because: `Home for ${who.name}, ${who.role}: the metrics their role watches, where things stand, and objects with a task they can run now or urgent objects they can act on`,
     root: stack([
       ...(notice ? [[notice]] : []),
       // The greeting is the page's main heading (design system spec 4.3, The greeting).
       header(greeting(who.name, today), summary),
       // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
-      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
+      // Home: the person's world and where things stand, then their work (platform spec 5.1, Home).
+      ...(options.home ? homeSections(options.home) : []),
+      ...(allItems.length || options.home
+        ? [[stack([
+            [{ component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode],
+            ...(allItems.length ? buildSummary(allItems, today).map((n) => [n]) : []),
+            ...(options.home ? [[text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))]] : []),
+          ])]]
+        : []),
       ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'To do'),
     ]),

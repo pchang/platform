@@ -154,7 +154,7 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
 
   it('has no summary when nothing is waiting', () => {
-    expect(JSON.stringify(buildTodoView([], ben))).not.toContain('At a glance');
+    expect(JSON.stringify(buildTodoView([], ben))).not.toContain('Your work');
   });
 });
 

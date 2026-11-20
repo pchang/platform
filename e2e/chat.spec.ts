@@ -11,7 +11,7 @@ const bar = (page: Page) => chat(page).locator('.pf-chatbot__message-bar').getBy
 
 async function openTodo(page: Page, person?: string) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   if (person) {
     await page.getByRole('button', { name: /^Profile/ }).click();
     await page.getByRole('option', { name: new RegExp(`^${person}`) }).click();

@@ -7,7 +7,7 @@ test.setTimeout(120_000);
 test('run a trial simulation on a study scenario and read its forecasts against their targets', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: /^Marcus Bell/ }).click();
   await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Marcus/ })).toBeVisible({ timeout: 30_000 });

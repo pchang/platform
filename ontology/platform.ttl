@@ -121,6 +121,47 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:comment "Counts objects of a type by exposure and outcome. For the target exposure, creates an object for each outcome that is reported disproportionately often compared with every other exposure: at least the minimum count, a proportional reporting ratio of at least the minimum ratio, and a chi-squared statistic with Yates' correction of at least the minimum. An outcome that already has such an object for the target is not created again." ;
   rdfs:subClassOf p:Analysis .
 
+p:Metric a rdfs:Class ;
+  rdfs:label "metric" ;
+  rdfs:comment "A count of the objects of one type in given states, with the thresholds at which its health turns from on track to watch and at risk (platform spec 5.1, Home)." .
+
+p:watches a rdf:Property ;
+  rdfs:label "watches" ;
+  rdfs:comment "A metric the role watches on Home." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Metric .
+
+p:metricOf a rdf:Property ;
+  rdfs:label "metric of" ;
+  rdfs:comment "The object type a metric counts." ;
+  rdfs:domain p:Metric ;
+  rdfs:range p:ObjectType .
+
+p:inState a rdf:Property ;
+  rdfs:label "in state" ;
+  rdfs:comment "A state value the counted objects have. Values of one dimension are alternatives; dimensions together must all hold." ;
+  rdfs:domain p:Metric .
+
+p:pastDue a rdf:Property ;
+  rdfs:label "past due" ;
+  rdfs:comment "A date property: only objects whose date is before today are counted." ;
+  rdfs:domain p:Metric .
+
+p:watchAt a rdf:Property ;
+  rdfs:label "watch at" ;
+  rdfs:comment "The count at which the metric's health turns to watch: at or above it, or at or below it when more is better." ;
+  rdfs:domain p:Metric .
+
+p:riskAt a rdf:Property ;
+  rdfs:label "at risk at" ;
+  rdfs:comment "The count at which the metric's health turns to at risk." ;
+  rdfs:domain p:Metric .
+
+p:moreIsBetter a rdf:Property ;
+  rdfs:label "more is better" ;
+  rdfs:comment "True when a higher count is healthier, so the thresholds are minimums." ;
+  rdfs:domain p:Metric .
+
 p:PlatformMethod a rdfs:Class ;
   rdfs:label "platform method" ;
   rdfs:comment "A method every object type has, declared once here rather than in each domain, such as Create and Edit (platform spec 5.3, Creating and editing objects)." .

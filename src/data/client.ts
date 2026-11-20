@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, Obj
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, FormField, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -43,6 +43,8 @@ export interface GatewayClient {
   people(): Promise<Person[]>;
   navigation(principal: Principal): Promise<NavigationDomain[]>;
   todo(principal: Principal): Promise<ToDoItem[]>;
+  /** Each person's homepage: their world's health, where things stand, and how they are keeping up (platform spec 5.1, Home). */
+  home(principal: Principal): Promise<HomeView>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
