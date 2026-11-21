@@ -50,7 +50,14 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await row.click();
   await expect(page.getByRole('heading', { level: 1, name: 'Data Queries' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('main').getByText('8 objects.')).toBeVisible();
-  // The sidebar's Home returns.
+  // The list begins with a way back to Home, above its heading; the sidebar's Home returns too.
+  const back = page.getByRole('link', { name: 'Back to Home' });
+  await expect(back).toHaveAttribute('href', '#/');
+  expect((await back.boundingBox())!.y).toBeLessThan((await page.getByRole('heading', { level: 1, name: 'Data Queries' }).boundingBox())!.y);
+  await back.click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Where things stand' })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Data Queries' }).click();
+  await expect(page.getByRole('link', { name: 'Back to Home' })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Where things stand' })).toBeVisible({ timeout: 30_000 });
 });

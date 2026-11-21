@@ -63,6 +63,12 @@ describe('the list bar (design system spec 4.3)', () => {
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
   });
 
+  it('begins a type’s list with a Back to Home link above the heading', () => {
+    const json = JSON.stringify(buildTypeView('Safety Cases', cases, { methods, controls: controls() }));
+    expect(json).toContain('"label":"Back to Home","variant":"link","icon":"arrow-left","isInline":true},"goes":"home"');
+    expect(json.indexOf('Back to Home')).toBeLessThan(json.indexOf('"label":"Safety Cases"'));
+  });
+
   it('leaves New out of the bar while objects are chosen, and keeps it otherwise (design system spec 4.3)', () => {
     const create = { type: 'urn:SC', typeLabel: 'Safety Case', verb: 'New' as const };
     const offered = (selected: string[]) => JSON.stringify(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(selected), create }) })).includes('"creates"');

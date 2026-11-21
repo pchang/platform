@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
 import { group, sections } from './layout';
+import { backToHome } from './homeView';
 import { MAX_ABOUT } from '../gateway/ask';
 import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
@@ -487,7 +488,8 @@ export function buildTypeView(
     because: `The ${pluralLabel.toLowerCase()} the person may read, with the methods they can run on each now`,
     root: sections([
       ...(options.notice ? [options.notice] : []),
-      header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`),
+      // The way back to Home stands a little above the heading, as on a metric's page (design system spec 4.3, Home).
+      group([backToHome, header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`)], 'gapMd'),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };

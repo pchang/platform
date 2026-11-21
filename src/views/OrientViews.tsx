@@ -346,7 +346,7 @@ export function TypeView({ type }: { type: string }) {
     <>
       <ViewRenderer
         view={view}
-        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout, homeHref: routeHref({ name: 'todo' }) }}
       />
       {list.dialog}
     </>
