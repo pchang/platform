@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.53. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.54. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -95,13 +95,21 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 
 | Position | Content |
 |---|---|
-| Masthead, left | A menu button that opens and closes the sidebar, then the text-based logo: the product name, set in configuration. The logo links to Home |
+| Masthead, left | A menu button that opens and closes the sidebar, then the logo, which links to Home: the brand's own mark and wordmark, as image files set in configuration (see Brand logo, below); where none are configured, or a file cannot be loaded, the product name as text |
 | Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | Home, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
 
 All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem. On a phone, where the actions leave little room, the name wraps onto a second line, "LS&H" over "Ecosystem", before it is ever cut short with an ellipsis.
+
+**Brand logo.** A branded deployment shows its parent brand's own artwork, a mark and a wordmark, in the masthead in place of the product name as text.
+
+- **The files are the brand's, never ours.** The mark and the wordmark are the brand's approved SVG files, kept in `public/brand/` and named in `src/config/product.ts`. The platform never typesets the brand's lettering in its own typeface, redraws its mark, recolors it, or stretches it. A deployment that has no approved files shows the product name as text.
+- **Lockup.** The mark first, then the wordmark, centered on the menu button's line, with a gap of 8px between them. The mark is 28px high, and the wordmark's cap height matches the product name's text size. Both are sized by height, so their proportions never change. The wordmark carries the product name as its alternative text; the mark is decorative, with an empty one, so the link's accessible name is the product name and is not read twice.
+- **Light and dark.** Each file may have a dark variant, `-dark` before the extension, shown in dark mode; with none, the one file is shown in both. The brand's files are chosen to hold their contrast on the masthead's surface in both modes.
+- **Phones.** At 320px the lockup shares the masthead with the menu button and four icon buttons, so it fits in about 87px: the mark and a short wordmark such as "LS&H" fit; a longer one scales down by height, never wrapping.
+- **Falls back, never breaks.** If either file cannot be loaded, the lockup is replaced by the product name as text (4.1), so the masthead never shows a broken image. The sign-in page and the chat keep the product name as text.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
@@ -491,3 +499,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.51 | 2026-11-21 | Your world: a metric tile that counts objects is clickable as a whole, its title the link, in place of a View link. |
 | 0.52 | 2026-11-21 | Profile: choosing another person or role opens their Home, so no one is left on a page that does not apply to them. |
 | 0.53 | 2026-11-21 | Spacing and grouping (new section 4.5): three distances, group, peers and section, so headings sit nearer what they head; a legend close to its bar; metric tile labels aligned along a row; optical alignment of a lone icon button; fair targets for checkboxes and radios. On phones, wrapping instead of clipping: dialog titles and buttons, list bars, the product name over two lines, even menu margins, stacked radios, a thin object panel head; a list bar that drops its stranded divider and its New and Add while objects are chosen; denser cards in the chat for the chosen. |
+| 0.54 | 2026-11-21 | Brand logo (4.1): a branded deployment's masthead shows the parent brand's own mark and wordmark as approved image files named in configuration, with light and dark variants, never redrawn or retyped, falling back to the product name as text when none are configured or a file cannot load. |

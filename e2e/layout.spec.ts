@@ -17,9 +17,16 @@ const sidewaysScroll = (page: Page) => page.evaluate(() => document.documentElem
 
 test('at 320px no page scrolls sideways, and the product name is whole over two lines', async ({ page }) => {
   await start(page, 'Ben Okafor');
+  // The logo is whole: the product name as text, over two lines at most and not clipped, or the brand's images inside the masthead.
+  const logo = page.locator('.app-masthead__brand a');
+  await expect(logo).toHaveAccessibleName('LS&H Ecosystem');
   const name = page.locator('.app-masthead__name');
-  expect(await name.evaluate((e) => e.scrollHeight <= e.clientHeight + 1)).toBe(true);
-  expect(await name.evaluate((e) => e.textContent)).toBe('LS&H Ecosystem');
+  if (await name.count()) expect(await name.evaluate((e) => e.scrollHeight <= e.clientHeight + 1)).toBe(true);
+  else {
+    const box = (await logo.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320);
+  }
   for (const route of ['#/', '#/metric/Metric-OpenDataQueries', '#/type/DataQuery', '#/type/Visit', '#/catalog', '#/search/open%20queries']) {
     await page.goto(`/${route}`);
     await page.waitForTimeout(800);

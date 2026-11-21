@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,6 +52,32 @@ describe('AppMasthead', () => {
     render(<Masthead />);
     const logo = await screen.findByRole('link', { name: product.name });
     expect(logo).toHaveAttribute('href', product.homeHref);
+  });
+
+  it('shows the brand’s mark, then its wordmark, as images: the wordmark names the product and the mark is decorative', async () => {
+    const { container } = render(<Masthead />);
+    const link = await screen.findByRole('link', { name: product.name });
+    const images = [...link.querySelectorAll('img')];
+    // The mark first, then the wordmark; each with a dark variant shown in dark mode.
+    const mark = images.filter((i) => i.classList.contains('app-brand__mark'));
+    const wordmark = images.filter((i) => i.classList.contains('app-brand__wordmark'));
+    expect(mark.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.mark.light}`, `/${product.logo.mark.dark}`]);
+    expect(wordmark.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.wordmark.light}`, `/${product.logo.wordmark.dark}`]);
+    expect(mark.every((i) => i.getAttribute('alt') === '')).toBe(true);
+    expect(wordmark[0]).toHaveAttribute('alt', product.name);
+    expect(wordmark[1]).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('.app-masthead__name')).toBeNull();
+    // The link reads once, as the product name.
+    expect(screen.getAllByRole('link', { name: product.name })).toHaveLength(1);
+  });
+
+  it('falls back to the product name as text when a brand file cannot be loaded, never a broken image', async () => {
+    const { container } = render(<Masthead />);
+    const link = await screen.findByRole('link', { name: product.name });
+    fireEvent.error(link.querySelector('img.app-brand__mark')!);
+    expect(container.querySelectorAll('.app-brand img')).toHaveLength(0);
+    expect(container.querySelector('.app-masthead__name')).toHaveTextContent(product.name);
+    expect(await screen.findByRole('link', { name: product.name })).toHaveAttribute('href', product.homeHref);
   });
 
   it('draws the menu button as two lines, and says whether the sidebar is open', async () => {

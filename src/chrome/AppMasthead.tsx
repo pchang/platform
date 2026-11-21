@@ -12,6 +12,7 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core';
+import { useState } from 'react';
 import AttentionBellIcon from '@patternfly/react-icons/dist/esm/icons/attention-bell-icon';
 import BellIcon from '@patternfly/react-icons/dist/esm/icons/bell-icon';
 import CommentsIcon from '@patternfly/react-icons/dist/esm/icons/comments-icon';
@@ -21,6 +22,34 @@ import { ProfileMenu } from './ProfileMenu';
 import { MenuIcon } from './MenuIcon';
 import { SettingsMenu } from './SettingsMenu';
 import './AppMasthead.css';
+
+/** One brand image, with its dark variant shown in dark mode when it has one (design system spec 4.1, Brand logo). */
+function BrandImage({ image, alt, className, onError }: { image: { light: string; dark?: string }; alt: string; className: string; onError: () => void }) {
+  const src = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+  return (
+    <>
+      <img src={src(image.light)} alt={alt} className={`${className}${image.dark ? ' app-brand__light' : ''}`} onError={onError} />
+      {image.dark && <img src={src(image.dark)} alt="" aria-hidden="true" className={`${className} app-brand__dark`} onError={onError} />}
+    </>
+  );
+}
+
+/**
+ * The logo: the parent brand's mark, then its wordmark, as the brand's own files. The wordmark names the product, and the
+ * mark is decorative, so the link reads once. The product name as text stands in until the files are there, or if
+ * either cannot be loaded (design system spec 4.1, Brand logo).
+ */
+function BrandLogo() {
+  const [failed, setFailed] = useState(false);
+  const { logo } = product;
+  if (failed) return <span className="app-masthead__name">{product.name}</span>;
+  return (
+    <span className="app-brand">
+      <BrandImage image={logo.mark} alt="" className="app-brand__mark" onError={() => setFailed(true)} />
+      <BrandImage image={logo.wordmark} alt={product.name} className="app-brand__wordmark" onError={() => setFailed(true)} />
+    </span>
+  );
+}
 
 /**
  * Platform chrome (design system spec, section 4.1): the sidebar's menu button and the text logo on the left;
@@ -52,7 +81,7 @@ export function AppMasthead({
         </MastheadToggle>
         <MastheadBrand className="app-masthead__brand">
           <MastheadLogo href={product.homeHref} className="app-masthead__logo">
-            <span className="app-masthead__name">{product.name}</span>
+            <BrandLogo />
           </MastheadLogo>
         </MastheadBrand>
       </MastheadMain>

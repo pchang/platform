@@ -82,3 +82,38 @@
     transition: none;
   }
 }
+
+/*
+ * The brand's logo (design system spec 4.1, Brand logo): its mark, then its wordmark, as the brand's own image files,
+ * sized by height so their proportions never change, centered on the menu button's line.
+ */
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  min-width: 0;
+}
+.app-brand__mark {
+  block-size: calc(var(--pf-t--global--spacer--lg) + var(--pf-t--global--spacer--xs));
+  inline-size: auto;
+  flex: none;
+}
+.app-brand__wordmark {
+  block-size: calc(var(--pf-t--global--font--size--body--lg) * 1.25);
+  inline-size: auto;
+  /* On the narrowest phone a long wordmark scales down inside its box rather than wrapping or pushing the actions. */
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  object-fit: contain;
+  object-position: left center;
+}
+/* The dark variant of each file shows in dark mode, the light one otherwise. */
+.app-brand__dark {
+  display: none;
+}
+.pf-v6-theme-dark .app-brand__light {
+  display: none;
+}
+.pf-v6-theme-dark .app-brand__dark {
+  display: block;
+}
