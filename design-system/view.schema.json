@@ -138,7 +138,7 @@
         "shows": {
           "type": "string",
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
-          "description": "A metric whose objects a Button shows on a page of their own; the Button is a link to that page (platform spec 5.1, Home; design system 4.3)."
+          "description": "A metric whose objects a Card or Button shows on a page of their own: a Card is chosen anywhere to go there, its title the link; a Button is a link (platform spec 5.1, Home; design system 4.3)."
         }
       }
     }

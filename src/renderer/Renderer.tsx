@@ -205,6 +205,8 @@ function ActionsMenu({ node, host }: { node: ViewNode; host: RenderHost }) {
 
 /** The object the Card being drawn opens, so its title can be the card's button. */
 const OpensContext = createContext<string | undefined>(undefined);
+/** The address of the page a card shows, such as a metric's objects, for its title's link (design system spec 4.3, Home). */
+const ShowsContext = createContext<string | undefined>(undefined);
 
 /** Clicks on these, inside an openable card, do their own thing and do not open the card's object. */
 const INTERACTIVE = 'button, a, input, select, textarea, label, [role="tab"], [role="radio"], [role="checkbox"]';
@@ -240,6 +242,31 @@ function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
         </Card>
       </SelectContext.Provider>
     </OpensContext.Provider>
+  );
+}
+
+/**
+ * A card that shows a page of its own, such as a metric tile opening the objects it counts (design system spec 4.3, Home):
+ * choosing it anywhere goes there, and its title is the link, so it can be reached by keyboard and opened in a new tab.
+ */
+function ShowingCard({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const href = host.metricHref!(node.shows!);
+  const { Card } = library;
+  const onClick = (event: MouseEvent<HTMLElement>) => {
+    const control = (event.target as HTMLElement).closest(INTERACTIVE);
+    if (control && event.currentTarget.contains(control)) return;
+    if (window.getSelection()?.toString()) return;
+    if (event.metaKey || event.ctrlKey) window.open(href, '_blank', 'noopener');
+    else window.location.assign(href);
+  };
+  return (
+    <ShowsContext.Provider value={href}>
+      <Card {...(node.props ?? {})} className="app-openable-card" onClick={onClick}>
+        {(node.children ?? []).map((child, i) => (
+          <Node key={i} node={child} host={host} />
+        ))}
+      </Card>
+    </ShowsContext.Provider>
   );
 }
 
@@ -439,11 +466,13 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   const generatedId = useId();
   const groupId = useContext(FieldIdContext);
   const opens = useContext(OpensContext);
+  const shows = useContext(ShowsContext);
   const select = useContext(SelectContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
   if (entry.id === 'Chart') return <ChartFrame node={node} />;
   if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
+  if (entry.id === 'Card' && node.shows && host.metricHref) return <ShowingCard node={node} host={host} />;
   if (entry.id === 'Card' && (node.opens || node.selects)) return <OpenableCard node={node} host={host} />;
   if (entry.id === 'Table') return <ObjectTable node={node} host={host} />;
   if (entry.id === 'Tr') return <TableRow node={node} host={host} />;
@@ -584,6 +613,16 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const Button = library.Button;
     content = (
       <Button variant="link" isInline className="app-card-open" onClick={(event: MouseEvent<HTMLElement>) => host.onOpen?.(opens, event.currentTarget.closest<HTMLElement>('.app-openable-card') ?? undefined)}>
+        {content}
+      </Button>
+    );
+  }
+
+  // In a card that shows a page, the title is the link to it.
+  if (entry.id === 'CardTitle' && shows && content !== undefined) {
+    const Button = library.Button;
+    content = (
+      <Button variant="link" isInline component="a" href={shows} className="app-card-open">
         {content}
       </Button>
     );

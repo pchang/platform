@@ -13,9 +13,12 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Ben/ })).toBeVisible({ timeout: 30_000 });
   for (const heading of ['Your world', 'Where things stand', 'Your work']) await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible();
 
-  const link = page.getByRole('link', { name: 'View 3: open data queries' });
-  await expect(link).toHaveAttribute('href', '#/metric/Metric-OpenDataQueries');
-  await link.click();
+  // No View link: the tile is chosen as a whole, and its title is the link.
+  await expect(page.getByRole('link', { name: /^View \d/ })).toHaveCount(0);
+  const tile = page.locator('.app-openable-card').filter({ has: page.getByRole('heading', { level: 3, name: 'Open data queries' }) });
+  await expect(tile.getByRole('link', { name: 'Open data queries' })).toHaveAttribute('href', '#/metric/Metric-OpenDataQueries');
+  // Choosing the card away from its title opens the page.
+  await tile.getByText('of 8 data queries').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Open data queries' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('3 of 8 data queries.')).toBeVisible();
   await expect(page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'Data Query' })).toHaveCount(3);

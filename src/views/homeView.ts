@@ -26,6 +26,8 @@ function metricTile(m: HomeView['metrics'][number]): ViewNode {
       {
         component: 'Card',
         props: { isFullHeight: true, isCompact: true },
+        // The whole tile opens the objects it counts, when it counts any (platform spec 5.1, From a metric to its objects).
+        ...(m.count ? { shows: m.metric } : {}),
         children: [
           { component: 'CardTitle', props: { label: m.label, component: 'h3' } },
           {
@@ -34,8 +36,6 @@ function metricTile(m: HomeView['metrics'][number]): ViewNode {
               stack([
                 [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${m.total} ${m.pluralLabel.toLowerCase()}`, 'small')],
                 ...(health ? [[{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }]] : []),
-                // From the number to the work behind it (platform spec 5.1, Home, From a metric to its objects).
-                ...(m.count ? [[{ component: 'Button', props: { label: `View ${m.count}`, 'aria-label': `View ${m.count}: ${m.label.toLowerCase()}`, variant: 'link', isInline: true }, shows: m.metric } as ViewNode]] : []),
               ]),
             ],
           },

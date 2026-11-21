@@ -49,7 +49,7 @@ export interface ViewNode {
   within?: string;
   /** An object a Button opens the edit form for (platform spec 5.3). */
   edits?: string;
-  /** A metric whose objects a Button shows on a page of their own, as a link (platform spec 5.1, Home). */
+  /** A metric whose objects a Card or Button shows on a page of their own, as a link (platform spec 5.1, Home). */
   shows?: string;
   children?: ViewNode[];
 }

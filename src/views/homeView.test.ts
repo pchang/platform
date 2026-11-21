@@ -42,7 +42,9 @@ describe('Home view', () => {
     const g = withSeed([], { now });
     const ben = as('person-ben', 'ClinicalDataManager');
     const json = JSON.stringify(buildTodoView(await g.todo(ben), { name: 'Ben Okafor', role: 'Clinical Data Manager' }, undefined, [], { home: g.home(ben), today: now() }));
-    expect(json).toContain('"label":"View 3","aria-label":"View 3: open data queries","variant":"link","isInline":true},"shows":"https://w3id.org/lsh-platform/life-sciences#Metric-OpenDataQueries"');
+    // The whole tile shows its objects; there is no View link.
+    expect(json).toContain('"component":"Card","props":{"isFullHeight":true,"isCompact":true},"shows":"https://w3id.org/lsh-platform/life-sciences#Metric-OpenDataQueries"');
+    expect(json).not.toContain('"label":"View 3"');
     // A metric that counts nothing has nothing to open.
     const marcus = as('person-marcus', 'ClinicalOperationsLead');
     expect(JSON.stringify(buildTodoView([], { name: 'Marcus Bell', role: 'Clinical Operations Lead' }, undefined, [], { home: g.home(marcus), today: now() }))).not.toContain('Metric-BudgetsOverCeiling"');
