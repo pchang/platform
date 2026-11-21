@@ -241,6 +241,8 @@ export function TodoView() {
           onOpen: panel.open, onAsk: chat.askAbout,
           // A metric tile links to its objects' own page (platform spec 5.1, Home).
           metricHref: (metric) => routeHref({ name: 'metric', metric }),
+          // A Where things stand row links to its type's list (design system spec 4.3, Home).
+          typeHref: (type) => routeHref({ name: 'type', type }),
         }}
       />
       {list.dialog}

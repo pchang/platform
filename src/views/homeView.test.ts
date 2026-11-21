@@ -61,6 +61,18 @@ describe('Home view', () => {
     expect(JSON.stringify(page).indexOf('Back to Home')).toBeLessThan(JSON.stringify(page).indexOf('"label":"Open data queries"'));
   });
 
+  it('links each Where things stand row’s name to that type’s list of objects', async () => {
+    const g = withSeed([], { now });
+    const ben = as('person-ben', 'ClinicalDataManager');
+    const home = g.home(ben);
+    const view = buildTodoView(await g.todo(ben), { name: 'Ben Okafor', role: 'Clinical Data Manager' }, undefined, [], { home, today: now() });
+    expect(validateView(view).errors).toEqual([]);
+    const json = JSON.stringify(view);
+    for (const l of home.lifecycles) expect(json, l.pluralLabel).toContain(`{"component":"Title","props":{"label":"${l.pluralLabel}","headingLevel":"h3","size":"md"},"lists":"${l.type}"}`);
+    // Only a heading or a button may list a type.
+    expect(validateView({ pattern: 'card-view', because: 'x', root: { component: 'Card', lists: 'ls:Visit' } }).errors.join(' ')).toContain('only a Button or a Title lists a type');
+  });
+
   it('runs the blue ramp from the first stage to the last', () => {
     expect([0, 1, 2, 3, 4].map((i) => rampStep(i, 5))).toEqual([100, 200, 300, 400, 500]);
     expect([0, 1, 2].map((i) => rampStep(i, 3))).toEqual([100, 300, 500]);

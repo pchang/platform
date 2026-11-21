@@ -49,6 +49,8 @@ export interface ViewNode {
   within?: string;
   /** An object a Button opens the edit form for (platform spec 5.3). */
   edits?: string;
+  /** A type whose objects a Title or Button lists on a page of their own, as a link (design system spec 4.3, Home). */
+  lists?: string;
   /** A place in the app a Button goes to, as a link, such as Back to Home (design system spec 4.3, Home). */
   goes?: 'home';
   /** A metric whose objects a Card or Button shows on a page of their own, as a link (platform spec 5.1, Home). */

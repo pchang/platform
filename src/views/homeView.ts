@@ -69,7 +69,7 @@ function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode 
     {
       component: 'Flex',
       props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsBaseline' }, flexWrap: { default: 'wrap' } },
-      children: [{ component: 'Title', props: { label: l.pluralLabel, headingLevel: 'h3', size: 'md' } }, text(`${l.total}, by ${l.dimension.toLowerCase()}`, 'small')],
+      children: [{ component: 'Title', props: { label: l.pluralLabel, headingLevel: 'h3', size: 'md' }, lists: l.type }, text(`${l.total}, by ${l.dimension.toLowerCase()}`, 'small')],
     },
     {
       component: 'Chart',

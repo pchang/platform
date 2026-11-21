@@ -135,6 +135,11 @@
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
           "description": "A graph object a Button opens the edit form for (platform spec 5.3; design system 4.4)."
         },
+        "lists": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A type whose objects a Title or Button lists on a page of their own; a Title's text is the link, a Button is a link (design system 4.3, Home)."
+        },
         "goes": {
           "enum": ["home"],
           "description": "A place in the app a Button goes to, as a link: Home. Used for Back (design system 4.3, Home)."

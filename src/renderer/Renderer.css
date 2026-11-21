@@ -45,3 +45,18 @@
     position: static;
   }
 }
+
+/*
+ * A heading that is a link to a list carries a small chevron, so it reads as a link at rest (design system spec 4.3, Home).
+ * It sits on the label's text: the button's own ::after is its border. The chevron is decoration, never read out.
+ */
+.app-title-link .pf-v6-c-button__text::after {
+  content: '\203A' / '';
+  margin-inline-start: var(--pf-t--global--spacer--xs);
+  color: var(--pf-t--global--text--color--subtle);
+  display: inline-block;
+}
+.app-title-link:hover .pf-v6-c-button__text::after,
+.app-title-link:focus-visible .pf-v6-c-button__text::after {
+  color: var(--pf-t--global--text--color--link--default);
+}

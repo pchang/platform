@@ -41,6 +41,8 @@ export interface RenderHost {
   onEdit?: (object: string) => void;
   /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
   metricHref?: (metric: string) => string;
+  /** Where a Title or Button that lists a type links (view spec `lists`, design system spec 4.3, Home). */
+  typeHref?: (type: string) => string;
   /** Where a Button that goes to Home links (view spec `goes`, design system spec 4.3, Home). */
   homeHref?: string;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
@@ -598,6 +600,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     props.component = 'a';
     props.href = host.metricHref(node.shows);
   }
+  if (entry.id === 'Button' && node.lists && host.typeHref) {
+    props.component = 'a';
+    props.href = host.typeHref(node.lists);
+  }
   if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
     props.component = 'a';
     props.href = host.homeHref;
@@ -619,6 +625,16 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const Button = library.Button;
     content = (
       <Button variant="link" isInline className="app-card-open" onClick={(event: MouseEvent<HTMLElement>) => host.onOpen?.(opens, event.currentTarget.closest<HTMLElement>('.app-openable-card') ?? undefined)}>
+        {content}
+      </Button>
+    );
+  }
+
+  // A heading that lists a type is a link to that list, set as the heading it is (design system spec 4.3, Home).
+  if (entry.id === 'Title' && node.lists && host.typeHref && content !== undefined) {
+    const Button = library.Button;
+    content = (
+      <Button variant="link" isInline component="a" href={host.typeHref(node.lists)} className="app-card-open app-title-link">
         {content}
       </Button>
     );

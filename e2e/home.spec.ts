@@ -36,3 +36,21 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   await page.getByRole('link', { name: 'Back to Home' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Your world' })).toBeVisible({ timeout: 30_000 });
 });
+
+test('each Where things stand row links to its type’s list of objects, and back', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: /^Profile/ }).click();
+  await page.getByRole('option', { name: /^Ben Okafor/ }).click();
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Ben/ })).toBeVisible({ timeout: 30_000 });
+  // The row's name is a heading and a link, to the same page as the sidebar's entry for it.
+  const row = page.getByRole('heading', { level: 3, name: 'Data Queries', exact: true }).getByRole('link', { name: 'Data Queries', exact: true });
+  await expect(row).toHaveAttribute('href', '#/type/DataQuery');
+  await row.click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Data Queries' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('main').getByText('8 objects.')).toBeVisible();
+  // The sidebar's Home returns.
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Where things stand' })).toBeVisible({ timeout: 30_000 });
+});
