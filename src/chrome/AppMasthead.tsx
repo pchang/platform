@@ -23,21 +23,21 @@ import { MenuIcon } from './MenuIcon';
 import { SettingsMenu } from './SettingsMenu';
 import './AppMasthead.css';
 
-/** One brand image, with its dark variant shown in dark mode when it has one (design system spec 4.1, Brand logo). */
-function BrandImage({ image, alt, className, onError }: { image: { light: string; dark?: string }; alt: string; className: string; onError: () => void }) {
+/** The brand's mark, with its dark variant shown in dark mode when it has one (design system spec 4.1, Brand logo). */
+function BrandMark({ image, onError }: { image: { light: string; dark?: string }; onError: () => void }) {
   const src = (file: string) => `${import.meta.env.BASE_URL}${file}`;
   return (
     <>
-      <img src={src(image.light)} alt={alt} className={`${className}${image.dark ? ' app-brand__light' : ''}`} onError={onError} />
-      {image.dark && <img src={src(image.dark)} alt="" aria-hidden="true" className={`${className} app-brand__dark`} onError={onError} />}
+      <img src={src(image.light)} alt="" className={`app-brand__mark${image.dark ? ' app-brand__light' : ''}`} onError={onError} />
+      {image.dark && <img src={src(image.dark)} alt="" aria-hidden="true" className="app-brand__mark app-brand__dark" onError={onError} />}
     </>
   );
 }
 
 /**
- * The logo: the parent brand's mark, then its wordmark, as the brand's own files. The wordmark names the product, and the
- * mark is decorative, so the link reads once. The product name as text stands in until the files are there, or if
- * either cannot be loaded (design system spec 4.1, Brand logo).
+ * The logo: the parent brand's mark, then the product's short name as text. The link is named for the whole product, which
+ * begins with the visible short name. The product name as text stands in until the mark's file is there, or if it cannot be
+ * loaded (design system spec 4.1, Brand logo).
  */
 function BrandLogo() {
   const [failed, setFailed] = useState(false);
@@ -45,8 +45,8 @@ function BrandLogo() {
   if (failed) return <span className="app-masthead__name">{product.name}</span>;
   return (
     <span className="app-brand">
-      <BrandImage image={logo.mark} alt="" className="app-brand__mark" onError={() => setFailed(true)} />
-      <BrandImage image={logo.wordmark} alt={product.name} className="app-brand__wordmark" onError={() => setFailed(true)} />
+      <BrandMark image={logo.mark} onError={() => setFailed(true)} />
+      <span className="app-brand__wordmark">{logo.shortName}</span>
     </span>
   );
 }
@@ -80,7 +80,7 @@ export function AppMasthead({
           <PageToggleButton isSidebarOpen={isSidebarOpen} onSidebarToggle={onSidebarToggle} aria-label="Navigation" className="app-menu-toggle" icon={<MenuIcon />} />
         </MastheadToggle>
         <MastheadBrand className="app-masthead__brand">
-          <MastheadLogo href={product.homeHref} className="app-masthead__logo">
+          <MastheadLogo href={product.homeHref} className="app-masthead__logo" aria-label={product.name}>
             <BrandLogo />
           </MastheadLogo>
         </MastheadBrand>

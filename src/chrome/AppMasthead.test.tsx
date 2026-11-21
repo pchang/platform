@@ -54,20 +54,19 @@ describe('AppMasthead', () => {
     expect(logo).toHaveAttribute('href', product.homeHref);
   });
 
-  it('shows the brand’s mark, then its wordmark, as images: the wordmark names the product and the mark is decorative', async () => {
+  it('shows the brand’s mark, then the short name as text; the link is named for the whole product and begins with what is seen', async () => {
     const { container } = render(<Masthead />);
     const link = await screen.findByRole('link', { name: product.name });
-    const images = [...link.querySelectorAll('img')];
-    // The mark first, then the wordmark; each with a dark variant shown in dark mode.
-    const mark = images.filter((i) => i.classList.contains('app-brand__mark'));
-    const wordmark = images.filter((i) => i.classList.contains('app-brand__wordmark'));
-    expect(mark.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.mark.light}`, `/${product.logo.mark.dark}`]);
-    expect(wordmark.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.wordmark.light}`, `/${product.logo.wordmark.dark}`]);
-    expect(mark.every((i) => i.getAttribute('alt') === '')).toBe(true);
-    expect(wordmark[0]).toHaveAttribute('alt', product.name);
-    expect(wordmark[1]).toHaveAttribute('aria-hidden', 'true');
+    // The mark first, decorative, with a dark variant shown in dark mode; then the short name as live text.
+    const marks = [...link.querySelectorAll('img.app-brand__mark')];
+    expect(marks.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.mark.light}`, `/${product.logo.mark.dark}`]);
+    expect(marks.every((i) => i.getAttribute('alt') === '')).toBe(true);
+    expect(marks[1]).toHaveAttribute('aria-hidden', 'true');
+    const shortName = link.querySelector('.app-brand__wordmark');
+    expect(shortName).toHaveTextContent(product.logo.shortName);
+    expect(link.querySelector('img')!.compareDocumentPosition(shortName!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(product.name.startsWith(product.logo.shortName)).toBe(true);
     expect(container.querySelector('.app-masthead__name')).toBeNull();
-    // The link reads once, as the product name.
     expect(screen.getAllByRole('link', { name: product.name })).toHaveLength(1);
   });
 
@@ -75,7 +74,7 @@ describe('AppMasthead', () => {
     const { container } = render(<Masthead />);
     const link = await screen.findByRole('link', { name: product.name });
     fireEvent.error(link.querySelector('img.app-brand__mark')!);
-    expect(container.querySelectorAll('.app-brand img')).toHaveLength(0);
+    expect(container.querySelectorAll('.app-brand')).toHaveLength(0);
     expect(container.querySelector('.app-masthead__name')).toHaveTextContent(product.name);
     expect(await screen.findByRole('link', { name: product.name })).toHaveAttribute('href', product.homeHref);
   });
