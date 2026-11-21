@@ -95,9 +95,9 @@ export function ChatPanel() {
    * The object a conversation is about, leading it as an object list's card does: its identifier and type, its title,
    * which opens it, its state, and the methods the person can run on it now, which run as they do anywhere.
    */
-  const aboutCard = ({ object, methods }: ChatAbout, withMethods = true) => {
-    // About several, the cards have no methods: the list's batch actions run on them (design system spec 4.1, About the chosen).
-    const runnable = withMethods ? methods.filter((m) => m.available && BUILT_ARCHETYPES.has(m.archetype.label)) : [];
+  const aboutCard = ({ object, methods }: ChatAbout, one = true) => {
+    // About several, the cards are dense: no methods, which the list's batch actions run, and no state (design system spec 4.1, About the chosen).
+    const runnable = one ? methods.filter((m) => m.available && BUILT_ARCHETYPES.has(m.archetype.label)) : [];
     return (
       <Card key={object.iri} className="app-chat__about" isCompact>
         <CardHeader>
@@ -110,15 +110,17 @@ export function ChatPanel() {
         </CardHeader>
         <CardBody>
           <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
-            <Flex gap={{ default: 'gapSm' }}>
-              {Object.entries(object.state)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([dimension, value]) => (
-                  <FlexItem key={dimension}>
-                    <Label color="grey" variant="outline" isCompact>{`${dimension}: ${value}`}</Label>
-                  </FlexItem>
-                ))}
-            </Flex>
+            {one && (
+              <Flex gap={{ default: 'gapSm' }}>
+                {Object.entries(object.state)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([dimension, value]) => (
+                    <FlexItem key={dimension}>
+                      <Label color="grey" variant="outline" isCompact>{`${dimension}: ${value}`}</Label>
+                    </FlexItem>
+                  ))}
+              </Flex>
+            )}
             {runnable.length > 0 && (
               <>
                 <Content component="small">You can:</Content>
@@ -289,7 +291,7 @@ export function ChatPanel() {
                       {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the objects" />}
                       {chat.about.length === 1 && aboutCard(chat.about[0])}
                       {chat.about.length > 1 && (
-                        <Stack hasGutter className="app-chat__about-many">
+                        <Stack hasGutter className="app-chat__about-many" data-count={chat.about.length}>
                           {chat.about.map((a) => aboutCard(a, false))}
                         </Stack>
                       )}

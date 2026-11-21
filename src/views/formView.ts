@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, FormField, ObjectForm } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import { fieldFor } from './composeView';
+import { dialogBody } from './layout';
 
 /**
  * Creating and editing an object (platform spec 5.3, Creating and editing objects; design system spec 5.1): Fill in, as
@@ -11,7 +12,6 @@ import { fieldFor } from './composeView';
 export type FormPreview = { status: 'incomplete' } | { status: 'checking' } | { status: 'ready'; preview: Omit<CommitResult, 'commit'> } | { status: 'refused'; reasons: string[] };
 
 const text = (label: string, component?: 'p' | 'small'): ViewNode => ({ component: 'Content', props: component ? { label, component } : { label } });
-const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: { hasGutter: true }, children: items.map((children) => ({ component: 'StackItem', children })) });
 
 /** A form field as a method input, so it draws the same field: a number, a date, a choice, an object or text. */
 const asInput = (f: FormField): ComposedInput => ({
@@ -76,7 +76,7 @@ export function buildFormView(form: ObjectForm, state: FormPreview, submitting =
       props: { variant: 'medium', 'aria-label': title },
       children: [
         { component: 'ModalHeader', props: { title, description } },
-        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalBody', children: [dialogBody(body)] },
         {
           component: 'ModalFooter',
           children: [

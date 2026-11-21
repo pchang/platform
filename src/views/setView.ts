@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, MethodComposition } from '../data/client';
 import { changeLines, fieldFor } from './composeView';
 import { countOf } from './batchView';
+import { dialogBody } from './layout';
 
 /**
  * A set method (platform spec 5.4, Acting on a set; design system spec 5.1, Compare and decide over a set): the set's
@@ -11,7 +12,6 @@ import { countOf } from './batchView';
 export type SetPreview = { status: 'incomplete' } | { status: 'checking' } | { status: 'ready'; preview: Omit<CommitResult, 'commit'> } | { status: 'refused'; reasons: string[] };
 
 const text = (label: string, component?: 'p' | 'small'): ViewNode => ({ component: 'Content', props: component ? { label, component } : { label } });
-const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: { hasGutter: true }, children: items.map((children) => ({ component: 'StackItem', children })) });
 
 /** A cell's value without its row's name, when its title repeats it: "Last patient in: 19.6 months" reads "19.6 months". */
 function valueOf(title: string, row: string): string {
@@ -120,7 +120,7 @@ export function buildSetView(composition: MethodComposition, state: SetPreview, 
       props: { variant: 'large', 'aria-label': title },
       children: [
         { component: 'ModalHeader', props: { title, description: objects.map((o) => o.identifier).join(', ') } },
-        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalBody', children: [dialogBody(body)] },
         {
           component: 'ModalFooter',
           children: [

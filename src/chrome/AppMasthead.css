@@ -29,12 +29,32 @@
   line-height: var(--pf-t--global--font--line-height--heading);
 }
 
-/* A long product name shrinks to an ellipsis instead of pushing the actions off-screen. */
+/*
+ * A long product name wraps onto a second line before it shrinks to an ellipsis, so on a small phone it reads
+ * "LS&H / Ecosystem", not "LS…". Either way it never pushes the actions off-screen.
+ */
 .app-masthead__name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.15;
+}
+@media (max-width: 575px) {
+  /* The masthead keeps the page's 16px gutter, so its menu button lines up with the content below, and gives the name the room. */
+  .pf-v6-c-masthead.app-masthead {
+    padding-inline: var(--pf-t--global--spacer--md);
+  }
+  .app-masthead__main {
+    column-gap: var(--pf-t--global--spacer--sm);
+    margin-inline-end: var(--pf-t--global--spacer--sm);
+  }
+  .app-masthead__logo {
+    font-size: var(--pf-t--global--font--size--body--lg);
+  }
 }
 
 /*

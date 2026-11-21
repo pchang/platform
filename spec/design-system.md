@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.52. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.53. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -101,7 +101,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 
 The menu button is PatternFly's page toggle button, drawn as two lines rather than PatternFly's hamburger and arrow. While the sidebar is open the lines turn into an X, and back as it closes, timed by PatternFly's motion tokens for icons. With reduced motion asked for, the icon changes without moving. Its accessible name stays Navigation, and its expanded state says whether the sidebar is open.
 
-All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem.
+All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem. On a phone, where the actions leave little room, the name wraps onto a second line, "LS&H" over "Ecosystem", before it is ever cut short with an ellipsis.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
@@ -118,7 +118,7 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 
   It opens the chat on a new conversation about the object, keeping the one before in the history. The object leads the conversation as a card like an object list's: its identifier and type in small text, its title, which opens it, its state, and the methods the person can run on it now as buttons, which run as they do anywhere. The welcome becomes "Ask about" and the identifier, with the title as its line, and three prompts about it: "Summarize" it, "What can I do next on" it, "and why?", and "What is" it "linked to?". The message bar reads "Ask about" and the identifier. Every question in the conversation is about it, until New conversation.
 
-  **About the chosen.** From the list bar, the conversation is about every chosen object, up to ten, the most a question can be asked from (platform spec 5.2, About an object); with more chosen, the button is unavailable but still focusable, and its tooltip says "Choose ten or fewer to ask about them." The objects lead the conversation as a stack of compact cards, each its identifier and type in small text, its title, which opens it, and its state, without methods: the list's batch actions run on them. The welcome becomes "Ask about these" and how many, such as "Ask about these 3", with their identifiers as its line, and three prompts about them: "Summarize these 3", "How do they differ?" and "What can I do next on them, and why?". The message bar reads "Ask about these 3". The history names the conversation by its identifiers, such as "SSC-1, SSC-3". Every question in it is about all of them, until New conversation.
+  **About the chosen.** From the list bar, the conversation is about every chosen object, up to ten, the most a question can be asked from (platform spec 5.2, About an object); with more chosen, the button is unavailable but still focusable, and its tooltip says "Choose ten or fewer to ask about them." The objects lead the conversation as a stack of compact cards, each its identifier and type in small text and its title, which opens it, without state or methods: the list shows its state, and its batch actions run on them. Up to three show whole; more scroll within themselves so the welcome and its prompts stay in view. The welcome becomes "Ask about these" and how many, such as "Ask about these 3", with their identifiers as its line, and three prompts about them: "Summarize these 3", "How do they differ?" and "What can I do next on them, and why?". The message bar reads "Ask about these 3". The history names the conversation by its identifiers, such as "SSC-1, SSC-3". Every question in it is about all of them, until New conversation.
 - **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
 - **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
   - **An answer:** the model's text, then the objects it cites as sources, one under another with an object list's gutter, each like an object list's card: its identifier and type in small text, then its title, which opens the object; and in small text which model answered and how many objects it looked at.
@@ -151,7 +151,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -182,7 +182,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 **Home** (platform spec 5.1, Home) is each person's homepage, in this order under the greeting: Your world, then Where things stand, then Your work with the To do summary and list. Every section is drawn the same way for every role; only the ontology's metrics and the person's types differ.
 
 - **Your world.** Under the heading "Your world", one tile per metric the person's roles watch, in a gallery: two to a row on phones, four from md up. Each tile is a card with the metric's name, its count large, "of" the type's total in small text beneath when that helps, and its health as a status label with its icon: On track (success), Watch (warning) or At risk (danger). An information-only metric has no label. Status colors are never used for anything else on Home, and the label's word always goes with its color, so health is never told by color alone. When the metric counts any objects, the whole tile is clickable and opens them on a page of their own, with its title as the link, so it can be reached by keyboard and opened in a new tab; a tile that counts nothing is not clickable. The page shows the metric's name as the page's heading, its description and its health under it, then the objects as an object list (4.3). The page has an address of its own, so it can be bookmarked and shared.
-- **Where things stand.** Under the heading "Where things stand", one row per type: its plural name and total, then a thin segmented bar of its objects by lifecycle stage, then the stages as text, each with a small circle in its stage's color, its name and count, such as "draft 3 · in review 1". The bar runs the chart blue ramp from the first stage, step 100, to the last; in dark mode its own steps, from the same ramp against the dark surface. Segments are separated by a 2px surface gap, and the text beside the bar carries every figure, so the bar is never read by color alone. Each bar is an accessible chart, named for its type with its figures in its description. All the bars share one scale, from zero to the largest total, so rows compare. The legend's markers are circles, never squares, so they are not mistaken for the bar's segments.
+- **Where things stand.** Under the heading "Where things stand", one row per type: its plural name and total, then a thin segmented bar of its objects by lifecycle stage, then the stages as text, each with a small circle in its stage's color, its name and count, close under the bar (4.5), such as "draft 3 · in review 1". The bar runs the chart blue ramp from the first stage, step 100, to the last; in dark mode its own steps, from the same ramp against the dark surface. Segments are separated by a 2px surface gap, and the text beside the bar carries every figure, so the bar is never read by color alone. Each bar is an accessible chart, named for its type with its figures in its description. All the bars share one scale, from zero to the largest total, so rows compare. The legend's markers are circles, never squares, so they are not mistaken for the bar's segments.
 - **Your work.** Under the heading "Your work", the To do summary tiles, then a line on keeping up: what the person has done in the last 7 days, such as "You've done 4 things in the last 7 days; 1 item is overdue." Then the To do list.
 
 **The greeting.** Home opens with a greeting as its main heading, in place of the word "Home": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page Home. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
@@ -222,6 +222,31 @@ Every component, pattern and view works in both light and dark mode. Dark mode i
 - Because colors come only from tokens (rule 2), components need no theme-specific code.
 - The page sets its own base text color, background, font and line height from tokens, on the page itself, not only through PatternFly's low-priority base styles. A page the platform is embedded in, such as a preview host, can then never turn text black on the dark theme or change the chrome's alignment.
 - The accessibility scans in section 4 run in both modes.
+
+### 4.5 Spacing and grouping
+
+Space is how a page shows what belongs together. Three distances do the work, and every view uses them the same way, so a person can tell at a glance which things are one group, which are peers, and where a new section starts.
+
+| Distance | Size | Where |
+|---|---|---|
+| **Group** | 8px (4px for a title and its summary) | The parts of one thing: a heading and what it holds, a name and its bar and legend, a count and its total |
+| **Peers** | 16px, PatternFly's gutter | Things of equal rank in one section: cards in a gallery, items in a stack, tiles in a grid |
+| **Section** | 32px | One section from the next: the greeting from Your world, Your world from Where things stand, an overview's Details from its Linked, a dialog's fields from What will change |
+
+- **Nearer what it heads.** A heading is always closer to the content it introduces than to whatever came before it, by at least two to one. Section spacing is larger than group spacing so the heading reads as the start of something, never as a label for the section above.
+- **A legend belongs to its bar.** In Where things stand, a row's name, bar and legend are one group, close together, and the rows are peers set 32px apart, so a legend is never nearer the next row's name than its own bar.
+- **Aligned along a row.** Where tiles sit in a row, the same things sit at the same height. A metric tile's count and total are at the top and its health label is pinned to the tile's foot, so the labels of a row line up however many lines each name takes.
+- **Optical alignment.** An icon-only button that starts a row, such as Ask on a card with no method buttons, is pulled left so its glyph lines up with the text above it, and its own padding adds no height to the card.
+- **Fair targets.** Checkboxes and radio buttons in a form are in rows at least 32px tall with 4px between, so each can be tapped without catching its neighbor. Every interactive target is at least 24px, as WCAG 2.2 requires.
+
+On phones, from 320px:
+
+- **Wrap, never clip.** A dialog's title wraps onto the next line; its buttons wrap rather than squeeze, so a button's label always has its padding. A list bar's controls wrap onto another row; "3 selected" is never broken in two or cut off, in the object panel beside an open chat as much as on a phone. The bar measures its own width, not the screen's: when narrow it drops the thin divider after the selection control, which would be left stranded at the end of a row, and while objects are chosen it leaves out New and Add, so it is never more than it needs to be.
+- **Radio buttons stack**, one to a row, rather than wrapping raggedly side by side.
+- **The masthead keeps the page's 16px gutter**, so its menu button lines up with the content below, and the product name has the room to wrap onto two lines without being cut.
+- **Menus keep an even margin** to the screen's edge on both sides.
+- **No page scrolls sideways.** Wide content, such as a table, scrolls inside its own container.
+- The object panel's top bar is a thin band, with the object starting directly beneath it.
 
 ---
 
@@ -465,3 +490,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.50 | 2026-11-21 | Where things stand: the legend's markers are small circles, not squares, so they are not mistaken for the bar's segments. |
 | 0.51 | 2026-11-21 | Your world: a metric tile that counts objects is clickable as a whole, its title the link, in place of a View link. |
 | 0.52 | 2026-11-21 | Profile: choosing another person or role opens their Home, so no one is left on a page that does not apply to them. |
+| 0.53 | 2026-11-21 | Spacing and grouping (new section 4.5): three distances, group, peers and section, so headings sit nearer what they head; a legend close to its bar; metric tile labels aligned along a row; optical alignment of a lone icon button; fair targets for checkboxes and radios. On phones, wrapping instead of clipping: dialog titles and buttons, list bars, the product name over two lines, even menu margins, stacked radios, a thin object panel head; a list bar that drops its stranded divider and its New and Add while objects are chosen; denser cards in the chat for the chosen. |

@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import type { Progress } from '../processes/processes';
+import { dialogBody } from './layout';
 
 /**
  * The Confirm and Fill in patterns (design system spec 5.1), as view specs. The pattern is fixed by the
@@ -136,7 +137,7 @@ export function buildComposeView(composition: MethodComposition, state: PreviewS
       props: { variant: isConfirm ? 'small' : 'medium', 'aria-label': title },
       children: [
         modalHeader(title, composition.object.title, minimizable),
-        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalBody', children: [dialogBody(body)] },
         {
           component: 'ModalFooter',
           children: [
@@ -213,7 +214,7 @@ export function buildStartView(composition: MethodComposition, state: PreviewSta
       props: { variant: 'small', 'aria-label': title },
       children: [
         modalHeader(title, composition.object.title, minimizable),
-        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalBody', children: [dialogBody(body)] },
         { component: 'ModalFooter', children: footer },
       ],
     },

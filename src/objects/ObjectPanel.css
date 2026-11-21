@@ -13,9 +13,15 @@
   block-size: 100%;
 }
 
-/* The top bar: Back at the start, Expand and Close at the end. */
+/* The top bar: Back at the start, Expand and Close at the end. It is a thin band, and the object starts right beneath it. */
 .app-object-panel__head .pf-v6-c-drawer__head {
   align-items: center;
+}
+.pf-v6-c-drawer__head.app-object-panel__head {
+  padding-block-end: 0;
+}
+.app-object-panel__body {
+  padding-block-start: var(--pf-t--global--spacer--sm);
 }
 
 /* A tab's content starts a gutter below the tabs. */

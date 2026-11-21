@@ -63,6 +63,13 @@ describe('the list bar (design system spec 4.3)', () => {
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
   });
 
+  it('leaves New out of the bar while objects are chosen, and keeps it otherwise (design system spec 4.3)', () => {
+    const create = { type: 'urn:SC', typeLabel: 'Safety Case', verb: 'New' as const };
+    const offered = (selected: string[]) => JSON.stringify(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(selected), create }) })).includes('"creates"');
+    expect(offered([])).toBe(true);
+    expect(offered(['urn:SC-4'])).toBe(false);
+  });
+
   it('offers only Ask when no method applies to all the chosen objects, and says nothing about it', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-6']) }) });
     expect(find(view.root, (n) => Boolean(n.batch))).toEqual([]);

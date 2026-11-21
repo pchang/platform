@@ -1,5 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
+import { group, sections } from './layout';
 import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
 
 /**
@@ -58,18 +59,18 @@ const dl = (rows: [string, ViewNode[]][]): ViewNode => ({
 });
 
 const heading = (label: string): ViewNode => ({ component: 'Title', props: { label, headingLevel: 'h3', size: 'md' } });
-/** A section of the overview: its heading, then what it holds, with the standard gutter between. */
-const part = (title: string, body: ViewNode): ViewNode[] => [stack([[heading(title)], [body]])];
+/** A section of the overview: its heading, then what it holds, close together (design system spec 4.5). */
+const part = (title: string, body: ViewNode): ViewNode => group([heading(title), body]);
 
 function overview(view: ObjectView, today: Date): ViewNode {
-  const sections: ViewNode[][] = [];
+  const parts: ViewNode[] = [];
   const properties = Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b));
-  sections.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
+  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
 
   const linked = view.links.filter((end) => !isTab(end));
   if (linked.length) {
     const named = names(linked, view.type, (end) => end.typeLabel);
-    sections.push(
+    parts.push(
       part(
         'Linked',
         dl(
@@ -94,8 +95,8 @@ function overview(view: ObjectView, today: Date): ViewNode {
     'Last change',
     [text(view.lastChange ? `${view.lastChange.methodLabel} by ${view.lastChange.personName}, ${new Date(view.lastChange.at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` : 'None since it was recorded')],
   ]);
-  sections.push(part('About', dl(about)));
-  return stack(sections);
+  parts.push(part('About', dl(about)));
+  return sections(parts);
 }
 
 /** A tab's objects as an object list like any other (design system spec 4.4 and 4.3): the list bar, then cards or a list. */
@@ -108,8 +109,8 @@ function section(
   const sentence = `This ${inText(view.typeLabel)} ${end.label} ${end.objects.length === 1 ? `this ${inText(end.typeLabel)}` : `these ${inText(end.pluralLabel)}`}.`;
   // Add creates a new object inside this one, when the person may (platform spec 5.3; design system spec 4.3).
   const create = end.canAdd ? { type: end.type, typeLabel: end.typeLabel, within: view.iri, verb: 'Add' as const } : undefined;
-  if (!end.objects.length) return stack([[text(`No ${inText(end.pluralLabel)} yet.`)], ...(create ? [[createButton(create)]] : [])]);
-  return stack([[text(sentence)], ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')]);
+  if (!end.objects.length) return group([text(`No ${inText(end.pluralLabel)} yet.`), ...(create ? [createButton(create)] : [])], 'gapMd');
+  return group([text(sentence), ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')], 'gapMd');
 }
 
 /**
@@ -156,10 +157,13 @@ export function buildObjectView(
   return {
     pattern: 'object',
     because: `${view.identifier}, as the person may read it: its header, overview and the objects at each relationship end its type has in the ontology`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
-      [stack(header)],
-      [{ component: 'Tabs', props: { 'aria-label': `${view.identifier} sections` }, field: OBJECT_TAB_FIELD, children: tabNodes }],
-    ]),
+    root: group(
+      [
+        ...(options.notice ? [options.notice] : []),
+        stack(header),
+        { component: 'Tabs', props: { 'aria-label': `${view.identifier} sections` }, field: OBJECT_TAB_FIELD, children: tabNodes },
+      ],
+      'gapLg',
+    ),
   };
 }

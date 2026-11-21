@@ -13,6 +13,7 @@ export function SettingsMenu() {
 
   return (
     <Select
+      className="app-header-menu"
       isOpen={isOpen}
       onOpenChange={setIsOpen}
       selected={setting}

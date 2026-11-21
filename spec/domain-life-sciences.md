@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.28. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
+Version 0.29. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -747,8 +747,8 @@ The domain is written in the platform's ontology format (platform spec section 3
   | belongs to | Study → Program | includes | Related only | one program |
   | aims at | Program or Opportunity → Target Product Profile | is the aim of | The profile is part of the program or opportunity | Many |
   | evaluates | Opportunity → Compound | is evaluated in | Related only | Many |
-  | is an option for | Development Option → Opportunity or Program | has options | The option is part of its opportunity or program | one parent |
-  | is proposed for | Study Concept → Opportunity or Program | has study concepts | The study concept is part of its opportunity or program | one parent |
+  | is an option for | Development Option → Opportunity or Program | has | The option is part of its opportunity or program | one parent |
+  | is proposed for | Study Concept → Opportunity or Program | has proposed | The study concept is part of its opportunity or program | one parent |
   | plans | Development Option → Study Concept | is planned in | Related only | Many |
   | develops | Program → Compound | is developed in | Related only | Many |
   | explores | Study Scenario → Study Concept or Study | is explored by | The scenario is part of its study concept or study | one parent |
@@ -757,7 +757,7 @@ The domain is written in the platform's ontology format (platform spec section 3
   | simulates | Trial Simulation → Study Scenario or Development Option | is simulated by | The simulation is part of what it simulates | one scenario or option |
   | comes from | Forecast → Trial Simulation | forecasts | The forecast is part of its simulation | one simulation |
   | is measured against | Forecast → Outcome Target | measures | Related only | one target |
-  | sets success for | Outcome Target → Opportunity, Study Concept or Study | has targets | The target is part of what it sets success for | one parent |
+  | sets success for | Outcome Target → Opportunity, Study Concept or Study | has | The target is part of what it sets success for | one parent |
   | specified in | Population, Objective, Arm, Intervention, Planned Visit, Assessment → Protocol | specifies | Part of the protocol version | one protocol |
   | defines | Eligibility Criterion → Population | is defined by | The criterion is part of the population | one population |
   | is the estimand of | Estimand → Objective | targets | The estimand is part of the objective | one objective |
@@ -769,8 +769,8 @@ The domain is written in the platform's ontology format (platform spec section 3
   | scheduled from | Visit → Planned Visit | schedules | Related only | one planned visit |
   | proposed in | Proposed Site → Site Selection | proposes | The proposed site is part of the selection | one selection |
   | proposes | Proposed Site → Site | is proposed as | Related only | one site |
-  | contributes to | Contribution → Protocol | has contributions | The contribution is part of the protocol | one protocol |
-  | is about | Design Signal → a design or plan object | has design signals | The signal is part of the object it is about | one object |
+  | contributes to | Contribution → Protocol | has | The contribution is part of the protocol | one protocol |
+  | is about | Design Signal → a design or plan object | has | The signal is part of the object it is about | one object |
   | decides on | Decision → Opportunity, Study Concept or Study | is decided by | The decision is part of what it decides on | one parent |
   | chooses | Decision → Development Option or Study Scenario | is chosen by | Related only | one choice |
   | justified by | Eligibility Criterion → Assay Result or Safety Case | justifies | Related only | Many |
@@ -940,3 +940,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.26 | 2026-11-20 | Creating and editing (platform spec 0.34): which types each persona creates and edits, which come only through methods, and which states are classifying. Rule 4 also freezes approved or superseded protocols, locked studies and closed safety cases. |
 | 0.27 | 2026-11-20 | Home metrics (section 6): the metrics each persona watches, with their thresholds. |
 | 0.28 | 2026-11-21 | Seed: VELOCITY-3's three study scenarios are simulated (TS-1 to TS-3, 18 forecasts, two design signals, budget totals), as the reference trial model's own output, checked against it by a test, so the scenarios can be compared and one selected from the start. |
+| 0.29 | 2026-11-21 | Relationships: the inverse labels of is an option for, is proposed for, sets success for, contributes to and is about no longer repeat their object ("has", "has proposed"), so a tab's sentence reads "This program has proposed these study concepts." |

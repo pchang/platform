@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { group, sections } from './layout';
 import { MAX_ABOUT } from '../gateway/ask';
 import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
@@ -116,8 +117,8 @@ export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
     .map((r) => ({ component: 'Label', props: { label: `${r.methodLabel}: ${r.status === 'queued' ? 'waiting to start' : 'running'}`, status: 'info' } }));
 }
 
-function header(title: string, summary: string): ViewNode[] {
-  return [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)];
+function header(title: string, summary: string): ViewNode {
+  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)], 'gapXs');
 }
 
 // ---------------------------------------------------------------- the To do summary (design system spec 4.3)
@@ -281,7 +282,8 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       children: [
         // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
         ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
-        ...(controls.create ? [barItem(createButton(controls.create))] : []),
+        // While objects are chosen the bar is for acting on them; creating another waits until the choice is cleared (spec 4.3).
+        ...(controls.create && !chosen ? [barItem(createButton(controls.create))] : []),
         barItem({
           component: 'ToggleGroup',
           props: { 'aria-label': 'Show objects as', isCompact: true },
@@ -394,12 +396,12 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
 }
 
 /** An object list (design system spec 4.3): the list bar, then the objects as cards or as a list. */
-export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[][] {
+export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[] {
   if (!entries.length) return [];
   const objects: ViewNode =
     controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
-  return [[listBar(entries, controls), objects]];
+  return [group([listBar(entries, controls), objects], 'gapNone')];
 }
 
 /** To do's items as list entries: deadline, urgency and runs as status, and the tasks waiting, else the actions. */
@@ -436,21 +438,22 @@ export function buildTodoView(
   return {
     pattern: 'card-view',
     because: `Home for ${who.name}, ${who.role}: the metrics their role watches, where things stand, and objects with a task they can run now or urgent objects they can act on`,
-    root: stack([
-      ...(notice ? [[notice]] : []),
+    root: sections([
+      ...(notice ? [notice] : []),
       // The greeting is the page's main heading (design system spec 4.3, The greeting).
       header(greeting(who.name, today), summary),
-      // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
       // Home: the person's world and where things stand, then their work (platform spec 5.1, Home).
       ...(options.home ? homeSections(options.home) : []),
       ...(allItems.length || options.home
-        ? [[stack([
-            [{ component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode],
-            ...(allItems.length ? buildSummary(allItems, today).map((n) => [n]) : []),
-            ...(options.home ? [[text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))]] : []),
-          ])]]
+        ? [
+            group([
+              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode,
+              ...(allItems.length ? buildSummary(allItems, today) : []),
+              ...(options.home ? [text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))] : []),
+            ]),
+          ]
         : []),
-      ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
+      ...(narrowed && !items.length ? [text('Nothing matches. Choose Waiting to see every item.')] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'To do'),
     ]),
   };
@@ -482,8 +485,8 @@ export function buildTypeView(
   return {
     pattern: 'card-view',
     because: `The ${pluralLabel.toLowerCase()} the person may read, with the methods they can run on each now`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
       header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
@@ -524,12 +527,15 @@ export function buildSearchView(
   return {
     pattern: 'card-view',
     because: `Search for "${result.query}": the objects the person may read that it finds, best first`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
-      header('Search', `${count} for “${result.query}”${shown}.`),
-      // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
-      [...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
-      ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
+      // The title and how many matched, then how the query was understood as one group beneath it.
+      group([
+        header('Search', `${count} for “${result.query}”${shown}.`),
+        // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
+        group([...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])]),
+      ], 'gapMd'),
+      ...(result.total === 0 ? [text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'Search results'),
     ]),
   };
@@ -575,10 +581,10 @@ export function buildAnswerView(
   return {
     pattern: 'card-view',
     because: `The answer to "${result.question}", from what the person may read, and the objects it rests on`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
       header('Search', `“${result.question}”`),
-      [body],
+      body,
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'Objects in the answer'),
     ]),
   };

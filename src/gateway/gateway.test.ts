@@ -54,7 +54,7 @@ describe('reads', () => {
       expect(ends(withSeed().read(ben, 'ST-01'))).toEqual([
         ['enrolls', 'Patients', 'contains', 'many', 'PT-01 PT-02 PT-03 PT-04 PT-05 PT-06 PT-07 PT-08 PT-09 PT-10 PT-11 PT-12'],
         ['is explored by', 'Study Scenarios', 'contains', 'many', 'SSC-4'],
-        ['has targets', 'Outcome Targets', 'contains', 'many', ''],
+        ['has', 'Outcome Targets', 'contains', 'many', ''],
         ['is decided by', 'Decisions', 'contains', 'many', ''],
         ['tests', 'Formulations', 'related', 'many', 'F-101'],
         ['runs at', 'Sites', 'related', 'many', 'SITE-1 SITE-2 SITE-3'],
@@ -97,7 +97,7 @@ describe('reads', () => {
       expect(gateway.describe(ben).find((t) => t.label === 'Study')?.relationships.map((r) => `${r.label} ${r.pluralLabel}`)).toEqual([
         'enrolls Patients',
         'is explored by Study Scenarios',
-        'has targets Outcome Targets',
+        'has Outcome Targets',
         'is decided by Decisions',
         'tests Formulations',
         'runs at Sites',

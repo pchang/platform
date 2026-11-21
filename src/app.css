@@ -86,3 +86,106 @@ html body .pf-v6-c-card:not(.pf-m-plain) {
     --pf-v6-c-form-control--FontSize: var(--pf-t--global--font--size--body--lg);
   }
 }
+
+/*
+ * Spacing and grouping (design system spec 4.5). Layout comes from the view's own gaps; these rules only settle what a
+ * component's defaults get wrong: optical alignment, targets of a fair size, and text that wraps rather than clips.
+ * They start html body, as the rules above do, so a component's own styles, which can load later, never outrank them.
+ */
+
+/* An Ask button alone at the start of its row lines up with the text above it, and adds no height beyond its glyph. */
+html body .pf-v6-c-card__body .pf-v6-l-flex > .pf-v6-c-button.pf-m-plain:only-child {
+  margin-inline-start: calc(var(--pf-t--global--spacer--md) * -0.7);
+  margin-block: calc(var(--pf-t--global--spacer--xs) * -1);
+}
+
+/* A dialog's title wraps onto the next line rather than ending in an ellipsis; its buttons stay beside it. */
+html body .pf-v6-c-modal-box__title,
+html body .pf-v6-c-modal-box__title-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}
+
+/* A dialog's buttons wrap, never squeeze: the primary keeps its full width, and Cancel drops below when it must. */
+html body .pf-v6-c-modal-box__footer {
+  flex-wrap: wrap;
+  gap: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+}
+html body .pf-v6-c-modal-box__footer > .pf-v6-c-button {
+  flex-shrink: 0;
+  white-space: normal;
+}
+
+/*
+ * Choices in a form: a checkbox or radio row is at least a fair target tall, with room between rows, so a thumb can
+ * choose one without catching its neighbor (WCAG 2.2 target size). On phones, radios stack, one to a row.
+ */
+/* The box sits on its label's center line, not its first line's top. */
+html body .pf-v6-c-check__input,
+html body .pf-v6-c-radio__input {
+  align-self: center;
+  margin-block-start: 0;
+  /* PatternFly nudges the box down to a label's first line; here it is centered on the label. */
+  transform: none;
+}
+html body .pf-v6-c-form__group-control:not(.pf-m-inline) {
+  row-gap: var(--pf-t--global--spacer--xs);
+}
+html body .pf-v6-c-check__label,
+html body .pf-v6-c-radio__label {
+  padding-block: var(--pf-t--global--spacer--xs);
+}
+@media (max-width: 575px) {
+  html body .pf-v6-c-form__group-control.pf-m-inline {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--pf-t--global--spacer--xs);
+  }
+}
+
+/* A list bar wraps its controls onto another row rather than clipping them or breaking "3 selected" in two. */
+html body .pf-v6-c-toolbar__content-section,
+html body .pf-v6-c-toolbar__group {
+  flex-wrap: wrap;
+  row-gap: var(--pf-t--global--spacer--xs);
+  min-inline-size: 0;
+}
+html body .pf-v6-c-toolbar .pf-v6-c-menu-toggle__text {
+  white-space: nowrap;
+}
+html body .pf-v6-c-toolbar__item .pf-v6-c-button {
+  white-space: nowrap;
+}
+
+/*
+ * On phones the Settings and Profile menus open as a sheet under the masthead, the same margin from both screen edges, and a
+ * long one, such as the list of people, scrolls. The popper's inline position is overridden: it has no room to be anchored.
+ */
+@media (max-width: 575px) {
+  html body .pf-v6-c-menu.app-header-menu {
+    position: fixed !important;
+    inset-block-start: calc(var(--pf-t--global--spacer--3xl) + var(--pf-t--global--spacer--sm)) !important;
+    inset-inline: var(--pf-t--global--spacer--md) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    max-block-size: calc(100dvh - var(--pf-t--global--spacer--3xl) - var(--pf-t--global--spacer--xl));
+    overflow-y: auto;
+  }
+}
+
+/*
+ * A list bar measures itself, not the screen (only the list bar: containment would collapse the masthead's own toolbar): in a narrow panel, beside an open chat as much as on a phone, its controls
+ * wrap, and the thin divider between the selection control and the actions, which would be left stranded at the end of
+ * a row, goes.
+ */
+html body .pf-v6-c-toolbar.pf-m-sticky {
+  container-type: inline-size;
+}
+@container (max-width: 34rem) {
+  .pf-v6-c-toolbar__item.pf-m-separator {
+    display: none;
+  }
+}

@@ -2277,14 +2277,14 @@ ls:evaluates a p:Relationship, owl:ObjectProperty ;
 
 ls:optionFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is an option for" ;
-  p:inverseLabel "has options" ;
+  p:inverseLabel "has" ;
   p:order 31 ;
   p:partOf true ;
   rdfs:comment "A development option is one path for an opportunity or a program." .
 
 ls:proposedFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is proposed for" ;
-  p:inverseLabel "has study concepts" ;
+  p:inverseLabel "has proposed" ;
   p:order 32 ;
   p:partOf true ;
   rdfs:comment "A study concept is proposed for an opportunity or a program." .
@@ -2350,7 +2350,7 @@ ls:measuredAgainst a p:Relationship, owl:ObjectProperty ;
 
 ls:targetFor a p:Relationship, owl:ObjectProperty ;
   rdfs:label "sets success for" ;
-  p:inverseLabel "has targets" ;
+  p:inverseLabel "has" ;
   p:order 42 ;
   p:partOf true ;
   rdfs:comment "An outcome target sets what success means for an opportunity, a study concept or a study." .
@@ -2428,14 +2428,14 @@ ls:candidateSite a p:Relationship, owl:ObjectProperty ;
 
 ls:contributesTo a p:Relationship, owl:ObjectProperty ;
   rdfs:label "contributes to" ;
-  p:inverseLabel "has contributions" ;
+  p:inverseLabel "has" ;
   p:order 54 ;
   p:partOf true ;
   rdfs:comment "A contribution contributes to a protocol version." .
 
 ls:isAbout a p:Relationship, owl:ObjectProperty ;
   rdfs:label "is about" ;
-  p:inverseLabel "has design signals" ;
+  p:inverseLabel "has" ;
   p:order 55 ;
   p:partOf true ;
   rdfs:comment "A design signal is about the design or plan object it concerns." .

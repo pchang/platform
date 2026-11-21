@@ -1,5 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { HomeView } from '../data/client';
+import { group, sections } from './layout';
 
 /**
  * Home's first two sections (platform spec 5.1, Home; design system spec 4.3, Home): Your world, the metrics the person's
@@ -7,7 +8,6 @@ import type { HomeView } from '../data/client';
  */
 
 const text = (label: string, component?: 'p' | 'small'): ViewNode => ({ component: 'Content', props: component ? { label, component } : { label } });
-const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: { hasGutter: true }, children: items.map((children) => ({ component: 'StackItem', children })) });
 const heading = (label: string): ViewNode => ({ component: 'Title', props: { label, headingLevel: 'h2', size: 'lg' } });
 
 /** Health as a status label with its icon and word, never color alone (design system spec 4.3, Home). */
@@ -33,10 +33,16 @@ function metricTile(m: HomeView['metrics'][number]): ViewNode {
           {
             component: 'CardBody',
             children: [
-              stack([
-                [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${m.total} ${m.pluralLabel.toLowerCase()}`, 'small')],
-                ...(health ? [[{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }]] : []),
-              ]),
+              // The count and its total are one group; the health label is the tile's last line, pinned to its foot, so
+              // the labels of a row of tiles line up however many lines each name takes (design system spec 4.5).
+              {
+                component: 'Stack',
+                props: { hasGutter: true },
+                children: [
+                  { component: 'StackItem', props: { isFilled: true }, children: [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${m.total} ${m.pluralLabel.toLowerCase()}`, 'small')] },
+                  ...(health ? [{ component: 'StackItem', children: [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } } as ViewNode] }] : []),
+                ],
+              },
             ],
           },
         ],
@@ -55,10 +61,11 @@ export function rampStep(index: number, stages: number): number {
  * One type's row: its name and total, then a thin segmented bar of its stages with every figure in the legend beside it.
  * The legend's markers are circles, so they are not mistaken for the bar's segments (design system spec 4.3, Home).
  */
-function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode[] {
+function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode {
   const fill = (i: number) => `var(--pf-t--chart--color--blue--${rampStep(i, l.stages.length)})`;
   const figures = l.stages.map((s) => `${s.label} ${s.count}`).join(', ');
-  return [
+  // The name, the bar and its legend are one group, close together: the legend belongs to its bar (design system spec 4.5).
+  return group([
     {
       component: 'Flex',
       props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsBaseline' }, flexWrap: { default: 'wrap' } },
@@ -96,24 +103,25 @@ function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode[
         },
       ],
     },
-  ];
+  ], 'gapXs');
 }
 
-export function homeSections(home: HomeView): ViewNode[][] {
-  const sections: ViewNode[][] = [];
+export function homeSections(home: HomeView): ViewNode[] {
+  const parts: ViewNode[] = [];
   if (home.metrics.length) {
-    sections.push([stack([[heading('Your world')], [{ component: 'Grid', props: { hasGutter: true }, children: home.metrics.map(metricTile) }]])]);
+    parts.push(group([heading('Your world'), { component: 'Grid', props: { hasGutter: true }, children: home.metrics.map(metricTile) }]));
   }
   if (home.lifecycles.length) {
     const max = Math.max(...home.lifecycles.map((l) => l.total));
-    sections.push([
-      stack([
-        [heading('Where things stand')],
-        [{ component: 'Card', props: { isCompact: true }, children: [{ component: 'CardBody', children: [stack(home.lifecycles.map((l) => lifecycleRow(l, max)))] }] }],
+    parts.push(
+      group([
+        heading('Where things stand'),
+        // The rows are peers, set well apart so a row's legend is nearer its own bar than the next row's name (design system spec 4.5).
+        { component: 'Card', props: { isCompact: true }, children: [{ component: 'CardBody', children: [group(home.lifecycles.map((l) => lifecycleRow(l, max)), 'gapXl')] }] },
       ]),
-    ]);
+    );
   }
-  return sections;
+  return parts;
 }
 
 /** How the person is keeping up, in one line under the To do summary. */
@@ -126,26 +134,30 @@ export function keepingUp(home: HomeView, overdue: number): string {
  * A metric's own page (platform spec 5.1, Home, From a metric to its objects): its name as the heading, its description
  * and health under it, then exactly the objects it counts as an object list.
  */
-export function metricPage(metric: HomeView['metrics'][number], list: ViewNode[][], notice?: ViewNode): ViewSpec {
+export function metricPage(metric: HomeView['metrics'][number], list: ViewNode[], notice?: ViewNode): ViewSpec {
   const health = metric.health ? HEALTH[metric.health] : undefined;
   return {
     pattern: 'card-view',
     because: `The ${metric.pluralLabel.toLowerCase()} the metric ${metric.label} counts, as the person may read them`,
-    root: stack([
-      ...(notice ? [[notice]] : []),
-      [
-        { component: 'Title', props: { label: metric.label, headingLevel: 'h1', size: '2xl' } },
-        text(metric.comment),
-        {
-          component: 'Flex',
-          props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
-          children: [
-            text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
-            ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
-          ],
-        },
-      ],
-      ...(metric.count ? list : [[text(`None right now.`)]]),
+    root: sections([
+      ...(notice ? [notice] : []),
+      // The name, what it measures and how many, as one group.
+      group(
+        [
+          { component: 'Title', props: { label: metric.label, headingLevel: 'h1', size: '2xl' } },
+          text(metric.comment),
+          {
+            component: 'Flex',
+            props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
+            children: [
+              text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
+              ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
+            ],
+          },
+        ],
+        'gapXs',
+      ),
+      ...(metric.count ? list : [text(`None right now.`)]),
     ]),
   };
 }

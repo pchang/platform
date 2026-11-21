@@ -153,13 +153,14 @@ describe('the chat panel', () => {
     expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
   });
 
-  it('asks about the chosen objects together, led by a compact card for each without methods', async () => {
+  it('asks about the chosen objects together, led by a dense card for each without state or methods', async () => {
     const { calls } = renderChat(async (q) => answered(q));
     await userEvent.click(await screen.findByRole('button', { name: 'From the list bar' }));
     expect(await screen.findByText('Ask about these 2')).toBeInTheDocument();
     expect(screen.getByText('AE-003, AE-004')).toBeInTheDocument();
     expect(screen.getByText('AE-004 · Adverse Event')).toBeInTheDocument();
-    expect(screen.getAllByText('Reporting: not reported')).toHaveLength(2);
+    // The list shows their state; the cards are only who they are.
+    expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
     // The list's batch actions run on them, so their cards have no methods.
     expect(screen.queryByRole('button', { name: 'Report to safety' })).not.toBeInTheDocument();
     expect(bar()).toHaveAttribute('placeholder', 'Ask about these 2');

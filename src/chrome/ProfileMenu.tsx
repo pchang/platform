@@ -22,6 +22,7 @@ export function ProfileMenu() {
 
   return (
     <Select
+      className="app-header-menu"
       isOpen={isOpen}
       onOpenChange={setIsOpen}
       selected={key(principal.person, principal.role)}
