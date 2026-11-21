@@ -199,7 +199,13 @@ html body .pf-v6-c-drawer__body {
   container: page / inline-size;
 }
 @container page (max-width: 42rem) {
-  html body .pf-v6-l-grid:has(> .pf-v6-l-grid__item > .pf-v6-c-card) > .pf-v6-l-grid__item {
+  /* Only the grids that go four across from md up: a grid that stacks on a phone, such as a comparison's two cards, stays stacked. */
+  html body .pf-v6-l-grid > .pf-v6-l-grid__item.pf-m-3-col-on-md {
     grid-column: span 6 / span 6;
   }
+}
+
+/* Text in a row of items carries no paragraph margin, so the items share one line: a count and its health label, a name and its total. */
+html body .pf-v6-l-flex > .pf-v6-c-content--small {
+  margin-block-end: 0;
 }

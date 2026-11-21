@@ -12,7 +12,8 @@ import { BatchDialog } from './BatchDialog';
 import { SetDialog } from './SetDialog';
 import { ObjectFormDialog, type FormTarget } from './ObjectFormDialog';
 import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, objectEntries, objectList, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
-import { metricPage } from './homeView';
+import { backToHome, metricPage } from './homeView';
+import { sections } from './layout';
 import { RefusedError } from '../data/client';
 import { routeHref } from '../routing';
 
@@ -283,7 +284,11 @@ export function MetricView({ metric }: { metric: string }) {
     ? {
         pattern: 'card-view',
         because: 'The gateway refused to show the metric',
-        root: { component: 'Alert', props: { variant: 'danger', title: 'This metric cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
+        // Even when the metric cannot be shown, the way back is there.
+        root: sections([
+          backToHome,
+          { component: 'Alert', props: { variant: 'danger', title: 'This metric cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
+        ]),
       }
     : loaded
       ? metricPage(loaded.metric, objectList(objectEntries(loaded.objects, { methods: loaded.methods, runs }), list.controls, loaded.metric.label), processes.notice)
@@ -292,7 +297,7 @@ export function MetricView({ metric }: { metric: string }) {
     <>
       <ViewRenderer
         view={view}
-        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout, homeHref: routeHref({ name: 'todo' }) }}
       />
       {list.dialog}
     </>

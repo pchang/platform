@@ -71,7 +71,8 @@
               "list",
               "outlined-check-square",
               "times",
-              "comments"
+              "comments",
+              "arrow-left"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -315,7 +316,8 @@
               "list",
               "outlined-check-square",
               "times",
-              "comments"
+              "comments",
+              "arrow-left"
             ],
             "description": "Icon from @patternfly/react-icons"
           },

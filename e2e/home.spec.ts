@@ -23,4 +23,16 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   await expect(page.getByText('3 of 8 data queries.')).toBeVisible();
   await expect(page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'Data Query' })).toHaveCount(3);
   await expect(page.getByRole('main').getByText('Status: open')).toHaveCount(3);
+
+  // The way back: a link to Home above the heading, which returns to Home however the page was reached.
+  const back = page.getByRole('link', { name: 'Back to Home' });
+  await expect(back).toBeVisible();
+  await expect(back).toHaveAttribute('href', '#/');
+  await back.click();
+  await expect(page).toHaveURL(/#\/$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Your world' })).toBeVisible({ timeout: 30_000 });
+  // From a bookmarked address, too.
+  await page.goto('/#/metric/Metric-OpenDataQueries');
+  await page.getByRole('link', { name: 'Back to Home' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Your world' })).toBeVisible({ timeout: 30_000 });
 });

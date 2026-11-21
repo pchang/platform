@@ -56,6 +56,9 @@ describe('Home view', () => {
     const page = metricPage(metric, objectList(objectEntries(objects), NO_CONTROLS, metric.label));
     expect(validateView(page).errors).toEqual([]);
     expect(JSON.stringify(page)).toContain('"label":"3 of 8 data queries."');
+    // The way back is the first thing on the page, above the heading, and goes to Home.
+    expect(JSON.stringify(page)).toContain('"label":"Back to Home","variant":"link","icon":"arrow-left","isInline":true},"goes":"home"');
+    expect(JSON.stringify(page).indexOf('Back to Home')).toBeLessThan(JSON.stringify(page).indexOf('"label":"Open data queries"'));
   });
 
   it('runs the blue ramp from the first stage to the last', () => {

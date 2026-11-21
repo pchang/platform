@@ -130,6 +130,9 @@ export function keepingUp(home: HomeView, overdue: number): string {
   return `${done}; ${overdue === 0 ? 'nothing is overdue' : `${overdue} ${overdue === 1 ? 'item is' : 'items are'} overdue`}.`;
 }
 
+/** The way back to Home from a page the person drilled into: a link above the page's heading (design system spec 4.3, Home). */
+export const backToHome: ViewNode = { component: 'Button', props: { label: 'Back to Home', variant: 'link', icon: 'arrow-left', isInline: true }, goes: 'home' };
+
 /**
  * A metric's own page (platform spec 5.1, Home, From a metric to its objects): its name as the heading, its description
  * and health under it, then exactly the objects it counts as an object list.
@@ -141,21 +144,27 @@ export function metricPage(metric: HomeView['metrics'][number], list: ViewNode[]
     because: `The ${metric.pluralLabel.toLowerCase()} the metric ${metric.label} counts, as the person may read them`,
     root: sections([
       ...(notice ? [notice] : []),
-      // The name, what it measures and how many, as one group.
+      // The way back, then the name, what it measures and how many: the link stands a little above the heading it belongs to.
       group(
         [
-          { component: 'Title', props: { label: metric.label, headingLevel: 'h1', size: '2xl' } },
-          text(metric.comment),
-          {
-            component: 'Flex',
-            props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
-            children: [
-              text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
-              ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
+          backToHome,
+          group(
+            [
+              { component: 'Title', props: { label: metric.label, headingLevel: 'h1', size: '2xl' } },
+              text(metric.comment),
+              {
+                component: 'Flex',
+                props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
+                children: [
+                  text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
+                  ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
+                ],
+              },
             ],
-          },
+            'gapXs',
+          ),
         ],
-        'gapXs',
+        'gapMd',
       ),
       ...(metric.count ? list : [text(`None right now.`)]),
     ]),

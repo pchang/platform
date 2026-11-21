@@ -41,6 +41,8 @@ export interface RenderHost {
   onEdit?: (object: string) => void;
   /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
   metricHref?: (metric: string) => string;
+  /** Where a Button that goes to Home links (view spec `goes`, design system spec 4.3, Home). */
+  homeHref?: string;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
   onAsk?: (objects: string | string[]) => void;
 }
@@ -595,6 +597,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Button' && node.shows && host.metricHref) {
     props.component = 'a';
     props.href = host.metricHref(node.shows);
+  }
+  if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
+    props.component = 'a';
+    props.href = host.homeHref;
   }
   if (entry.id === 'Button' && node.edits) {
     const object = node.edits;
