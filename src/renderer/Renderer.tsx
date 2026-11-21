@@ -42,7 +42,7 @@ export interface RenderHost {
   /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
   metricHref?: (metric: string) => string;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
-  onAsk?: (object: string) => void;
+  onAsk?: (objects: string | string[]) => void;
 }
 
 /** A card in select mode: whether it is chosen, how to change that, and its title for the control's name. */

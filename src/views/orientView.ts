@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { MAX_ABOUT } from '../gateway/ask';
 import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
 import { BUILT_ARCHETYPES } from './composeView';
@@ -35,6 +36,20 @@ export const askAbout = (object: ObjectSummary): ViewNode => ({
   props: { variant: 'plain', icon: 'comments', 'aria-label': `Ask about ${object.identifier}` },
   asks: object.iri,
 });
+
+/**
+ * The speech bubbles that start a conversation about the chosen objects, last in the list bar after the set and batch
+ * actions (design system spec 4.3, Ask about the chosen). With more than ten chosen it stays focusable and says why not.
+ */
+export function askAboutChosen(objects: string[]): ViewNode {
+  const label = `Ask about the ${objects.length} selected`;
+  const tooMany = objects.length > MAX_ABOUT;
+  return {
+    component: 'Tooltip',
+    props: { content: tooMany ? 'Choose ten or fewer to ask about them.' : label },
+    children: [{ component: 'Button', props: { variant: 'plain', icon: 'comments', 'aria-label': label, ...(tooMany ? { isAriaDisabled: true } : {}) }, ...(tooMany ? {} : { asks: objects }) }],
+  };
+}
 
 /**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
@@ -258,6 +273,7 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       );
     }
   }
+  if (chosen) start.push(barItem(askAboutChosen(entries.filter((e) => controls.selected.has(e.object.iri)).map((e) => e.object.iri))));
   const groups: ViewNode[] = [
     { component: 'ToolbarGroup', props: { variant: 'action-group-plain' }, children: start },
     {

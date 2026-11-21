@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.47. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.48. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -114,8 +114,11 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
   - on an object's card, last in the row of its method buttons; a card with no method buttons has it alone at the foot of its body;
   - on a list's row, last among its actions, after the raised method and its … menu, at the right end of the actions column, so the Ask buttons line up down the list;
   - in the object panel's header, beside Expand and Close.
+  - in an object list's bar, while objects are chosen, last after the set and batch actions, named "Ask about the" and how many are chosen, such as "Ask about the 3 selected" (4.3).
 
   It opens the chat on a new conversation about the object, keeping the one before in the history. The object leads the conversation as a card like an object list's: its identifier and type in small text, its title, which opens it, its state, and the methods the person can run on it now as buttons, which run as they do anywhere. The welcome becomes "Ask about" and the identifier, with the title as its line, and three prompts about it: "Summarize" it, "What can I do next on" it, "and why?", and "What is" it "linked to?". The message bar reads "Ask about" and the identifier. Every question in the conversation is about it, until New conversation.
+
+  **About the chosen.** From the list bar, the conversation is about every chosen object, up to ten, the most a question can be asked from (platform spec 5.2, About an object); with more chosen, the button is unavailable but still focusable, and its tooltip says "Choose ten or fewer to ask about them." The objects lead the conversation as a stack of compact cards, each its identifier and type in small text, its title, which opens it, and its state, without methods: the list's batch actions run on them. The welcome becomes "Ask about these" and how many, such as "Ask about these 3", with their identifiers as its line, and three prompts about them: "Summarize these 3", "How do they differ?" and "What can I do next on them, and why?". The message bar reads "Ask about these 3". The history names the conversation by its identifiers, such as "SSC-1, SSC-3". Every question in it is about all of them, until New conversation.
 - **The message bar** at the foot, "Search or ask", sends on Enter or with its Send button. Under it, a footnote: "Answers come from what you may read. Check them before you act."
 - **Messages.** The person's message on the right, named for them. The platform's reply, named for the product, shows a loading state until the gateway answers, then:
   - **An answer:** the model's text, then the objects it cites as sources, one under another with an object list's gutter, each like an object list's card: its identifier and type in small text, then its title, which opens the object; and in small text which model answered and how many objects it looked at.
@@ -174,6 +177,7 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Commit runs only the objects that would succeed, one commit each.
   - The outcome names each object, those changed and those refused, and the choice is cleared.
   - A batch is not set aside in the dock.
+- **Ask about the chosen.** Last among the actions for what is chosen, after the set and batch actions and their … menu, the Ask speech bubbles, named "Ask about the" and how many, such as "Ask about the 3 selected". Anticipation first: the set and batch actions are what the platform anticipates, so they come first, and Ask is the free-text way forward for the chosen objects when none of them fits, including when no action applies to all of them. It opens the chat on a conversation about them (4.1, About the chosen).
 
 **Home** (platform spec 5.1, Home) is each person's homepage, in this order under the greeting: Your world, then Where things stand, then Your work with the To do summary and list. Every section is drawn the same way for every role; only the ontology's metrics and the person's types differ.
 
@@ -456,3 +460,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.45 | 2026-11-20 | New and Add at the end of the list bar, Edit in the object panel's header, and the create and edit form: required fields first, then Optional, as Fill in. |
 | 0.46 | 2026-11-20 | Home replaces To do as each person's homepage: Your world (metric tiles with health), Where things stand (a thin segmented lifecycle bar per type, figures beside it, one shared scale), then Your work (the To do summary, keeping up, the list). |
 | 0.47 | 2026-11-21 | A metric tile links to its objects, on a page of their own under the metric's name, description and health. |
+| 0.48 | 2026-11-21 | Ask about the chosen: once objects are chosen in a list, the list bar ends with the Ask speech bubbles, after the set and batch actions, opening a conversation about all of them, led by a compact card for each, up to ten. |

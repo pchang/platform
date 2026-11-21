@@ -3,7 +3,7 @@ import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import type { CommitResult, MethodComposition, MethodOption, ObjectSummary } from '../data/client';
 import { batchModeOf, batchNotice, buildBatchView, buildSequentialBatchView, countOf, inputsFor, isComplete, type ObjectPreview } from './batchView';
-import { buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientView';
+import { askAboutChosen, buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientView';
 
 // Object lists in cards or a list, the list bar, and batch actions (design system spec 4.3; platform spec 5.4).
 
@@ -45,7 +45,7 @@ describe('the list bar (design system spec 4.3)', () => {
       ['Select all (3)', 'select-all'],
       ['Select none', 'clear-selection'],
     ]);
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done']);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Ask about the 2 selected', 'Done']);
     // Once selecting, the card bar is the list bar, with Done to end select mode.
     const listBar = find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) }).root, (n) => n.component === 'Toolbar')[0];
     const dropDone = (n: ViewNode): ViewNode => ({
@@ -67,6 +67,31 @@ describe('the list bar (design system spec 4.3)', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-6']) }) });
     expect(find(view.root, (n) => Boolean(n.batch))).toEqual([]);
     expect(JSON.stringify(view)).toContain('No action applies to all of them.');
+    // Ask is still there, as the free-text way forward when nothing anticipated fits (design system spec 4.3).
+    expect(find(view.root, (n) => Boolean(n.asks) && Array.isArray(n.asks)).map((n) => n.asks)).toEqual([['urn:SC-4', 'urn:SC-6']]);
+  });
+
+  it('ends the actions for what is chosen with Ask about the chosen, after the set and batch actions', () => {
+    const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']), setActions: [{ method: 'urn:Compare', label: 'Compare' }] }) });
+    expect(validateView(view).errors).toEqual([]);
+    const bar = find(view.root, (n) => n.component === 'Toolbar')[0];
+    const start = (bar.children![0].children![0].children ?? []).map((item) => JSON.stringify(item));
+    const at = (needle: string) => start.findIndex((i) => i.includes(needle));
+    expect(at('"batch":"urn:Compare"')).toBeLessThan(at('"batch":"urn:Triage"'));
+    expect(at('"batch":"urn:Triage"')).toBeLessThan(at('Ask about the 2 selected'));
+    expect(at('Ask about the 2 selected')).toBe(start.length - 1);
+    const ask = find(bar, (n) => Boolean(n.asks))[0];
+    expect(ask).toMatchObject({ component: 'Button', props: { icon: 'comments', 'aria-label': 'Ask about the 2 selected' }, asks: ['urn:SC-4', 'urn:SC-5'] });
+    // Nothing chosen, nothing to ask about.
+    expect(find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list' }) }).root, (n) => Boolean(n.asks) && Array.isArray(n.asks))).toEqual([]);
+  });
+
+  it('asks about at most ten chosen objects, and says why not with more', () => {
+    expect(askAboutChosen(Array.from({ length: 10 }, (_, i) => `urn:o${i}`))).toMatchObject({ component: 'Tooltip', props: { content: 'Ask about the 10 selected' } });
+    const tooMany = askAboutChosen(Array.from({ length: 11 }, (_, i) => `urn:o${i}`));
+    expect(tooMany).toMatchObject({ component: 'Tooltip', props: { content: 'Choose ten or fewer to ask about them.' } });
+    expect(tooMany.children![0]).toMatchObject({ props: { isAriaDisabled: true } });
+    expect(tooMany.children![0].asks).toBeUndefined();
   });
 
   it('works out the common methods from what each chosen object has available now', () => {

@@ -53,6 +53,10 @@
             "type": "boolean",
             "description": "Not available. Prefer hiding methods that are not valid"
           },
+          "isAriaDisabled": {
+            "type": "boolean",
+            "description": "Not available, but still focusable, so a Tooltip around it can say why"
+          },
           "icon": {
             "enum": [
               "check-circle",
