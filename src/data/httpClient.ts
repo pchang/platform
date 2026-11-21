@@ -24,6 +24,7 @@ export function httpClient(base = '/api'): GatewayClient {
     navigation: (p) => request('/navigation', p),
     todo: (p) => request('/todo', p),
     home: (p) => request('/home', p),
+    metricObjects: (p, metric) => request(`/metrics/${encodeURIComponent(metric)}`, p),
     search: (p, query, options = {}) => request(`/search?q=${encodeURIComponent(query)}${options.understand === 'ontology' ? '&understand=ontology' : ''}`, p),
     ask: (p, question, earlier = [], about = []) => request('/ask', p, { question, earlier, about }),
     find: (p, type) => request(`/objects?type=${encodeURIComponent(type)}`, p),

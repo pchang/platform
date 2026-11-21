@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import { NS } from '../ontology/ontology';
 import { withSeed } from '../gateway/node';
-import { buildTodoView } from './orientView';
-import { keepingUp, rampStep } from './homeView';
+import { buildTodoView, NO_CONTROLS, objectEntries, objectList } from './orientView';
+import { keepingUp, metricPage, rampStep } from './homeView';
 
 // Home (platform spec 5.1; design system spec 4.3, Home), drawn from the gateway's answer for real roles.
 const as = (person: string, role: string) => ({ person: `${NS.d}${person}`, role: `${NS.ls}${role}` });
@@ -33,6 +33,20 @@ describe('Home view', () => {
     // Each bar's figures are in its legend and its description, so it is never read by color alone.
     expect(json).toContain('"ariaDesc":"8 data queries: open 3, answered 3, closed 2"');
     expect(json).toContain('"name":"open 3"');
+  });
+
+  it('links each metric that counts anything to its objects, and opens them on a valid page of their own', async () => {
+    const g = withSeed([], { now });
+    const ben = as('person-ben', 'ClinicalDataManager');
+    const json = JSON.stringify(buildTodoView(await g.todo(ben), { name: 'Ben Okafor', role: 'Clinical Data Manager' }, undefined, [], { home: g.home(ben), today: now() }));
+    expect(json).toContain('"label":"View 3","aria-label":"View 3: open data queries","variant":"link","isInline":true},"shows":"https://w3id.org/lsh-platform/life-sciences#Metric-OpenDataQueries"');
+    // A metric that counts nothing has nothing to open.
+    const marcus = as('person-marcus', 'ClinicalOperationsLead');
+    expect(JSON.stringify(buildTodoView([], { name: 'Marcus Bell', role: 'Clinical Operations Lead' }, undefined, [], { home: g.home(marcus), today: now() }))).not.toContain('Metric-BudgetsOverCeiling"');
+    const { metric, objects } = g.metricObjects(ben, 'Metric-OpenDataQueries');
+    const page = metricPage(metric, objectList(objectEntries(objects), NO_CONTROLS, metric.label));
+    expect(validateView(page).errors).toEqual([]);
+    expect(JSON.stringify(page)).toContain('"label":"3 of 8 data queries."');
   });
 
   it('runs the blue ramp from the first stage to the last', () => {

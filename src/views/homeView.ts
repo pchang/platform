@@ -1,4 +1,4 @@
-import type { ViewNode } from '../design-system/catalog';
+import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { HomeView } from '../data/client';
 
 /**
@@ -34,6 +34,8 @@ function metricTile(m: HomeView['metrics'][number]): ViewNode {
               stack([
                 [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${m.total} ${m.pluralLabel.toLowerCase()}`, 'small')],
                 ...(health ? [[{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }]] : []),
+                // From the number to the work behind it (platform spec 5.1, Home, From a metric to its objects).
+                ...(m.count ? [[{ component: 'Button', props: { label: `View ${m.count}`, 'aria-label': `View ${m.count}: ${m.label.toLowerCase()}`, variant: 'link', isInline: true }, shows: m.metric } as ViewNode]] : []),
               ]),
             ],
           },
@@ -115,4 +117,32 @@ export function homeSections(home: HomeView): ViewNode[][] {
 export function keepingUp(home: HomeView, overdue: number): string {
   const done = home.doneLast7Days === 0 ? 'You haven’t done anything here in the last 7 days' : `You’ve done ${home.doneLast7Days} ${home.doneLast7Days === 1 ? 'thing' : 'things'} in the last 7 days`;
   return `${done}; ${overdue === 0 ? 'nothing is overdue' : `${overdue} ${overdue === 1 ? 'item is' : 'items are'} overdue`}.`;
+}
+
+/**
+ * A metric's own page (platform spec 5.1, Home, From a metric to its objects): its name as the heading, its description
+ * and health under it, then exactly the objects it counts as an object list.
+ */
+export function metricPage(metric: HomeView['metrics'][number], list: ViewNode[][], notice?: ViewNode): ViewSpec {
+  const health = metric.health ? HEALTH[metric.health] : undefined;
+  return {
+    pattern: 'card-view',
+    because: `The ${metric.pluralLabel.toLowerCase()} the metric ${metric.label} counts, as the person may read them`,
+    root: stack([
+      ...(notice ? [[notice]] : []),
+      [
+        { component: 'Title', props: { label: metric.label, headingLevel: 'h1', size: '2xl' } },
+        text(metric.comment),
+        {
+          component: 'Flex',
+          props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
+          children: [
+            text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
+            ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
+          ],
+        },
+      ],
+      ...(metric.count ? list : [[text(`None right now.`)]]),
+    ]),
+  };
 }

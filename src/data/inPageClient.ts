@@ -70,6 +70,7 @@ export async function inPageClient(): Promise<GatewayClient> {
     previewEdit: (p, object, values) => refused(() => gateway.previewEdit(p, object, values)),
     edit: (p, object, values) => refused(() => gateway.edit(p, object, values)),
     home: async (p) => refused(() => gateway.home(p)),
+    metricObjects: async (p, metric) => refused(() => gateway.metricObjects(p, metric)),
     setMethods: (p, objects) => refused(() => gateway.setMethods(p, objects)),
     composeSet: (p, objects, method) => refused(() => gateway.composeSet(p, objects, method)),
     previewSet: (p, objects, method, inputs) => refused(() => gateway.previewSet(p, objects, method, inputs)),

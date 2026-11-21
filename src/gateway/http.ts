@@ -31,6 +31,7 @@ import { createMcpServer } from './mcp';
  *   POST /api/objects/:id/edit/preview       preview an edit; body { "values": { ... } }
  *   POST /api/objects/:id/edit               edit an object; body { "values": { ... } }
  *   GET  /api/home                           the person's homepage: metrics, lifecycles and work done lately
+ *   GET  /api/metrics/:metric                a metric and exactly the objects it counts
  *   POST /api/sets                           the set methods a selection qualifies for; body { "objects": [...] }
  *   POST /api/sets/:method                   compose a set method for a selection; body { "objects": [...] }
  *   POST /api/sets/:method/preview           preview a set method; body { "objects": [...], "inputs": { ... } }
@@ -176,6 +177,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.navigation(principal));
       case 'GET home':
         return send(res, 200, gateway.home(principal));
+      case 'GET metrics/:':
+        return send(res, 200, gateway.metricObjects(principal, parts[2]));
       case 'GET todo':
         return send(res, 200, await gateway.todo(principal));
       case 'GET objects': {

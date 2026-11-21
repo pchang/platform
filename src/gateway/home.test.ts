@@ -54,6 +54,17 @@ describe('Home', () => {
     expect(marcusHome.lifecycles.map((l) => l.pluralLabel)).not.toContain('Proposed Sites');
   });
 
+  it('opens a metric on exactly the objects it counts, as long as the role may read them', () => {
+    const g = withSeed([], { now });
+    const queries = g.metricObjects(ben, 'Metric-OpenDataQueries');
+    expect(queries.metric).toMatchObject({ label: 'Open data queries', count: 3, health: 'watch' });
+    expect(queries.objects.every((o) => Object.values(o.state).includes('open'))).toBe(true);
+    // The count on Home and the list behind it agree.
+    for (const m of g.home(ben).metrics) expect(g.metricObjects(ben, m.metric).objects, m.label).toHaveLength(m.count);
+    expect(g.metricObjects(ben, 'Metric-OverdueVisits').objects).toHaveLength(2);
+    expect(() => g.metricObjects(ada, 'Metric-OverdueVisits')).toThrow(/cannot read/);
+  });
+
   it('counts what the person has done in the last 7 days', async () => {
     const g = withSeed([], { now });
     expect(g.home(ben).doneLast7Days).toBe(0);

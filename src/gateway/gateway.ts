@@ -1208,20 +1208,9 @@ export class Gateway {
         ?m rdfs:label ?label ; rdfs:comment ?comment ; p:metricOf ?type . ?type p:pluralLabel ?plural .
         OPTIONAL { ?m p:pastDue ?past } OPTIONAL { ?m p:watchAt ?watch } OPTIONAL { ?m p:riskAt ?risk } OPTIONAL { ?m p:moreIsBetter ?more } }`)) {
       if (!this.canRead(principal, m.type)) continue;
-      // Values of one dimension are alternatives; dimensions together must all hold.
-      const byDimension = new Map<string, string[]>();
-      for (const { v, d } of this.q(`SELECT ?v ?d WHERE { <${m.m}> p:inState ?v . ?d p:dimensionOf <${m.type}> ; p:valuesFrom ?s . ?v skos:inScheme ?s }`)) {
-        byDimension.set(d, [...(byDimension.get(d) ?? []), v]);
-      }
-      const where = [...byDimension].map(([d, vs], i) => `?o <${d}> ?v${i} FILTER(?v${i} IN (${vs.map((v) => `<${v}>`).join(', ')}))`).join(' . ');
-      const past = m.past ? `?o <${m.past}> ?date FILTER(?date < "${today}"^^xsd:date)` : '';
-      const count = Number(this.q(`SELECT (COUNT(DISTINCT ?o) AS ?n) WHERE { ?o a <${m.type}> . ${where} ${where && past ? '.' : ''} ${past} }`)[0].n);
+      const count = this.metricMatches(m.m, m.type, today).length;
       const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
-      let health: HomeView['metrics'][number]['health'];
-      if (m.watch !== undefined) {
-        const [watch, risk, more] = [Number(m.watch), Number(m.risk ?? m.watch), m.more === 'true'];
-        health = more ? (count <= risk ? 'at risk' : count <= watch ? 'watch' : 'on track') : count >= risk ? 'at risk' : count >= watch ? 'watch' : 'on track';
-      }
+      const health = this.healthOf(count, m.watch, m.risk, m.more);
       metrics.push({ metric: m.m, label: m.label, comment: m.comment, type: m.type, pluralLabel: m.plural, count, total, ...(health ? { health } : {}) });
     }
     // What needs attention first: at risk, then watch, then on track, then information only; by name within each.
@@ -1248,6 +1237,41 @@ export class Gateway {
     const doneLast7Days = Number(this.q(`SELECT (COUNT(DISTINCT ?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit ; prov:wasAssociatedWith <${principal.person}> ; prov:startedAtTime ?at }
         FILTER(?at >= "${since}"^^xsd:dateTime) }`)[0].n);
     return { metrics, lifecycles, doneLast7Days };
+  }
+
+  /** The objects a metric counts: its type, in its states (values of one dimension are alternatives), past due if it says so. */
+  private metricMatches(metric: string, type: string, today: string): string[] {
+    const byDimension = new Map<string, string[]>();
+    for (const { v, d } of this.q(`SELECT ?v ?d WHERE { <${metric}> p:inState ?v . ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?v skos:inScheme ?s }`)) {
+      byDimension.set(d, [...(byDimension.get(d) ?? []), v]);
+    }
+    const where = [...byDimension].map(([d, vs], i) => `?o <${d}> ?v${i} FILTER(?v${i} IN (${vs.map((v) => `<${v}>`).join(', ')}))`);
+    const past = this.q(`SELECT ?p WHERE { <${metric}> p:pastDue ?p }`)[0]?.p;
+    if (past) where.push(`?o <${past}> ?date FILTER(?date < "${today}"^^xsd:date)`);
+    return this.q(`SELECT DISTINCT ?o WHERE { ?o a <${type}> . ${where.join(' . ')} } ORDER BY ?o`).map((r) => r.o);
+  }
+
+  private healthOf(count: number, watch?: string, risk?: string, more?: string): HomeView['metrics'][number]['health'] {
+    if (watch === undefined) return undefined;
+    const [w, r, better] = [Number(watch), Number(risk ?? watch), more === 'true'];
+    return better ? (count <= r ? 'at risk' : count <= w ? 'watch' : 'on track') : count >= r ? 'at risk' : count >= w ? 'watch' : 'on track';
+  }
+
+  /** A metric and exactly the objects it counts, for its own page (spec 5.1, Home, From a metric to its objects). */
+  metricObjects(principal: Principal, metricId: string): { metric: HomeView['metrics'][number]; objects: ObjectSummary[] } {
+    this.authorize(principal);
+    const metric = metricId.includes('://') ? metricId : `${NS.ls}${metricId}`;
+    const m = this.q(`SELECT ?label ?comment ?type ?plural ?watch ?risk ?more WHERE { <${metric}> a p:Metric ; rdfs:label ?label ; rdfs:comment ?comment ; p:metricOf ?type .
+        ?type p:pluralLabel ?plural OPTIONAL { <${metric}> p:watchAt ?watch } OPTIONAL { <${metric}> p:riskAt ?risk } OPTIONAL { <${metric}> p:moreIsBetter ?more } }`)[0];
+    if (!m) throw new GatewayError(404, ['No such metric']);
+    if (!this.canRead(principal, m.type)) throw new GatewayError(403, ['Your role cannot read these objects']);
+    const objects = this.metricMatches(metric, m.type, this.now().toISOString().slice(0, 10)).map((o) => this.summary(o));
+    const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
+    const health = this.healthOf(objects.length, m.watch, m.risk, m.more);
+    return {
+      metric: { metric, label: m.label, comment: m.comment, type: m.type, pluralLabel: m.plural, count: objects.length, total, ...(health ? { health } : {}) },
+      objects,
+    };
   }
 
   // ---------------------------------------------------------------- creating and editing (spec 5.3)

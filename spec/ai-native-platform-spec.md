@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.35. November 20, 2026. Author: Paul Chang.
+Version 0.36. November 21, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -255,6 +255,7 @@ Orient opens on **Home**, each person's homepage. It answers three questions in 
 - **Your world.** First, the **metrics** the person's roles watch, each with its health. A metric is declared in the ontology, not in code: a count of the objects of one type in given states (values of one dimension are alternatives; dimensions together must all hold), optionally only those past their deadline, with the thresholds at which its health turns from on track to watch and to at risk, and whether more is better. A metric with no thresholds is information only. A role names the metrics it watches (`p:watches`), as defaults each organization may vary like permissions. A metric over a type the person may not read is left out.
 - **Where things stand.** Then, for each type of the person's work (the types their navigation lists, then the types their metrics count) that has a lifecycle and objects, how its objects spread across the lifecycle's stages. It is derived, never declared: the lifecycle is the type's first state dimension that is not classifying (section 5.3), its stages in order.
 - **What needs attention first.** Metrics are shown at risk first, then watch, then on track, then information only.
+- **From a metric to its objects.** Choosing a metric opens exactly the objects it counts, as an object list like any other, under the metric's name, its description and its health, so the person goes straight from the number to the work behind it.
 - **Your work.** Then the work itself: the To do summary and list below, and how the person is keeping up: what they have done in the last 7 days, their commits and the runs they started, beside what is waiting and overdue.
 
 #### To do
@@ -508,3 +509,4 @@ To resolve in future versions of this spec.
 | 0.33 | 2026-11-20 | Acting on a set (section 5.4): a set method takes the selection as its one object, offered only when the selection qualifies (type, count, what the objects share, each one's precondition), beside the batch actions. It commits once, on the chosen object, and may change the others; it may declare a comparison read from each object. |
 | 0.34 | 2026-11-20 | Creating and editing objects (section 5.3): Create and Edit are platform methods every type has, permitted by role, never for types that only come through methods. The form asks for the title's properties, the parent and classifying states; lifecycles start at their first value and only methods move them. Frozen objects cannot be edited. New on lists, Add on containing tabs, Edit in the header. |
 | 0.35 | 2026-11-20 | Home (section 5.1): each person's homepage, opening Orient. Their world's health from the metrics their roles watch, declared in the ontology with thresholds; where things stand, derived from each type's lifecycle; then their work, To do, and how they are keeping up. |
+| 0.36 | 2026-11-21 | From a metric to its objects (section 5.1, Home): choosing a metric opens exactly the objects it counts. |

@@ -45,6 +45,8 @@ export interface GatewayClient {
   todo(principal: Principal): Promise<ToDoItem[]>;
   /** Each person's homepage: their world's health, where things stand, and how they are keeping up (platform spec 5.1, Home). */
   home(principal: Principal): Promise<HomeView>;
+  /** A metric and exactly the objects it counts (platform spec 5.1, Home). */
+  metricObjects(principal: Principal, metric: string): Promise<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[] }>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */

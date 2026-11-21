@@ -39,6 +39,8 @@ export interface RenderHost {
   onCreate?: (type: string, within?: string) => void;
   /** Opens the form to edit an object (platform spec 5.3). */
   onEdit?: (object: string) => void;
+  /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
+  metricHref?: (metric: string) => string;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
   onAsk?: (object: string) => void;
 }
@@ -560,6 +562,10 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const type = node.creates;
     const within = node.within;
     props.onClick = () => host.onCreate?.(type, within);
+  }
+  if (entry.id === 'Button' && node.shows && host.metricHref) {
+    props.component = 'a';
+    props.href = host.metricHref(node.shows);
   }
   if (entry.id === 'Button' && node.edits) {
     const object = node.edits;

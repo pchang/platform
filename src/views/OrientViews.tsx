@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
-import type { ViewNode } from '../design-system/catalog';
+import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useChat } from '../chat/ChatProvider';
@@ -11,7 +11,10 @@ import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
 import { SetDialog } from './SetDialog';
 import { ObjectFormDialog, type FormTarget } from './ObjectFormDialog';
-import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
+import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, objectEntries, objectList, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
+import { metricPage } from './homeView';
+import { RefusedError } from '../data/client';
+import { routeHref } from '../routing';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
 const LIST_MODE_KEY = 'lsh.listMode';
@@ -235,7 +238,61 @@ export function TodoView() {
           onIntent: list.onIntent,
           onAction: (action) => openMethod(action.target, action.method),
           onOpen: panel.open, onAsk: chat.askAbout,
+          // A metric tile links to its objects' own page (platform spec 5.1, Home).
+          metricHref: (metric) => routeHref({ name: 'metric', metric }),
         }}
+      />
+      {list.dialog}
+    </>
+  );
+}
+
+/** A metric's objects, on a page of their own (platform spec 5.1, Home, From a metric to its objects). */
+export function MetricView({ metric }: { metric: string }) {
+  const panel = useObjectPanel();
+  const chat = useChat();
+  const { client, principal } = usePrincipal();
+  const { changes } = useNotifications();
+  const processes = useProcesses();
+  const [loaded, setLoaded] = useState<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
+  const [refused, setRefused] = useState<string[]>();
+  const openMethod = useOpenMethod((object, method) => {
+    const summary = loaded?.objects.find((o) => o.iri === object);
+    const option = loaded?.methods.get(object)?.find((m) => m.method === method);
+    return summary && option && { object: summary, method: option };
+  });
+  const runs = useActiveRuns([metric, processes.changes, changes]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const found = await client.metricObjects(principal, metric);
+        const methods = new Map(await Promise.all(found.objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
+        if (!cancelled) setLoaded({ ...found, methods });
+      } catch (error) {
+        if (!cancelled) setRefused(error instanceof RefusedError ? error.reasons : [String(error)]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, metric, processes.changes, changes]);
+
+  const list = useObjectList(loaded?.objects ?? NONE);
+  const view: ViewSpec = refused
+    ? {
+        pattern: 'card-view',
+        because: 'The gateway refused to show the metric',
+        root: { component: 'Alert', props: { variant: 'danger', title: 'This metric cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
+      }
+    : loaded
+      ? metricPage(loaded.metric, objectList(objectEntries(loaded.objects, { methods: loaded.methods, runs }), list.controls, loaded.metric.label), processes.notice)
+      : loadingView;
+  return (
+    <>
+      <ViewRenderer
+        view={view}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
       />
       {list.dialog}
     </>
