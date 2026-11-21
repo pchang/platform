@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.48. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.49. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -169,7 +169,7 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Actions: a column pinned to the end of the row, behind a thin border, so it stays in view while a wide table scrolls under it; on phones, below md, it scrolls with the row, since pinned it would hide most of it. One method raised to the row, the first task waiting or else the first method available, and the rest in a "…" menu, named "More actions for" the object's identifier.
   - Cells keep their content on one line, with PatternFly's default, roomy cell padding, on the content area's white table surface. When the table is wider than the content area, it scrolls sideways inside itself; the page never does. It stays a table on phones.
 - **Set actions.** Once objects are chosen, in either view, a thin divider follows the selection control. First come the set methods the selection qualifies for (platform spec 5.4, Acting on a set), each a plain text button named by the method, such as Compare study scenarios. A set action opens its archetype's pattern once for the selection as a whole, as a modal titled with the method and how many objects; a large modal for a comparison, so three or four cards fit side by side. Choosing a set that does not qualify, such as one object or alternatives from different parents, offers no set action, and nothing explains why unless the person asks.
-- **Batch actions.** After any set actions come the methods every chosen object has available that run for many (platform spec 5.4), as plain text buttons. The first three are shown; the rest are in a "…" menu named "More actions for the selected". When none applies to all of them, it says so, quietly.
+- **Batch actions.** After any set actions come the methods every chosen object has available that run for many (platform spec 5.4), as plain text buttons. The first three are shown; the rest are in a "…" menu named "More actions for the selected". When none applies to all of them, there are none and nothing says so: Ask about the chosen follows the divider alone.
   - A batch action opens its archetype's pattern once for all the chosen objects. The modal names the method and how many objects.
   - **Together** (every input shared, platform spec 5.4): the modal gives the inputs once, then previews each object, naming any the gateway would refuse with its reasons. Objects whose changes are the same are shown once, under all their identifiers.
   - **One after another** (some input about each object): a Wizard in the modal, one step per object named by its identifier, then Review. A step called "For all of them" comes first when there are shared inputs. Each object's step shows its title, its own inputs and its own preview, or why the gateway would refuse it; Next is enabled once its inputs are given, or straight away when it will be left out. Review lists every object with its own changes and the ones left out, and its button commits them, in order.
@@ -461,3 +461,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.46 | 2026-11-20 | Home replaces To do as each person's homepage: Your world (metric tiles with health), Where things stand (a thin segmented lifecycle bar per type, figures beside it, one shared scale), then Your work (the To do summary, keeping up, the list). |
 | 0.47 | 2026-11-21 | A metric tile links to its objects, on a page of their own under the metric's name, description and health. |
 | 0.48 | 2026-11-21 | Ask about the chosen: once objects are chosen in a list, the list bar ends with the Ask speech bubbles, after the set and batch actions, opening a conversation about all of them, led by a compact card for each, up to ten. |
+| 0.49 | 2026-11-21 | When no batch action applies to all the chosen objects, the list bar no longer says so; Ask about the chosen stands alone after the divider. |

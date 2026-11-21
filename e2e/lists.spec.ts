@@ -44,8 +44,10 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await card(page, 'SC-005').getByRole('checkbox').click();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await expect(bar(page).getByText('3 selected')).toBeVisible();
-  // SC-002 waits to be assessed, not triaged: nothing applies to all three.
-  await expect(bar(page).getByText('No action applies to all of them.')).toBeVisible();
+  // SC-002 waits to be assessed, not triaged: nothing applies to all three, so only Ask follows, and nothing says so.
+  await expect(bar(page).getByRole('button', { name: 'Triage' })).toHaveCount(0);
+  await expect(bar(page).getByText('No action applies')).toHaveCount(0);
+  await expect(bar(page).getByRole('button', { name: 'Ask about the 3 selected' })).toBeVisible();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await card(page, 'SC-006').getByRole('checkbox').click();
   await bar(page).getByRole('button', { name: 'Triage' }).click();

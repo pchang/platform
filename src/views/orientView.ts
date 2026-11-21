@@ -260,7 +260,6 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
     const sets = chosen > 1 ? (controls.setActions ?? []) : [];
     const batch = [...sets, ...commonMethods(entries, controls.selected)];
     start.push(separator);
-    if (!batch.length) start.push(barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small')));
     for (const m of batch.slice(0, SHOWN_BATCH_ACTIONS)) start.push(barItem({ component: 'Button', props: { label: m.label, variant: 'plain' }, batch: m.method }));
     const more = batch.slice(SHOWN_BATCH_ACTIONS);
     if (more.length) {

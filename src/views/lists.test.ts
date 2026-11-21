@@ -63,10 +63,10 @@ describe('the list bar (design system spec 4.3)', () => {
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
   });
 
-  it('says when no method applies to all the chosen objects', () => {
+  it('offers only Ask when no method applies to all the chosen objects, and says nothing about it', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-6']) }) });
     expect(find(view.root, (n) => Boolean(n.batch))).toEqual([]);
-    expect(JSON.stringify(view)).toContain('No action applies to all of them.');
+    expect(JSON.stringify(view)).not.toContain('No action applies');
     // Ask is still there, as the free-text way forward when nothing anticipated fits (design system spec 4.3).
     expect(find(view.root, (n) => Boolean(n.asks) && Array.isArray(n.asks)).map((n) => n.asks)).toEqual([['urn:SC-4', 'urn:SC-6']]);
   });
