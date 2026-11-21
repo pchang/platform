@@ -23,30 +23,21 @@ import { MenuIcon } from './MenuIcon';
 import { SettingsMenu } from './SettingsMenu';
 import './AppMasthead.css';
 
-/** The brand's mark, with its dark variant shown in dark mode when it has one (design system spec 4.1, Brand logo). */
-function BrandMark({ image, onError }: { image: { light: string; dark?: string }; onError: () => void }) {
-  const src = (file: string) => `${import.meta.env.BASE_URL}${file}`;
-  return (
-    <>
-      <img src={src(image.light)} alt="" className={`app-brand__mark${image.dark ? ' app-brand__light' : ''}`} onError={onError} />
-      {image.dark && <img src={src(image.dark)} alt="" aria-hidden="true" className="app-brand__mark app-brand__dark" onError={onError} />}
-    </>
-  );
-}
-
 /**
- * The logo: the parent brand's mark, then the product's short name as text. The link is named for the whole product, which
- * begins with the visible short name. The product name as text stands in until the mark's file is there, or if it cannot be
- * loaded (design system spec 4.1, Brand logo).
+ * The logo: the parent brand's own file, with its reversed copy shown in dark mode. Both pictures are decorative: the link
+ * around them is named for the whole product, which begins with the short name they show, so the name never depends on which
+ * copy is showing. The product name as text stands in until the file is there, or if it cannot be loaded (design system spec
+ * 4.1, Brand logo).
  */
 function BrandLogo() {
   const [failed, setFailed] = useState(false);
   const { logo } = product;
   if (failed) return <span className="app-masthead__name">{product.name}</span>;
+  const src = (file: string) => `${import.meta.env.BASE_URL}${file}`;
   return (
     <span className="app-brand">
-      <BrandMark image={logo.mark} onError={() => setFailed(true)} />
-      <span className="app-brand__wordmark">{logo.shortName}</span>
+      <img src={src(logo.light)} alt="" className={`app-brand__logo${logo.dark ? ' app-brand__light' : ''}`} onError={() => setFailed(true)} />
+      {logo.dark && <img src={src(logo.dark)} alt="" aria-hidden="true" className="app-brand__logo app-brand__dark" onError={() => setFailed(true)} />}
     </span>
   );
 }

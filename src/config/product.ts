@@ -13,12 +13,10 @@ export const product = {
   name: 'LS&H Ecosystem',
   homeHref: '#/',
   /**
-   * The masthead's logo: the parent brand's own mark, an approved SVG file in public/brand that the platform never redraws,
-   * then the product's short name as text. Until the mark's file is there, or if it cannot be loaded, the masthead shows the
-   * name as text. The dark variant is optional: without one, the light file shows in both modes.
+   * The masthead's logo: the parent brand's own approved SVG in public/brand, its mark with the product's short name in the
+   * brand's lettering. The platform never redraws, retypes or recolors it; the dark file is the same paths reversed to white.
+   * Until the file is there, or if it cannot be loaded, the masthead shows the name as text. Without a dark file the light one
+   * shows in both modes.
    */
-  logo: {
-    mark: { light: 'brand/3ds-mark.svg', dark: 'brand/3ds-mark-dark.svg' } satisfies BrandImage,
-    shortName: 'LS&H',
-  },
+  logo: { light: 'brand/lsh-logo.svg', dark: 'brand/lsh-logo-dark.svg' } satisfies BrandImage,
 } as const;

@@ -84,8 +84,8 @@
 }
 
 /*
- * The brand's logo (design system spec 4.1, Brand logo): its mark, as the brand's own image file sized by height so its
- * proportions never change, then the short name as text, centered on the menu button's line.
+ * The brand's logo (design system spec 4.1, Brand logo): the brand's own image file, sized by height so its proportions
+ * never change, centered on the menu button's line.
  */
 .app-brand {
   display: flex;
@@ -93,19 +93,19 @@
   gap: var(--pf-t--global--spacer--sm);
   min-width: 0;
 }
-.app-brand__mark {
-  block-size: calc(var(--pf-t--global--spacer--lg) + var(--pf-t--global--spacer--xs));
+.app-brand__logo {
+  /* Sized by height so its proportions never change: smaller on phones, where it also scales down to the room it is given. */
+  block-size: calc(var(--pf-t--global--spacer--lg));
   inline-size: auto;
-  flex: none;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  object-fit: contain;
+  object-position: left center;
 }
-.app-brand__wordmark {
-  /* The short name is live text in the platform's typeface, spaced like a wordmark; its capitals stand about as tall as the mark. */
-  font-size: var(--pf-t--global--font--size--body--lg);
-  font-weight: var(--pf-t--global--font--weight--heading--bold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1;
-  white-space: nowrap;
+@media (min-width: 768px) {
+  .app-brand__logo {
+    block-size: var(--pf-t--global--spacer--xl);
+  }
 }
 /* The dark variant of each file shows in dark mode, the light one otherwise. */
 .app-brand__dark {

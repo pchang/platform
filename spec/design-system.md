@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.55. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.56. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -95,7 +95,7 @@ The masthead and the sidebar of the Page template are the platform chrome. Their
 
 | Position | Content |
 |---|---|
-| Masthead, left | A menu button that opens and closes the sidebar, then the logo, which links to Home: the brand's own mark as an image file, then the product's short name as text, set in configuration (see Brand logo, below); where no mark is configured, or its file cannot be loaded, the product name as text |
+| Masthead, left | A menu button that opens and closes the sidebar, then the logo, which links to Home: the brand's own logo, one image file set in configuration (see Brand logo, below); where none is configured, or its file cannot be loaded, the product name as text |
 | Masthead, right | Ask, notifications, settings and profile, as icon buttons with accessible names |
 | Sidebar | Home, then the object world of the person's work: their work domains as groups, and each domain's object types with a count (platform spec section 5.1). Each type opens a list of its objects |
 
@@ -103,14 +103,12 @@ The menu button is PatternFly's page toggle button, drawn as two lines rather th
 
 All masthead items stay visible at every width, on one row with the logo, centered on the same line as the menu button. The product name is LS&H Ecosystem. On a phone, where the actions leave little room, the name wraps onto a second line, "LS&H" over "Ecosystem", before it is ever cut short with an ellipsis.
 
-**Brand logo.** A branded deployment shows its parent brand's own mark, with the product's short name beside it, in the masthead in place of the product name as text.
+**Brand logo.** A branded deployment shows its parent brand's own logo in the masthead in place of the product name as text: the brand's mark with the product's short name beside it, in the brand's lettering, as one image.
 
-- **The mark is the brand's, never ours.** It is the brand's approved SVG file, kept in `public/brand/` and named in `src/config/product.ts`. The platform never redraws, recolors or stretches it. It may be cut from the brand's own combined logo and wordmark file, keeping its paths unchanged; a deployment with no approved file shows the product name as text.
-- **The short name is text.** It is set in the platform's typeface, in capitals and semibold, spaced like a wordmark, at a size whose capitals stand about as tall as the mark's. It is live text, not an image, because the brand's lettering has only the letters of the brand's own name, and the platform never retypes the brand's lettering in its own letterforms to imitate it.
-- **Lockup.** The mark first, then the short name, centered on the menu button's line, with a gap of 8px. The mark is 28px high, sized by height so its proportions never change, and decorative, with an empty alternative text. The link's accessible name is the whole product name, which begins with the visible short name, so a voice user can say what they see.
-- **Light and dark.** The mark may have a dark variant, `-dark` before the extension, shown in dark mode; with none, the one file is shown in both. The brand's file is chosen to hold its contrast on the masthead's surface in both modes. The short name follows the text color.
-- **Phones.** At 320px the lockup shares the masthead with the menu button and four icon buttons, so it fits in about 87px: the mark and a short name such as "LS&H" fit.
-- **Falls back, never breaks.** If the mark's file cannot be loaded, the lockup is replaced by the product name as text (4.1), so the masthead never shows a broken image. The sign-in page and the chat keep the product name as text.
+- **The artwork is the brand's, never ours.** The logo is the brand's approved SVG file, kept in `public/brand/` and named in `src/config/product.ts`. The platform never redraws, retypes, recolors or stretches it. Its viewBox is cropped to the artwork, so it carries no empty margin, and its paths are kept exactly as supplied. A deployment with no approved file shows the product name as text.
+- **Lockup.** One image, centered on the menu button's line. It is sized by height, 24px on phones and 32px from md up, so its proportions never change, and where the masthead has less room, as on a 320px phone, it scales down to fit, never wrapping, clipping or pushing the actions. Both copies are decorative, with an empty alternative text; the link around them is named for the full product name, which begins with the short name the logo shows, so the name never depends on which copy is showing and a voice user can say what they see.
+- **Light and dark.** The logo is supplied in two colors: the brand's own, for light mode, and a reversed copy, the same paths in white, for dark mode, shown in dark mode. With only one file configured, it shows in both modes, so it must hold its contrast on the masthead's surface in both.
+- **Falls back, never breaks.** If the file cannot be loaded, the logo is replaced by the product name as text (4.1), so the masthead never shows a broken image. The sign-in page and the chat keep the product name as text.
 
 The sidebar is open beside the content from xl up. Below xl it is a drawer over the content, opened with the menu button and closed when a destination is chosen.
 
@@ -502,3 +500,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.53 | 2026-11-21 | Spacing and grouping (new section 4.5): three distances, group, peers and section, so headings sit nearer what they head; a legend close to its bar; metric tile labels aligned along a row; optical alignment of a lone icon button; fair targets for checkboxes and radios. On phones, wrapping instead of clipping: dialog titles and buttons, list bars, the product name over two lines, even menu margins, stacked radios, a thin object panel head; a list bar that drops its stranded divider and its New and Add while objects are chosen; denser cards in the chat for the chosen. |
 | 0.54 | 2026-11-21 | Brand logo (4.1): a branded deployment's masthead shows the parent brand's own mark and wordmark as approved image files named in configuration, with light and dark variants, never redrawn or retyped, falling back to the product name as text when none are configured or a file cannot load. |
 | 0.55 | 2026-11-21 | Brand logo (4.1): the brand's own mark as an image, cut from its combined logo file with its paths unchanged, then the product's short name as live text in the platform's typeface, since the brand's lettering has no H or &. The accessible name is the full product name. |
+| 0.56 | 2026-11-21 | Brand logo (4.1): one image, the brand's mark with the product's short name in the brand's lettering, as supplied; viewBox cropped, paths unchanged, with a reversed copy for dark mode. It replaces the mark-and-text lockup of 0.55. |
