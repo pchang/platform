@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.56. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.57. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -243,6 +243,8 @@ Space is how a page shows what belongs together. Three distances do the work, an
 - **Nearer what it heads.** A heading is always closer to the content it introduces than to whatever came before it, by at least two to one. Section spacing is larger than group spacing so the heading reads as the start of something, never as a label for the section above.
 - **A legend belongs to its bar.** In Where things stand, a row's name, bar and legend are one group, close together, and the rows are peers set 32px apart, so a legend is never nearer the next row's name than its own bar.
 - **Aligned along a row.** Where tiles sit in a row, the same things sit at the same height. A metric tile's count and total are at the top and its health label is pinned to the tile's foot, so the labels of a row line up however many lines each name takes.
+- **Tiles follow the room they have.** Metric tiles and To do's count tiles go four across only when the area they are in is wide enough to give each about 9.5rem (150px), and two across below that. The area is measured, not the screen: with the chat open beside the page, or an object's panel, there is far less room than the screen suggests. A tile's own control, such as the round select circle, sits at its top right inside the card, never past its edge.
+- **A list bar stands clear of its list.** The bar and the objects below it are one group, 16px apart, so the view toggle and the Select link never crowd the first card.
 - **Optical alignment.** An icon-only button that starts a row, such as Ask on a card with no method buttons, is pulled left so its glyph lines up with the text above it, and its own padding adds no height to the card.
 - **Fair targets.** Checkboxes and radio buttons in a form are in rows at least 32px tall with 4px between, so each can be tapped without catching its neighbor. Every interactive target is at least 24px, as WCAG 2.2 requires.
 
@@ -501,3 +503,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.54 | 2026-11-21 | Brand logo (4.1): a branded deployment's masthead shows the parent brand's own mark and wordmark as approved image files named in configuration, with light and dark variants, never redrawn or retyped, falling back to the product name as text when none are configured or a file cannot load. |
 | 0.55 | 2026-11-21 | Brand logo (4.1): the brand's own mark as an image, cut from its combined logo file with its paths unchanged, then the product's short name as live text in the platform's typeface, since the brand's lettering has no H or &. The accessible name is the full product name. |
 | 0.56 | 2026-11-21 | Brand logo (4.1): one image, the brand's mark with the product's short name in the brand's lettering, as supplied; viewBox cropped, paths unchanged, with a reversed copy for dark mode. It replaces the mark-and-text lockup of 0.55. |
+| 0.57 | 2026-11-21 | Tiles follow the room they have: four across only where each gets about 150px, else two, measured on the area, not the screen, so the select circle never falls past a tile's edge beside an open chat. A list bar stands 16px clear of its list. |

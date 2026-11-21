@@ -189,3 +189,17 @@ html body .pf-v6-c-toolbar.pf-m-sticky {
     display: none;
   }
 }
+
+/*
+ * Tiles follow the room they have (design system spec 4.5). The page's area measures itself, and metric tiles and count
+ * tiles go two across when it is narrow, as with the chat or an object's panel open, where the screen's own width says
+ * there is room for four and there is not.
+ */
+html body .pf-v6-c-drawer__body {
+  container: page / inline-size;
+}
+@container page (max-width: 42rem) {
+  html body .pf-v6-l-grid:has(> .pf-v6-l-grid__item > .pf-v6-c-card) > .pf-v6-l-grid__item {
+    grid-column: span 6 / span 6;
+  }
+}

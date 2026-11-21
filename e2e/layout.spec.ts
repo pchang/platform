@@ -105,3 +105,31 @@ test('a list bar never clips beside an open chat: its controls wrap, and "select
   // New and Add wait while objects are chosen.
   await expect(bar.getByRole('button', { name: /^Add Study Scenario/ })).toHaveCount(0);
 });
+
+test('beside an open chat the count tiles go two across, each select circle stays inside its card, and the list bar stands clear of its list', async ({ page }) => {
+  await start(page, 'Chloé Martin', 1280);
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
+  await page.getByRole('heading', { level: 2, name: 'Your work' }).scrollIntoViewIfNeeded();
+  const tiles = await page.locator('.pf-v6-c-card.pf-m-selectable').evaluateAll((cards) =>
+    cards.map((c) => {
+      const card = c.getBoundingClientRect();
+      const circle = c.querySelector('input')!.getBoundingClientRect();
+      return { width: Math.round(card.width), x: Math.round(card.x), inset: Math.round(card.right - circle.right), top: Math.round(circle.top - card.top) };
+    }),
+  );
+  expect(tiles).toHaveLength(4);
+  // Two across: only two distinct left edges, and no tile so narrow its title and circle collide.
+  expect(new Set(tiles.map((t) => t.x)).size).toBe(2);
+  for (const t of tiles) {
+    expect(t.width, 'tile width').toBeGreaterThanOrEqual(140);
+    expect(t.inset, 'circle inside the card').toBeGreaterThanOrEqual(8);
+    expect(t.top, 'circle inside the card').toBeGreaterThanOrEqual(0);
+  }
+  // The view toggle stands clear of the first card.
+  const gap = await page.evaluate(() => {
+    const bar = document.querySelector('.pf-v6-c-toolbar.pf-m-sticky')!.getBoundingClientRect();
+    const card = document.querySelector('.pf-v6-l-gallery .pf-v6-c-card')!.getBoundingClientRect();
+    return card.top - bar.bottom;
+  });
+  expect(gap, 'bar to first card').toBeGreaterThanOrEqual(14);
+});

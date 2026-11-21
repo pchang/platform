@@ -401,7 +401,7 @@ export function objectList(entries: ListEntry[], controls: ListControls, name: s
   const objects: ViewNode =
     controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
-  return [group([listBar(entries, controls), objects], 'gapNone')];
+  return [group([listBar(entries, controls), objects], 'gapMd')];
 }
 
 /** To do's items as list entries: deadline, urgency and runs as status, and the tasks waiting, else the actions. */
