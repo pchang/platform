@@ -30,8 +30,8 @@ describe('Home', () => {
     const chemist = withSeed([], { now }).home(ada);
     expect(chemist.metrics.find((m) => m.label === 'Candidates')).toMatchObject({ count: 1 });
     expect(chemist.metrics.find((m) => m.label === 'Candidates')!.health).toBeUndefined();
-    // Forecasts missing their target must be current and missed: the seed's three are current, none missed.
-    expect(withSeed([], { now }).home(marcus).metrics.find((m) => m.label === 'Forecasts missing their target')).toMatchObject({ count: 0, health: 'on track' });
+    // Forecasts missing their target must be current and missed: SSC-1 misses time and cost, SSC-2 cost and success.
+    expect(withSeed([], { now }).home(marcus).metrics.find((m) => m.label === 'Forecasts missing their target')).toMatchObject({ count: 4, health: 'at risk' });
   });
 
   it('shows where things stand for each type of the person’s work, stage by stage in lifecycle order', () => {

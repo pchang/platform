@@ -47,7 +47,11 @@ describe('Home view', () => {
     expect(json).not.toContain('"label":"View 3"');
     // A metric that counts nothing has nothing to open.
     const marcus = as('person-marcus', 'ClinicalOperationsLead');
-    expect(JSON.stringify(buildTodoView([], { name: 'Marcus Bell', role: 'Clinical Operations Lead' }, undefined, [], { home: g.home(marcus), today: now() }))).not.toContain('Metric-BudgetsOverCeiling"');
+    const home = g.home(marcus);
+    const none = { ...home, metrics: home.metrics.map((m) => (m.label === 'Budgets over their ceiling' ? { ...m, count: 0 } : m)) };
+    const marcusView = JSON.stringify(buildTodoView([], { name: 'Marcus Bell', role: 'Clinical Operations Lead' }, undefined, [], { home: none, today: now() }));
+    expect(marcusView).not.toContain('Metric-BudgetsOverCeiling"');
+    expect(marcusView).toContain('Metric-ForecastsMissingTarget"');
     const { metric, objects } = g.metricObjects(ben, 'Metric-OpenDataQueries');
     const page = metricPage(metric, objectList(objectEntries(objects), NO_CONTROLS, metric.label));
     expect(validateView(page).errors).toEqual([]);

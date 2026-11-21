@@ -2423,6 +2423,275 @@ d:FC-10 a ls:Forecast ;
   ls:forecastUnit "million USD" ;
   ls:forecastFrom d:TS-4 .
 
+# VELOCITY-3's three study scenarios, each simulated by Tomás Lindqvist on November 19, 2026 with the reference trial
+# model (domain spec 3.4.4): the model's own output, as Run trial simulation wrote it. SSC-2 allows patients who failed a
+# prior biologic, so the biostatistician assumed fewer screen failures (33 percent) and a lower response on treatment
+# (43 percent). simulation.test.ts runs the model again and checks every figure here against it.
+
+d:TS-1 a ls:TrialSimulation ;
+  ls:identifier "TS-1" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:SSC-1 ;
+  ls:scenarioAsOf "2026-11-19"^^xsd:date ;
+  ls:simulatedTrials 2000 ;
+  ls:recruitmentRate 0.5 ;
+  ls:screenFailureRate 48.0 ;
+  ls:dropoutRate 15.0 ;
+  ls:assumedEffect "Response of 46 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
+  ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
+
+d:FC-11 a ls:Forecast ;
+  ls:identifier "FC-11" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 19.6 ;
+  ls:forecastLow 17.5 ;
+  ls:forecastHigh 21.9 ;
+  ls:forecastUnit "months" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-1 .
+
+d:FC-12 a ls:Forecast ;
+  ls:identifier "FC-12" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-totalCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 53.6 ;
+  ls:forecastLow 50.7 ;
+  ls:forecastHigh 57.0 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-3 .
+
+d:FC-13 a ls:Forecast ;
+  ls:identifier "FC-13" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 71.3 ;
+  ls:forecastLow 69.9 ;
+  ls:forecastHigh 72.5 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-1 ;
+  ls:measuredAgainst d:OT-2 .
+
+d:FC-14 a ls:Forecast ;
+  ls:identifier "FC-14" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-seriousAdverseEvents ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 35.0 ;
+  ls:forecastLow 28.0 ;
+  ls:forecastHigh 43.0 ;
+  ls:forecastUnit "events" ;
+  ls:forecastFrom d:TS-1 .
+
+d:FC-15 a ls:Forecast ;
+  ls:identifier "FC-15" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-patientBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 10.5 ;
+  ls:forecastLow 10.5 ;
+  ls:forecastHigh 10.5 ;
+  ls:forecastUnit "hours per patient" ;
+  ls:forecastFrom d:TS-1 .
+
+d:FC-16 a ls:Forecast ;
+  ls:identifier "FC-16" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-siteBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 3.5 ;
+  ls:forecastLow 3.3 ;
+  ls:forecastHigh 3.8 ;
+  ls:forecastUnit "hours per site per month" ;
+  ls:forecastFrom d:TS-1 .
+
+d:TS-2 a ls:TrialSimulation ;
+  ls:identifier "TS-2" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:SSC-2 ;
+  ls:scenarioAsOf "2026-11-19"^^xsd:date ;
+  ls:simulatedTrials 2000 ;
+  ls:recruitmentRate 0.6 ;
+  ls:screenFailureRate 33.0 ;
+  ls:dropoutRate 15.0 ;
+  ls:assumedEffect "Response of 43 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
+  ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
+
+d:FC-17 a ls:Forecast ;
+  ls:identifier "FC-17" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 16.8 ;
+  ls:forecastLow 15.0 ;
+  ls:forecastHigh 18.9 ;
+  ls:forecastUnit "months" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-1 .
+
+d:FC-18 a ls:Forecast ;
+  ls:identifier "FC-18" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-totalCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 49.9 ;
+  ls:forecastLow 47.3 ;
+  ls:forecastHigh 52.8 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-3 .
+
+d:FC-19 a ls:Forecast ;
+  ls:identifier "FC-19" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-missed ;
+  ls:forecastMedian 47.5 ;
+  ls:forecastLow 46.1 ;
+  ls:forecastHigh 48.9 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-2 ;
+  ls:measuredAgainst d:OT-2 .
+
+d:FC-20 a ls:Forecast ;
+  ls:identifier "FC-20" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-seriousAdverseEvents ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 39.0 ;
+  ls:forecastLow 31.0 ;
+  ls:forecastHigh 46.0 ;
+  ls:forecastUnit "events" ;
+  ls:forecastFrom d:TS-2 .
+
+d:FC-21 a ls:Forecast ;
+  ls:identifier "FC-21" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-patientBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 10.5 ;
+  ls:forecastLow 10.5 ;
+  ls:forecastHigh 10.5 ;
+  ls:forecastUnit "hours per patient" ;
+  ls:forecastFrom d:TS-2 .
+
+d:FC-22 a ls:Forecast ;
+  ls:identifier "FC-22" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-siteBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 4.0 ;
+  ls:forecastLow 3.8 ;
+  ls:forecastHigh 4.3 ;
+  ls:forecastUnit "hours per site per month" ;
+  ls:forecastFrom d:TS-2 .
+
+d:TS-3 a ls:TrialSimulation ;
+  ls:identifier "TS-3" ;
+  ls:trialSimulationRun lst:TrialSimulationRun-complete ;
+  ls:simulates d:SSC-3 ;
+  ls:scenarioAsOf "2026-11-19"^^xsd:date ;
+  ls:simulatedTrials 2000 ;
+  ls:recruitmentRate 0.6 ;
+  ls:screenFailureRate 48.0 ;
+  ls:dropoutRate 15.0 ;
+  ls:assumedEffect "Response of 46 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
+  ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
+
+d:FC-23 a ls:Forecast ;
+  ls:identifier "FC-23" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-lastPatientIn ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 14.6 ;
+  ls:forecastLow 13.2 ;
+  ls:forecastHigh 16.2 ;
+  ls:forecastUnit "months" ;
+  ls:forecastFrom d:TS-3 ;
+  ls:measuredAgainst d:OT-1 .
+
+d:FC-24 a ls:Forecast ;
+  ls:identifier "FC-24" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-totalCost ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 37.7 ;
+  ls:forecastLow 36.0 ;
+  ls:forecastHigh 39.7 ;
+  ls:forecastUnit "million USD" ;
+  ls:forecastFrom d:TS-3 ;
+  ls:measuredAgainst d:OT-3 .
+
+d:FC-25 a ls:Forecast ;
+  ls:identifier "FC-25" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-probabilityOfSuccess ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-met ;
+  ls:forecastMedian 72.1 ;
+  ls:forecastLow 70.8 ;
+  ls:forecastHigh 73.4 ;
+  ls:forecastUnit "percent" ;
+  ls:forecastFrom d:TS-3 ;
+  ls:measuredAgainst d:OT-2 .
+
+d:FC-26 a ls:Forecast ;
+  ls:identifier "FC-26" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-seriousAdverseEvents ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 36.0 ;
+  ls:forecastLow 28.0 ;
+  ls:forecastHigh 44.0 ;
+  ls:forecastUnit "events" ;
+  ls:forecastFrom d:TS-3 .
+
+d:FC-27 a ls:Forecast ;
+  ls:identifier "FC-27" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-patientBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 6.0 ;
+  ls:forecastLow 6.0 ;
+  ls:forecastHigh 6.0 ;
+  ls:forecastUnit "hours per patient" ;
+  ls:forecastFrom d:TS-3 .
+
+d:FC-28 a ls:Forecast ;
+  ls:identifier "FC-28" ;
+  ls:forecastCurrency lst:ForecastCurrency-current ;
+  ls:forecastMeasure lst:OutcomeMeasure-siteBurden ;
+  ls:forecastAgainstTarget lst:ForecastAgainstTarget-noTarget ;
+  ls:forecastMedian 2.3 ;
+  ls:forecastLow 2.2 ;
+  ls:forecastHigh 2.5 ;
+  ls:forecastUnit "hours per site per month" ;
+  ls:forecastFrom d:TS-3 .
+
+d:DS-3 a ls:DesignSignal ;
+  ls:identifier "DS-3" ;
+  ls:designSignalStatus lst:DesignSignalStatus-raised ;
+  ls:designSignalText "Cannot perform MRI of both hands (MRI), which the protocol needs, so its 10 sites take no part in enrollment" ;
+  ls:isAbout d:PS-3 .
+
+d:DS-4 a ls:DesignSignal ;
+  ls:identifier "DS-4" ;
+  ls:designSignalStatus lst:DesignSignalStatus-raised ;
+  ls:designSignalText "Cannot perform MRI of both hands (MRI), which the protocol needs, so its 10 sites take no part in enrollment" ;
+  ls:isAbout d:PS-9 .
+
+d:SB-1 ls:budgetTotal 53.6 ;
+  ls:studyBudgetFit lst:StudyBudgetFit-overCeiling .
+
+d:SB-2 ls:budgetTotal 49.9 ;
+  ls:studyBudgetFit lst:StudyBudgetFit-overCeiling .
+
+d:SB-3 ls:budgetTotal 37.7 ;
+  ls:studyBudgetFit lst:StudyBudgetFit-withinCeiling .
+
 d:OPP-2 a ls:Opportunity ;
   ls:identifier "OPP-2" ;
   ls:opportunityStatus lst:OpportunityStatus-parked ;

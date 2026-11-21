@@ -91,6 +91,30 @@ describe('Run trial simulation', () => {
     expect(old.every((f) => states(f).includes('out of date'))).toBe(true);
   });
 
+  it('seeds VELOCITY-3’s scenarios with the model’s own output: running it again gives every seeded figure', async () => {
+    // The seed's TS-1 to TS-3 were written by this model (domain spec section 11): never invented, and kept in step with it.
+    const seeded = withSeed();
+    const figures = (g: ReturnType<typeof withSeed>, simulation: string) =>
+      g.read(marcus, simulation).links.find((l) => l.relationship === ls('forecastFrom'))!.objects
+        .map((f) => g.read(marcus, f.identifier))
+        .map((f) => `${f.title} (${f.properties.low} to ${f.properties.high}) ${f.state['Against target']}`)
+        .sort();
+    const recorded = (g: ReturnType<typeof withSeed>, simulation: string) => {
+      const { properties } = g.read(marcus, simulation);
+      return Object.fromEntries(Object.entries(properties).filter(([k]) => !/as of/i.test(k)));
+    };
+    for (const [scenario, simulation, overrides] of [
+      ['SSC-1', 'TS-1', {}],
+      ['SSC-2', 'TS-2', { screenFailureRate: '33', treatmentResponse: '43' }],
+      ['SSC-3', 'TS-3', {}],
+    ] as const) {
+      expect(seeded.read(marcus, scenario).links.find((l) => l.relationship === ls('simulates'))!.objects.map((o) => o.identifier)).toEqual([simulation]);
+      const again = await simulate(scenario, assumptions(overrides));
+      expect(figures(again.gateway, again.simulation.identifier), scenario).toEqual(figures(seeded, simulation));
+      expect(recorded(again.gateway, again.simulation.identifier), scenario).toEqual(recorded(seeded, simulation));
+    }
+  });
+
   describe('the three elements move each other', () => {
     it('protocol → sites: sites without MRI take no part while the protocol needs it, and a design signal says why', async () => {
       const { gateway } = await simulate('SSC-1');

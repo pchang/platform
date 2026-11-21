@@ -38,8 +38,9 @@ test('run a trial simulation on a study scenario and read its forecasts against 
   await expect(dialog.getByText(/Over the budget's ceiling of 45 million USD/)).toBeVisible();
   await dialog.getByRole('button', { name: 'Done' }).click();
 
-  await panel.getByRole('tab', { name: /^Trial Simulations 1/ }).click();
-  await panel.getByText(/^Simulation of VELOCITY-3 baseline/).first().click();
+  // The seed's simulation (TS-1) and this one.
+  await panel.getByRole('tab', { name: /^Trial Simulations 2/ }).click();
+  await panel.locator('.pf-v6-c-card').filter({ hasNotText: 'TS-1' }).getByText(/^Simulation of VELOCITY-3 baseline/).first().click();
   await panel.getByRole('tab', { name: /^Forecasts 2/ }).click();
   await expect(panel.getByText(/^Last patient in: \d+(\.\d)? months$/)).toBeVisible();
   await expect(panel.getByText(/^Total cost: \d+(\.\d)? million USD$/)).toBeVisible();

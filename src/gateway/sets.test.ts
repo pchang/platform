@@ -52,21 +52,28 @@ describe('set methods (platform spec 5.4, Acting on a set)', () => {
   });
 
   it('compose with the set as the choices, Compare and decide, and a comparison of current forecasts by measure', async () => {
+    // The seed simulates all three with the reference model (domain spec section 11): the trade-off is there to compare.
     const g = withSeed();
-    for (const s of ['SSC-1', 'SSC-3']) await g.commit(marcus, s, ls('RunTrialSimulation'), assumptions);
-    await g.idle();
     const c = await g.composeSet(marcus, ['SSC-1', 'SSC-2', 'SSC-3'], COMPARE);
     expect(c.archetype.label).toBe('Compare and decide');
     expect(c.objects!.map((o) => o.identifier)).toEqual(['SSC-1', 'SSC-2', 'SSC-3']);
     expect(c.inputs.find((i) => i.name === 'chosen')!.choices!.map((x) => x.label.split(' · ')[0])).toEqual(['SSC-1', 'SSC-2', 'SSC-3']);
     const rows = c.comparison!.rows;
-    expect(rows.map((r) => r.label)).toEqual(['Last patient in', 'Probability of success', 'Total cost']);
-    const lpi = rows[0].cells;
-    expect(lpi[0]).toMatchObject({ status: 'Against target: missed', urgent: true });
-    // SSC-2 has not been simulated: its cells are empty, never invented.
-    expect(lpi[1]).toBeNull();
-    expect(lpi[2]).toMatchObject({ status: 'Against target: met' });
-    expect(lpi[2]!.urgent).toBeUndefined();
+    expect(rows.map((r) => r.label)).toEqual(['Last patient in', 'Probability of success', 'Total cost', 'Serious adverse events', 'Patient burden', 'Site burden']);
+    const against = (row: number) => rows[row].cells.map((cell) => cell!.status!.replace('Against target: ', ''));
+    // The baseline is slow and over budget; allowing prior biologics is fast but unlikely to succeed; SSC-3 meets all three.
+    expect(against(0)).toEqual(['missed', 'met', 'met']);
+    expect(against(1)).toEqual(['met', 'missed', 'met']);
+    expect(against(2)).toEqual(['missed', 'missed', 'met']);
+    expect(rows[0].cells[0]).toMatchObject({ title: 'Last patient in: 19.6 months', urgent: true });
+    expect(rows[0].cells[2]!.urgent).toBeUndefined();
+
+    // Simulating SSC-2 again for one measure makes its other forecasts out of date: those cells are empty, never invented.
+    await g.commit(marcus, 'SSC-2', ls('RunTrialSimulation'), { ...assumptions, measures: lst('OutcomeMeasure-lastPatientIn') });
+    await g.idle();
+    const after = (await g.composeSet(marcus, ['SSC-1', 'SSC-2', 'SSC-3'], COMPARE)).comparison!.rows;
+    expect(after.find((r) => r.label === 'Probability of success')!.cells[1]).toBeNull();
+    expect(after.find((r) => r.label === 'Last patient in')!.cells[1]).not.toBeNull();
   });
 
   it('commit once, on the chosen scenario: it is selected, the others set aside, a decision on their parent', async () => {

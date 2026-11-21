@@ -23,24 +23,36 @@ test('choose study scenarios together, compare them side by side, and select one
   // One scenario alone is not a set: no set action, and Run trial simulation needs inputs, so nothing applies to all.
   await card('VELOCITY-3 baseline').getByRole('checkbox').check();
   await expect(panel.getByRole('button', { name: 'Compare study scenarios' })).toHaveCount(0);
+  await card('VELOCITY-3 with prior biologic').getByRole('checkbox').check();
   await card('VELOCITY-3 without hand MRI').getByRole('checkbox').check();
   await panel.getByRole('button', { name: 'Compare study scenarios' }).click();
 
-  const modal = page.getByRole('dialog', { name: 'Compare study scenarios: 2 study scenarios' });
+  const modal = page.getByRole('dialog', { name: 'Compare study scenarios: 3 study scenarios' });
   await expect(modal.getByRole('heading', { name: 'Side by side' })).toBeVisible();
-  // Neither has been simulated in the seed: the comparison says so rather than inventing values.
-  await expect(modal.getByText('Nothing to compare yet.')).toHaveCount(2);
+  // Each was simulated in the seed by the reference model: its forecasts, against the concept's targets.
+  const figure = (text: string) => {
+    const [value, against] = text.split(' Against target: ');
+    return modal.getByRole('definition').filter({ hasText: value }).filter({ hasText: `Against target: ${against}` });
+  };
+  await expect(figure('19.6 months Against target: missed')).toBeVisible();
+  await expect(figure('16.8 months Against target: met')).toBeVisible();
+  await expect(figure('47.5 percent Against target: missed')).toBeVisible();
+  await expect(figure('14.6 months Against target: met')).toBeVisible();
+  await expect(figure('37.7 million USD Against target: met')).toBeVisible();
+  await expect(modal.getByText('Nothing to compare yet.')).toHaveCount(0);
   const choice = modal.getByRole('combobox', { name: 'Scenario to select' });
   const option = (await choice.locator('option').allTextContents()).find((o) => o.startsWith('SSC-3'))!;
   await choice.selectOption({ label: option });
   await modal.getByRole('textbox', { name: 'Rationale' }).fill('Within budget, without hand MRI');
   await expect(modal.getByText('SSC-1 Status')).toBeVisible({ timeout: 15_000 });
+  await expect(modal.getByText('SSC-2 Status')).toBeVisible();
   await expect(modal.getByText('SSC-3 Status')).toBeVisible();
   await modal.getByRole('button', { name: 'Compare study scenarios' }).click();
   await expect(modal).toBeHidden({ timeout: 15_000 });
 
-  await expect(panel.getByText('Compare study scenarios: SSC-3 chosen of 2 study scenarios')).toBeVisible();
+  await expect(panel.getByText('Compare study scenarios: SSC-3 chosen of 3 study scenarios')).toBeVisible();
   await expect(card('VELOCITY-3 without hand MRI').getByText('Status: selected')).toBeVisible();
   await expect(card('VELOCITY-3 baseline').getByText('Status: set aside')).toBeVisible();
+  await expect(card('VELOCITY-3 with prior biologic').getByText('Status: set aside')).toBeVisible();
   await expect(panel.getByRole('tab', { name: /^Decisions 1/ })).toBeVisible();
 });
