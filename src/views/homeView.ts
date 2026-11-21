@@ -51,7 +51,10 @@ export function rampStep(index: number, stages: number): number {
   return Math.round(1 + (index * 4) / (stages - 1)) * 100;
 }
 
-/** One type's row: its name and total, then a thin segmented bar of its stages with every figure in the legend beside it. */
+/**
+ * One type's row: its name and total, then a thin segmented bar of its stages with every figure in the legend beside it.
+ * The legend's markers are circles, so they are not mistaken for the bar's segments (design system spec 4.3, Home).
+ */
 function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode[] {
   const fill = (i: number) => `var(--pf-t--chart--color--blue--${rampStep(i, l.stages.length)})`;
   const figures = l.stages.map((s) => `${s.label} ${s.count}`).join(', ');
@@ -72,7 +75,7 @@ function lifecycleRow(l: HomeView['lifecycles'][number], max: number): ViewNode[
         padding: { top: 0, bottom: 36, left: 0, right: 0 },
         // One scale for every row, so the bars compare (design system spec 4.3, Home).
         domain: { y: [0, max] },
-        legendData: l.stages.map((s, i) => ({ name: `${s.label} ${s.count}`, symbol: { fill: fill(i), type: 'square' } })),
+        legendData: l.stages.map((s, i) => ({ name: `${s.label} ${s.count}`, symbol: { fill: fill(i), type: 'circle' } })),
         legendPosition: 'bottom-left',
         legendAllowWrap: true,
       },

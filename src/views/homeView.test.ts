@@ -33,6 +33,9 @@ describe('Home view', () => {
     // Each bar's figures are in its legend and its description, so it is never read by color alone.
     expect(json).toContain('"ariaDesc":"8 data queries: open 3, answered 3, closed 2"');
     expect(json).toContain('"name":"open 3"');
+    // Circles in the legend, so a marker is never mistaken for a segment of the bar.
+    expect(json).toContain('"symbol":{"fill":"var(--pf-t--chart--color--blue--100)","type":"circle"}');
+    expect(json).not.toContain('"type":"square"');
   });
 
   it('links each metric that counts anything to its objects, and opens them on a valid page of their own', async () => {
