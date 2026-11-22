@@ -23,7 +23,10 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(validateView(view).errors).toEqual([]);
     expect(view.pattern).toBe('object');
     const json = JSON.stringify(view);
-    expect(json).toContain('"label":"ST-01 · Study"');
+    // The type's name links to that type's list, then the identifier, quiet (design system spec 4.4, Header).
+    expect(json).toContain(`{"component":"Button","props":{"label":"Study","variant":"link","isInline":true,"size":"sm"},"lists":"${study.type}"}`);
+    expect(json).toContain('"label":"· ST-01","component":"small","isSubtle":true');
+    expect(json).not.toContain('"label":"ST-01 · Study"');
     expect(json).toContain(`"label":"${study.title}","headingLevel":"h2"`);
     expect(tabsOf(view.root).map((t) => [t.label, t.count])).toEqual([
       ['Overview', undefined],

@@ -21,7 +21,7 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   await tile.getByText('of 8 data queries').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Open data queries' })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('3 of 8 data queries.')).toBeVisible();
-  await expect(page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'Data Query' })).toHaveCount(3);
+  await expect(page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card')).toHaveCount(3);
   await expect(page.getByRole('main').getByText('Status: open')).toHaveCount(3);
 
   // The way back: a link to Home above the heading, which returns to Home however the page was reached.

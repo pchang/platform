@@ -1,7 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
 import { group, sections } from './layout';
-import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
+import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -131,7 +131,11 @@ export function buildObjectView(
   status.push(...runLabels(view, options.runs ?? []));
 
   const header: ViewNode[][] = [
-    [text(`${view.identifier} · ${view.typeLabel}`, 'small'), { component: 'Title', props: { label: view.title, headingLevel: 'h2', size: '2xl' } }],
+    [
+      // The type's name, a link to its list, then the identifier, quiet (design system spec 4.4).
+      { component: 'Flex', props: { gap: { default: 'gapXs' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsBaseline' } }, children: [typeLink(view.type, view.typeLabel), quietId(`· ${view.identifier}`)] },
+      { component: 'Title', props: { label: view.title, headingLevel: 'h2', size: '2xl' } },
+    ],
   ];
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);

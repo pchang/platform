@@ -85,6 +85,8 @@ export function useObjectList(listed: ObjectSummary[]) {
         }),
     },
     onBatch: (method) => setBatch({ method, objects: listed.filter((o) => selected.has(o.iri)) }),
+    // A type's name links to that type's list (design system spec 4.3, Type links).
+    typeHref: (type) => routeHref({ name: 'type', type }),
     // Creating and editing (platform spec 5.3): New and Add in the list bar, Edit in the object panel's header.
     onCreate: (type, within) => setForm({ mode: 'create', type, ...(within ? { within } : {}) }),
     onEdit: (object) => setForm({ mode: 'edit', object }),

@@ -41,6 +41,8 @@ export interface RenderHost {
   onEdit?: (object: string) => void;
   /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
   metricHref?: (metric: string) => string;
+  /** Called when a type link is followed, so the host can step aside, as the object panel does (design system spec 4.3, Type links). */
+  onList?: () => void;
   /** Where a Title or Button that lists a type links (view spec `lists`, design system spec 4.3, Home). */
   typeHref?: (type: string) => string;
   /** Where a Button that goes to Home links (view spec `goes`, design system spec 4.3, Home). */
@@ -603,6 +605,13 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Button' && node.lists && host.typeHref) {
     props.component = 'a';
     props.href = host.typeHref(node.lists);
+    // The list is where the link goes; the host may step aside to show it, as the object panel does.
+    props.onClick = () => host.onList?.();
+  }
+  // Quieter text, in the subtle text color (view spec Content.isSubtle).
+  if (entry.id === 'Content' && props.isSubtle) {
+    props.className = [props.className, 'app-subtle'].filter(Boolean).join(' ');
+    delete props.isSubtle;
   }
   if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
     props.component = 'a';

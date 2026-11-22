@@ -1,3 +1,4 @@
+import { eyebrow } from './cards';
 import { expect, test, type Page } from '@playwright/test';
 
 // Creating and editing objects (platform spec 5.3; design system spec 4.3 and 4.4): Add on a containing tab, Edit in the
@@ -52,15 +53,15 @@ test('offers New on a list the person may create, and no Edit on an approved pro
   await expect(page.getByRole('main').getByRole('button', { name: 'New Protocol' })).toBeVisible();
   const panel = page.locator('.app-object-panel');
   const open = async (id: string) => {
-    await page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: `${id} · Protocol` }).locator('.pf-v6-c-card__body').first().click({ position: { x: 4, y: 4 } });
-    await expect(panel.getByText(`${id} · Protocol`, { exact: true })).toBeVisible();
+    await page.getByRole('main').locator('.pf-v6-c-card').filter({ has: eyebrow(page, id) }).locator('.pf-v6-c-card__body').first().click({ position: { x: 4, y: 4 } });
+    await expect(panel.getByText(`· ${id}`, { exact: true })).toBeVisible();
   };
   // PROT-2 is approved, so rule 4 freezes it; PROT-3 is a draft amendment.
   await open('PROT-2');
   await expect(panel.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
   // Its draft amendment opens from its tab.
   await panel.getByRole('tab', { name: /^Is amended by 1/ }).click();
-  await panel.locator('.pf-v6-c-card').filter({ hasText: 'PROT-3 · Protocol' }).locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
-  await expect(panel.getByText('PROT-3 · Protocol', { exact: true })).toBeVisible();
+  await panel.locator('.pf-v6-c-card').filter({ has: eyebrow(page, 'PROT-3') }).locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
+  await expect(panel.getByText('· PROT-3', { exact: true })).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
 });

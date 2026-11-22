@@ -35,7 +35,7 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   const heading = panel(page).getByRole('heading', { level: 2 }).first();
   await expect(heading).toContainText('VELOCITY-2');
   await expect(heading).toBeFocused();
-  await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
   await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0']);
 
@@ -43,12 +43,12 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await panel(page).getByRole('tab', { name: 'Patients 12' }).click();
   await expect(panel(page).getByText('This study enrolls these patients.')).toBeVisible();
   await panelCard(page, 'PT-03').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
-  await expect(panel(page).getByText('PT-03 · Patient', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· PT-03', { exact: true })).toBeVisible();
   await expect(panel(page).getByRole('tab')).toHaveText(['Overview', 'Visits 3', 'Adverse Events 1', 'Batches 1']);
 
   // The overview links the one study the patient is part of; Back returns to the study, on the tab it was on.
   await panel(page).getByRole('button', { name: 'Back to ST-01' }).click();
-  await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   await expect(panel(page).getByRole('tab', { name: 'Patients 12' })).toHaveAttribute('aria-selected', 'true');
 
   // Expand covers everything below the masthead, the sidebar too, so no destination is chosen behind the panel.
@@ -98,9 +98,9 @@ test('a linked object opens from the overview, and Close ends the whole panel', 
   await listCard(page, 'ST-01').getByRole('button', { name: /VELOCITY-2/ }).click();
   await panel(page).getByRole('tab', { name: 'Patients 12' }).click();
   await panelCard(page, 'PT-03').getByRole('button', { name: /Patient at/ }).click();
-  await expect(panel(page).getByText('PT-03 · Patient', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· PT-03', { exact: true })).toBeVisible();
   await panel(page).getByRole('button', { name: /^SITE-3 · / }).click();
-  await expect(panel(page).getByText('SITE-3 · Site', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· SITE-3', { exact: true })).toBeVisible();
   await expect(panel(page).getByRole('button', { name: 'Back to PT-03' })).toBeVisible();
   await panel(page).getByRole('button', { name: 'Close' }).click();
   await expect(panel(page).getByRole('tab')).toHaveCount(0);
@@ -118,7 +118,8 @@ test('a method runs from the panel header, and the panel then shows the object a
   await expect(panel(page).getByRole('tab')).toHaveCount(0);
 
   await card.locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
-  await expect(panel(page).getByText('SC-004 · Safety Case', { exact: true })).toBeVisible();
+  await expect(panel(page).getByRole('link', { name: 'Safety Case', exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· SC-004', { exact: true })).toBeVisible();
   await panel(page).getByRole('button', { name: 'Triage' }).click();
   const dialog = page.getByRole('dialog', { name: 'Triage SC-004' });
   await dialog.getByRole('radio', { name: 'serious', exact: true }).check();

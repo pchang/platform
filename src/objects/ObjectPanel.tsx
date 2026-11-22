@@ -238,6 +238,8 @@ function ObjectContent({
           onAction: (action) => openMethod(action.target, action.method),
           onOpen: (target) => panel.moveIn(target),
           onAsk: chat.askAbout,
+          // Following a type's name shows that type's list: the panel steps aside so it is seen (design system spec 4.3, Type links).
+          onList: panel.close,
         }}
       />
       {list.dialog}

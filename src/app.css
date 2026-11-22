@@ -209,3 +209,8 @@ html body .pf-v6-c-drawer__body {
 html body .pf-v6-l-flex > .pf-v6-c-content--small {
   margin-block-end: 0;
 }
+
+/* Quieter text: a secondary fact, such as an object's identifier beside its title (design system spec 4.3). */
+html body .app-subtle {
+  color: var(--pf-t--global--text--color--subtle);
+}

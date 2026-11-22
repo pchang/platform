@@ -105,8 +105,8 @@ describe('the To do summary (design system spec 4.3)', () => {
 
   it('narrows the cards to the chosen count, and says so when nothing matches', () => {
     const urgent = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today, filter: 'urgent' }));
-    expect(urgent).toContain(`"label":"SC-2 · Safety Case"`);
-    expect(urgent).not.toContain(`"label":"SC-1 · Safety Case"`);
+    expect(urgent).toContain('"label":"SC-2","component":"small","isSubtle":true');
+    expect(urgent).not.toContain('"label":"SC-1","component":"small","isSubtle":true');
     // The counts stay those of every item.
     expect(urgent).toContain('"label":"Waiting","component":"h3"}},{"component":"CardBody","children":[{"component":"Content","props":{"label":"5"');
     const none = JSON.stringify(buildTodoView([caseItem('SC-1', 0)], chloe, undefined, [], { today, filter: 'overdue' }));
@@ -125,17 +125,27 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
   });
 
-  it('leads each card with the identifier and type in small text, then the title as its heading', () => {
+  it('leads each card with its title; the type’s name, as a link to its list, only above it in a list of several types; the identifier quiet at the end of the state row', () => {
     const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
-    expect(json).toContain('{"component":"CardHeader","children":[{"component":"Content","props":{"label":"SC-2 · Safety Case","component":"small"}},{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+    // To do holds several types: the type's name is a link to that type's list, above the title.
+    expect(json).toContain('"children":[{"component":"Button","props":{"label":"Safety Case","variant":"link","isInline":true,"size":"sm"},"lists":"urn:SafetyCase"},{"component":"Content","props":{"label":"SC-2","component":"small","isSubtle":true}}]');
+    // The identifier is quiet, at the end of that line, and no longer the card's first and only eyebrow.
+    expect(json).toContain('"label":"SC-2","component":"small","isSubtle":true');
+    expect(json).not.toContain('SC-2 · Safety Case');
+    // A list of one type repeats the type on no card.
+    const oneType = JSON.stringify(buildTypeView('Safety Cases', items.filter((i) => i.object.type === 'urn:SafetyCase').map((i) => i.object)));
+    expect(oneType).toContain('{"component":"CardHeader","children":[{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+    expect(oneType).not.toContain('"lists"');
+    expect(oneType).toContain('"label":"SC-2","component":"small","isSubtle":true');
   });
 
   // Anticipation first: the methods the platform expects come first, then Ask about this (design system spec 4.1).
   const nodes = (n: ViewNode): ViewNode[] => [n, ...(n.children ?? []).flatMap(nodes)];
   const cardOf = (view: ViewNode, identifier: string) =>
-    nodes(view).find((n) => n.component === 'Card' && JSON.stringify(n).includes(`"label":"${identifier} · `))!;
+    nodes(view).find((n) => n.component === 'Card' && JSON.stringify(n).includes(`"label":"${identifier}","component":"small","isSubtle":true`))!;
   const buttonsOf = (card: ViewNode) =>
-    nodes(card).filter((n) => n.component === 'Button').map((n) => (n.asks ? 'Ask' : (n.props as { label: string }).label));
+    // The method buttons and Ask; a type's name linking to its list is not one of them.
+    nodes(card).filter((n) => n.component === 'Button' && !n.lists).map((n) => (n.asks ? 'Ask' : (n.props as { label: string }).label));
 
   it('puts Ask about this last in the row of method buttons, not in the header', () => {
     const card = cardOf(buildTodoView(items, chloe, undefined, [], { today }).root, 'SC-2');

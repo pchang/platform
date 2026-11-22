@@ -132,20 +132,22 @@ describe('the list view (design system spec 4.3)', () => {
   it('heads a column for each state dimension, with the values in plain text, and leaves out Type when all are one type', () => {
     const head = find(view.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string; screenReaderText?: string }).label ?? `(${(n.props as { screenReaderText: string }).screenReaderText})`);
     // No object needs attention here, so there is no Attention column.
-    expect(head).toEqual(['Identifier', 'Title', 'Workflow', '(Actions)']);
+    expect(head).toEqual(['Title', 'Workflow', '(Actions)']);
     const [row] = bodyRows(view.root);
-    expect((row.children ?? []).map(cellText)).toEqual(['SC-4', 'Case SC-4', 'received', 'Triage ']);
+    // The identifier has no column: it follows the title on the same line, quiet.
+    expect((row.children ?? []).map(cellText)).toEqual(['Case SC-4 SC-4', 'received', 'Triage ']);
+    expect(JSON.stringify(row.children![0])).toContain('"label":"SC-4","component":"small","isSubtle":true');
     // Every cell keeps to one line; the actions column fits its content.
-    expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'nowrap', 'fitContent']);
+    expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'fitContent']);
   });
 
   it('adds an Attention column for deadlines, urgency and runs once any object has one', () => {
     const runs = [{ run: 'urn:r', method: 'urn:Detect', methodLabel: 'Run signal detection', object: 'urn:SC-5', objectIdentifier: 'SC-5', status: 'running' as const, startedAt: '', startedBy: '', startedByName: '' }];
     const withRun = buildTypeView('Safety Cases', cases, { methods, runs: runs as never, controls: controls({ mode: 'list' }) });
     const head = find(withRun.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
-    expect(head).toEqual(['Identifier', 'Title', 'Attention', 'Workflow', undefined]);
+    expect(head).toEqual(['Title', 'Attention', 'Workflow', undefined]);
     const [, second] = bodyRows(withRun.root);
-    expect(cellText((second.children ?? [])[2])).toBe('Run signal detection: running');
+    expect(cellText((second.children ?? [])[1])).toBe('Run signal detection: running');
   });
 
   it('puts the lifecycle first among the state columns, adds Type for mixed types, and leaves cells empty where a type has no such dimension', () => {
@@ -157,9 +159,12 @@ describe('the list view (design system spec 4.3)', () => {
     const table = buildTypeView('Mixed', mixed, { controls: controls({ mode: 'list' }) });
     expect(validateView(table).errors).toEqual([]);
     const head = find(table.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
-    expect(head).toEqual(['Identifier', 'Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
-    const [, sub] = bodyRows(table.root);
-    expect((sub.children ?? []).map(cellText).slice(0, 7)).toEqual(['SUB-1', 'Case SUB-1', 'Submission', '', '', 'draft', 'on track']);
+    expect(head).toEqual(['Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
+    const [first, sub] = bodyRows(table.root);
+    expect((sub.children ?? []).map(cellText).slice(0, 6)).toEqual(['Case SUB-1 SUB-1', 'Submission', '', '', 'draft', 'on track']);
+    // The Type column links each value to that type's list (design system spec 4.3, Type links).
+    expect(JSON.stringify(sub.children![1])).toContain('"lists":"urn:Submission"');
+    expect(JSON.stringify(first.children![1])).toContain('"lists":');
   });
 
   // Ask about this comes after the methods, at the right end of the actions column, so it lines up down the list (design system spec 4.1).

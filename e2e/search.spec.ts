@@ -7,7 +7,8 @@ test.setTimeout(60_000);
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
-const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card__header').getByText(/ · /);
+// Each result's identifier is quiet, at the end of its state row (design system spec 4.3).
+const results = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card .app-subtle');
 
 async function openTodo(page: Page) {
   await page.goto('/');
@@ -21,7 +22,7 @@ test('the search page shows how the query was understood, and what it found', as
   await expect(page.getByText('6 matches for “cases for P-101”.')).toBeVisible();
   await expect(page.getByText('Type: Safety Case', { exact: true })).toBeVisible();
   await expect(page.getByText('Linked to P-101', { exact: true })).toBeVisible();
-  await expect(results(page)).toHaveText(['SC-001 · Safety Case', 'SC-002 · Safety Case', 'SC-003 · Safety Case', 'SC-004 · Safety Case', 'SC-005 · Safety Case', 'SC-006 · Safety Case']);
+  await expect(results(page)).toHaveText(['SC-001', 'SC-002', 'SC-003', 'SC-004', 'SC-005', 'SC-006']);
 });
 
 test('words find what the records say, with the methods the person can run', async ({ page }) => {
@@ -31,7 +32,7 @@ test('words find what the records say, with the methods the person can run', asy
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/search/pneumonia');
-  await expect(results(page)).toHaveText(['AE-005 · Adverse Event'], { timeout: 30_000 });
+  await expect(results(page)).toHaveText(['AE-005'], { timeout: 30_000 });
   await expect(cardFor(page, 'AE-005').getByRole('button', { name: 'Report to safety' })).toBeVisible();
 });
 
@@ -47,7 +48,7 @@ test('“list all of my queries” finds the person’s own queries, and says th
   // The in-page gateway holds no credential, so the question is searched, and the page says so.
   await expect(page.getByText('No model is connected to answer questions, so the question was searched.')).toBeVisible();
   await expect(page.getByText('Yours', { exact: true })).toBeVisible();
-  await expect(results(page)).toHaveText(['Q-01 · Data Query', 'Q-02 · Data Query', 'Q-03 · Data Query']);
+  await expect(results(page)).toHaveText(['Q-01', 'Q-02', 'Q-03']);
 });
 
 test('says so when nothing matches', async ({ page }) => {

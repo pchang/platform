@@ -37,6 +37,6 @@ test('a protocol type added to the ontology appears in navigation, To do, its li
   await panel(page).getByRole('tab', { name: 'Studies 1' }).click();
   await expect(panel(page).getByText('This protocol governs this study.')).toBeVisible();
   await panel(page).locator('.pf-v6-c-card').filter({ has: eyebrow(page, 'ST-01') }).locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
-  await expect(panel(page).getByText('ST-01 · Study', { exact: true })).toBeVisible();
+  await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   await expect(panel(page).getByRole('button', { name: 'PROT-2 · VELOCITY-2 protocol, version 2.0' })).toBeVisible();
 });

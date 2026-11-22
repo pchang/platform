@@ -53,11 +53,18 @@ export function askAboutChosen(objects: string[]): ViewNode {
   };
 }
 
+/** An object's identifier, quiet: small, subtle text, a reference to cite or look up (design system spec 4.3). */
+export const quietId = (identifier: string): ViewNode => ({ component: 'Content', props: { label: identifier, component: 'small', isSubtle: true } });
+
+/** A type's name as a small link to that type's list of objects (design system spec 4.3, Type links). */
+export const typeLink = (type: string, typeLabel: string): ViewNode => ({ component: 'Button', props: { label: typeLabel, variant: 'link', isInline: true, size: 'sm' }, lists: type });
+
 /**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
  * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
+ * It leads with the title; the type's name, as a link, only in a list of several types.
  */
-export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
+export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2', options: { showType?: boolean } = {}): ViewNode {
   return {
     component: 'GalleryItem',
     children: [
@@ -67,11 +74,20 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
         opens: object.iri,
         selects: object.iri,
         children: [
-          // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
+          // The object's title as the card's heading, with the type's name above it only in a list of several types.
           {
             component: 'CardHeader',
             children: [
-              text(`${object.identifier} · ${object.typeLabel}`, 'small'),
+              // In a list of several types the type's name and the identifier share one line, the identifier quiet at its end.
+              ...(options.showType
+                ? [
+                    {
+                      component: 'Flex',
+                      props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsBaseline' }, justifyContent: { default: 'justifyContentSpaceBetween' } },
+                      children: [typeLink(object.type, object.typeLabel), quietId(object.identifier)],
+                    } as ViewNode,
+                  ]
+                : []),
               { component: 'CardTitle', props: { label: object.title, component: heading } },
             ],
           },
@@ -300,14 +316,26 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
   return { component: 'Toolbar', props: { isSticky: true }, children: [{ component: 'ToolbarContent', children: groups }] };
 }
 
-function entryCard(entry: ListEntry, heading: 'h2' | 'h3'): ViewNode {
+function entryCard(entry: ListEntry, heading: 'h2' | 'h3', showType: boolean): ViewNode {
   const body: ViewNode[][] = [];
   if (entry.status.length) body.push([flexOf(entry.status)]);
-  body.push([flexOf(stateLabels(entry.object))]);
+  // The state. In a list of one type the identifier is quiet at this row's end; in a list of several it is on the type's line
+  // above the title. Either way it takes no line of its own (design system spec 4.3).
+  body.push(
+    showType
+      ? [flexOf(stateLabels(entry.object))]
+      : [
+          {
+            component: 'Flex',
+            props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsCenter' }, justifyContent: { default: 'justifyContentSpaceBetween' } },
+            children: [flexOf(stateLabels(entry.object)), quietId(entry.object.identifier)],
+          },
+        ],
+  );
   if (entry.detail) body.push([text(entry.detail, 'small')]);
   if (entry.methods.length) body.push([text(entry.intro ?? 'You can:', 'small')]);
   body.push(...runnable(entry.methods, entry.object.iri, entry.firstIsPrimary, entry.object));
-  return card(entry.object, body, heading);
+  return card(entry.object, body, heading, { showType });
 }
 
 /** The state dimensions of the listed objects, as table columns: each object's lifecycle first, then the rest by name. */
@@ -361,7 +389,6 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
   // Attention only when some object needs it: a deadline, urgency or a run in progress.
   const hasAttention = entries.some((e) => e.status.length);
   const head: ViewNode[] = [
-    th('Identifier'),
     th('Title'),
     ...(mixed ? [th('Type')] : []),
     ...(hasAttention ? [th('Attention')] : []),
@@ -376,9 +403,15 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
       component: 'Tr',
       selects: o.iri,
       children: [
-        td('Identifier', [text(o.identifier)]),
-        td('Title', [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }]),
-        ...(mixed ? [td('Type', [text(o.typeLabel)])] : []),
+        // The title, then the identifier after it, quiet: there is no column for it (design system spec 4.3).
+        td('Title', [
+          {
+            component: 'Flex',
+            props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsBaseline' } },
+            children: [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }, quietId(o.identifier)],
+          },
+        ]),
+        ...(mixed ? [td('Type', [typeLink(o.type, o.typeLabel)])] : []),
         ...(hasAttention ? [td('Attention', entry.status.length ? [flexOf(entry.status)] : [])] : []),
         ...columns.map((c) => td(c, o.state[c] ? [text(o.state[c])] : [])),
         ...(hasDetail ? [td('Matched', entry.detail ? [text(entry.detail.replace(/^Matched: /, ''), 'small')] : [])] : []),
@@ -399,8 +432,10 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
 /** An object list (design system spec 4.3): the list bar, then the objects as cards or as a list. */
 export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[] {
   if (!entries.length) return [];
+  // The type's name is shown, as a link, only when the list holds more than one type.
+  const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
   const objects: ViewNode =
-    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading)));
+    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, mixed)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
   return [group([listBar(entries, controls), objects], 'gapMd')];
 }
