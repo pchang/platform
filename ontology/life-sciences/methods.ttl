@@ -1736,6 +1736,7 @@ ls:CompareStudyScenarios a p:Method ;
   rdfs:comment "Compares two to four study scenarios of one study concept or study by their current forecasts, and selects one; the others are set aside." ;
   p:appliesTo ls:StudyScenario ;
   p:onSet true ;
+  p:commitLabel "Select" ;
   p:minObjects 2 ;
   p:maxObjects 4 ;
   p:sameAlong ls:explores ;

@@ -205,6 +205,11 @@ p:onSet a rdf:Property ;
   rdfs:comment "True when a method takes the selection as its one object: it runs once for the set and commits once, on the chosen object (platform spec 5.4, Acting on a set)." ;
   rdfs:domain p:Method .
 
+p:commitLabel a rdf:Property ;
+  rdfs:label "commit label" ;
+  rdfs:comment "The word that names a method's commit button, such as Select. A set method that decides among its set follows it with the chosen object's identifier, such as Select SSC-3 (platform spec 5.4, Acting on a set). Without one, the button carries the method's name." ;
+  rdfs:domain p:Method .
+
 p:minObjects a rdf:Property ;
   rdfs:label "minimum objects" ;
   rdfs:comment "The fewest objects a set method takes." ;

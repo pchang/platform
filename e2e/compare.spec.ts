@@ -40,6 +40,9 @@ test('choose study scenarios together, compare them side by side, and select one
   await expect(figure('14.6 months Against target: met')).toBeVisible();
   await expect(figure('37.7 million USD Against target: met')).toBeVisible();
   await expect(modal.getByText('Nothing to compare yet.')).toHaveCount(0);
+  // Before a choice the button says only what it will do, and cannot be pressed.
+  await expect(modal.getByRole('button', { name: 'Select', exact: true })).toBeDisabled();
+  await expect(modal.getByRole('button', { name: 'Compare study scenarios' })).toHaveCount(0);
   const choice = modal.getByRole('combobox', { name: 'Scenario to select' });
   const option = (await choice.locator('option').allTextContents()).find((o) => o.startsWith('SSC-3'))!;
   await choice.selectOption({ label: option });
@@ -47,7 +50,8 @@ test('choose study scenarios together, compare them side by side, and select one
   await expect(modal.getByText('SSC-1 Status')).toBeVisible({ timeout: 15_000 });
   await expect(modal.getByText('SSC-2 Status')).toBeVisible();
   await expect(modal.getByText('SSC-3 Status')).toBeVisible();
-  await modal.getByRole('button', { name: 'Compare study scenarios' }).click();
+  // The button names the decision, with the scenario chosen.
+  await modal.getByRole('button', { name: 'Select SSC-3', exact: true }).click();
   await expect(modal).toBeHidden({ timeout: 15_000 });
 
   await expect(panel.getByText('Compare study scenarios: SSC-3 chosen of 3 study scenarios')).toBeVisible();

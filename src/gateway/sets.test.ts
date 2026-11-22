@@ -56,6 +56,8 @@ describe('set methods (platform spec 5.4, Acting on a set)', () => {
     const g = withSeed();
     const c = await g.composeSet(marcus, ['SSC-1', 'SSC-2', 'SSC-3'], COMPARE);
     expect(c.archetype.label).toBe('Compare and decide');
+    // The method names its commit action, so the button names the decision, not the comparison.
+    expect(c.commitLabel).toBe('Select');
     expect(c.objects!.map((o) => o.identifier)).toEqual(['SSC-1', 'SSC-2', 'SSC-3']);
     expect(c.inputs.find((i) => i.name === 'chosen')!.choices!.map((x) => x.label.split(' · ')[0])).toEqual(['SSC-1', 'SSC-2', 'SSC-3']);
     const rows = c.comparison!.rows;

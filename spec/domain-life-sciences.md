@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.29. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
+Version 0.30. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -312,7 +312,7 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
 | Run trial simulation | Study Scenario | Outcome measures (many, of one study), screen failure rate, dropout rate, response on control and on treatment, serious adverse events per 100 patient-years | Its protocol has a planned enrollment and planned visits, and its site selection proposes a site that is not rejected | Runs the reference trial model in the background (section 3.4.4): creates a Trial Simulation and a Forecast for each chosen measure, against its target; sets the study budget's total and fit; makes earlier forecasts out of date; raises a Design Signal on each proposed site that cannot perform an assessment the protocol needs |
-| Compare study scenarios | Study Scenario | A set of 2 to 4 study scenarios with the same parent (platform spec 5.4, Acting on a set); the chosen scenario, from the set; rationale | Each is a draft or selected | Shows the set side by side, each scenario's current forecasts by measure against their targets (Compare and decide). The chosen scenario: selected; the others: set aside. Creates a Decision to select, choosing it and decided on their parent, with the rationale and the date |
+| Compare study scenarios | Study Scenario | A set of 2 to 4 study scenarios with the same parent (platform spec 5.4, Acting on a set); the chosen scenario, from the set; rationale | Each is a draft or selected | Shows the set side by side, each scenario's current forecasts by measure against their targets (Compare and decide). The chosen scenario: selected; the others: set aside. Creates a Decision to select, choosing it and decided on their parent, with the rationale and the date. Its commit button reads Select, and "Select SSC-3" once one is chosen: it selects a scenario and records the decision; it does not yet create a study, which is a later method (section 3.8) |
 
 ### 3.8 Design and Plan methods to come
 
@@ -941,3 +941,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.27 | 2026-11-20 | Home metrics (section 6): the metrics each persona watches, with their thresholds. |
 | 0.28 | 2026-11-21 | Seed: VELOCITY-3's three study scenarios are simulated (TS-1 to TS-3, 18 forecasts, two design signals, budget totals), as the reference trial model's own output, checked against it by a test, so the scenarios can be compared and one selected from the start. |
 | 0.29 | 2026-11-21 | Relationships: the inverse labels of is an option for, is proposed for, sets success for, contributes to and is about no longer repeat their object ("has", "has proposed"), so a tab's sentence reads "This program has proposed these study concepts." |
+| 0.30 | 2026-11-21 | Compare study scenarios names its commit action Select, so the button reads "Select SSC-3", not the comparison already made. It selects and records the decision; creating the study from the selected scenario is still to come. |

@@ -70,7 +70,7 @@ export function SetDialog({
 
   return (
     <ViewRenderer
-      view={buildSetView(composition, state, submitting)}
+      view={buildSetView(composition, state, submitting, values)}
       host={{
         values,
         onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),

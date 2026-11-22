@@ -104,7 +104,19 @@ function preview(composition: MethodComposition, state: SetPreview): ViewNode[] 
   ];
 }
 
-export function buildSetView(composition: MethodComposition, state: SetPreview, submitting = false): ViewSpec {
+/**
+ * The commit button's label: the method's own commit word, such as Select, then the chosen object, such as Select SSC-3, so the
+ * button names the decision and not the comparison already on the screen (platform spec 5.4; design system spec 4.3, Set actions).
+ * A method that names no commit word keeps its own name.
+ */
+export function commitLabelOf(composition: MethodComposition, values: Record<string, string> = {}): string {
+  if (!composition.commitLabel) return composition.label;
+  const choice = composition.inputs.find((i) => i.kind === 'object')?.name;
+  const chosen = choice ? composition.objects?.find((o) => o.iri === values[choice]) : undefined;
+  return chosen ? `${composition.commitLabel} ${chosen.identifier}` : composition.commitLabel;
+}
+
+export function buildSetView(composition: MethodComposition, state: SetPreview, submitting = false, values: Record<string, string> = {}): ViewSpec {
   const objects = composition.objects ?? [];
   const title = `${composition.label}: ${countOf(objects)}`;
   const body: ViewNode[][] = [
@@ -124,7 +136,7 @@ export function buildSetView(composition: MethodComposition, state: SetPreview, 
         {
           component: 'ModalFooter',
           children: [
-            { component: 'Button', props: { label: composition.label, variant: 'primary', isDisabled: state.status !== 'ready' || submitting }, intent: 'submit' },
+            { component: 'Button', props: { label: commitLabelOf(composition, values), variant: 'primary', isDisabled: state.status !== 'ready' || submitting }, intent: 'submit' },
             { component: 'Button', props: { label: 'Cancel', variant: 'link' }, intent: 'cancel' },
           ],
         },

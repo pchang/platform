@@ -172,6 +172,8 @@ export interface MethodComposition {
   objects?: ObjectSummary[];
   /** For a set method that declares a comparison: its rows, one cell per object of the set. */
   comparison?: ComparisonView;
+  /** The word that names the commit button, when the method names one (platform spec 5.4), such as Select. */
+  commitLabel?: string;
 }
 
 /** A set method's comparison (spec 5.4, Acting on a set): rows keyed by a state value, a cell per object of the set. */
@@ -1554,6 +1556,7 @@ export class Gateway {
     const blocks = await this.setBlocks(principal, objects, method);
     if (blocks.length) throw new GatewayError(400, blocks);
     const label = this.q(`SELECT ?l WHERE { <${method}> rdfs:label ?l }`)[0].l;
+    const commitLabel = this.q(`SELECT ?c WHERE { <${method}> p:commitLabel ?c }`)[0]?.c;
     const summaries = objects.map((o) => this.summary(o));
     const among = new Set(this.q(`SELECT ?name WHERE { <${method}> p:input ?i . ?i p:amongSet true ; p:inputName ?name }`).map((r) => r.name));
     const inputs: ComposedInput[] = this.inputs(method).map((input) => {
@@ -1571,6 +1574,7 @@ export class Gateway {
       object: summaries[0],
       objects: summaries,
       inputs,
+      ...(commitLabel ? { commitLabel } : {}),
       ...(this.comparison(method, objects) ?? {}),
     };
   }
