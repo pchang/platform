@@ -1,7 +1,7 @@
 import { proposedSection, type ProposalState } from './proposalView';
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
-import type { ComposedInput } from '../gateway/gateway';
+import type { ComposedInput, StructureImpact } from '../gateway/gateway';
 import type { Progress } from '../processes/processes';
 import { dialogBody } from './layout';
 
@@ -11,7 +11,12 @@ import { dialogBody } from './layout';
  */
 
 /** The archetypes built so far. Tasks of other archetypes are shown as text until their pattern exists. */
-export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Compare and decide', 'Review and sign', 'Start and track', 'Review a draft']);
+export const BUILT_ARCHETYPES = new Set(['Confirm', 'Fill in', 'Choose an object', 'Compare and decide', 'Review and sign', 'Start and track', 'Review a draft']);
+
+/** The field that searches an object input's choices, such as "valueSetSearch". It is never an input. */
+export const SEARCH_SUFFIX = 'Search';
+/** Above this many choices, an object input gets a search field that narrows them. */
+const SEARCH_FROM = 8;
 
 /** The field the signer types their name into (design system spec 5.1, Review and sign). Not a method input. */
 export const SIGNATURE_FIELD = 'signatureName';
@@ -33,7 +38,7 @@ const stack = (items: ViewNode[][]): ViewNode => ({ component: 'Stack', props: {
 /** Up to this many values show as radio buttons; more as a select (design system spec 5.1). */
 const MAX_RADIOS = 5;
 
-export function fieldFor(input: ComposedInput): ViewNode {
+export function fieldFor(input: ComposedInput, values: Record<string, string> = {}): ViewNode {
   const group = (children: ViewNode[], role?: 'radiogroup' | 'group'): ViewNode => ({
     component: 'FormGroup',
     // Radio buttons sit side by side, so each has room to be tapped (WCAG 2.2 target size).
@@ -51,14 +56,24 @@ export function fieldFor(input: ComposedInput): ViewNode {
     );
   }
   if (input.choices) {
+    // An object gives a searchable list (design system spec 5.1): a search field narrows the choices as it is typed,
+    // and the one chosen always stays in the list.
+    const searchable = input.kind === 'object' && input.choices.length > SEARCH_FROM;
+    const words = searchable ? (values[`${input.name}${SEARCH_SUFFIX}`] ?? '').trim().toLowerCase() : '';
+    const shown = words ? input.choices.filter((c) => c.value === values[input.name] || c.label.toLowerCase().includes(words)) : input.choices;
     return group([
+      ...(searchable
+        ? [
+            { component: 'TextInput', props: { 'aria-label': `Search ${input.label.toLowerCase()}`, type: 'search' }, field: `${input.name}${SEARCH_SUFFIX}` } as ViewNode,
+          ]
+        : []),
       {
         component: 'FormSelect',
         props: { 'aria-label': input.label, isRequired: !input.optional },
         field: input.name,
         children: [
-          { component: 'FormSelectOption', props: { value: '', label: `Choose ${input.label.toLowerCase()}` } },
-          ...input.choices.map((c) => ({ component: 'FormSelectOption', props: { value: c.value, label: c.label } })),
+          { component: 'FormSelectOption', props: { value: '', label: words ? `Choose from ${shown.length} of ${input.choices.length}` : `Choose ${input.label.toLowerCase()}` } },
+          ...shown.map((c) => ({ component: 'FormSelectOption', props: { value: c.value, label: c.label } })),
         ],
       },
     ]);
@@ -124,28 +139,62 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
   ];
 }
 
-export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false, proposal: ProposalState = { status: 'none' }): ViewSpec {
+/**
+ * The Impact group (design system spec 4.3, Change sets): what changes in the structure, the objects that move, those that
+ * would no longer conform, what refers to it, and the ontology's version now and after.
+ */
+export function impactSection(impact: StructureImpact): ViewNode[] {
+  const group = (term: string, children: ViewNode[]): ViewNode => ({
+    component: 'DescriptionListGroup',
+    children: [{ component: 'DescriptionListTerm', props: { label: term } }, { component: 'DescriptionListDescription', children }],
+  });
+  const lines = (items: string[], small = false): ViewNode[] => items.map((i) => text(i, small ? 'small' : undefined));
+  return [
+    { component: 'Title', props: { label: 'Impact', headingLevel: 'h2', size: 'md' } },
+    ...(impact.notConforming.length
+      ? [{ component: 'Alert', props: { variant: 'danger', title: 'Objects that would no longer conform', isInline: true, component: 'h3' }, children: lines(impact.notConforming) } as ViewNode]
+      : []),
+    {
+      component: 'DescriptionList',
+      props: { isCompact: true },
+      children: [
+        group('What changes in the structure', lines(impact.structure)),
+        group('Objects that move', impact.moves.length ? lines(impact.moves.map((m) => `${m.identifier}: ${m.from} → ${m.to}`)) : [text('None')]),
+        ...(impact.notConforming.length ? [] : [group('Objects that would no longer conform', [text('None')])]),
+        ...(impact.refersTo.length ? [group('What refers to it', lines(impact.refersTo, true))] : []),
+      ],
+    },
+    ...(impact.versions.length ? [{ component: 'Content', props: { label: impact.versions.join('; '), component: 'small', isSubtle: true } } as ViewNode] : []),
+  ];
+}
+
+export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false, proposal: ProposalState = { status: 'none' }, values: Record<string, string> = {}): ViewSpec {
   const isConfirm = composition.archetype.label === 'Confirm';
+  const isChoose = composition.archetype.label === 'Choose an object';
   const title = `${composition.label} ${composition.object.identifier}`;
   const body: ViewNode[][] = [];
   // A skill's proposal leads the body, before the fields it pre-fills (design system spec 4.3, Proposals from skills).
   const proposed = proposedSection(proposal);
   if (proposed) body.push(proposed);
-  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i, values)) }]);
   body.push(previewSection(composition, state));
+  // Deciding on a change to the structure: its impact follows what will change (design system spec 4.3, Change sets).
+  const impact = state.status === 'ready' ? state.preview.impact : undefined;
+  if (impact) body.push(impactSection(impact));
+  const breaks = Boolean(impact?.notConforming.length);
   return {
-    pattern: isConfirm ? 'confirm' : 'fill-in',
+    pattern: isConfirm ? 'confirm' : isChoose ? 'choose-an-object' : 'fill-in',
     because: `${composition.label} is a ${composition.archetype.label} method (platform spec 5.4)`,
     root: {
       component: 'Modal',
-      props: { variant: isConfirm ? 'small' : 'medium', 'aria-label': title },
+      props: { variant: isConfirm && !impact ? 'small' : 'medium', 'aria-label': title },
       children: [
         modalHeader(title, composition.object.title, minimizable),
         { component: 'ModalBody', children: [dialogBody(body)] },
         {
           component: 'ModalFooter',
           children: [
-            { component: 'Button', props: { label: composition.label, variant: 'primary', isDisabled: state.status !== 'ready' || submitting }, intent: 'submit' },
+            { component: 'Button', props: { label: composition.label, variant: 'primary', isDisabled: state.status !== 'ready' || submitting || breaks }, intent: 'submit' },
             { component: 'Button', props: { label: 'Cancel', variant: 'link' }, intent: 'cancel' },
           ],
         },
@@ -201,7 +250,7 @@ export function buildStartView(composition: MethodComposition, state: PreviewSta
   else {
     const proposed = proposedSection(proposal);
     if (proposed) body.push(proposed);
-    if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+    if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }]);
     body.push(previewSection(composition, state));
   }
   // Closing never stops the run. While it runs, the button says the person can go on; once it ends, that they are done.
@@ -419,7 +468,7 @@ export function buildCompareView(
   const pick = composition.inputs.find((i) => i.kind === 'object');
   const items: ViewNode[][] = [
     pageTitle(title, composition.object.title, minimizable),
-    [{ component: 'Form', children: composition.inputs.map(fieldFor) }],
+    [{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }],
   ];
   if (other) {
     const selfRows = compareRows(self);
@@ -462,7 +511,7 @@ export function buildSignView(composition: MethodComposition, state: PreviewStat
   const review: ViewNode[][] = [];
   const proposed = proposedSection(proposal);
   if (proposed) review.push(proposed);
-  if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+  if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }]);
   review.push(previewSection(composition, state));
   const sign: ViewNode[][] = [
     [

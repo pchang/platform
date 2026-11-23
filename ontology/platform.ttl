@@ -1357,9 +1357,15 @@ p:changeSetStatus a p:StateDimension, rdf:Property ;
   p:valuesFrom p:ChangeSetStatus ;
   p:order 1 .
 
+p:startsEmpty a rdf:Property ;
+  rdfs:label "starts empty" ;
+  rdfs:comment "True when a state dimension holds no value until a method sets one, such as how a change set ended. Every other lifecycle starts at its first value." ;
+  rdfs:domain p:StateDimension .
+
 p:changeSetOutcome a p:StateDimension, rdf:Property ;
   rdfs:label "Outcome" ;
   rdfs:comment "How a change set ended, once it has: withdrawn, rejected or rolled back." ;
+  p:startsEmpty true ;
   p:dimensionOf p:ChangeSet ;
   p:valuesFrom p:ChangeSetOutcome ;
   p:order 2 .

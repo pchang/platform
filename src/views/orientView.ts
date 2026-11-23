@@ -432,7 +432,8 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
 
 /** An object list (design system spec 4.3): the list bar, then the objects as cards or as a list. */
 export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[] {
-  if (!entries.length) return [];
+  // An empty list still offers New, so the first object of a type can be made (platform spec 5.3).
+  if (!entries.length) return controls.create ? [{ component: 'Flex', props: { gap: { default: 'gapSm' } }, children: [createButton(controls.create)] }] : [];
   // The type's name is shown, as a link, only when the list holds more than one type.
   const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
   const objects: ViewNode =

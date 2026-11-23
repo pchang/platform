@@ -112,7 +112,7 @@ export function buildBatchView(composition: MethodComposition, objects: ObjectSu
   const title = `${composition.label} ${countOf(objects)}`;
   const ready = readyCount(state);
   const body: ViewNode[][] = [];
-  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }]);
   body.push(previews(composition, state));
   const allReady = state.status === 'ready' && ready === objects.length;
   return {
@@ -197,7 +197,7 @@ export function buildSequentialBatchView(
     steps.push({
       component: 'WizardStep',
       props: { name: 'For all of them', id: 'shared', footer: { isNextDisabled: !shared.every((i) => values[i.name]?.trim()) } },
-      children: [stack([[text(`These hold for ${objects.map((o) => o.identifier).join(', ')}.`)], [{ component: 'Form', children: shared.map(fieldFor) }]])],
+      children: [stack([[text(`These hold for ${objects.map((o) => o.identifier).join(', ')}.`)], [{ component: 'Form', children: shared.map((i) => fieldFor(i)) }]])],
     });
   }
   for (const object of objects) {

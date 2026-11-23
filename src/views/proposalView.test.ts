@@ -1,11 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { validateView } from '../design-system/validateView';
 import { NS } from '../ontology/ontology';
 import { withSeed } from '../gateway/node';
 import { buildStartView } from './composeView';
 import { fillEmpty, leadingProposal, type ProposalState } from './proposalView';
 import { buildSetView } from './setView';
+
+// Each test builds a gateway of its own.
+vi.setConfig({ testTimeout: 30_000 });
 
 // Proposals from skills (design system spec 4.3, Proposals from skills; platform spec 3.3, Skills).
 const marcus = { person: `${NS.d}person-marcus`, role: `${NS.ls}ClinicalOperationsLead` };
@@ -80,5 +83,27 @@ describe('the recommendation in Compare and decide', () => {
     const view = buildSetView(composition, { status: 'incomplete' }, false, {}, proposal);
     expect(labels(view.root)).not.toContain('Recommended');
     expect(labels(view.root).some((l) => l.startsWith('No recommendation: SSC-1 and SSC-2 tie.'))).toBe(true);
+  });
+});
+
+describe('Choose an object (design system spec 5.1)', () => {
+  it('gives an object input with many choices a search field that narrows them, keeping the one chosen', async () => {
+    const { buildComposeView } = await import('./composeView');
+    const g = withSeed();
+    const noor = { person: `${NS.d}person-noor`, role: `${NS.p}StructureSteward` };
+    const { created } = await g.create(noor, `${NS.p}ChangeSet`, { changeSummary: 'Add on hold' });
+    const composition = await g.compose(noor, created[0], `${NS.p}AddValue`);
+    expect(composition.archetype.label).toBe('Choose an object');
+    const all = buildComposeView(composition, { status: 'incomplete' });
+    expect(validateView(all).errors).toEqual([]);
+    expect(all.pattern).toBe('choose-an-object');
+    const options = (view: ReturnType<typeof buildComposeView>) => nodesOf(view.root).filter((n) => n.component === 'FormSelectOption').length;
+    const narrowed = buildComposeView(composition, { status: 'incomplete' }, false, false, { status: 'none' }, { valueSetSearch: 'study scenario status' });
+    expect(validateView(narrowed).errors).toEqual([]);
+    expect(options(narrowed)).toBe(2);
+    expect(options(all)).toBeGreaterThan(50);
+    // The one chosen stays, whatever is typed.
+    const chosen = composition.inputs[0].choices![0].value;
+    expect(options(buildComposeView(composition, { status: 'incomplete' }, false, false, { status: 'none' }, { valueSetSearch: 'zzz', valueSet: chosen }))).toBe(2);
   });
 });

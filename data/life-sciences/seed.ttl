@@ -1277,7 +1277,7 @@ d:person-marcus a p:Person ;
 
 # The Structure Steward (platform spec 3.7; domain spec section 11). No change sets: the structure starts as the files publish it.
 d:person-noor a p:Person ;
-  rdfs:label "Noor Haddad" ;
+  rdfs:label "Noor Rahman" ;
   p:actsAs p:StructureSteward .
 
 d:person-ingrid a p:Person ;

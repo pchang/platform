@@ -16,6 +16,7 @@ import {
   DRAFT_FIELD,
   PAGE_ARCHETYPES,
   processProgress,
+  SEARCH_SUFFIX,
   SIGNATURE_FIELD,
   type DraftState,
   type PreviewState,
@@ -145,7 +146,8 @@ export function ComposeDialog({
   // The method's inputs: everything but the typed signature, which is not an input and never previewed.
   const inputs = useMemo(() => {
     const { [SIGNATURE_FIELD]: _typed, ...rest } = values;
-    return rest;
+    // Searching an object's choices is not an input either.
+    return Object.fromEntries(Object.entries(rest).filter(([name]) => !name.endsWith(SEARCH_SUFFIX)));
   }, [values]);
   const inputsKey = JSON.stringify(inputs);
   // Preview as soon as every input has a value; again whenever a value changes.
@@ -220,7 +222,7 @@ export function ComposeDialog({
       ? buildStartView(composition, state, run, submitting, Boolean(onMinimize), proposal)
       : composition.signature
       ? buildSignView(composition, state, values, submitting, Boolean(onMinimize), proposal)
-      : buildComposeView(composition, state, submitting, Boolean(onMinimize), proposal);
+      : buildComposeView(composition, state, submitting, Boolean(onMinimize), proposal, values);
   return (
     <ViewRenderer
       view={view}

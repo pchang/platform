@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.65. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.39, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.66. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.39, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -160,7 +160,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. A list with no objects yet shows no bar, only New or Add, so the first object can be made. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -298,7 +298,7 @@ Each interaction archetype has one pattern. On phones, every surface below takes
 |---|---|---|
 | Confirm | Modal, small | The question, the preview of what changes, then Confirm and Cancel |
 | Fill in | Modal, medium | A Form with one field per input, the preview, then the commit button named for the method |
-| Choose an object | Modal, medium | A searchable list of the objects that qualify, then the preview |
+| Choose an object | Modal, medium | A searchable list of the objects that qualify, each by its identifier and title, then the preview |
 | Step by step | Wizard | One step per group of inputs, a review step with the preview, then commit |
 | Compare and decide | Page; a modal for a set | The objects side by side as cards, differences marked; they stack on phones. For a set, the comparison's rows first, such as each alternative's forecasts against their targets, a missed target marked as a warning; then the other differences. The decision, then the preview |
 | Review a draft | Page | The draft, marked as generated until accepted (rule 5); Accept, Edit and Discard |
@@ -307,7 +307,7 @@ Each interaction archetype has one pattern. On phones, every surface below takes
 
 **Creating and editing** open as Fill in, a medium modal titled New and the type, or Edit and the object's identifier. The required fields come first, marked as required, then the optional ones under the heading Optional. Editing starts with the object's current values. The preview lists what will be created or what will change, and the button says Create or Save.
 
-**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, an input that takes many values from a scheme gives a group of checkboxes, one per value, stacked so each label reads in full, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field.
+**Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, an input that takes many values from a scheme gives a group of checkboxes, one per value, stacked so each label reads in full, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field. A searchable list is a search field, named Search and the input, above a select of the objects that qualify; with more than eight, typing narrows the select to those whose identifier or title holds the words, and the one already chosen always stays in it.
 
 **After every commit**, a success Alert says what changed, and the person returns to where they came from, with the object updated and its next tasks, if any, shown.
 
@@ -527,3 +527,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.63 | 2026-11-23 | The type's name links to that type's list only in the object panel's header. On a card, and in a table's Type column, it is plain text: choosing a card anywhere, its type's name included, opens the object. |
 | 0.64 | 2026-11-23 | Proposals from skills: a Proposed group leads a method's dialog with the skill, its version and how it ran, its reasoning and each proposed value with its sources; fields are pre-filled. In Compare and decide the recommended card is labeled Recommended and outlined, the choice pre-selected, the rationale left to the person. |
 | 0.65 | 2026-11-23 | Change sets: their impact in the preview (what changes in the structure, objects that move, objects that would no longer conform, what refers to it, the version before and after) and a drafted change set as a card in the chat. No admin screens: the structure uses the patterns every object uses. |
+| 0.66 | 2026-11-23 | Choose an object built: a search field above a select of the objects that qualify, each by identifier and title, narrowing as it is typed. An empty object list still offers New. A value's own line breaks are kept. |

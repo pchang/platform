@@ -10,13 +10,25 @@ export type Route = { name: 'todo' } | { name: 'catalog' } | { name: 'type'; typ
 let cachedHash: string | undefined;
 let cachedRoute: Route = { name: 'todo' };
 
+/**
+ * A type or metric in an address: its name alone in the domain's namespace, as before, or with a prefix for any other,
+ * such as p:ChangeSet or skos:Concept for the platform's own structure (platform spec 3.7).
+ */
+const fromAddress = (prefix: string | undefined, name: string) => `${(prefix && (NS as Record<string, string>)[prefix]) || NS.ls}${name}`;
+
+export function toAddress(iri: string): string {
+  if (iri.startsWith(NS.ls) && !iri.slice(NS.ls.length).includes('/')) return iri.slice(NS.ls.length);
+  const prefixed = Object.entries(NS).find(([, ns]) => iri.startsWith(ns) && !iri.slice(ns.length).includes('/'));
+  return prefixed ? `${prefixed[0]}:${iri.slice(prefixed[1].length)}` : iri.split(/[#/]/).pop()!;
+}
+
 function parse(hash: string): Route {
   const path = hash.replace(/^#\/?/, '').replace(/\/$/, '');
   if (path === 'catalog') return { name: 'catalog' };
-  const type = path.match(/^type\/([A-Za-z0-9]+)$/);
-  if (type) return { name: 'type', type: `${NS.ls}${type[1]}` };
-  const metric = path.match(/^metric\/([A-Za-z0-9-]+)$/);
-  if (metric) return { name: 'metric', metric: `${NS.ls}${metric[1]}` };
+  const type = path.match(/^type\/(?:([a-z]+):)?([A-Za-z0-9]+)$/);
+  if (type) return { name: 'type', type: fromAddress(type[1], type[2]) };
+  const metric = path.match(/^metric\/(?:([a-z]+):)?([A-Za-z0-9-]+)$/);
+  if (metric) return { name: 'metric', metric: fromAddress(metric[1], metric[2]) };
   const search = path.match(/^search\/(.+)$/);
   if (search) {
     try {
@@ -48,8 +60,8 @@ export function useRoute(): Route {
 
 export function routeHref(route: Route): string {
   if (route.name === 'catalog') return '#/catalog';
-  if (route.name === 'type') return `#/type/${route.type.split('#').pop()}`;
-  if (route.name === 'metric') return `#/metric/${route.metric.split('#').pop()}`;
+  if (route.name === 'type') return `#/type/${toAddress(route.type)}`;
+  if (route.name === 'metric') return `#/metric/${toAddress(route.metric)}`;
   if (route.name === 'search') return `#/search/${encodeURIComponent(route.query)}`;
   return '#/';
 }

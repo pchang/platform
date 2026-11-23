@@ -477,15 +477,26 @@ function freeStore(store: oxigraph.Store) {
   (store as unknown as { free?: () => void }).free?.();
 }
 
-/** Changes as a Turtle patch (spec 3.7): the statements removed, then those added, in N-Triples, which is Turtle. */
+/**
+ * Changes as a Turtle patch (spec 3.7), for review into the repository's files: the prefixes it uses, then the statements
+ * removed and those added, one to a line, with prefixed names where a namespace is known.
+ */
 function turtlePatch(changes: { subject: string; property: string; oldValue?: Term; newValue?: Term }[]): string {
+  const used = new Set<string>();
+  const name = (iri: string) => {
+    const known = Object.entries(NS).find(([, ns]) => iri.startsWith(ns) && /^[A-Za-z][A-Za-z0-9_-]*$/.test(iri.slice(ns.length)));
+    if (!known) return `<${iri}>`;
+    used.add(known[0]);
+    return `${known[0]}:${iri.slice(known[1].length)}`;
+  };
   const term = (t: Term) =>
-    t.termType === 'NamedNode' ? `<${t.value}>`
-    : `${JSON.stringify(t.value)}${t.termType === 'Literal' && t.datatype && t.datatype.value !== `${NS.xsd}string` ? `^^<${t.datatype.value}>` : ''}`;
-  const line = (c: { subject: string; property: string }, t: Term) => `<${c.subject}> <${c.property}> ${term(t)} .`;
+    t.termType === 'NamedNode' ? name(t.value)
+    : `${JSON.stringify(t.value)}${t.termType === 'Literal' && t.datatype && t.datatype.value !== `${NS.xsd}string` ? `^^${name(t.datatype.value)}` : ''}`;
+  const line = (c: { subject: string; property: string }, t: Term) => `${name(c.subject)} ${c.property === RDF_TYPE ? 'a' : name(c.property)} ${term(t)} .`;
   const removed = changes.filter((c) => c.oldValue).map((c) => line(c, c.oldValue!));
   const added = changes.filter((c) => c.newValue).map((c) => line(c, c.newValue!));
-  return [`# Removed`, ...removed, `# Added`, ...added].join('\n');
+  const prefixes = [...used].sort().map((p) => `@prefix ${p}: <${(NS as Record<string, string>)[p]}> .`);
+  return [...prefixes, '', '# Removed', ...removed, '', '# Added', ...added].join('\n');
 }
 
 /** A skill that serves a method, as the gateway runs it. */
@@ -613,6 +624,15 @@ export class Gateway {
     const copy = new oxigraph.Store();
     copy.load(this.graph.store.dump({ format: 'application/n-triples', from_graph_name: defaultGraph() }), { format: 'application/n-triples' });
     return copy;
+  }
+
+  /**
+   * The changes a person reads in a preview or an outcome. A change to the structure shows only what happens to objects,
+   * such as the change set's status and the objects that move: what happens to the structure is its impact (spec 3.7).
+   */
+  private shownChanges(method: string, changes: Change[], work: Graph): Change[] {
+    if (!this.changesStructure(method)) return changes;
+    return changes.filter((c) => c.property !== `${NS.p}patch` && ask(work.store, `ASK { <${c.subject}> ls:identifier ?i ; a ?t . ?t a p:ObjectType FILTER NOT EXISTS { ?t p:inDomain p:Structure FILTER(?t NOT IN (p:ChangeSet)) } }`));
   }
 
   /** Whether a method changes the structure itself (spec 3.7). */
@@ -1565,7 +1585,7 @@ export class Gateway {
     const changes: Change[] = [];
     const created = this.mint(work, type, changes);
     for (const { d, first } of this.q(`SELECT ?d ?first WHERE { ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?first skos:inScheme ?s ; p:order 1
-        FILTER NOT EXISTS { ?d p:chosenOnCreate true } }`)) this.set(work, created, d, namedNode(first), changes, false);
+        FILTER NOT EXISTS { ?d p:chosenOnCreate true } FILTER NOT EXISTS { ?d p:startsEmpty true } }`)) this.set(work, created, d, namedNode(first), changes, false);
     for (const [f, v] of resolved) if (v) this.set(work, created, f.property, v, changes, false);
     if (form.parent) {
       const link = this.parentLinkFor(type, form.parent.iri);
@@ -1876,7 +1896,7 @@ export class Gateway {
     const decidesChangeSet = ask(this.graph.store, `ASK { <${object}> a p:ChangeSet FILTER NOT EXISTS { <${method}> p:effect/a p:Creation } }`);
     const rollsBack = ask(this.graph.store, `ASK { <${method}> p:effect/a p:RollBackStructureChange }`);
     const result = {
-      changes: changes.map((c) => this.changeView(c, work)),
+      changes: this.shownChanges(method, changes, work).map((c) => this.changeView(c, work)),
       created,
       pending,
       pendingDescriptions: this.describe_(pending),
@@ -1940,7 +1960,7 @@ export class Gateway {
       void this.enqueue(() => this.work(run));
     }
 
-    const changeViews = changes.map((c) => this.changeView(c, work));
+    const changeViews = this.shownChanges(method, changes, work).map((c) => this.changeView(c, work));
     freeStore(work.store);
     return {
       commit,
@@ -2761,9 +2781,14 @@ export class Gateway {
         const self = people.some((p) => p.value === principal.person) ? principal.person : undefined;
         return { ...base, kind: 'person', choices: asChoices(people), ...(self ? { default: self } : {}) };
       }
-      const candidates = input.choicesAlong
+      const candidates = (input.choicesAlong
         ? this.q(`SELECT ?value ?label WHERE { <${object}> <${input.choicesAlong}> ?value . ?value ls:identifier ?label } ORDER BY ?label`)
-        : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) } ORDER BY ?label`);
+        : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) } ORDER BY ?label`)
+      ).map((c) => {
+        // An object reads as its identifier, with its title where it says more, such as a value's label.
+        const title = titleOf(this.graph.store, c.value);
+        return title && title.toLowerCase() !== c.label.toLowerCase() ? { ...c, label: `${c.label} · ${title}` } : c;
+      });
       // Only objects that meet the input's shape qualify, such as cases that are not closed.
       const shapes = this.q(`SELECT ?shape WHERE { <${input.input}> p:inputShape ?shape }`).map((r) => r.shape);
       const qualifying = [];

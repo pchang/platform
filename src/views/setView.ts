@@ -139,7 +139,7 @@ export function buildSetView(composition: MethodComposition, state: SetPreview, 
   const body: ViewNode[][] = [
     [{ component: 'Title', props: { label: 'Side by side', headingLevel: 'h2', size: 'md' } }, text('Each scenario’s current forecasts, against their targets.', 'small'), setCards(composition, recommendationOf(proposal)?.recommended?.iri)],
     ...(recommendation ? [recommendation] : []),
-    [{ component: 'Title', props: { label: 'Decide', headingLevel: 'h2', size: 'md' } }, { component: 'Form', children: composition.inputs.map(fieldFor) }],
+    [{ component: 'Title', props: { label: 'Decide', headingLevel: 'h2', size: 'md' } }, { component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }],
     preview(composition, state),
   ];
   return {

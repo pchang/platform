@@ -89,7 +89,8 @@ describe('J7: evolving the structure', () => {
     const after = g.read(noor, changeSet);
     expect(after.state).toMatchObject({ Status: 'applied' });
     expect(after.properties.version).toBe('LS&H life sciences terms 0.2.0 → 0.3.0');
-    expect(after.properties['Turtle patch']).toContain('<https://w3id.org/lsh-platform/life-sciences/term#StudyScenarioStatus-onHold> <http://www.w3.org/2004/02/skos/core#prefLabel> "on hold" .');
+    expect(after.properties['Turtle patch']).toContain('lst:StudyScenarioStatus-onHold skos:prefLabel "on hold" .');
+    expect(after.properties['Turtle patch']).toContain('@prefix lst: <https://w3id.org/lsh-platform/life-sciences/term#> .');
     // The shape that allows each status now allows it too, so a scenario could hold it.
     expect(select(storeOf(g), `SELECT ?v WHERE { <${NS.lsh}StudyScenario-studyScenarioStatus> sh:in/rdf:rest*/rdf:first ?v }`).map((r) => r.v)).toContain(`${NS.lst}StudyScenarioStatus-onHold`);
 

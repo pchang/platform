@@ -26,9 +26,9 @@ describe('Orient views are valid view specs drawn only from the catalog (design 
 
   it('shows tasks whose pattern is not built yet as text, not as buttons', () => {
     // No method in the life sciences domain uses Choose an object yet, so its pattern is not built.
-    const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
+    const choose = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Plan a study', archetype: { archetype: 'urn:a', label: 'Step by step' } }] }];
     const json = JSON.stringify(buildTodoView(choose, { name: 'Dev Raman', role: 'Drug Safety Physician' }));
-    expect(json).toContain('Link a record (Choose an object, coming soon)');
+    expect(json).toContain('Plan a study (Step by step, coming soon)');
     // No method button: only the list bar's own controls.
     expect(json).not.toContain('"action":');
   });
@@ -157,7 +157,7 @@ describe('the To do summary (design system spec 4.3)', () => {
   });
 
   it('gives a card with no method buttons its Ask about this alone, at the foot of its body', () => {
-    const notBuilt = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Link a record', archetype: { archetype: 'urn:a', label: 'Choose an object' } }] }];
+    const notBuilt = [{ ...items[0], tasks: [{ method: 'urn:s', label: 'Plan a study', archetype: { archetype: 'urn:a', label: 'Step by step' } }] }];
     const card = cardOf(buildTodoView(notBuilt, chloe, undefined, [], { today }).root, 'SUB-1');
     expect(buttonsOf(card)).toEqual(['Ask']);
     const body = nodes(card).find((n) => n.component === 'Stack')!;
