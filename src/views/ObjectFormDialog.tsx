@@ -4,7 +4,7 @@ import { RefusedError, type ObjectForm } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { buildRefusedView } from './composeView';
-import { buildFormView, formNotice, formValues, isFormComplete, type FormPreview } from './formView';
+import { BEGIN_WITH_FORM, buildFormView, buildStartingPointView, chosenStart, STARTING_POINT_FIELD, formNotice, formValues, isFormComplete, type FormPreview } from './formView';
 
 const reasonsOf = (e: unknown) => (e instanceof RefusedError ? e.reasons : [String(e)]);
 
@@ -22,6 +22,9 @@ export function ObjectFormDialog({ target, onDone, onCancel }: { target: FormTar
   const [state, setState] = useState<FormPreview>({ status: 'incomplete' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string[]>();
+  // How to begin, when a skill names the ways (platform spec 3.3, Starting points).
+  const [start, setStart] = useState<Record<string, string>>({});
+  const [begun, setBegun] = useState(false);
   const key = JSON.stringify(target);
 
   useEffect(() => {
@@ -65,6 +68,24 @@ export function ObjectFormDialog({ target, onDone, onCancel }: { target: FormTar
 
   if (error) return <ViewRenderer view={buildRefusedView(error)} host={{ onIntent: onCancel }} />;
   if (!form) return null;
+
+  // Starting points (platform spec 3.3): first how to begin, then what the chosen one begins, here the create form.
+  if (form.startingPoints?.length && !begun) {
+    return (
+      <ViewRenderer
+        view={buildStartingPointView(form, start)}
+        host={{
+          // The only starting point that runs shows as chosen to begin with.
+          values: { [STARTING_POINT_FIELD]: chosenStart(form, start)?.startingPoint ?? '', ...start },
+          onField: (field, value) => setStart((v) => ({ ...v, [field]: value })),
+          onIntent: (intent) => {
+            if (intent === 'cancel') return onCancel();
+            if (intent === 'submit' && chosenStart(form, start)?.begins === BEGIN_WITH_FORM) setBegun(true);
+          },
+        }}
+      />
+    );
+  }
 
   return (
     <ViewRenderer

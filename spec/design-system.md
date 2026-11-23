@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.68. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.41, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.69. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -314,6 +314,8 @@ Each interaction archetype has one pattern. On phones, every surface below takes
 | Review and sign | Wizard | A review step with the preview, then a signature step showing the signer, the time and the meaning of the signature |
 | Start and track | Modal, then the object | Confirm the start; progress then shows on the object, and Notifications tells the person when it ends |
 
+**Starting points** (platform spec 3.3, Skills). When a skill names the ways to begin creating a type, New opens first on a choice, a medium modal titled New and the type (pattern `choose-a-starting-point`): the line "How do you want to start?", then one card per starting point, in order, its name as the title and what it does as its line. A starting point the platform can run is a selectable card; one it cannot yet is a plain card with a "Coming soon" label and why, in small text, so it is seen but cannot be chosen. Continue, disabled until one is chosen, opens what it begins, such as the create form below; Cancel closes. When only one starting point can run, it is chosen to begin with.
+
 **Creating and editing** open as Fill in, a medium modal titled New and the type, or Edit and the object's identifier. The required fields come first, marked as required, then the optional ones under the heading Optional. Editing starts with the object's current values. The preview lists what will be created or what will change, and the button says Create or Save.
 
 **Fields come from the inputs.** Each input's kind decides its field: text gives a text area, a value from a concept scheme gives radio buttons side by side for up to five values, so each has room to be tapped, and a select beyond that, an input that takes many values from a scheme gives a group of checkboxes, one per value, stacked so each label reads in full, a person gives a select of people that defaults to the person acting, an object gives a searchable list, and a web address gives a URL field. A searchable list is a search field, named Search and the input, above a select of the objects that qualify; with more than eight, typing narrows the select to those whose identifier or title holds the words, and the one already chosen always stays in it.
@@ -540,3 +542,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.42 | 2026-11-16 | Counts name what they count: a count of one type's objects uses the type's name, such as "12 patients", never "12 objects". |
 | 0.67 | 2026-11-23 | Restored from 0.43 on another branch, lost when the branches diverged: in the object panel, Ask about this leaves the top bar and comes last in the header's row of methods and Edit, or alone there when there are none. |
 | 0.68 | 2026-11-23 | Restored from 0.44 on another branch, lost when the branches diverged: the object panel shows the object's journey under its header, as PatternFly's progress stepper, with passed, current, to come, skipped and exit stages, vertical below md. The catalog gains ProgressStepper and ProgressStep. |
+| 0.69 | 2026-11-23 | Starting points: when a skill names the ways to begin creating a type, New opens on a choice of cards, one per starting point; those not yet available are shown with Coming soon and why; Continue opens what the chosen one begins, such as the create form. |

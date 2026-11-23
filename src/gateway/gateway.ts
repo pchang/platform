@@ -219,6 +219,24 @@ export interface ObjectForm {
   /** The object a new one is created inside. */
   parent?: ObjectSummary;
   fields: FormField[];
+  /** For a create, the ways to begin a skill names (spec 3.3, Starting points), in order. The form is what the create form begins. */
+  startingPoints?: StartingPointView[];
+}
+
+/** A way to begin creating an object, as a skill names it (spec 3.3, Starting points). */
+export interface StartingPointView {
+  startingPoint: string;
+  label: string;
+  description: string;
+  /** The beginning it uses, such as the create form. */
+  begins: string;
+  beginsLabel: string;
+  /** Whether the platform can run it now; when not, why. */
+  available: boolean;
+  notYet?: string;
+  /** The skill that names it. */
+  skill: string;
+  skillLabel: string;
 }
 
 /** A set method a selection qualifies for (spec 5.4, Acting on a set). */
@@ -1623,7 +1641,38 @@ export class Gateway {
       fields = fields.filter((f) => f.property !== link.property);
     }
     const typeLabel = this.q(`SELECT ?l WHERE { <${type}> rdfs:label ?l }`)[0].l;
-    return { mode: 'create', type, typeLabel, fields, ...(parent ? { parent: this.summary(parent) } : {}) };
+    const startingPoints = this.startingPoints(principal, type);
+    return { mode: 'create', type, typeLabel, fields, ...(parent ? { parent: this.summary(parent) } : {}), ...(startingPoints.length ? { startingPoints } : {}) };
+  }
+
+  /** The beginnings the platform implements (spec 3.3, Starting points). Only the create form so far. */
+  private static readonly BEGINNINGS = new Set([`${NS.p}BeginWithForm`]);
+
+  /**
+   * Starting points (spec 3.3): the ways an approved skill names to begin creating a type, for a role that may create it,
+   * in order, each available when the platform implements its beginning, or else with why not.
+   */
+  private startingPoints(principal: Principal, type: string): StartingPointView[] {
+    const today = this.now().toISOString().slice(0, 10);
+    return this.q(`SELECT ?skill ?skillLabel ?sp ?label ?description ?begins ?beginsLabel ?why WHERE {
+        ?skill a p:Skill ; p:serves p:Create ; p:forType <${type}> ; rdfs:label ?skillLabel ; p:approvedOn ?approved ; p:startingPoint ?sp .
+        FILTER(STR(?approved) <= "${today}")
+        FILTER(NOT EXISTS { ?skill p:usableBy ?r } || EXISTS { ?skill p:usableBy <${principal.role}> })
+        ?sp rdfs:label ?label ; rdfs:comment ?description ; p:begins ?begins ; p:order ?order . ?begins rdfs:label ?beginsLabel .
+        OPTIONAL { ?begins p:notYetBecause ?why } } ORDER BY ?skillLabel ?order`).map((r) => {
+      const available = Gateway.BEGINNINGS.has(r.begins);
+      return {
+        startingPoint: r.sp,
+        label: r.label,
+        description: r.description,
+        begins: r.begins,
+        beginsLabel: r.beginsLabel,
+        available,
+        ...(available ? {} : { notYet: r.why ?? 'The platform cannot begin this way yet.' }),
+        skill: r.skill,
+        skillLabel: r.skillLabel,
+      };
+    });
   }
 
   /** How a new object of a type belongs to a parent: its own link to the parent, or the parent's link to it. */

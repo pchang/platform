@@ -2,7 +2,8 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, FormField, ObjectForm } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import { fieldFor } from './composeView';
-import { dialogBody } from './layout';
+import { dialogBody, group } from './layout';
+import { NS } from '../ontology/ontology';
 
 /**
  * Creating and editing an object (platform spec 5.3, Creating and editing objects; design system spec 5.1): Fill in, as
@@ -57,6 +58,79 @@ function previewLines(form: ObjectForm, state: FormPreview): ViewNode[] {
       })),
     },
   ];
+}
+
+/** The beginning that opens the create form (platform spec 3.3, Starting points). */
+export const BEGIN_WITH_FORM = `${NS.p}BeginWithForm`;
+
+/** The field that holds the chosen starting point. It is never one of the form's values. */
+export const STARTING_POINT_FIELD = 'startingPoint';
+
+/** The starting point chosen to begin with: the one the person chose, or the only one the platform can run. */
+export function chosenStart(form: ObjectForm, values: Record<string, string>) {
+  const available = (form.startingPoints ?? []).filter((s) => s.available);
+  return available.find((s) => s.startingPoint === values[STARTING_POINT_FIELD]) ?? (available.length === 1 ? available[0] : undefined);
+}
+
+/**
+ * Starting points (design system spec 5.1; platform spec 3.3): New opens first on the ways a skill names to begin, a card
+ * each, those the platform cannot run yet shown with Coming soon and why. Continue opens what the chosen one begins.
+ */
+export function buildStartingPointView(form: ObjectForm, values: Record<string, string>): ViewSpec {
+  const title = `New ${form.typeLabel}`;
+  const chosen = chosenStart(form, values);
+  const points = form.startingPoints ?? [];
+  const cards: ViewNode[] = points.map((p) =>
+    p.available
+      ? {
+          component: 'Card',
+          props: { isSelectable: true, value: p.startingPoint, isCompact: true },
+          field: STARTING_POINT_FIELD,
+          children: [
+            { component: 'CardTitle', props: { label: p.label, component: 'h3' } },
+            { component: 'CardBody', children: [{ component: 'Content', props: { label: p.description } }] },
+          ],
+        }
+      : {
+          component: 'Card',
+          props: { isCompact: true },
+          children: [
+            {
+              component: 'CardHeader',
+              children: [
+                {
+                  component: 'Flex',
+                  props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
+                  children: [{ component: 'CardTitle', props: { label: p.label, component: 'h3' } }, { component: 'Label', props: { label: 'Coming soon', isCompact: true } }],
+                },
+              ],
+            },
+            {
+              component: 'CardBody',
+              children: [group([{ component: 'Content', props: { label: p.description } }, { component: 'Content', props: { label: p.notYet ?? '', component: 'small', isSubtle: true } }])],
+            },
+          ],
+        },
+  );
+  return {
+    pattern: 'choose-a-starting-point',
+    because: `${points[0]?.skillLabel ?? 'A skill'} names the ways to begin a new ${form.typeLabel.toLowerCase()} (platform spec 3.3, Starting points)`,
+    root: {
+      component: 'Modal',
+      props: { variant: 'medium', 'aria-label': title },
+      children: [
+        { component: 'ModalHeader', props: { title, description: form.parent ? `In ${form.parent.identifier} · ${form.parent.title}` : `A new ${form.typeLabel.toLowerCase()}` } },
+        { component: 'ModalBody', children: [dialogBody([[{ component: 'Content', props: { label: 'How do you want to start?' } }, group(cards, 'gapMd')]])] },
+        {
+          component: 'ModalFooter',
+          children: [
+            { component: 'Button', props: { label: 'Continue', variant: 'primary', isDisabled: !chosen }, intent: 'submit' },
+            { component: 'Button', props: { label: 'Cancel', variant: 'link' }, intent: 'cancel' },
+          ],
+        },
+      ],
+    },
+  };
 }
 
 export function buildFormView(form: ObjectForm, state: FormPreview, submitting = false): ViewSpec {

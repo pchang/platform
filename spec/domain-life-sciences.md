@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.34. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.41.
+Version 0.35. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -396,10 +396,12 @@ Built, and read by the conformance tests. A skill is this sponsor's know-how for
 |---|---|---|---|---|
 | Simulation assumptions | Run trial simulation | Biostatistician | Screen failure rate, dropout rate, response on control, response on treatment, serious adverse events per 100 patient-years | Reuses the values recorded on the most recent trial simulation of the scenario, or else of another scenario of the same study concept, and cites it |
 | Recommend a study scenario | Compare study scenarios | Clinical Operations Lead | The scenario to select | Ranks the set by its comparison: fewest forecasts that miss their target first, then fewest forecasts missing; recommends none on a tie |
+| Start a protocol | Create | Medical Writer | Where to begin a new protocol: author from scratch, start from a template, or import a protocol document | None. It names starting points (platform spec 3.3): from scratch opens the create form; a template and a document are not built yet |
 
 **Their instructions,** in short. The full text is kept with each skill's declaration.
 
 - **Simulation assumptions.** Start from the most recent simulation of this scenario or of its study concept's other scenarios. Adjust for what this scenario changes, as its stated change, its protocol's eligibility and schedule and its sites say, and say why for every value. Ground each value in prior simulations, design signals and the protocol, and name the source. Keep each rate within what is plausible for the indication, and say which assumptions rest on weak evidence. The person chooses the outcome measures; the skill does not.
+- **Start a protocol.** A protocol begins one of three ways, in this order: authored from scratch in the platform, from one of the sponsor's approved protocol templates with its sections and standard text in place, or by importing an existing protocol document, such as last year's synopsis, whose objectives, criteria, arms and visits are proposed as structure for review, as Import protocol does (section 3.8). Whichever way it begins, it is a draft the people named for it shape and review.
 - **Recommend a study scenario.** Weigh each scenario's current forecasts against the study concept's agreed targets first and its proposed targets second; then the budget's fit against its ceiling and the design signals raised. Prefer a scenario that meets every agreed target. Name what each scenario gives up, and, when two are close, what would change the recommendation. Never write the decision's rationale: that is the person's.
 
 So that simulation assumptions can be reused, a trial simulation records every assumption as a number: screen failure rate, dropout rate, response on control and on treatment, and serious adverse events per 100 patient-years, as well as the assumed effect in words.
@@ -1002,3 +1004,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.32 | 2026-11-23 | The Structure Steward, the platform's own role (platform spec section 3.7), joins the personas with its metrics and a seed person. Who owns each part of the structure, for approving change sets. Journey J7, Evolving the structure. One open question. |
 | 0.33 | 2026-11-23 | The Structure Steward watches Deprecated values, not deprecated terms still in use, until derived states are built (platform spec section 9). J7 adds to a value set and shows the new status wherever study scenarios' statuses are shown or chosen. |
 | 0.34 | 2026-11-23 | Restored from 0.19 on another branch, lost when the branches diverged: lifecycles (section 9), each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |
+| 0.35 | 2026-11-23 | Start a protocol (section 3.9): a skill with three starting points for a new protocol, author from scratch, start from a template or import a protocol document; only from scratch runs now, with the create form. |

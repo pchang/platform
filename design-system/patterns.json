@@ -108,6 +108,32 @@
       "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
     },
     {
+      "id": "choose-a-starting-point",
+      "purpose": "Offers the ways a skill names to begin creating an object, one card each, those not yet available marked Coming soon with why; Continue opens what the chosen one begins (platform spec 3.3, Starting points).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose"
+      ],
+      "fitsWhen": [
+        "A skill names starting points for creating the type"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
+    },
+    {
       "id": "compare-and-decide",
       "purpose": "Shows the object and another of the same type side by side, or a chosen set of them, differences marked, then previews and runs the method (archetype Compare and decide). For a set it opens as a modal, with the comparison's rows first.",
       "template": "page",

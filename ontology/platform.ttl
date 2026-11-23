@@ -1810,3 +1810,51 @@ p:Shape-IsCurrentValue-query a sh:SPARQLConstraint ;
     UNION { $this skos:inScheme ?s FILTER(STRSTARTS(STR(?s), "https://w3id.org/lsh-platform/platform#")) } }""" .
 
 p:StructureSteward p:mayRun p:AddValue, p:RelabelValue, p:DeprecateValue .
+
+# Starting points (platform spec 3.3, Skills): a skill may serve creating a type, naming the ways a person may begin.
+
+p:StartingPoint a rdfs:Class ;
+  rdfs:label "starting point" ;
+  rdfs:comment "One way a person may begin creating an object of a type, named by a skill, with the beginning the platform uses for it." .
+
+p:Beginning a rdfs:Class ;
+  rdfs:label "beginning" ;
+  rdfs:comment "How the platform begins a new object, implemented once for every domain: the create form, a template or a document." .
+
+p:forType a rdf:Property ;
+  rdfs:label "for type" ;
+  rdfs:comment "The type a skill that serves Create is for." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:ObjectType .
+
+p:startingPoint a rdf:Property ;
+  rdfs:label "starting point" ;
+  rdfs:comment "A way to begin that the skill names, in the order given by p:order." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:StartingPoint .
+
+p:begins a rdf:Property ;
+  rdfs:label "begins with" ;
+  rdfs:comment "The beginning a starting point uses." ;
+  rdfs:domain p:StartingPoint ;
+  rdfs:range p:Beginning .
+
+p:notYetBecause a rdf:Property ;
+  rdfs:label "not yet because" ;
+  rdfs:comment "Why the platform cannot run a beginning yet, said to the person who sees it as not yet available." ;
+  rdfs:domain p:Beginning ;
+  rdfs:range xsd:string .
+
+p:BeginWithForm a p:Beginning ;
+  rdfs:label "the create form" ;
+  rdfs:comment "Opens the type's create form (platform spec 5.3)." .
+
+p:BeginFromTemplate a p:Beginning ;
+  rdfs:label "a template" ;
+  rdfs:comment "Copies an approved template of the type with its parts, for the person to complete." ;
+  p:notYetBecause "Templates need a deep copy of an object with its parts, which the platform cannot make yet." .
+
+p:BeginFromDocument a p:Beginning ;
+  rdfs:label "a document" ;
+  rdfs:comment "Reads a document into the type's structure, proposed for review." ;
+  p:notYetBecause "Importing a document needs a connected model to read it into structure, and is not built yet." .
