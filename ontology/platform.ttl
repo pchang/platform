@@ -893,8 +893,7 @@ p:draftsProperty a rdf:Property ;
 
 p:instructions a rdf:Property ;
   rdfs:label "instructions" ;
-  rdfs:comment "What the model is asked to write, and how. Versioned with the ontology." ;
-  rdfs:domain p:Drafting ;
+  rdfs:comment "What a model is asked to do, and how: for a drafting effect, what to write; for a skill, the expert's way of doing the method's work. Versioned with the ontology or the context that declares it." ;
   rdfs:range xsd:string .
 
 p:drawsOn a rdf:Property ;
@@ -1076,3 +1075,197 @@ p:Confirm a p:Archetype ;
   rdfs:label "Confirm" ;
   rdfs:comment "The method has no inputs. The person confirms the change." ;
   p:ruleOrder 8 .
+
+# Skills (platform spec 3.3, Skills): an organization's know-how for a method. Context, not ontology.
+
+p:Skill a rdfs:Class ;
+  rdfs:label "skill" ;
+  rdfs:comment "How one organization does a method's work well: the method it serves, what it proposes, its version, owner and approval, its instructions, and its reference procedure, if any. It proposes and never commits (platform spec 3.3, Skills)." .
+
+p:ReferenceProcedure a rdfs:Class ;
+  rdfs:label "reference procedure" ;
+  rdfs:comment "A plain, deterministic procedure the platform implements once for every domain, which a skill may declare for when no model is connected. Its parameters are declared on the skill." .
+
+p:InputSource a rdfs:Class ;
+  rdfs:label "input source" ;
+  rdfs:comment "For a skill that reuses recorded inputs: the input it proposes and the property of an earlier result it reads the value from." .
+
+p:Proposal a rdfs:Class ;
+  rdfs:label "proposal" ;
+  rdfs:comment "What a skill proposed for a method on an object or a set: values for inputs, a recommended object, the reasoning and the objects it rests on, recorded with who asked and how it ran. It changes nothing. A PROV-O entity." ;
+  rdfs:subClassOf prov:Entity .
+
+p:ProposedValue a rdfs:Class ;
+  rdfs:label "proposed value" ;
+  rdfs:comment "One input's value in a proposal, with the objects it rests on." .
+
+p:serves a rdf:Property ;
+  rdfs:label "serves" ;
+  rdfs:comment "The method whose work the skill does." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:Method .
+
+p:proposesInput a rdf:Property ;
+  rdfs:label "proposes input" ;
+  rdfs:comment "An input of the served method that the skill proposes a value for. Never an input that must be the person's own words." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:Input .
+
+p:recommends a rdf:Property ;
+  rdfs:label "recommends" ;
+  rdfs:comment "True when the skill recommends one object of the set a set method chooses among." ;
+  rdfs:domain p:Skill ;
+  rdfs:range xsd:boolean .
+
+p:skillVersion a rdf:Property ;
+  rdfs:label "skill version" ;
+  rdfs:comment "The skill's version. A proposal records the version that made it." ;
+  rdfs:domain p:Skill ;
+  rdfs:range xsd:string .
+
+p:owner a rdf:Property ;
+  rdfs:label "owner" ;
+  rdfs:comment "The role accountable for the skill's content." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:Role .
+
+p:approvedOn a rdf:Property ;
+  rdfs:label "approved on" ;
+  rdfs:comment "When this version of the skill was approved. A skill with no approval, or approved after today, does not run." ;
+  rdfs:domain p:Skill ;
+  rdfs:range xsd:date .
+
+p:usableBy a rdf:Property ;
+  rdfs:label "usable by" ;
+  rdfs:comment "A role that may use the skill. Without any, every role that may run its method may." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:Role .
+
+p:referenceProcedure a rdf:Property ;
+  rdfs:label "reference procedure" ;
+  rdfs:comment "The procedure the skill runs when no model is connected, or the model fails." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:ReferenceProcedure .
+
+p:resultsAlong a rdf:Property ;
+  rdfs:label "results along" ;
+  rdfs:comment "For reusing recorded inputs: the relationship from an earlier result to the object it is a result of, such as a simulation to what it simulates." ;
+  rdfs:domain p:Skill ;
+  rdfs:range rdf:Property .
+
+p:siblingsAlong a rdf:Property ;
+  rdfs:label "siblings along" ;
+  rdfs:comment "For reusing recorded inputs: the relationship to a parent whose other children's results are used when the object has none of its own." ;
+  rdfs:domain p:Skill ;
+  rdfs:range rdf:Property .
+
+p:latestBy a rdf:Property ;
+  rdfs:label "latest by" ;
+  rdfs:comment "For reusing recorded inputs: the date of a result that decides which is the most recent." ;
+  rdfs:domain p:Skill ;
+  rdfs:range rdf:Property .
+
+p:inputSource a rdf:Property ;
+  rdfs:label "input source" ;
+  rdfs:comment "Where a skill that reuses recorded inputs reads one input's value." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:InputSource .
+
+p:forInput a rdf:Property ;
+  rdfs:label "for input" ;
+  rdfs:comment "The input an input source gives a value for." ;
+  rdfs:domain p:InputSource ;
+  rdfs:range p:Input .
+
+p:readFrom a rdf:Property ;
+  rdfs:label "read from" ;
+  rdfs:comment "The property of an earlier result the value is read from." ;
+  rdfs:domain p:InputSource ;
+  rdfs:range rdf:Property .
+
+p:proposedBy a rdf:Property ;
+  rdfs:label "proposed by" ;
+  rdfs:comment "The skill that made the proposal." ;
+  rdfs:domain p:Proposal ;
+  rdfs:range p:Skill .
+
+p:proposalFor a rdf:Property ;
+  rdfs:label "proposal for" ;
+  rdfs:comment "An object the proposal was made for: the object, or each object of the set." ;
+  rdfs:domain p:Proposal .
+
+p:ranBy a rdf:Property ;
+  rdfs:label "ran by" ;
+  rdfs:comment "How the proposal was made: the model as the provider reports it, or the name of the reference procedure." ;
+  rdfs:domain p:Proposal ;
+  rdfs:range xsd:string .
+
+p:fellBack a rdf:Property ;
+  rdfs:label "fell back" ;
+  rdfs:comment "Why the reference procedure was run instead of the connected model, when it was." ;
+  rdfs:domain p:Proposal ;
+  rdfs:range xsd:string .
+
+p:reasoning a rdf:Property ;
+  rdfs:label "reasoning" ;
+  rdfs:comment "Why the skill proposes what it proposes, in a few sentences." ;
+  rdfs:domain p:Proposal ;
+  rdfs:range xsd:string .
+
+p:restsOn a rdf:Property ;
+  rdfs:label "rests on" ;
+  rdfs:comment "An object a proposal or a proposed value rests on. Only objects read for this proposal." .
+
+p:recommended a rdf:Property ;
+  rdfs:label "recommended" ;
+  rdfs:comment "The object of the set the proposal recommends." ;
+  rdfs:domain p:Proposal .
+
+p:proposedValue a rdf:Property ;
+  rdfs:label "proposed value" ;
+  rdfs:comment "One input's value in the proposal." ;
+  rdfs:domain p:Proposal ;
+  rdfs:range p:ProposedValue .
+
+p:valueOf a rdf:Property ;
+  rdfs:label "value of" ;
+  rdfs:comment "The input a proposed value is for." ;
+  rdfs:domain p:ProposedValue ;
+  rdfs:range p:Input .
+
+p:proposedAs a rdf:Property ;
+  rdfs:label "proposed as" ;
+  rdfs:comment "The value proposed for the input, as the input takes it." ;
+  rdfs:domain p:ProposedValue .
+
+p:fromProposal a rdf:Property ;
+  rdfs:label "from proposal" ;
+  rdfs:comment "The proposal a commit's inputs started from." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Proposal .
+
+p:keptInput a rdf:Property ;
+  rdfs:label "kept input" ;
+  rdfs:comment "A proposed input whose value the person committed as proposed." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Input .
+
+p:changedInput a rdf:Property ;
+  rdfs:label "changed input" ;
+  rdfs:comment "A proposed input whose value the person changed before committing." ;
+  rdfs:domain p:Commit ;
+  rdfs:range p:Input .
+
+p:followedRecommendation a rdf:Property ;
+  rdfs:label "followed recommendation" ;
+  rdfs:comment "Whether the person chose the object the proposal recommended." ;
+  rdfs:domain p:Commit ;
+  rdfs:range xsd:boolean .
+
+p:ReuseRecordedInputs a p:ReferenceProcedure ;
+  rdfs:label "reuse recorded inputs" ;
+  rdfs:comment "Proposes the values recorded on the most recent result of the object, along the skill's results relationship, or else of the other children of its parent; cites that result. It does not judge what has changed since." .
+
+p:RankByComparison a p:ReferenceProcedure ;
+  rdfs:label "rank by comparison" ;
+  rdfs:comment "Recommends the object of the set whose comparison has the fewest cells that miss their target, then the fewest missing; recommends none on a tie. Cites the rows it counted." .

@@ -56,7 +56,8 @@ export async function inPageClient(): Promise<GatewayClient> {
     read: (p, object) => refused(() => gateway.read(p, object)),
     compose: async (p, object, method) => refused(() => gateway.compose(p, object, method)),
     preview: (p, object, method, inputs) => refused(() => gateway.preview(p, object, method, inputs)),
-    commit: (p, object, method, inputs, signature, draft) => refused(() => gateway.commit(p, object, method, inputs, signature, draft)),
+    commit: (p, object, method, inputs, signature, draft, proposal) => refused(() => gateway.commit(p, object, method, inputs, signature, draft, proposal)),
+    propose: (p, objects, method) => refused(() => gateway.propose(p, objects, method)),
     // No model is ever connected in a preview: a key cannot live in a page. The gateway says so.
     draft: (p, object, method) => refused(() => gateway.draft(p, object, method)),
     discardDraft: (p, draft) => refused(() => gateway.discardDraft(p, draft)),
@@ -74,7 +75,7 @@ export async function inPageClient(): Promise<GatewayClient> {
     setMethods: (p, objects) => refused(() => gateway.setMethods(p, objects)),
     composeSet: (p, objects, method) => refused(() => gateway.composeSet(p, objects, method)),
     previewSet: (p, objects, method, inputs) => refused(() => gateway.previewSet(p, objects, method, inputs)),
-    commitSet: (p, objects, method, inputs) => refused(() => gateway.commitSet(p, objects, method, inputs)),
+    commitSet: (p, objects, method, inputs, proposal) => refused(() => gateway.commitSet(p, objects, method, inputs, proposal)),
     runs: (p, filter) => refused(() => gateway.runs(p, filter)),
     run: (p, run) => refused(() => gateway.run(p, run)),
     notifications: (p) => refused(() => gateway.notifications(p)),

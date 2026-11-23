@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.30. November 21, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
+Version 0.31. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -316,7 +316,7 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 
 ### 3.8 Design and Plan methods to come
 
-**Specified, not yet built.** These are the skills that act on the objects above. The conformance tests read sections 3.1 to 3.7 and not this table. Several need the platform spec first (section 12): a deep copy for Copy study scenario and Approve study concept, a connected model for Import protocol, and for Run development simulation a portfolio model. Until a model is connected, the gateway refuses those methods, as it refuses Run simulation.
+**Specified, not yet built.** These are the methods that act on the objects above. The conformance tests read sections 3.1 to 3.7 and not this table. Several need the platform spec first (section 12): a deep copy for Copy study scenario and Approve study concept, a connected model for Import protocol, and for Run development simulation a portfolio model. Until a model is connected, the gateway refuses those methods, as it refuses Run simulation.
 
 | Method | On | Needs | Precondition | Effect |
 |---|---|---|---|---|
@@ -385,6 +385,24 @@ Built, and read by the conformance tests like sections 2.3, 3.3 and 4.3:
 | Multi-regional trials (ICH E17) | Record regional enrollment and consistency assumptions |
 | Diversity action plans (FDA, under FDORA 2022) | Record enrollment goals by demographic group where a plan is required |
 | Models used for decisions | Each simulation model is validated for its intended use, and every forecast records the model and data it came from (platform spec section 7) |
+
+---
+
+### 3.9 Design and Plan skills
+
+Built, and read by the conformance tests. A skill is this sponsor's know-how for a method (platform spec 3.3, Skills): it proposes, and the person decides. Each is version 1.0, approved on November 23, 2026, and may be used by every role that may run its method.
+
+| Skill | Serves | Owner | Proposes | Reference procedure |
+|---|---|---|---|---|
+| Simulation assumptions | Run trial simulation | Biostatistician | Screen failure rate, dropout rate, response on control, response on treatment, serious adverse events per 100 patient-years | Reuses the values recorded on the most recent trial simulation of the scenario, or else of another scenario of the same study concept, and cites it |
+| Recommend a study scenario | Compare study scenarios | Clinical Operations Lead | The scenario to select | Ranks the set by its comparison: fewest forecasts that miss their target first, then fewest forecasts missing; recommends none on a tie |
+
+**Their instructions,** in short. The full text is kept with each skill's declaration.
+
+- **Simulation assumptions.** Start from the most recent simulation of this scenario or of its study concept's other scenarios. Adjust for what this scenario changes, as its stated change, its protocol's eligibility and schedule and its sites say, and say why for every value. Ground each value in prior simulations, design signals and the protocol, and name the source. Keep each rate within what is plausible for the indication, and say which assumptions rest on weak evidence. The person chooses the outcome measures; the skill does not.
+- **Recommend a study scenario.** Weigh each scenario's current forecasts against the study concept's agreed targets first and its proposed targets second; then the budget's fit against its ceiling and the design signals raised. Prefer a scenario that meets every agreed target. Name what each scenario gives up, and, when two are close, what would change the recommendation. Never write the decision's rationale: that is the person's.
+
+So that simulation assumptions can be reused, a trial simulation records every assumption as a number: screen failure rate, dropout rate, response on control and on treatment, and serious adverse events per 100 patient-years, as well as the assumed effect in words.
 
 ---
 
@@ -942,3 +960,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.28 | 2026-11-21 | Seed: VELOCITY-3's three study scenarios are simulated (TS-1 to TS-3, 18 forecasts, two design signals, budget totals), as the reference trial model's own output, checked against it by a test, so the scenarios can be compared and one selected from the start. |
 | 0.29 | 2026-11-21 | Relationships: the inverse labels of is an option for, is proposed for, sets success for, contributes to and is about no longer repeat their object ("has", "has proposed"), so a tab's sentence reads "This program has proposed these study concepts." |
 | 0.30 | 2026-11-21 | Compare study scenarios names its commit action Select, so the button reads "Select SSC-3", not the comparison already made. It selects and records the decision; creating the study from the selected scenario is still to come. |
+| 0.31 | 2026-11-23 | Design and Plan skills (section 3.9): Simulation assumptions for Run trial simulation and Recommend a study scenario for Compare study scenarios, each with its instructions and reference procedure. A trial simulation records each assumption as a number. Section 3.8 calls its methods methods. |

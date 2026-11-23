@@ -4,6 +4,7 @@ import { CONNECTED_MODELS } from '../ontology/models';
 import { templateProperties } from '../ontology/titles';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
+import { PROPOSAL_TOOL, type SkillModel } from './skills';
 import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
@@ -226,6 +227,8 @@ export interface CommitResult {
   run?: RunView;
   /** The draft the commit accepted, for a method that produces a draft. */
   fromDraft?: { draft: string; model: string; edited: boolean };
+  /** The skill's proposal the inputs started from, with the inputs kept as proposed and those changed (spec 3.3, Skills). */
+  fromProposal?: { proposal: string; kept: string[]; changed: string[]; followedRecommendation?: boolean };
 }
 
 /** A search's answer (spec 5.2): how the query was understood, and the objects it found, best first. */
@@ -277,6 +280,33 @@ export interface DraftView {
   given: { iri: string; identifier: string }[];
   requestedBy: string;
   requestedByName: string;
+}
+
+/** A skill's proposal (spec 3.3, Skills), as the person deciding sees it. It changes nothing. */
+export interface ProposalView {
+  proposal: string;
+  skill: string;
+  /** The skill's name, such as Simulation assumptions. */
+  label: string;
+  version: string;
+  method: string;
+  /** How it ran: the model as the provider reports it, or the reference procedure by name. */
+  ranBy: { model: string } | { procedure: string };
+  /** Why the reference procedure ran instead of the connected model, when it did. */
+  fellBack?: string;
+  reasoning: string;
+  /** A value for each input the skill could ground, in the method's input order. */
+  values: { name: string; label: string; value: string; valueLabel: string; restsOn: { iri: string; identifier: string }[] }[];
+  /** The object of the set it recommends, for a skill that recommends. */
+  recommended?: { iri: string; identifier: string };
+  restsOn: { iri: string; identifier: string }[];
+  generatedAt: string;
+}
+
+/** The skills that serve a method, for the principal: each one's proposal, or why it did not run. */
+export interface SkillProposals {
+  proposals: ProposalView[];
+  notRun: { skill: string; label: string; reason: string }[];
 }
 
 /** Accepting a draft: which one, and the text to commit, as written or edited. */
@@ -353,7 +383,7 @@ export interface JournalWriter {
 }
 
 /** What a journal entry records: a commit, a recorded read, a run's change of status, or notifications read. */
-export type JournalKind = 'commit' | 'read' | 'run' | 'notification' | 'draft';
+export type JournalKind = 'commit' | 'read' | 'run' | 'notification' | 'draft' | 'proposal';
 
 const RUN_STATUS = (status: RunStatus) => namedNode(`${NS.p}RunStatus-${status}`);
 const WORKER = `${NS.p}BackgroundWorker`;
@@ -374,6 +404,8 @@ export interface GatewayOptions {
   searchModel?: SearchModel;
   /** The model connected to answer questions (spec 5.2, Asking a question). Without one, questions are searched. */
   askModel?: AskModel;
+  /** The model connected to run skills (spec 3.3, Skills). Without one, skills run their reference procedures. */
+  skillModel?: SkillModel;
 }
 
 /** The read-only tools a model answering a question may call (spec 5.2, Asking a question). Domain-free: names come from the ontology. */
@@ -422,12 +454,28 @@ const ASK_TOOLS: AskTool[] = [
   },
 ];
 
+/** A skill that serves a method, as the gateway runs it. */
+interface SkillRow {
+  skill: string;
+  label: string;
+  version: string;
+  instructions: string;
+  procedure?: string;
+  procedureLabel?: string;
+  recommends: boolean;
+  inputs: { input: string; name: string; label: string; datatype?: string; among: boolean }[];
+}
+
+/** A proposal as made, before it is recorded. */
+type MadeProposal = Pick<ProposalView, 'values' | 'recommended' | 'reasoning' | 'restsOn' | 'ranBy' | 'fellBack'>;
+
 export class Gateway {
   private commitCount = 0;
   private readCount = 0;
   private runCount = 0;
   private notificationCount = 0;
   private draftCount = 0;
+  private proposalCount = 0;
   /** Each running run's progress, from 0 to 1. Reported while it runs, not kept (spec 3.4). */
   private readonly progress = new Map<string, number>();
   /** Commits and background work run one at a time, in the order they arrive. */
@@ -442,6 +490,7 @@ export class Gateway {
     this.runCount = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?r { ?r a p:Run } }`)[0].n);
     this.notificationCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Notification } }`)[0].n);
     this.draftCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Draft } }`)[0].n);
+    this.proposalCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Proposal } }`)[0].n);
     // A run that had not ended when the gateway stopped starts again (spec 3.4, Background runs).
     for (const { run } of this.q(`SELECT ?run WHERE { GRAPH ?run { ?run a p:Run ; p:runStatus ?s ; prov:startedAtTime ?at FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running)) } } ORDER BY ?at STRLEN(STR(?run)) ?run`)) {
       void this.enqueue(() => this.work(run));
@@ -1195,8 +1244,8 @@ export class Gateway {
   // ---------------------------------------------------------------- commits
 
   /** Commits run one at a time: each waits for the one before it to finish. */
-  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven): Promise<CommitResult> {
-    return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft));
+  commit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}, signature?: SignatureGiven, draft?: DraftGiven, proposal?: string): Promise<CommitResult> {
+    return this.enqueue(() => this.runCommit(principal, idOrIri, method, inputs, signature, draft, [], proposal));
   }
 
   // ---------------------------------------------------------------- home (spec 5.1)
@@ -1630,11 +1679,11 @@ export class Gateway {
   }
 
   /** Commit a set method once, on the chosen object, with the others named in the same commit (spec 5.4, Acting on a set). */
-  commitSet(principal: Principal, ids: string[], method: string, inputs: Record<string, string> = {}): Promise<CommitResult> {
+  commitSet(principal: Principal, ids: string[], method: string, inputs: Record<string, string> = {}, proposal?: string): Promise<CommitResult> {
     return this.enqueue(async () => {
       this.authorize(principal);
       const set = await this.setPlan(principal, ids, method, inputs);
-      return this.runCommit(principal, set.chosen, method, set.inputs, undefined, undefined, set.others);
+      return this.runCommit(principal, set.chosen, method, set.inputs, undefined, undefined, set.others, proposal);
     });
   }
 
@@ -1716,10 +1765,11 @@ export class Gateway {
     };
   }
 
-  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven, others: string[] = []): Promise<CommitResult> {
+  private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven, others: string[] = [], proposalGiven?: string): Promise<CommitResult> {
     const accepted = draftGiven ? this.checkDraft(principal, this.resolve(idOrIri), method, draftGiven) : undefined;
     const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text, others);
     const signature = this.checkSignature(principal, method, given);
+    const fromProposal = proposalGiven ? this.proposalOutcome(proposalGiven, method, [object, ...others], resolvedInputs) : undefined;
 
     // 6. Record the commit: journal first, flushed to disk, then the live graph.
     const commit = `${this.dataNamespace}commit/${this.commitCount + 1}`;
@@ -1742,6 +1792,16 @@ export class Gateway {
       removed.push(...decided.removed);
       added.push(...decided.added);
     }
+    // Starting from a proposal: the commit names it and, for each proposed input, whether the value was kept or changed.
+    if (fromProposal) {
+      const g = namedNode(commit);
+      added.push(quad(g, namedNode(`${NS.p}fromProposal`), namedNode(fromProposal.proposal), g));
+      for (const i of fromProposal.keptInputs) added.push(quad(g, namedNode(`${NS.p}keptInput`), namedNode(i), g));
+      for (const i of fromProposal.changedInputs) added.push(quad(g, namedNode(`${NS.p}changedInput`), namedNode(i), g));
+      if (fromProposal.followedRecommendation !== undefined) {
+        added.push(quad(g, namedNode(`${NS.p}followedRecommendation`), literal(String(fromProposal.followedRecommendation), namedNode(`${NS.xsd}boolean`)), g));
+      }
+    }
     this.options.journal?.append('commit', at, removed, added);
     for (const q of removed) this.graph.store.delete(q);
     for (const q of added) this.graph.store.add(q);
@@ -1763,7 +1823,316 @@ export class Gateway {
       background: analysisDescriptions(this.graph.store, method),
       ...(run ? { run: this.runView(run) } : {}),
       ...(accepted ? { fromDraft: { draft: accepted.draft, model: accepted.model, edited: accepted.edited } } : {}),
+      ...(fromProposal
+        ? {
+            fromProposal: {
+              proposal: fromProposal.proposal,
+              kept: fromProposal.kept,
+              changed: fromProposal.changed,
+              ...(fromProposal.followedRecommendation !== undefined ? { followedRecommendation: fromProposal.followedRecommendation } : {}),
+            },
+          }
+        : {}),
     };
+  }
+
+  // ---------------------------------------------------------------- skills (spec 3.3, Skills)
+
+  /** How many turns a skill's model may take, tool calls included. */
+  static readonly SKILL_STEPS = 12;
+
+  /**
+   * Propose with skills (spec 3.3, Skills): runs the approved skills that serve a method on an object or a set, as the
+   * principal, with the connected model or by each skill's reference procedure. Each proposal is recorded before it is
+   * returned, and changes nothing.
+   */
+  async propose(principal: Principal, ids: string[], method: string): Promise<SkillProposals> {
+    this.authorize(principal);
+    if (!ids.length) throw new GatewayError(400, ['Give the object or the set']);
+    const objects = ids.map((id) => this.resolve(id));
+    const onSet = ask(this.graph.store, `ASK { <${method}> p:onSet true }`);
+    if (onSet) {
+      const blocks = await this.setBlocks(principal, objects, method);
+      if (blocks.length) throw new GatewayError(400, blocks);
+    } else {
+      if (objects.length !== 1) throw new GatewayError(400, ['This method acts on one object']);
+      const { type } = this.typeOf(objects[0]);
+      if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this object']);
+      if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
+      if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    }
+
+    const result: SkillProposals = { proposals: [], notRun: [] };
+    for (const skill of this.skillsFor(principal, method)) {
+      const model = this.options.skillModel;
+      let made: MadeProposal | undefined;
+      let fellBack: string | undefined;
+      if (model) {
+        try {
+          made = await this.proposeWithModel(principal, skill, method, objects, model);
+        } catch (error) {
+          console.warn(`The skill model could not run ${skill.label}.`, error instanceof Error ? error.message : error);
+          fellBack = 'The model could not propose, so the reference procedure ran instead.';
+        }
+      }
+      if (!made && skill.procedure) {
+        const outcome = this.runProcedure(principal, skill, method, objects);
+        if ('reason' in outcome) {
+          result.notRun.push({ skill: skill.skill, label: skill.label, reason: outcome.reason });
+          continue;
+        }
+        made = { ...outcome, ranBy: { procedure: skill.procedureLabel! }, ...(fellBack ? { fellBack } : {}) };
+      }
+      if (!made) {
+        result.notRun.push({ skill: skill.skill, label: skill.label, reason: fellBack ? 'The model could not propose, and this skill has no reference procedure.' : 'No model is connected, and this skill has no reference procedure.' });
+        continue;
+      }
+      result.proposals.push(await this.recordProposal(principal, skill, method, objects, made));
+    }
+    return result;
+  }
+
+  /** The approved skills that serve a method and that the principal's role may use. */
+  private skillsFor(principal: Principal, method: string): SkillRow[] {
+    const today = this.now().toISOString().slice(0, 10);
+    return this.q(`SELECT ?skill ?label ?version ?instructions ?procedure ?procedureLabel ?recommends WHERE {
+        ?skill a p:Skill ; p:serves <${method}> ; rdfs:label ?label ; p:skillVersion ?version ; p:approvedOn ?approved ; p:instructions ?instructions .
+        FILTER(STR(?approved) <= "${today}")
+        FILTER(NOT EXISTS { ?skill p:usableBy ?r } || EXISTS { ?skill p:usableBy <${principal.role}> })
+        OPTIONAL { ?skill p:referenceProcedure ?procedure . ?procedure rdfs:label ?procedureLabel }
+        OPTIONAL { ?skill p:recommends ?recommends } } ORDER BY ?label`)
+      .filter((s) => this.options.skillModel || s.procedure)
+      .map((s) => ({ skill: s.skill, label: s.label, version: s.version, instructions: s.instructions, procedure: s.procedure, procedureLabel: s.procedureLabel, recommends: s.recommends === 'true', inputs: this.proposedInputs(s.skill, method) }));
+  }
+
+  /** The method's inputs a skill proposes, in the method's order. */
+  private proposedInputs(skill: string, method: string) {
+    const proposed = new Set(this.q(`SELECT ?i WHERE { <${skill}> p:proposesInput ?i }`).map((r) => r.i));
+    const among = new Set(this.q(`SELECT ?i WHERE { <${method}> p:input ?i . ?i p:amongSet true }`).map((r) => r.i));
+    return this.inputs(method)
+      .filter((i) => proposed.has(i.input))
+      .map((i) => ({ input: i.input, name: i.name, label: i.label, datatype: i.datatype, among: among.has(i.input) }));
+  }
+
+  /** A reference procedure, run by the platform (spec 3.3, Skills): deterministic, and plain about what it does not judge. */
+  private runProcedure(principal: Principal, skill: SkillRow, method: string, objects: string[]): Omit<MadeProposal, 'ranBy'> | { reason: string } {
+    switch (skill.procedure) {
+      case `${NS.p}ReuseRecordedInputs`:
+        return this.reuseRecordedInputs(principal, skill, objects[0]);
+      case `${NS.p}RankByComparison`:
+        return this.rankByComparison(skill, method, objects);
+      default:
+        return { reason: 'This skill names a reference procedure the platform does not have.' };
+    }
+  }
+
+  /** Reuse recorded inputs: the most recent result of the object, or else of its siblings, and the values recorded on it. */
+  private reuseRecordedInputs(principal: Principal, skill: SkillRow, object: string): Omit<MadeProposal, 'ranBy'> | { reason: string } {
+    const p = this.q(`SELECT ?along ?siblings ?latest WHERE { <${skill.skill}> p:resultsAlong ?along ; p:latestBy ?latest . OPTIONAL { <${skill.skill}> p:siblingsAlong ?siblings } }`)[0];
+    if (!p) return { reason: 'This skill does not say where its earlier results are.' };
+    const hidden = this.unreadable(principal.role);
+    const sources = this.q(`SELECT ?input ?from WHERE { <${skill.skill}> p:inputSource ?s . ?s p:forInput ?input ; p:readFrom ?from }`).filter((s) => !hidden.has(s.from));
+    const wanted = skill.inputs.filter((i) => sources.some((s) => s.input === i.input));
+    const known = sources.map((s) => `<${s.from}>`).join(' ');
+    const latest = (of: string) =>
+      this.q(`SELECT ?result ?of ?at WHERE { ?result <${p.along}> ?of ; <${p.latest}> ?at ; ls:identifier ?id . VALUES ?of { ${of} }
+          FILTER EXISTS { ?result ?prop ?v VALUES ?prop { ${known} } } } ORDER BY DESC(?at) DESC(?id) LIMIT 1`)[0];
+    const self = this.summary(object);
+    let found = latest(`<${object}>`);
+    let fromSibling = false;
+    if (!found && p.siblings) {
+      const siblings = this.q(`SELECT DISTINCT ?s WHERE { <${object}> <${p.siblings}> ?parent . ?s <${p.siblings}> ?parent ; a <${self.type}> FILTER(?s != <${object}>) }`).map((r) => `<${r.s}>`);
+      if (siblings.length) found = latest(siblings.join(' '));
+      fromSibling = Boolean(found);
+    }
+    const resultLabel = this.q(`SELECT ?l WHERE { <${p.along}> rdfs:domain ?t . ?t rdfs:label ?l }`)[0]?.l;
+    if (!found || hidden.has(this.typeOf(found.result).type)) {
+      return { reason: `Nothing earlier to reuse: no ${(resultLabel ?? 'result').toLowerCase()} of ${self.identifier}${p.siblings ? ' or of the others alongside it' : ''} has these values recorded.` };
+    }
+    const result = this.summary(found.result);
+    const of = this.summary(found.of);
+    const cite = [{ iri: result.iri, identifier: result.identifier }];
+    const values = wanted.flatMap((i) => {
+      const from = sources.find((s) => s.input === i.input)!.from;
+      const v = this.q(`SELECT ?v WHERE { <${found.result}> <${from}> ?v }`)[0]?.v;
+      if (v === undefined || !/^-?\d+(\.\d+)?$/.test(v)) return [];
+      const value = String(Number(v));
+      return [{ name: i.name, label: i.label, value, valueLabel: value, restsOn: cite }];
+    });
+    if (!values.length) return { reason: `${result.identifier} has none of these values recorded.` };
+    const asOf = this.dateLabel(found.at);
+    const what = `${result.identifier}, the most recent ${result.typeLabel.toLowerCase()} of ${of.identifier}`;
+    const reasoning = fromSibling
+      ? `${self.identifier} has none of its own yet, so these are carried over from ${what}, which sits alongside it${asOf ? `, as of ${asOf}` : ''}. The reference procedure does not judge what ${self.identifier} changes: check each value against it.`
+      : `Carried over from ${what}${asOf ? `, as of ${asOf}` : ''}. The reference procedure does not judge what has changed since: check each value.`;
+    return { values, reasoning, restsOn: cite };
+  }
+
+  /** Rank by comparison: the fewest urgent cells, then the fewest missing; none on a tie. */
+  private rankByComparison(skill: SkillRow, method: string, objects: string[]): Omit<MadeProposal, 'ranBy'> | { reason: string } {
+    const comparison = this.comparison(method, objects)?.comparison;
+    const chosen = skill.inputs.find((i) => i.among);
+    if (!comparison || !chosen) return { reason: 'This set method has no comparison to rank by.' };
+    const summaries = objects.map((o) => this.summary(o));
+    const ranked = summaries.map((s, column) => {
+      const urgent = comparison.rows.filter((r) => r.cells[column]?.urgent);
+      const missing = comparison.rows.filter((r) => !r.cells[column]);
+      return { s, urgent, missing, cells: comparison.rows.flatMap((r) => (r.cells[column] ? [r.cells[column]!] : [])) };
+    });
+    const order = [...ranked].sort((a, b) => a.urgent.length - b.urgent.length || a.missing.length - b.missing.length);
+    const describe = (r: (typeof ranked)[number]) => {
+      const flagged = r.urgent.map((row) => `${row.label}${row.cells[ranked.indexOf(r)]?.status ? ` ${row.cells[ranked.indexOf(r)]!.status!.split(': ').pop()}` : ''}`);
+      const parts = [flagged.length ? flagged.join(', ') : 'none flagged'];
+      if (r.missing.length) parts.push(`${r.missing.length} missing`);
+      return `${r.s.identifier}: ${parts.join('; ')}`;
+    };
+    const cite = (r: (typeof ranked)[number]) => r.urgent.map((row) => row.cells[ranked.indexOf(r)]!.identifier);
+    const restsOn = [...new Set([...summaries.map((s) => s.identifier), ...ranked.flatMap(cite)])].map((identifier) => ({ iri: this.resolve(identifier), identifier }));
+    const counted = `Counted from the comparison alone: it does not weigh by how much a value misses, nor the budget or other signals.`;
+    const [first, second] = order;
+    if (second && first.urgent.length === second.urgent.length && first.missing.length === second.missing.length) {
+      const tied = order.filter((r) => r.urgent.length === first.urgent.length && r.missing.length === first.missing.length);
+      return { values: [], reasoning: `No recommendation: ${tied.map((r) => r.s.identifier).join(' and ')} tie. ${ranked.map(describe).join('. ')}. ${counted}`, restsOn };
+    }
+    const others = order.slice(1);
+    const lead = first.urgent.length
+      ? `${first.s.identifier} has the fewest flagged in the comparison.`
+      : `${first.s.identifier} is the only one with nothing flagged in the comparison.`;
+    const reasoning = `${lead} ${[first, ...others].map(describe).join('. ')}. ${counted}`;
+    const value = { name: chosen.name, label: chosen.label, value: first.s.iri, valueLabel: `${first.s.identifier} · ${first.s.title}`, restsOn: [{ iri: first.s.iri, identifier: first.s.identifier }, ...cite(first).map((identifier) => ({ iri: this.resolve(identifier), identifier }))] };
+    return { values: [value], recommended: { iri: first.s.iri, identifier: first.s.identifier }, reasoning, restsOn };
+  }
+
+  /** A skill run by the connected model, through the gateway's read-only tools as the principal. Every value is checked. */
+  private async proposeWithModel(principal: Principal, skill: SkillRow, method: string, objects: string[], model: SkillModel): Promise<MadeProposal> {
+    const seen = new Map<string, string>();
+    const toolbox = { tools: [...ASK_TOOLS, PROPOSAL_TOOL], run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen) };
+    const records = [];
+    for (const o of objects) records.push((await this.runAskTool(principal, 'read_object', { identifier: this.summary(o).identifier }, seen)).content);
+    const methodLabel = this.q(`SELECT ?l ?c WHERE { <${method}> rdfs:label ?l OPTIONAL { <${method}> rdfs:comment ?c } }`)[0];
+    const set = objects.map((o) => this.summary(o));
+    const reply = await model.propose({
+      instructions: skill.instructions,
+      method: `${methodLabel.l}${methodLabel.c ? `: ${methodLabel.c}` : ''}`,
+      inputs: skill.inputs.map((i) => ({ name: i.name, label: i.label, kind: i.among ? 'object' : 'number' })),
+      ...(skill.recommends ? { recommendAmong: set.map((s) => s.identifier) } : {}),
+      context: this.askContext(principal),
+      records,
+      toolbox,
+      maxSteps: Gateway.SKILL_STEPS,
+    });
+    // Only objects read for this proposal may be cited; only values an input would take are kept.
+    const cited = (ids: string[]) => [...new Set(ids.map(normalize))].flatMap((id) => (seen.has(id) ? [{ iri: seen.get(id)!, identifier: this.summary(seen.get(id)!).identifier }] : []));
+    const ofSet = (id: string) => set.find((s) => normalize(s.identifier) === normalize(id));
+    const values = skill.inputs.flatMap((i) => {
+      const given = reply.values.find((v) => v.name === i.name);
+      if (!given) return [];
+      if (i.among) {
+        const s = ofSet(given.value);
+        return s ? [{ name: i.name, label: i.label, value: s.iri, valueLabel: `${s.identifier} · ${s.title}`, restsOn: cited(given.restsOn) }] : [];
+      }
+      if (!/^-?\d+(\.\d+)?$/.test(given.value)) return [];
+      if (i.datatype === `${NS.xsd}integer` && !/^-?\d+$/.test(given.value)) return [];
+      return [{ name: i.name, label: i.label, value: given.value, valueLabel: given.value, restsOn: cited(given.restsOn) }];
+    });
+    const recommendedSummary = skill.recommends && reply.recommended ? ofSet(reply.recommended) : undefined;
+    // A recommendation and the choice it pre-fills are one and the same.
+    const chosen = skill.inputs.find((i) => i.among);
+    if (recommendedSummary && chosen && !values.some((v) => v.name === chosen.name)) {
+      values.push({ name: chosen.name, label: chosen.label, value: recommendedSummary.iri, valueLabel: `${recommendedSummary.identifier} · ${recommendedSummary.title}`, restsOn: [] });
+    }
+    const recommended = recommendedSummary ?? (chosen ? set.find((s) => s.iri === values.find((v) => v.name === chosen.name)?.value) : undefined);
+    if (!values.length && !recommended) throw new Error('The model proposed nothing that could be checked');
+    return {
+      values,
+      ...(skill.recommends && recommended ? { recommended: { iri: recommended.iri, identifier: recommended.identifier } } : {}),
+      reasoning: reply.reasoning,
+      restsOn: cited(reply.restsOn),
+      ranBy: { model: reply.model },
+    };
+  }
+
+  /** Records a proposal before it is shown, through the queue like every write (spec 3.4, Skill proposals). */
+  private recordProposal(principal: Principal, skill: SkillRow, method: string, objects: string[], made: MadeProposal): Promise<ProposalView> {
+    return this.enqueue(async () => {
+      const proposal = `${this.dataNamespace}proposal/${this.proposalCount + 1}`;
+      const at = this.now();
+      const g = namedNode(proposal);
+      const add = (s: string, p: string, o: Term) => quad(namedNode(s), namedNode(p), o, g);
+      const quads = [
+        add(proposal, RDF_TYPE, namedNode(`${NS.p}Proposal`)),
+        add(proposal, `${NS.p}proposedBy`, namedNode(skill.skill)),
+        add(proposal, `${NS.p}skillVersion`, literal(skill.version)),
+        add(proposal, `${NS.p}method`, namedNode(method)),
+        ...objects.map((o) => add(proposal, `${NS.p}proposalFor`, namedNode(o))),
+        add(proposal, `${NS.prov}wasAssociatedWith`, namedNode(principal.person)),
+        add(proposal, `${NS.p}actedAs`, namedNode(principal.role)),
+        ...(principal.account ? [add(proposal, `${NS.p}signedInAs`, literal(principal.account))] : []),
+        add(proposal, `${NS.p}ranBy`, literal('model' in made.ranBy ? made.ranBy.model : made.ranBy.procedure)),
+        ...(made.fellBack ? [add(proposal, `${NS.p}fellBack`, literal(made.fellBack))] : []),
+        add(proposal, `${NS.p}reasoning`, literal(made.reasoning)),
+        ...made.restsOn.map((r) => add(proposal, `${NS.p}restsOn`, namedNode(r.iri))),
+        ...(made.recommended ? [add(proposal, `${NS.p}recommended`, namedNode(made.recommended.iri))] : []),
+        add(proposal, `${NS.prov}generatedAtTime`, xsdDateTime(at)),
+      ];
+      for (const v of made.values) {
+        const input = skill.inputs.find((i) => i.name === v.name)!;
+        const node = `${proposal}/value/${v.name}`;
+        quads.push(
+          add(proposal, `${NS.p}proposedValue`, namedNode(node)),
+          add(node, RDF_TYPE, namedNode(`${NS.p}ProposedValue`)),
+          add(node, `${NS.p}valueOf`, namedNode(input.input)),
+          add(node, `${NS.p}proposedAs`, input.among ? namedNode(v.value) : literal(v.value, namedNode(input.datatype ?? `${NS.xsd}string`))),
+          ...v.restsOn.map((r) => add(node, `${NS.p}restsOn`, namedNode(r.iri))),
+        );
+      }
+      this.options.journal?.append('proposal', at, [], quads);
+      for (const q of quads) this.graph.store.add(q);
+      this.proposalCount++;
+      return {
+        proposal,
+        skill: skill.skill,
+        label: skill.label,
+        version: skill.version,
+        method,
+        ranBy: made.ranBy,
+        ...(made.fellBack ? { fellBack: made.fellBack } : {}),
+        reasoning: made.reasoning,
+        values: made.values,
+        ...(made.recommended ? { recommended: made.recommended } : {}),
+        restsOn: made.restsOn,
+        generatedAt: at.toISOString(),
+      };
+    });
+  }
+
+  /** What a commit records of the proposal it started from: each proposed input kept or changed, and the recommendation followed. */
+  private proposalOutcome(proposalGiven: string, method: string, objects: string[], resolved: Map<string, Term>) {
+    const proposal = proposalGiven.includes('://') ? proposalGiven : `${this.dataNamespace}proposal/${proposalGiven}`;
+    const head = this.q(`SELECT ?method WHERE { GRAPH <${proposal}> { <${proposal}> a p:Proposal ; p:method ?method } }`)[0];
+    if (!head) throw new GatewayError(400, [`No proposal ${proposalGiven}`]);
+    if (head.method !== method) throw new GatewayError(400, ['This proposal was made for another method']);
+    const forObjects = this.q(`SELECT ?o WHERE { GRAPH <${proposal}> { <${proposal}> p:proposalFor ?o } }`).map((r) => r.o);
+    if (forObjects.length !== objects.length || objects.some((o) => !forObjects.includes(o))) throw new GatewayError(400, ['This proposal was made for other objects']);
+    const proposed = this.q(`SELECT ?input ?name ?value WHERE { GRAPH <${proposal}> { <${proposal}> p:proposedValue ?v . ?v p:valueOf ?input ; p:proposedAs ?value } ?input p:inputName ?name } ORDER BY ?name`);
+    const same = (a: string, b: string) => a === b || (/^-?\d+(\.\d+)?$/.test(a) && /^-?\d+(\.\d+)?$/.test(b) && Number(a) === Number(b));
+    const kept = proposed.filter((p) => resolved.has(p.input) && same(resolved.get(p.input)!.value, p.value));
+    const changed = proposed.filter((p) => !kept.includes(p));
+    const recommended = this.q(`SELECT ?o WHERE { GRAPH <${proposal}> { <${proposal}> p:recommended ?o } }`)[0]?.o;
+    return {
+      proposal,
+      kept: kept.map((p) => p.name),
+      changed: changed.map((p) => p.name),
+      keptInputs: kept.map((p) => p.input),
+      changedInputs: changed.map((p) => p.input),
+      ...(recommended ? { followedRecommendation: recommended === objects[0] } : {}),
+    };
+  }
+
+  /** A date as people read it, such as Nov 19, 2026. */
+  private dateLabel(value: string): string | undefined {
+    const d = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+    return Number.isNaN(d.getTime()) ? undefined : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   }
 
   // ---------------------------------------------------------------- generated drafts (spec 3.4)

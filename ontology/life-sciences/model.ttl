@@ -2097,6 +2097,18 @@ ls:dropoutRate a owl:DatatypeProperty ;
   rdfs:label "dropout rate" ;
   rdfs:comment "Assumed share of randomized patients who withdraw, as a percentage." .
 
+ls:controlResponse a owl:DatatypeProperty ;
+  rdfs:label "response on control" ;
+  rdfs:comment "Assumed share of patients on control who respond, as a percentage." .
+
+ls:treatmentResponse a owl:DatatypeProperty ;
+  rdfs:label "response on treatment" ;
+  rdfs:comment "Assumed share of patients on treatment who respond, as a percentage." .
+
+ls:saeRate a owl:DatatypeProperty ;
+  rdfs:label "serious adverse events per 100 patient-years" ;
+  rdfs:comment "Assumed rate of serious adverse events." .
+
 ls:assumedEffect a owl:DatatypeProperty ;
   rdfs:label "assumed effect" ;
   rdfs:comment "The treatment effect assumed, with its source." .
@@ -2967,6 +2979,24 @@ lsh:TrialSimulation-dropoutRate a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "dropout rate" .
 
+lsh:TrialSimulation-controlResponse a sh:PropertyShape ;
+  sh:path ls:controlResponse ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "response on control" .
+
+lsh:TrialSimulation-treatmentResponse a sh:PropertyShape ;
+  sh:path ls:treatmentResponse ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "response on treatment" .
+
+lsh:TrialSimulation-saeRate a sh:PropertyShape ;
+  sh:path ls:saeRate ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "serious adverse events per 100 patient-years" .
+
 lsh:TrialSimulation-assumedEffect a sh:PropertyShape ;
   sh:path ls:assumedEffect ;
   sh:datatype xsd:string ;
@@ -3427,7 +3457,7 @@ lsh:ProposedSite a sh:NodeShape ;
 
 lsh:TrialSimulation a sh:NodeShape ;
   sh:targetClass ls:TrialSimulation ;
-  sh:property lsh:TrialSimulation-identifier, lsh:TrialSimulation-trialSimulationRun, lsh:TrialSimulation-scenarioAsOf, lsh:TrialSimulation-simulatedTrials, lsh:TrialSimulation-recruitmentRate, lsh:TrialSimulation-screenFailureRate, lsh:TrialSimulation-dropoutRate, lsh:TrialSimulation-assumedEffect, lsh:TrialSimulation-simulationModel, lsh:TrialSimulation-simulates .
+  sh:property lsh:TrialSimulation-identifier, lsh:TrialSimulation-trialSimulationRun, lsh:TrialSimulation-scenarioAsOf, lsh:TrialSimulation-simulatedTrials, lsh:TrialSimulation-recruitmentRate, lsh:TrialSimulation-screenFailureRate, lsh:TrialSimulation-dropoutRate, lsh:TrialSimulation-controlResponse, lsh:TrialSimulation-treatmentResponse, lsh:TrialSimulation-saeRate, lsh:TrialSimulation-assumedEffect, lsh:TrialSimulation-simulationModel, lsh:TrialSimulation-simulates .
 
 lsh:Forecast a sh:NodeShape ;
   sh:targetClass ls:Forecast ;

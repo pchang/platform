@@ -1,5 +1,6 @@
 import { askModelFromEnvironment } from './anthropicAsk';
 import { drafterFromEnvironment } from './anthropicDrafter';
+import { skillModelFromEnvironment } from './anthropicSkill';
 import { searchModelFromEnvironment } from './anthropicSearch';
 import { signInFromEnvironment } from './auth';
 import { createGatewayServer } from './http';
@@ -36,8 +37,9 @@ if (developmentMode && signIn) {
 const drafter = drafterFromEnvironment();
 const searchModel = searchModelFromEnvironment();
 const askModel = askModelFromEnvironment();
+const skillModel = skillModelFromEnvironment();
 // Development signatures are never valid; they are taken only on one's own machine or in a demo deployment (platform spec 3.4).
-const gateway = openGateway(journal, { developmentSignatures: developmentMode || (Boolean(signIn) && demoPersonas), drafter, searchModel, askModel });
+const gateway = openGateway(journal, { developmentSignatures: developmentMode || (Boolean(signIn) && demoPersonas), drafter, searchModel, askModel, skillModel });
 const server = createGatewayServer(gateway, { developmentMode, signIn, demoPersonas, staticDir });
 server.listen(port, () => {
   console.log(`LS&H gateway on http://localhost:${port} (HTTP at /api, MCP at /mcp${staticDir ? ', the page at /' : ''})`);
@@ -46,6 +48,7 @@ server.listen(port, () => {
   console.log(drafter ? `Drafting with ${drafter.model}.` : 'No drafting model is connected: methods that produce drafts are refused.');
   console.log(searchModel ? `Searches understood by ${searchModel.model}.` : 'No search model is connected: searches are read against the ontology.');
   console.log(askModel ? `Questions answered by ${askModel.model}.` : 'No ask model is connected: questions are searched.');
+  console.log(skillModel ? `Skills run by ${skillModel.model}.` : 'No skill model is connected: skills run their reference procedures.');
   console.log(
     signIn
       ? `Sign-in with Google${demoPersonas ? ', demo deployment: accounts act as any person, and nothing here is real data' : ''}.`

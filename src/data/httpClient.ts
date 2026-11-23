@@ -31,7 +31,8 @@ export function httpClient(base = '/api'): GatewayClient {
     read: (p, object) => request(`/objects/${encodeURIComponent(object)}`, p),
     compose: (p, object, method) => request(methodPath(object, method), p),
     preview: (p, object, method, inputs) => request(`${methodPath(object, method)}/preview`, p, { inputs }),
-    commit: (p, object, method, inputs, signature, draft) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}), ...(draft ? { draft } : {}) }),
+    commit: (p, object, method, inputs, signature, draft, proposal) => request(methodPath(object, method), p, { inputs, ...(signature ? { signature } : {}), ...(draft ? { draft } : {}), ...(proposal ? { proposal } : {}) }),
+    propose: (p, objects, method) => (objects.length === 1 ? request(`${methodPath(objects[0], method)}/propose`, p, {}) : request(`/sets/${encodeURIComponent(method)}/propose`, p, { objects })),
     draft: (p, object, method) => request(`${methodPath(object, method)}/draft`, p, {}),
     getDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}`, p),
     discardDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}/discard`, p, {}),
@@ -46,7 +47,7 @@ export function httpClient(base = '/api'): GatewayClient {
     setMethods: (p, objects) => request('/sets', p, { objects }),
     composeSet: (p, objects, method) => request(`/sets/${encodeURIComponent(method)}`, p, { objects }),
     previewSet: (p, objects, method, inputs) => request(`/sets/${encodeURIComponent(method)}/preview`, p, { objects, inputs }),
-    commitSet: (p, objects, method, inputs) => request(`/sets/${encodeURIComponent(method)}/commit`, p, { objects, inputs }),
+    commitSet: (p, objects, method, inputs, proposal) => request(`/sets/${encodeURIComponent(method)}/commit`, p, { objects, inputs, ...(proposal ? { proposal } : {}) }),
     runs: (p, filter = {}) => {
       const query = new URLSearchParams({ ...(filter.object ? { object: filter.object } : {}), ...(filter.active ? { active: 'true' } : {}) }).toString();
       return request(`/runs${query ? `?${query}` : ''}`, p);

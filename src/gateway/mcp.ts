@@ -140,11 +140,11 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description:
         'Runs one method on one object, such as method "AnswerQuery" on "Q-01" with inputs { "answer": "..." }. ' +
         'Checks your role, the inputs and the preconditions, applies the effects, validates the result and records the commit. ' +
-        'Nothing changes if any step fails; the reasons are returned.',
-      inputSchema: { id: z.string(), method: z.string(), inputs: z.record(z.string(), z.string()).optional() },
+        'Nothing changes if any step fails; the reasons are returned. Give proposal when the inputs started from a propose_inputs proposal.',
+      inputSchema: { id: z.string(), method: z.string(), inputs: z.record(z.string(), z.string()).optional(), proposal: z.string().optional() },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    ({ id, method, inputs = {} }) => result(() => gateway.commit(principal, id, expand(method, NS.ls), inputs)),
+    ({ id, method, inputs = {}, proposal }) => result(() => gateway.commit(principal, id, expand(method, NS.ls), inputs, undefined, undefined, proposal)),
   );
 
   server.registerTool(
@@ -158,6 +158,20 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     ({ id, method }) => result(() => gateway.draft(principal, id, expand(method, NS.ls))),
+  );
+
+  server.registerTool(
+    'propose_inputs',
+    {
+      title: 'Propose with skills',
+      description:
+        'Runs the approved skills that serve a method, such as "RunTrialSimulation" on ["SSC-1"] or "CompareStudyScenarios" on ["SSC-1", "SSC-2", "SSC-3"], ' +
+        'as you: each proposes input values, or recommends one of the set, with its reasoning and the objects it rests on. ' +
+        'The proposal is recorded and changes nothing. Pass it to commit_method only with values you checked; you are accountable for every value you commit.',
+      inputSchema: { ids: z.array(z.string()).min(1).max(50), method: z.string() },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    ({ ids, method }) => result(() => gateway.propose(principal, ids, expand(method, NS.ls))),
   );
 
   server.registerTool(

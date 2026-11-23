@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, ComparisonView, DraftView, FormField, Hom
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -63,7 +63,9 @@ export interface GatewayClient {
   /** Rejects with RefusedError when the method would fail. */
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
-  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }): Promise<CommitResult>;
+  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }, proposal?: string): Promise<CommitResult>;
+  /** Propose with skills (platform spec 3.3, Skills): each approved skill's proposal for a method on an object or a set, or why it did not run. */
+  propose(principal: Principal, objects: string[], method: string): Promise<SkillProposals>;
   /** The form to create an object of a type, inside a parent when given (platform spec 5.3, Creating and editing objects). */
   createForm(principal: Principal, type: string, parent?: string): Promise<ObjectForm>;
   previewCreate(principal: Principal, type: string, values: Record<string, string>, parent?: string): Promise<Omit<CommitResult, 'commit'>>;
@@ -79,7 +81,7 @@ export interface GatewayClient {
   composeSet(principal: Principal, objects: string[], method: string): Promise<MethodComposition>;
   previewSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Commits a set method once, on the chosen object. */
-  commitSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>): Promise<CommitResult>;
+  commitSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>, proposal?: string): Promise<CommitResult>;
   /** A connected model drafts the method. Rejects with RefusedError when no model is connected or it declines. */
   draft(principal: Principal, object: string, method: string): Promise<DraftView>;
   discardDraft(principal: Principal, draft: string): Promise<DraftView>;

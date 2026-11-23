@@ -16,7 +16,7 @@ describe('ontology files', () => {
   it('parse as Turtle, platform vocabulary first', () => {
     const files = ontologyFiles();
     expect(files[0]).toMatch(/platform\.ttl$/);
-    expect(files.length).toBe(6);
+    expect(files.length).toBe(7);
     expect(graph.store.size).toBeGreaterThan(1000);
   });
 

@@ -249,6 +249,10 @@ function run(request: ModelRequest): ModelResult {
       { property: ls('recruitmentRate'), value: decimal(taking.length ? (taking.reduce((sum, x) => sum + x.rate * x.count, 0) / siteList.length) * (1 - screenFailure) : 0) },
       { property: ls('screenFailureRate'), value: decimal(screenFailure * 100) },
       { property: ls('dropoutRate'), value: decimal(dropout * 100) },
+      // Every assumption as a number, so a skill can reuse them (domain spec 3.9).
+      { property: ls('controlResponse'), value: decimal(controlResponse * 100) },
+      { property: ls('treatmentResponse'), value: decimal(treatmentResponse * 100) },
+      { property: ls('saeRate'), value: decimal(saeRate) },
       { property: ls('assumedEffect'), value: literal(`Response of ${(treatmentResponse * 100).toFixed(0)} percent on treatment against ${(controlResponse * 100).toFixed(0)} percent on control; ${saeRate} serious adverse events per 100 patient-years`) },
       { property: ls('simulationModel'), value: literal(`${referenceTrialModel.name} ${referenceTrialModel.version}: a reference model, not validated for decisions about real studies`) },
     ],

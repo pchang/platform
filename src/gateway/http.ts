@@ -203,11 +203,13 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
         return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));
       }
+      case 'POST objects/:/methods/:/propose':
+        return send(res, 201, await gateway.propose(principal, [parts[2]], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:/draft':
         return send(res, 201, await gateway.draft(principal, parts[2], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:': {
-        const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
-        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
+        const { inputs = {}, signature, draft, proposal } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string }; proposal?: unknown };
+        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft, checkProposal(proposal)));
       }
       case 'GET types/:/form':
         return send(res, 200, gateway.createForm(principal, expand(parts[2], NS.ls), url.searchParams.get('parent') ?? undefined));
@@ -238,9 +240,11 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const given = await body(req);
         return send(res, 200, await gateway.previewSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given)));
       }
+      case 'POST sets/:/propose':
+        return send(res, 201, await gateway.propose(principal, checkObjects(await body(req)), expand(parts[2], NS.ls)));
       case 'POST sets/:/commit': {
         const given = await body(req);
-        return send(res, 201, await gateway.commitSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given)));
+        return send(res, 201, await gateway.commitSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given), checkProposal((given as { proposal?: unknown })?.proposal)));
       }
       case 'GET drafts/:':
         return send(res, 200, gateway.getDraft(principal, parts[2]));
@@ -320,6 +324,13 @@ function checkObjects(given: unknown): string[] {
   const objects = (given as { objects?: unknown })?.objects;
   if (!Array.isArray(objects) || !objects.every((o) => typeof o === 'string') || objects.length > 50) throw new GatewayError(400, ['Give the objects as a list of identifiers']);
   return objects;
+}
+
+/** The proposal a commit started from, if any (spec 3.3, Skills). */
+function checkProposal(proposal: unknown): string | undefined {
+  if (proposal === undefined || proposal === null) return undefined;
+  if (typeof proposal !== 'string' || !proposal.trim()) throw new GatewayError(400, ['Give the proposal as its address']);
+  return proposal;
 }
 
 function checkInputs(given: unknown): Record<string, string> {

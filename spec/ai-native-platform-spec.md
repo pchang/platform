@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.37. November 21, 2026. Author: Paul Chang.
+Version 0.38. November 23, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -64,6 +64,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, the metrics it watches, and what it may not read |
 | Metric | A resource in the platform vocabulary: a count of a type's objects in given states, with its health thresholds (section 5.1, Home) |
+| Skill | A resource in the platform vocabulary: the method it serves, what it proposes, its version, owner and approval, its instructions, and its reference procedure, if any. It is context, not ontology: written in the same notation, but declaring how an organization works, not what exists (section 3.3, Skills) |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
 The platform vocabulary (`ontology/platform.ttl`) adds what SHACL does not describe: methods, inputs, effects, business rules and roles. It is domain-free.
@@ -112,6 +113,18 @@ Agents must know more than the business context and the state of objects. They m
 
 The first release implements canonical roles with their default permissions only. Variance, multiple roles and role inference follow.
 
+#### Skills
+
+A method says what can change and what it needs. A **skill** says how to do that work well: the steps, the judgment, the checks and the sources an expert would use. Skills are context, not ontology. The ontology holds what is true in every organization; a skill holds one organization's way of working, its procedures and conventions, which vary between organizations and change over time.
+
+- **Declared as data.** A skill names the method it serves, the inputs it proposes, and, for a method that decides among a set, that it recommends one of the set. It has a version, an owner and an approval date; only an approved skill runs. It may be limited to some of the roles that may run its method; otherwise any of them may use it. Its body is its **instructions**: plain text, written for an expert, kept with its declaration so it is versioned and reviewed like any other context.
+- **What it gives is a proposal, never a change.** A proposal holds a value for each input the skill proposes, a recommended object where it recommends one, the reasoning in a few sentences, and the objects it rests on. It never proposes what must be the person's own words, such as the rationale for a decision.
+- **Run by an agent, as the person.** A skill runs through the gateway with the person's permissions, so it reads only what they may read, and reads of personal data are recorded as theirs.
+  - **With a connected model,** the model follows the instructions, reads through the gateway's read-only tools, and gives its proposal in a fixed form. It may cite only objects it read for this proposal. The gateway checks every proposed value as it checks an input, and drops what does not pass.
+  - **Without one,** a skill may declare a **reference procedure**: a plain, deterministic procedure the platform implements once for every domain, with its parameters declared on the skill, such as reusing the inputs recorded on the most recent result of the same method, or ranking a set by its comparison. A reference procedure says it is one, and never pretends to judgment it does not have.
+  - A skill with neither is not offered, and its method runs as it would without it.
+- **A person decides.** The proposal pre-fills the method's inputs and highlights what it recommends; the person may change anything, and only their commit changes the graph. The commit records which proposal it came from and, for each proposed input, whether the person kept the value or changed it.
+
 ### 3.4 Intelligence Gateway
 The single contract through which anything, human interface or agent, reads and acts on the platform.
 
@@ -122,7 +135,7 @@ The single contract through which anything, human interface or agent, reads and 
 
 #### Gateway contract
 
-Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fourteen kinds of request.
+Every request carries a **principal**: the person or agent making it and the role they act in. The gateway answers fifteen kinds of request.
 
 | Request | Answer |
 |---|---|
@@ -140,6 +153,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Search | Objects the principal may read that a text query finds, best first, with how the query was understood and why each object matched (section 5.2) |
 | Ask | A connected model answers a question, in a conversation, from what the principal may read, citing the objects the answer rests on; without one, the question is searched (section 5.2) |
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
+| Propose with skills | The approved skills that serve a method on an object or a set, each run as the principal, with a connected model or by its reference procedure, and recorded before it is shown (section 3.3, Skills) |
 
 **Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
 
@@ -189,6 +203,8 @@ A database server can later hold the current state for larger data or several ga
 - **A person decides.** Accepting commits the method with the draft's text or the person's edit of it. The commit records which draft it came from and whether it was edited, and the person who accepted it is accountable for the text. Discarding records that the draft was discarded. A draft is decided once. Agents may ask for drafts; only a person accepts or discards one.
 - **Failures.** When the model declines or cannot be reached, the reasons are returned and nothing is recorded.
 
+**Skill proposals.** A skill's proposal (section 3.3, Skills) is recorded before it is shown, as a draft is: the skill and its version, the method and the objects, who asked and in which role, how it ran (the model as the provider reports it, or the reference procedure), the proposed values, the recommendation, the reasoning, the objects it rests on and the time. A proposal changes nothing. A commit that names it records that it came from it and, for each proposed input, whether the value was kept or changed; the person who commits is accountable for every value. When a model fails or declines, a skill with a reference procedure falls back to it and says so; otherwise the reasons are returned and nothing is recorded.
+
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
 
 **Previews.** For reviewing the experience on any device without a server, the same gateway code can run inside the page, with the seed graph, in development mode and without a journal. Nothing a preview does is saved.
@@ -208,7 +224,7 @@ Agents do the work. The roles below are illustrative. The platform may split or 
 - **Orchestrate.** Interpret intent, plan steps, delegate.
 - **Navigate.** Build the navigation structure from the ontology and context.
 - **Find.** Search the graph and return the right object.
-- **Act.** Select and execute methods, check preconditions, handle failures.
+- **Act.** Select and execute methods, check preconditions, handle failures. Run the skills that serve a method to propose its inputs, never to commit them (section 3.3, Skills).
 - **Compose.** Generate the UI needed for the current step.
 - **Guard.** Check every proposed change against policy and explain blocks.
 
@@ -512,3 +528,4 @@ To resolve in future versions of this spec.
 | 0.35 | 2026-11-20 | Home (section 5.1): each person's homepage, opening Orient. Their world's health from the metrics their roles watch, declared in the ontology with thresholds; where things stand, derived from each type's lifecycle; then their work, To do, and how they are keeping up. |
 | 0.36 | 2026-11-21 | From a metric to its objects (section 5.1, Home): choosing a metric opens exactly the objects it counts. |
 | 0.37 | 2026-11-21 | A method may name its commit action (`p:commitLabel`); a set method that decides among its set puts the chosen object's identifier on that button, such as "Select SSC-3". |
+| 0.38 | 2026-11-23 | Skills (section 3.3): an organization's know-how for a method, declared as context with a version, owner and approval, run by an agent as the person, with a connected model or a declared reference procedure. A skill proposes inputs or recommends one of a set, never commits; the proposal is recorded before it is shown, and the commit records whether each proposed value was kept. The gateway gains a fifteenth request, Propose with skills. |

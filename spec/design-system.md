@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.63. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.64. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -330,6 +330,13 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 4. Below them, the preview: each value that will change, and each effect the gateway records as pending work, said plainly as later work, not as done.
 5. The commit button is named for the method. Cancel returns to To do and changes nothing. After the commit, To do returns with the success Alert.
 
+**Proposals from skills** (platform spec 3.3, Skills), in any archetype's pattern:
+
+- **Where.** When skills serve the method, a Proposed group leads the dialog's body, before the fields: the heading "Proposed by" and the skill's name, then in small text its version and how it ran, "reference procedure" or the model's name; then its reasoning in a sentence or two; then each proposed value as a term and description, the input's label and the value, with the objects it rests on by identifier in small, subtle text.
+- **The fields are pre-filled** with the proposed values, as proposals the person may change. A value the person has already entered is never overwritten.
+- **While it is worked out,** a small spinner and "Working out a proposal…" stand where the group will be, and the fields stay usable. When there is no proposal, or the skill could not run, the group is left out, or one quiet line says why.
+- **In Compare and decide,** the recommended object's card carries a "Recommended" status label beside its identifier, and its card is outlined, so it stands out in the row of cards without hiding the others. A Recommendation group, the skill's reasoning, sits between Side by side and Decide. The choice is pre-selected with the recommended object. The rationale stays empty: it is the person's own words. The commit button reads, as before, the decision with the chosen object, such as "Select SSC-3".
+
 **Review and sign, step by step:**
 
 1. The task's button on a To do card opens a Wizard in a modal, titled with the method and the object.
@@ -513,3 +520,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.61 | 2026-11-21 | A comparison's commit button names the decision, not the comparison: "Select", then "Select SSC-3" once one is chosen. |
 | 0.62 | 2026-11-22 | Identifiers are quiet in list views: a card leads with its title, with the identifier in small, subtle text at the end of its state row, or, in a list of several types, on the line of the type's name above the title, which is shown only then; a table has no Identifier column, the identifier following the title. A type's name wherever shown for one object, including the object panel's header, links to that type's list, and from the panel closes it. |
 | 0.63 | 2026-11-23 | The type's name links to that type's list only in the object panel's header. On a card, and in a table's Type column, it is plain text: choosing a card anywhere, its type's name included, opens the object. |
+| 0.64 | 2026-11-23 | Proposals from skills: a Proposed group leads a method's dialog with the skill, its version and how it ran, its reasoning and each proposed value with its sources; fields are pre-filled. In Compare and decide the recommended card is labeled Recommended and outlined, the choice pre-selected, the rationale left to the person. |

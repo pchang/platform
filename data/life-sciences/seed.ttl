@@ -2437,6 +2437,9 @@ d:TS-1 a ls:TrialSimulation ;
   ls:recruitmentRate 0.5 ;
   ls:screenFailureRate 48.0 ;
   ls:dropoutRate 15.0 ;
+  ls:controlResponse 35.0 ;
+  ls:treatmentResponse 46.0 ;
+  ls:saeRate 6.0 ;
   ls:assumedEffect "Response of 46 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
   ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
 
@@ -2518,6 +2521,9 @@ d:TS-2 a ls:TrialSimulation ;
   ls:recruitmentRate 0.6 ;
   ls:screenFailureRate 33.0 ;
   ls:dropoutRate 15.0 ;
+  ls:controlResponse 35.0 ;
+  ls:treatmentResponse 43.0 ;
+  ls:saeRate 6.0 ;
   ls:assumedEffect "Response of 43 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
   ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
 
@@ -2599,6 +2605,9 @@ d:TS-3 a ls:TrialSimulation ;
   ls:recruitmentRate 0.6 ;
   ls:screenFailureRate 48.0 ;
   ls:dropoutRate 15.0 ;
+  ls:controlResponse 35.0 ;
+  ls:treatmentResponse 46.0 ;
+  ls:saeRate 6.0 ;
   ls:assumedEffect "Response of 46 percent on treatment against 35 percent on control; 6 serious adverse events per 100 patient-years" ;
   ls:simulationModel "Reference trial model 1.0: a reference model, not validated for decisions about real studies" .
 
