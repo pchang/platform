@@ -56,13 +56,13 @@ export function askAboutChosen(objects: string[]): ViewNode {
 /** An object's identifier, quiet: small, subtle text, a reference to cite or look up (design system spec 4.3). */
 export const quietId = (identifier: string): ViewNode => ({ component: 'Content', props: { label: identifier, component: 'small', isSubtle: true } });
 
-/** A type's name as a small link to that type's list of objects (design system spec 4.3, Type links). */
+/** A type's name as a small link to that type's list of objects: only in the object panel's header (design system spec 4.3, Type links). */
 export const typeLink = (type: string, typeLabel: string): ViewNode => ({ component: 'Button', props: { label: typeLabel, variant: 'link', isInline: true, size: 'sm' }, lists: type });
 
 /**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
  * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
- * It leads with the title; the type's name, as a link, only in a list of several types.
+ * It leads with the title; the type's name, as plain text, only in a list of several types.
  */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2', options: { showType?: boolean } = {}): ViewNode {
   return {
@@ -78,13 +78,14 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
           {
             component: 'CardHeader',
             children: [
-              // In a list of several types the type's name and the identifier share one line, the identifier quiet at its end.
+              // In a list of several types the type's name, plain text, and the identifier share one line, the identifier quiet at
+              // its end. Nothing on a card but its buttons leads elsewhere: choosing it anywhere opens the object.
               ...(options.showType
                 ? [
                     {
                       component: 'Flex',
                       props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsBaseline' }, justifyContent: { default: 'justifyContentSpaceBetween' } },
-                      children: [typeLink(object.type, object.typeLabel), quietId(object.identifier)],
+                      children: [text(object.typeLabel, 'small'), quietId(object.identifier)],
                     } as ViewNode,
                   ]
                 : []),
@@ -411,7 +412,7 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
             children: [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }, quietId(o.identifier)],
           },
         ]),
-        ...(mixed ? [td('Type', [typeLink(o.type, o.typeLabel)])] : []),
+        ...(mixed ? [td('Type', [text(o.typeLabel)])] : []),
         ...(hasAttention ? [td('Attention', entry.status.length ? [flexOf(entry.status)] : [])] : []),
         ...columns.map((c) => td(c, o.state[c] ? [text(o.state[c])] : [])),
         ...(hasDetail ? [td('Matched', entry.detail ? [text(entry.detail.replace(/^Matched: /, ''), 'small')] : [])] : []),

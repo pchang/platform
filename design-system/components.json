@@ -1130,14 +1130,12 @@
         "accepts": [
           "Content",
           "CardTitle",
-          "Button",
           "Flex"
         ]
       },
       "responsive": "Full width of its card.",
       "accessibility": [
-        "Holds the card's title, which names the radio button of a selectable card",
-        "A Button in it, such as a type's name linking to its list, comes before the title and is a link, never a control that changes the card"
+        "Holds the card's title, which names the radio button of a selectable card"
       ],
       "examples": [
         {

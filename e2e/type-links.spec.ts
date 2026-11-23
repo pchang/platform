@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Identifiers are quiet in list views, and a type's name links to that type's list (design system spec 4.3, Type links, and 4.4).
 test.setTimeout(120_000);
 
-test('a card leads with its title and keeps its identifier quiet; the type’s name appears only in a list of several types', async ({ page }) => {
+test('a card leads with its title and keeps its identifier quiet; the type’s name, plain text, appears only in a list of several types', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
@@ -35,10 +35,20 @@ test('a card leads with its title and keeps its identifier quiet; the type’s n
   expect(rowId.x).toBeGreaterThan(link.x + link.width);
   await page.getByRole('button', { name: 'Cards', exact: true }).click();
 
-  // To do holds several types: each card names its type, as a link to that type's list.
+  // To do holds several types: each card names its type as plain text, never a link, and choosing the card anywhere, the
+  // type's name included, opens the object.
   await page.goto('/#/');
   const todo = page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card').first();
-  await expect(todo.locator('.pf-v6-c-card__header').getByRole('link')).toHaveAttribute('href', /#\/type\//);
+  await expect(todo).toBeVisible({ timeout: 30_000 });
+  await expect(todo.locator('.pf-v6-c-card__header a')).toHaveCount(0);
+  const name = (await todo.locator('.pf-v6-c-card__header small').first().textContent())!.trim();
+  await todo.locator('.pf-v6-c-card__header small', { hasText: name }).first().click();
+  const panel = page.locator('.app-object-panel');
+  await expect(panel.getByRole('link', { name, exact: true })).toBeVisible({ timeout: 30_000 });
+  // The list view's Type column is plain text too.
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'List', exact: true }).click();
+  await expect(page.getByRole('grid', { name: 'To do' }).locator('tbody a[href^="#/type/"]')).toHaveCount(0);
 });
 
 test('the type’s name in an object’s header opens the list of its objects, and choosing one in the list opens it again', async ({ page }) => {

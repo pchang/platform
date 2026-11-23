@@ -162,9 +162,9 @@ describe('the list view (design system spec 4.3)', () => {
     expect(head).toEqual(['Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
     const [first, sub] = bodyRows(table.root);
     expect((sub.children ?? []).map(cellText).slice(0, 6)).toEqual(['Case SUB-1 SUB-1', 'Submission', '', '', 'draft', 'on track']);
-    // The Type column links each value to that type's list (design system spec 4.3, Type links).
-    expect(JSON.stringify(sub.children![1])).toContain('"lists":"urn:Submission"');
-    expect(JSON.stringify(first.children![1])).toContain('"lists":');
+    // The Type column is plain text: a row stands for its object, so nothing in it leads elsewhere (design system spec 4.3, Type links).
+    expect(JSON.stringify(table.root)).not.toContain('"lists"');
+    expect(first).toBeDefined();
   });
 
   // Ask about this comes after the methods, at the right end of the actions column, so it lines up down the list (design system spec 4.1).

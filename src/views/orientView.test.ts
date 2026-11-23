@@ -125,10 +125,11 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
   });
 
-  it('leads each card with its title; the type’s name, as a link to its list, only above it in a list of several types; the identifier quiet at the end of the state row', () => {
+  it('leads each card with its title; the type’s name, as plain text, only above it in a list of several types; the identifier quiet', () => {
     const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
-    // To do holds several types: the type's name is a link to that type's list, above the title.
-    expect(json).toContain('"children":[{"component":"Button","props":{"label":"Safety Case","variant":"link","isInline":true,"size":"sm"},"lists":"urn:SafetyCase"},{"component":"Content","props":{"label":"SC-2","component":"small","isSubtle":true}}]');
+    // To do holds several types: the type's name is plain text above the title, never a link: choosing the card anywhere opens it.
+    expect(json).toContain('"children":[{"component":"Content","props":{"label":"Safety Case","component":"small"}},{"component":"Content","props":{"label":"SC-2","component":"small","isSubtle":true}}]');
+    expect(json).not.toContain('"lists"');
     // The identifier is quiet, at the end of that line, and no longer the card's first and only eyebrow.
     expect(json).toContain('"label":"SC-2","component":"small","isSubtle":true');
     expect(json).not.toContain('SC-2 · Safety Case');
