@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.31. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.35.
+Version 0.32. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.39.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -499,12 +499,15 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Medical Writer | Design and Plan and Clinical Development | One coherent, approvable protocol | Confirm contributions, write the narrative, send protocol versions for review | See unblinded arms |
 | Clinical Operations Lead | Design and Plan and Clinical Development | A plan that delivers on time and on budget | Build study budgets and site selections, run and compare trial simulations | See unblinded arms |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
+| Structure Steward | Structure (the platform's own domain) | A structure that keeps up with the work and stays healthy | Draft, propose, withdraw, apply and roll back change sets; approve those for parts nobody else owns, when someone else drafted them | See any type that holds personal health data. Approve a change set alone that they drafted |
 
 Each role's navigation lists the entry types of its work domains (platform spec section 5.1). A role also works across some contained types, which stay in its navigation: the clinical roles across patients, visits, data records, data queries and adverse events; the external agent across data queries; the Quality Lead across quality events and CAPAs; the Drug Safety Physician across quality events; the Computational Chemist across assay results. The Clinical Scientist and Program Leader work across study concepts. The other Design and Plan personas work across none: they start from opportunities, programs, studies and protocols.
 
 The six Design and Plan personas run Run trial simulation (Clinical Scientist, Biostatistician and Clinical Operations Lead) and the protocol methods named for them until the methods of section 3.8 are built; they read and navigate the design and plan graph now.
 
 An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
+
+The Structure Steward is the platform's own canonical role (platform spec section 3.7), not one of this domain's: every domain has one. This domain gives it its metrics, below, and a person in the seed. **Who owns what** follows the platform's rule: the roles that create and edit a type own it and its parts, as the Creating and editing table below says, so a change to study scenarios is approved by a Clinical Scientist or a Clinical Operations Lead; a skill's owner is named in section 3.9; the types nobody creates or edits, from adverse events to forecasts, are owned by the Structure Steward until the domain names their owners (section 12).
 
 The same object must look different to each persona. A Batch is a production record to the Quality Lead, a supply item to the Clinical Data Manager and a possible cause to the Drug Safety Physician. The platform must explain why each persona sees what it sees.
 
@@ -563,6 +566,9 @@ The metrics each persona watches on Home (platform spec 5.1, Home), declared in 
 | | Forecasts missing their target; Design signals raised | As above | 1, 3 |
 | | Sites still proposed | Proposed sites proposed | Information |
 | External CRO agent | Open data queries | As above | 3, 6 |
+| Structure Steward | Change sets awaiting approval | Change sets proposed | 1, 3 |
+| | Deprecated terms still in use | Terms deprecated and in use | 1, 3 |
+| | Change sets applied | Change sets applied | Information |
 
 ### To do
 
@@ -848,6 +854,9 @@ A second candidate edge case: the same adverse event arrives twice, once from th
 ### Inspection
 In any journey, any persona can ask "why am I seeing this?" on any view or element. The platform shows the `because` of each view node, the graph object it binds to, the method and its precondition, and the business rule that allowed or blocked it. This satisfies the inspection requirement in section 6 of the platform spec.
 
+### J7. Evolving the structure
+Structure Steward, then Clinical Operations Lead. Study scenarios sometimes wait on a budget decision, and teams have been writing "on hold" in the scenario's change. The Steward asks the chat to add an on hold status to study scenarios. The model drafts a change set with one operation, add a value to Study Scenario's status, and its impact shows: no object moves, nothing stops conforming, and Compare study scenarios' precondition names the statuses it allows, so a scenario on hold cannot be compared. The Steward proposes it. It waits on To do for the owners of study scenarios; the Clinical Operations Lead reads the impact and approves. The Steward applies it, and the new status appears at once wherever study scenarios' statuses do: the lifecycle stages, Where things stand and the Edit form. The Steward then rolls it back, which is allowed because no scenario holds it yet. Without a connected model, the Steward makes the same change set through forms.
+
 ### External agent
 A contract research organization's agent connects through the gateway with no UI. It lists open Data Queries at its sites, answers them from its own records and closes the ones it can. Everything it does is checked by the same policy and appears in the same log as a human's actions.
 
@@ -876,6 +885,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - VELOCITY-3's three study scenarios are each simulated once in the seed, by the biostatistician on November 19, 2026, for all six study measures, so they can be compared and one selected straight away (J-series, Compare study scenarios). The simulations and their forecasts are the reference trial model's own output, written by Run trial simulation and kept as seed data, never invented: a test runs the model again on the same scenarios and assumptions and checks every figure. With 35 and 46 percent response and 15 percent dropout, the baseline (TS-1) misses its 18-month target and its ceiling: 19.6 months and 53.6 million US dollars; allowing prior biologics (TS-2), at a 33 percent screen failure rate and 43 percent response, enrolls in 16.8 months but falls to a 47.5 percent chance of success and is still over its ceiling; dropping hand MRI and adding Poland and Brazil (TS-3) meets every target: 14.6 months, 37.7 million and 72.1 percent. The budgets carry the totals and fits the simulations set. Running a scenario again makes its seeded forecasts out of date, as any rerun does. The new asset's development option has one seeded simulation with three forecasts, from a portfolio model not yet connected. Four design signals raised: on an exclusion criterion and on hand MRI, and, from the simulations, on the Irish sites of the baseline and the prior-biologic scenario, which cannot perform hand MRI.
 - The Phase II study runs one study scenario of its own, using its draft amendment (J5).
 - Six more people, one for each Design and Plan persona.
+- One Structure Steward, Noor Haddad, and no change sets: the structure starts as the repository's files publish it (J7).
 
 All names, compounds, products, sites, lots, studies and people are invented. Product names, such as Velcorin and Duxalate, belong to no real medicine.
 
@@ -896,6 +906,7 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 ## 12. Open Questions
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
+- Who owns the types nobody creates or edits, such as adverse events, safety cases, forecasts and design signals? Until the domain names an owner for each, the Structure Steward approves changes to them (platform spec section 3.7).
 - Should post-market cases (after approval) be in scope, or only trial cases?
 - Which models back Run simulation and Generate analogs, and how are they validated for their intended use? Until one is connected, the gateway refuses both. Generate narrative is drafted by Claude Opus 5.5 where a deployment connects it.
 - Should signal detection move from PRR to a Bayesian method, such as the empirical Bayes geometric mean or the information component, once the case volume supports it?
@@ -961,3 +972,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.29 | 2026-11-21 | Relationships: the inverse labels of is an option for, is proposed for, sets success for, contributes to and is about no longer repeat their object ("has", "has proposed"), so a tab's sentence reads "This program has proposed these study concepts." |
 | 0.30 | 2026-11-21 | Compare study scenarios names its commit action Select, so the button reads "Select SSC-3", not the comparison already made. It selects and records the decision; creating the study from the selected scenario is still to come. |
 | 0.31 | 2026-11-23 | Design and Plan skills (section 3.9): Simulation assumptions for Run trial simulation and Recommend a study scenario for Compare study scenarios, each with its instructions and reference procedure. A trial simulation records each assumption as a number. Section 3.8 calls its methods methods. |
+| 0.32 | 2026-11-23 | The Structure Steward, the platform's own role (platform spec section 3.7), joins the personas with its metrics and a seed person. Who owns each part of the structure, for approving change sets. Journey J7, Evolving the structure. One open question. |

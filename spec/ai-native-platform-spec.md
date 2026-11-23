@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.38. November 23, 2026. Author: Paul Chang.
+Version 0.39. November 23, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -64,6 +64,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Business rule | A resource in the platform vocabulary with its parameters, enforced by SHACL shapes or by the gateway |
 | Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, the metrics it watches, and what it may not read |
 | Metric | A resource in the platform vocabulary: a count of a type's objects in given states, with its health thresholds (section 5.1, Home) |
+| Change set | An object in the platform's Structure domain: named operations on the structure, with a lifecycle whose steps are methods, applied as a new version of the ontology (section 3.7) |
 | Skill | A resource in the platform vocabulary: the method it serves, what it proposes, its version, owner and approval, its instructions, and its reference procedure, if any. It is context, not ontology: written in the same notation, but declaring how an organization works, not what exists (section 3.3, Skills) |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
@@ -203,6 +204,8 @@ A database server can later hold the current state for larger data or several ga
 - **A person decides.** Accepting commits the method with the draft's text or the person's edit of it. The commit records which draft it came from and whether it was edited, and the person who accepted it is accountable for the text. Discarding records that the draft was discarded. A draft is decided once. Agents may ask for drafts; only a person accepts or discards one.
 - **Failures.** When the model declines or cannot be reached, the reasons are returned and nothing is recorded.
 
+**Structure changes.** A change set (section 3.7) is applied by a commit like any other: Apply runs commit steps 1 to 6 with one more effect, which carries out its operations and their migration on the working copy, so the whole graph is validated against the changed structure before anything is saved. The commit records the change set, the ontology's version before and after, and every value the migration moved. A connected model may draft a change set as the principal, from the structure they may read; drafting changes nothing but the draft.
+
 **Skill proposals.** A skill's proposal (section 3.3, Skills) is recorded before it is shown, as a draft is: the skill and its version, the method and the objects, who asked and in which role, how it ran (the model as the provider reports it, or the reference procedure), the proposed values, the recommendation, the reasoning, the objects it rests on and the time. A proposal changes nothing. A commit that names it records that it came from it and, for each proposed input, whether the value was kept or changed; the person who commits is accountable for every value. When a model fails or declines, a skill with a reference procedure falls back to it and says so; otherwise the reasons are returned and nothing is recorded.
 
 **Transport.** The gateway serves JSON over HTTP for the experience layer, and the Model Context Protocol for agents. Both use the same contract.
@@ -236,6 +239,26 @@ What a person sees. Generated, not designed screen by screen.
 - Built from a design system that is itself machine-readable, so agents can assemble it.
 - Chat is one mode among many. The platform picks the right mode for the task.
 - The design system and its machine-readable catalog are defined in `design-system.md`.
+
+### 3.7 Structure Evolution
+
+A platform built on an ontology lives or dies by the health of that ontology. Organizations change, and an ontology that can change only through a release falls behind the work and starts to break. The platform is built to grow stronger from that change rather than break under it. It makes change to its own structure cheap, safe and traceable, it learns from the friction people meet, and it tests itself by stressing its own structure on purpose. **Structure** here means the ontology and the context layer: object types, properties, relationships, state dimensions and their values, methods, rules, roles, metrics and skills.
+
+- **The structure describes itself.** The platform vocabulary declares a **Structure** domain whose object types are the kinds of structure: Object Type, Property, Relationship, State Dimension, State Value, Method, Skill, Role, Metric, and Change Set. Its objects are the ontology's and the context layer's own resources, read where they are declared, never copied. They link as the structure does: a property belongs to a type, a state value to its dimension, a method applies to a type, a skill serves a method, a role may run a method. Each also says how much it is used: how many objects use a type, a property or a state value. Nothing about them is designed per screen. Navigation, Home, Within an object, search, chat and the method dialogs all work on them as on any other object, so whatever changes in the structure, the tools that change it change with it.
+- **A Structure Steward tends it.** The platform defines one domain-free canonical role, the **Structure Steward**, whose work domain is Structure. Their Home is generated like everyone else's: the structure's health as metrics, change sets waiting on them, and the structure itself to browse. A Steward reads the structure and how many objects use each part; which objects, only as far as their role may read them. By default the role reads no type that holds personal data.
+- **Change is a change set.** Every change to the structure is a **Change Set**: an object with a lifecycle (draft, proposed, approved, applied, rolled back; or withdrawn, or rejected) made of named **operations**, each a small change with its parameters. The first operations are: relabel a term, add a value to a state dimension, and deprecate a term in favor of its replacement. Others follow (section 9): add a type, a property or a relationship; change a method's inputs; change a rule's or a metric's thresholds; change what a role may do; change a skill. Operations keep the ontology's rule of additive evolution (section 3.1): a term's address and meaning never change; a relabel changes how it reads, and a term is deprecated, never deleted.
+- **Its lifecycle is methods.** Propose, Approve, Reject, Withdraw, Apply and Roll back are methods on a change set, declared in the platform vocabulary, so they run through the commit sequence (section 3.4) and the archetypes (section 5.4) like any other method. One new effect, **apply structure change**, carries out a change set's operations.
+- **Impact before approval.** The preview of Propose, Approve and Apply carries the change set's **impact**: the change set is applied to a working copy of the structure and the graph, every object is validated against the changed shapes, and the impact lists what changes in the structure; the **migration**, every object whose values move, such as from a deprecated state value to its replacement; the objects that would no longer conform, with the reasons; and everything that refers to what changes: methods, rules, metrics, roles, skills and titles. A change set whose migration would leave any object not conforming cannot be applied.
+- **Owners approve.** The roles that may create and edit a type's objects own that type and its parts, unless the domain declares an owner; a skill's owner is declared with it (section 3.3, Skills); parts with no owner are owned by the Structure Steward. A change set is approved once by an owner of every part it touches. The person who drafted it may not approve it alone, and agents never approve. Where a domain requires it, approval needs a signature, like any other method.
+- **Applied as a new version.** Apply runs the operations and the migration in one transaction, validates the whole graph against the changed structure and is refused if anything fails. The ontology's version moves on: a relabel is a patch, an added value or a deprecation a minor version. The commit is journaled, so the change survives a restart, and every view is generated from the new structure from the next request on.
+- **Rolled back as a new change.** Roll back applies the inverse of a change set as a new commit, never by rewriting history. It is refused, with the reasons, when the inverse would break something, such as removing a state value objects now hold; the impact of Roll back says which objects would move back.
+- **Drafted in words.** A Steward may describe a change in the chat, such as "add an on hold status to study scenarios". A connected model drafts the change set from the structure the Steward may read, through a tool that only drafts, and the draft opens with its impact. Every change can also be made without a model, by creating the change set and its operations through forms (section 5.3); chat is a convenience, never the only way in.
+- **The repository stays the baseline.** The ontology files in the repository are the published structure. Applied change sets are exported as a Turtle patch with their provenance, for review into the next release of the files, so the structure in the repository and the structure in use never drift apart unseen.
+
+**Specified, not yet built.** Two more make the structure learn from stress:
+
+- **Friction signals.** The platform already records where its structure strains: proposals people keep changing, searches and questions no reading understood, commits refused again and again for the same reason, free text that repeats where a coded value would serve, properties never filled and types never used. A **structure steward skill** (section 3.3, Skills) reads these signals and drafts change sets for a Steward to review. Like every skill, it proposes and never changes.
+- **Structure drills.** A Steward may run a **structure drill**: random, plausible change sets applied to a sandbox copy of the structure and graph, never to the live one, followed by the conformance checks and the generation of every view. The drill's report says what held up and what broke. Anything that breaks is a hidden dependency on the old structure, and the report points at it.
 
 ---
 
@@ -437,7 +460,7 @@ The platform meets these from the first release. Domain specs add the obligation
 - **Accessibility.** Generated UI meets WCAG 2.2 AA.
 - **Responsive.** Every view works at every screen size, from a small phone (320 CSS pixels wide) to a wide desktop, with no horizontal page scrolling. Nothing is desktop-only.
 - **Testing.** Every method, policy rule and pattern selection rule has automated tests. Generated views are tested for consistency (the same task produces the same UI shape) and accessibility.
-- **Change control.** The ontology, methods, policies and design system catalog are versioned. Changes to them are reviewed, tested and traceable, so the platform can be formally validated where a domain requires it.
+- **Change control.** The ontology, methods, policies and design system catalog are versioned. Changes to them are reviewed, tested and traceable, so the platform can be formally validated where a domain requires it. A change to the structure in use is a change set (section 3.7): previewed for its impact, approved by its owners, applied as a new version in one transaction, journaled, reversible, and exported for review into the repository.
 
 ---
 
@@ -458,7 +481,12 @@ The first release is accepted when:
 
 To resolve in future versions of this spec.
 
-- How are methods authored and versioned? Who owns them?
+- How are methods authored and versioned? Who owns them? Change sets (section 3.7) will change methods once their operations are defined.
+- Which operations follow the first three, and in what order: add a type, property or relationship; change a method's inputs; change thresholds; change a role's permissions; change a skill? Which of them can ever be breaking, and so need a major version and a release rather than a change set?
+- When two change sets touch the same term, the second is checked again when it is applied. Should the platform also warn while both are open?
+- How does an applied change set's Turtle patch flow back into the repository: by a pull request opened for review, or by a person?
+- Should structure drills run in validated deployments, on a sandbox, or only in development and demonstration?
+- How are a structure object's derived states, such as in use or unused, computed so that metrics count them without storing them?
 - How much autonomy do agents get before they must ask a human?
 - How does the platform resolve conflicting context?
 - What is the trust model for external agents and federated platforms?
@@ -529,3 +557,4 @@ To resolve in future versions of this spec.
 | 0.36 | 2026-11-21 | From a metric to its objects (section 5.1, Home): choosing a metric opens exactly the objects it counts. |
 | 0.37 | 2026-11-21 | A method may name its commit action (`p:commitLabel`); a set method that decides among its set puts the chosen object's identifier on that button, such as "Select SSC-3". |
 | 0.38 | 2026-11-23 | Skills (section 3.3): an organization's know-how for a method, declared as context with a version, owner and approval, run by an agent as the person, with a connected model or a declared reference procedure. A skill proposes inputs or recommends one of a set, never commits; the proposal is recorded before it is shown, and the commit records whether each proposed value was kept. The gateway gains a fifteenth request, Propose with skills. |
+| 0.39 | 2026-11-23 | Structure evolution (section 3.7): the structure describes itself as objects in a Structure domain, tended by a domain-free Structure Steward role. Every change is a change set of named operations (relabel, add a state value, deprecate first) whose lifecycle is methods: impact previewed on a working copy, approved by the owners of what it touches, applied as a new ontology version in one transaction, rolled back as a new change, drafted in words by a connected model or through forms, and exported as a Turtle patch. Friction signals and structure drills are specified, not yet built. Change control (section 7) names change sets. Six open questions. |

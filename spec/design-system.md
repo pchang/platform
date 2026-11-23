@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.64. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.30, sections 3.6, 5.1, 5.4 and 7.
+Version 0.65. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.39, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -337,6 +337,11 @@ The components these patterns need, such as Modal, Form, Description list, Alert
 - **While it is worked out,** a small spinner and "Working out a proposal…" stand where the group will be, and the fields stay usable. When there is no proposal, or the skill could not run, the group is left out, or one quiet line says why.
 - **In Compare and decide,** the recommended object's card carries a "Recommended" label beside its identifier, and its card is outlined in the brand border color (the catalog's Card isHighlighted), so it stands out in the row of cards without hiding the others. A Recommendation group, the skill's reasoning, sits between Side by side and Decide. The choice is pre-selected with the recommended object. The rationale stays empty: it is the person's own words. The commit button reads, as before, the decision with the chosen object, such as "Select SSC-3".
 
+**Change sets** (platform spec 3.7, Structure evolution). A change set and the structure it changes are objects, so they use the patterns every object uses: no admin screens. Two things are particular to them:
+
+- **Impact, in the preview.** The preview of Propose, Approve, Apply and Roll back adds, after What will change, an **Impact** group in this order: What changes in the structure, one line per operation, such as "Study Scenario status: adds on hold"; Objects that move, by identifier with the old and new value, or "None"; Objects that would no longer conform, by identifier with the reason, as a danger alert when there are any; and What refers to it, each method, rule, metric, role, skill and title by name, in small text. The commit button stays disabled while any object would no longer conform. Under it, in small, subtle text, the ontology's version now and after, such as "Life sciences ontology 0.1.0 → 0.1.1".
+- **Drafted in the chat.** When the model drafts a change set, the chat answer shows the draft as a card, its identifier and its operations, with the impact's counts, and a primary button, Open the change set, that opens it in the object panel to review and propose. The chat never proposes, approves or applies.
+
 **Review and sign, step by step:**
 
 1. The task's button on a To do card opens a Wizard in a modal, titled with the method and the object.
@@ -521,3 +526,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.62 | 2026-11-22 | Identifiers are quiet in list views: a card leads with its title, with the identifier in small, subtle text at the end of its state row, or, in a list of several types, on the line of the type's name above the title, which is shown only then; a table has no Identifier column, the identifier following the title. A type's name wherever shown for one object, including the object panel's header, links to that type's list, and from the panel closes it. |
 | 0.63 | 2026-11-23 | The type's name links to that type's list only in the object panel's header. On a card, and in a table's Type column, it is plain text: choosing a card anywhere, its type's name included, opens the object. |
 | 0.64 | 2026-11-23 | Proposals from skills: a Proposed group leads a method's dialog with the skill, its version and how it ran, its reasoning and each proposed value with its sources; fields are pre-filled. In Compare and decide the recommended card is labeled Recommended and outlined, the choice pre-selected, the rationale left to the person. |
+| 0.65 | 2026-11-23 | Change sets: their impact in the preview (what changes in the structure, objects that move, objects that would no longer conform, what refers to it, the version before and after) and a drafted change set as a card in the chat. No admin screens: the structure uses the patterns every object uses. |
