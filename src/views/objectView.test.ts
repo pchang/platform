@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { withSeed } from '../gateway/node';
 import { NS } from '../ontology/ontology';
 import { buildObjectView, endKey, OVERVIEW_TAB } from './objectView';
+
+// Some tests here run a commit on a gateway of their own, which takes longer than the default under a full parallel run.
+vi.setConfig({ testTimeout: 30_000 });
 
 // The object panel's content (platform spec 5.1, Within an object; design system spec 4.4), built from real gateway reads.
 
@@ -23,13 +26,20 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(validateView(view).errors).toEqual([]);
     expect(view.pattern).toBe('object');
     const json = JSON.stringify(view);
-    expect(json).toContain('"label":"ST-01 · Study"');
+    // The type's name links to that type's list, then the identifier, quiet (design system spec 4.4, Header).
+    expect(json).toContain(`{"component":"Button","props":{"label":"Study","variant":"link","isInline":true,"size":"sm"},"lists":"${study.type}"}`);
+    expect(json).toContain('"label":"· ST-01","component":"small","isSubtle":true');
+    expect(json).not.toContain('"label":"ST-01 · Study"');
     expect(json).toContain(`"label":"${study.title}","headingLevel":"h2"`);
     expect(tabsOf(view.root).map((t) => [t.label, t.count])).toEqual([
       ['Overview', undefined],
       ['Patients', 12],
+      ['Study Scenarios', 1],
+      ['Outcome Targets', 0],
+      ['Decisions', 0],
       ['Formulations', 1],
       ['Sites', 3],
+      ['Study Concepts', 0],
     ]);
     expect(json).toContain('This study enrolls these patients.');
     expect(json).toContain('This study runs at these sites.');

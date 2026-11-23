@@ -81,8 +81,35 @@
       "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
     },
     {
+      "id": "choose-an-object",
+      "purpose": "Chooses an object of another type from those that qualify, with a search field that narrows the list, then previews the change and runs it (archetype Choose an object).",
+      "template": "modal",
+      "coreLoopSteps": [
+        "compose",
+        "commit"
+      ],
+      "fitsWhen": [
+        "The method's archetype is Choose an object"
+      ],
+      "slots": [
+        {
+          "name": "body",
+          "accepts": [
+            "Stack"
+          ]
+        },
+        {
+          "name": "footer",
+          "accepts": [
+            "Button"
+          ]
+        }
+      ],
+      "responsive": "A medium modal on wide screens; on phones, the full width less the standard margin."
+    },
+    {
       "id": "compare-and-decide",
-      "purpose": "Shows the object and another of the same type side by side, differences marked, then previews and runs the method (archetype Compare and decide).",
+      "purpose": "Shows the object and another of the same type side by side, or a chosen set of them, differences marked, then previews and runs the method (archetype Compare and decide). For a set it opens as a modal, with the comparison's rows first.",
       "template": "page",
       "coreLoopSteps": [
         "compose",
@@ -99,7 +126,7 @@
           ]
         }
       ],
-      "responsive": "The two cards sit side by side from md up and stack on phones."
+      "responsive": "The cards sit side by side from md up, two or more to a row for a set, and stack on phones."
     },
     {
       "id": "review-and-sign",

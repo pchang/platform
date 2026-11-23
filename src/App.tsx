@@ -14,7 +14,7 @@ import { ProcessDock } from './chrome/ProcessDock';
 import { ProcessHost, useFrontIsPage } from './processes/ProcessHost';
 import { ProcessProvider } from './processes/ProcessProvider';
 import { useRoute } from './routing';
-import { SearchView, TodoView, TypeView } from './views/OrientViews';
+import { MetricView, SearchView, TodoView, TypeView } from './views/OrientViews';
 
 /** From PatternFly's xl breakpoint up, the sidebar sits beside the content; below it, it is a drawer (design system spec 4.1). */
 const isWide = () => window.innerWidth >= 1200;
@@ -82,11 +82,12 @@ function AppPage() {
       isContentFilled
     >
       {/* The content area is the object panel's drawer content, so the panel opens over it (design system spec 4.4). */}
-      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'To do' : route.name === 'search' ? 'Search' : 'Objects'}>
+      <PageSection isFilled hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="app-content" aria-label={frontIsPage ? 'Process' : route.name === 'catalog' ? 'Design system catalog' : route.name === 'todo' ? 'Home' : route.name === 'search' ? 'Search' : route.name === 'metric' ? 'Metric' : 'Objects'}>
         <ObjectDrawer>
           {!frontIsPage && route.name === 'catalog' && <CatalogPreview />}
           {!frontIsPage && route.name === 'todo' && <TodoView />}
           {!frontIsPage && route.name === 'type' && <TypeView key={route.type} type={route.type} />}
+          {!frontIsPage && route.name === 'metric' && <MetricView key={route.metric} metric={route.metric} />}
           {!frontIsPage && route.name === 'search' && <SearchView query={route.query} />}
           <ProcessHost />
         </ObjectDrawer>

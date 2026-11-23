@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, ToDoItem } from '../gateway/gateway';
+import type { AskResult, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, DraftView, MethodComposition, NavigationD
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, DraftView, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AskResult, AskTurn, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -43,6 +43,10 @@ export interface GatewayClient {
   people(): Promise<Person[]>;
   navigation(principal: Principal): Promise<NavigationDomain[]>;
   todo(principal: Principal): Promise<ToDoItem[]>;
+  /** Each person's homepage: their world's health, where things stand, and how they are keeping up (platform spec 5.1, Home). */
+  home(principal: Principal): Promise<HomeView>;
+  /** A metric and exactly the objects it counts (platform spec 5.1, Home). */
+  metricObjects(principal: Principal, metric: string): Promise<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[] }>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
@@ -59,7 +63,25 @@ export interface GatewayClient {
   /** Rejects with RefusedError when the method would fail. */
   preview(principal: Principal, object: string, method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
   /** Rejects with RefusedError when the gateway refuses the commit. */
-  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }): Promise<CommitResult>;
+  commit(principal: Principal, object: string, method: string, inputs: Record<string, string>, signature?: { typedName: string }, draft?: { draft: string; text: string }, proposal?: string): Promise<CommitResult>;
+  /** Propose with skills (platform spec 3.3, Skills): each approved skill's proposal for a method on an object or a set, or why it did not run. */
+  propose(principal: Principal, objects: string[], method: string): Promise<SkillProposals>;
+  /** The form to create an object of a type, inside a parent when given (platform spec 5.3, Creating and editing objects). */
+  createForm(principal: Principal, type: string, parent?: string): Promise<ObjectForm>;
+  previewCreate(principal: Principal, type: string, values: Record<string, string>, parent?: string): Promise<Omit<CommitResult, 'commit'>>;
+  create(principal: Principal, type: string, values: Record<string, string>, parent?: string): Promise<CommitResult>;
+  /** Why the object cannot be edited now; empty when it can. */
+  editBlocks(principal: Principal, object: string): Promise<string[]>;
+  editForm(principal: Principal, object: string): Promise<ObjectForm>;
+  previewEdit(principal: Principal, object: string, values: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
+  edit(principal: Principal, object: string, values: Record<string, string>): Promise<CommitResult>;
+  /** The set methods a selection qualifies for (platform spec 5.4, Acting on a set). */
+  setMethods(principal: Principal, objects: string[]): Promise<SetMethodOption[]>;
+  /** Compose a set method for a selection, with its comparison. Rejects with RefusedError when the set does not qualify. */
+  composeSet(principal: Principal, objects: string[], method: string): Promise<MethodComposition>;
+  previewSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>): Promise<Omit<CommitResult, 'commit'>>;
+  /** Commits a set method once, on the chosen object. */
+  commitSet(principal: Principal, objects: string[], method: string, inputs: Record<string, string>, proposal?: string): Promise<CommitResult>;
   /** A connected model drafts the method. Rejects with RefusedError when no model is connected or it declines. */
   draft(principal: Principal, object: string, method: string): Promise<DraftView>;
   discardDraft(principal: Principal, draft: string): Promise<DraftView>;

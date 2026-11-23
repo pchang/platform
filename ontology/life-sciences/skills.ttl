@@ -1,0 +1,88 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://w3id.org/lsh-platform/platform#> .
+@prefix ls:      <https://w3id.org/lsh-platform/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh-platform/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh-platform/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://w3id.org/lsh-platform/life-sciences/skills> a owl:Ontology ;
+  dcterms:title "LS&H life sciences skills" ;
+  rdfs:comment "This sponsor's know-how for its methods (domain spec 3.9; platform spec 3.3, Skills). Context, not ontology: how this organization does the work, not what exists." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/skills/0.1.0> ;
+  dcterms:created "2026-11-23"^^xsd:date .
+
+# Simulation assumptions: proposes Run trial simulation's assumptions.
+
+ls:SimulationAssumptions-screenFailureRate a p:InputSource ;
+  p:givesInput ls:RunTrialSimulation-screenFailureRate ;
+  p:readFrom ls:screenFailureRate .
+
+ls:SimulationAssumptions-dropoutRate a p:InputSource ;
+  p:givesInput ls:RunTrialSimulation-dropoutRate ;
+  p:readFrom ls:dropoutRate .
+
+ls:SimulationAssumptions-controlResponse a p:InputSource ;
+  p:givesInput ls:RunTrialSimulation-controlResponse ;
+  p:readFrom ls:controlResponse .
+
+ls:SimulationAssumptions-treatmentResponse a p:InputSource ;
+  p:givesInput ls:RunTrialSimulation-treatmentResponse ;
+  p:readFrom ls:treatmentResponse .
+
+ls:SimulationAssumptions-saeRate a p:InputSource ;
+  p:givesInput ls:RunTrialSimulation-saeRate ;
+  p:readFrom ls:saeRate .
+
+ls:SimulationAssumptions a p:Skill ;
+  rdfs:label "Simulation assumptions" ;
+  rdfs:comment "Proposes the assumptions of a trial simulation, grounded in earlier simulations, the protocol and the design signals." ;
+  p:serves ls:RunTrialSimulation ;
+  p:proposesInput ls:RunTrialSimulation-screenFailureRate, ls:RunTrialSimulation-dropoutRate, ls:RunTrialSimulation-controlResponse,
+    ls:RunTrialSimulation-treatmentResponse, ls:RunTrialSimulation-saeRate ;
+  p:skillVersion "1.0" ;
+  p:owner ls:Biostatistician ;
+  p:approvedOn "2026-11-23"^^xsd:date ;
+  p:referenceProcedure p:ReuseRecordedInputs ;
+  p:resultsAlong ls:simulates ;
+  p:siblingsAlong ls:explores ;
+  p:latestBy ls:scenarioAsOf ;
+  p:inputSource ls:SimulationAssumptions-screenFailureRate, ls:SimulationAssumptions-dropoutRate, ls:SimulationAssumptions-controlResponse,
+    ls:SimulationAssumptions-treatmentResponse, ls:SimulationAssumptions-saeRate ;
+  p:instructions """You propose the assumptions for a trial simulation of one study scenario, as a biostatistician at this sponsor would.
+
+Start from the most recent trial simulation of this scenario. If it has none, start from the most recent simulation of another scenario of the same study concept or study. Read the scenario, its stated change, its protocol (eligibility, planned enrollment, planned visits), its site selection and the design signals raised on it.
+
+Then adjust each value for what this scenario changes. A wider or narrower eligibility moves the screen failure rate; a heavier visit schedule or a longer study moves the dropout rate; a different population or comparator moves the response rates; a different dose or exposure moves the rate of serious adverse events. Leave a value as it was when nothing in the records gives a reason to move it, and say so.
+
+Every value is a number: screen failure rate and dropout rate as percent of patients, response on control and on treatment as percent of patients, and serious adverse events per 100 patient-years. Keep each within what is plausible for the indication. Ground each value in the records you read and name them by identifier. Say which assumptions rest on weak evidence.
+
+Do not choose the outcome measures: the person chooses them.""" .
+
+# Recommend a study scenario: recommends one scenario of the set Compare study scenarios chooses among.
+
+ls:RecommendStudyScenario a p:Skill ;
+  rdfs:label "Recommend a study scenario" ;
+  rdfs:comment "Recommends which of the study scenarios being compared to select, and says what each gives up." ;
+  p:serves ls:CompareStudyScenarios ;
+  p:proposesInput ls:CompareStudyScenarios-chosen ;
+  p:recommends true ;
+  p:skillVersion "1.0" ;
+  p:owner ls:ClinicalOperationsLead ;
+  p:approvedOn "2026-11-23"^^xsd:date ;
+  p:referenceProcedure p:RankByComparison ;
+  p:instructions """You recommend which of the study scenarios being compared to select, as a clinical operations lead at this sponsor would.
+
+Read each scenario, its current forecasts and the outcome targets they are measured against, its study budget and its design signals, and the study concept they explore.
+
+Weigh each scenario's current forecasts against the agreed targets first and the proposed targets second. Then weigh the budget's fit against its ceiling, and the design signals raised and not yet resolved. Prefer a scenario that meets every agreed target. When none does, prefer the one that misses the fewest, and among those the one that misses by the least.
+
+Say in a few sentences why you recommend it, and name what each scenario gives up. When two are close, say what would change the recommendation. Name the records you rest on by identifier.
+
+Never write the decision's rationale: that is the person's own words.""" .

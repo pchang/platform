@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RenderHost } from '../renderer/Renderer';
-import type { AskResult, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
+import type { ViewNode, ViewSpec } from '../design-system/catalog';
+import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, ToDoItem } from '../data/client';
 import { useNotifications } from '../notifications/NotificationsProvider';
 import { useChat } from '../chat/ChatProvider';
 import { useObjectPanel } from '../objects/ObjectPanelProvider';
@@ -8,7 +9,13 @@ import { usePrincipal } from '../principal/PrincipalProvider';
 import { useProcesses } from '../processes/ProcessProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { BatchDialog } from './BatchDialog';
-import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
+import { SetDialog } from './SetDialog';
+import { ObjectFormDialog, type FormTarget } from './ObjectFormDialog';
+import { answeringView, buildAnswerView, buildSearchView, buildTodoView, buildTypeView, LIST_MODE_FIELD, loadingView, matchesFilter, objectEntries, objectList, TODO_FILTER_FIELD, type ListControls, type ListMode, type TodoFilter } from './orientView';
+import { backToHome, metricPage } from './homeView';
+import { sections } from './layout';
+import { RefusedError } from '../data/client';
+import { routeHref } from '../routing';
 
 /** Cards or a list: the person's choice, kept on the device for every object list (design system spec 4.3). */
 const LIST_MODE_KEY = 'lsh.listMode';
@@ -30,6 +37,7 @@ export function useObjectList(listed: ObjectSummary[]) {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [batch, setBatch] = useState<{ method: string; objects: ObjectSummary[] }>();
+  const [form, setForm] = useState<FormTarget>();
   const key = listed.map((o) => o.iri).join('|');
   useEffect(() => {
     const present = new Set(key.split('|'));
@@ -39,8 +47,31 @@ export function useObjectList(listed: ObjectSummary[]) {
     });
   }, [key]);
 
+  // The set methods the chosen objects qualify for together, asked of the gateway as the choice changes (platform spec 5.4).
+  const { client, principal } = usePrincipal();
+  const [setActions, setSetActions] = useState<{ method: string; label: string }[]>([]);
+  const selectedKey = [...selected].sort().join('|');
+  useEffect(() => {
+    const ids = selectedKey ? selectedKey.split('|') : [];
+    if (ids.length < 2) {
+      setSetActions([]);
+      return;
+    }
+    let cancelled = false;
+    client.setMethods(principal, ids).then(
+      (methods) => !cancelled && setSetActions(methods.map((m) => ({ method: m.method, label: m.label }))),
+      () => !cancelled && setSetActions([]),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, selectedKey]);
+
   // Cards with something chosen are in select mode, so the choice shows; Done ends it and clears the choice.
-  const controls: ListControls = useMemo(() => ({ mode, selecting: mode === 'cards' && (selecting || selected.size > 0), selected }), [mode, selecting, selected]);
+  const controls: ListControls = useMemo(
+    () => ({ mode, selecting: mode === 'cards' && (selecting || selected.size > 0), selected, setActions }),
+    [mode, selecting, selected, setActions],
+  );
   const host: RenderHost = {
     selection: {
       selecting: controls.selecting,
@@ -54,6 +85,11 @@ export function useObjectList(listed: ObjectSummary[]) {
         }),
     },
     onBatch: (method) => setBatch({ method, objects: listed.filter((o) => selected.has(o.iri)) }),
+    // A type's name links to that type's list (design system spec 4.3, Type links).
+    typeHref: (type) => routeHref({ name: 'type', type }),
+    // Creating and editing (platform spec 5.3): New and Add in the list bar, Edit in the object panel's header.
+    onCreate: (type, within) => setForm({ mode: 'create', type, ...(within ? { within } : {}) }),
+    onEdit: (object) => setForm({ mode: 'edit', object }),
   };
   const onIntent = (intent: string) => {
     if (intent === 'select') {
@@ -73,7 +109,26 @@ export function useObjectList(listed: ObjectSummary[]) {
     }
     return true;
   };
-  const dialog = batch && (
+  const done = (notice: ViewNode) => {
+    setBatch(undefined);
+    setSelected(new Set());
+    setSelecting(false);
+    processes.report(notice);
+  };
+  const isSet = batch && setActions.some((m) => m.method === batch.method);
+  const formDialog = form && (
+    <ObjectFormDialog
+      target={form}
+      onCancel={() => setForm(undefined)}
+      onDone={(notice) => {
+        setForm(undefined);
+        processes.report(notice);
+      }}
+    />
+  );
+  const dialog = batch && isSet ? (
+    <SetDialog objects={batch.objects} method={batch.method} onCancel={() => setBatch(undefined)} onDone={done} />
+  ) : batch && (
     <BatchDialog
       objects={batch.objects}
       method={batch.method}
@@ -86,7 +141,7 @@ export function useObjectList(listed: ObjectSummary[]) {
       }}
     />
   );
-  return { controls, host, onIntent, onField, dialog, values: { [LIST_MODE_FIELD]: mode } };
+  return { controls, host, onIntent, onField, dialog: (<>{dialog}{formDialog}</>), values: { [LIST_MODE_FIELD]: mode } };
 }
 
 const NONE: ObjectSummary[] = [];
@@ -155,11 +210,17 @@ export function TodoView() {
     const task = [...(item?.tasks ?? []), ...(item?.actions ?? [])].find((t) => t.method === method);
     return item && task && { object: item.object, method: task };
   });
+  const [home, setHome] = useState<HomeView>();
   const runs = useActiveRuns([processes.changes, changes]);
   useEffect(() => {
     let cancelled = false;
     setItems(undefined);
-    client.todo(principal).then((i) => !cancelled && setItems(i));
+    // Home: To do, and the person's world and keeping up beside it (platform spec 5.1, Home).
+    Promise.all([client.todo(principal), client.home(principal)]).then(([i, h]) => {
+      if (cancelled) return;
+      setHome(h);
+      setItems(i);
+    });
     return () => {
       cancelled = true;
     };
@@ -168,7 +229,7 @@ export function TodoView() {
   const today = useMemo(() => new Date(), [items]);
   const shown = useMemo(() => (items ?? []).filter((i) => matchesFilter(i, filter, today)).map((i) => i.object), [items, filter, today]);
   const list = useObjectList(shown);
-  const view = items ? buildTodoView(items, { name, role: roleLabel }, processes.notice, runs, { filter, today, controls: list.controls }) : loadingView;
+  const view = items ? buildTodoView(items, { name, role: roleLabel }, processes.notice, runs, { filter, today, controls: list.controls, ...(home ? { home } : {}) }) : loadingView;
   return (
     <>
       <ViewRenderer
@@ -180,7 +241,67 @@ export function TodoView() {
           onIntent: list.onIntent,
           onAction: (action) => openMethod(action.target, action.method),
           onOpen: panel.open, onAsk: chat.askAbout,
+          // A metric tile links to its objects' own page (platform spec 5.1, Home).
+          metricHref: (metric) => routeHref({ name: 'metric', metric }),
+          // A Where things stand row links to its type's list (design system spec 4.3, Home).
+          typeHref: (type) => routeHref({ name: 'type', type }),
         }}
+      />
+      {list.dialog}
+    </>
+  );
+}
+
+/** A metric's objects, on a page of their own (platform spec 5.1, Home, From a metric to its objects). */
+export function MetricView({ metric }: { metric: string }) {
+  const panel = useObjectPanel();
+  const chat = useChat();
+  const { client, principal } = usePrincipal();
+  const { changes } = useNotifications();
+  const processes = useProcesses();
+  const [loaded, setLoaded] = useState<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
+  const [refused, setRefused] = useState<string[]>();
+  const openMethod = useOpenMethod((object, method) => {
+    const summary = loaded?.objects.find((o) => o.iri === object);
+    const option = loaded?.methods.get(object)?.find((m) => m.method === method);
+    return summary && option && { object: summary, method: option };
+  });
+  const runs = useActiveRuns([metric, processes.changes, changes]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const found = await client.metricObjects(principal, metric);
+        const methods = new Map(await Promise.all(found.objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
+        if (!cancelled) setLoaded({ ...found, methods });
+      } catch (error) {
+        if (!cancelled) setRefused(error instanceof RefusedError ? error.reasons : [String(error)]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, metric, processes.changes, changes]);
+
+  const list = useObjectList(loaded?.objects ?? NONE);
+  const view: ViewSpec = refused
+    ? {
+        pattern: 'card-view',
+        because: 'The gateway refused to show the metric',
+        // Even when the metric cannot be shown, the way back is there.
+        root: sections([
+          backToHome,
+          { component: 'Alert', props: { variant: 'danger', title: 'This metric cannot be shown', isInline: true }, children: refused.map((r) => ({ component: 'Content', props: { label: r } })) },
+        ]),
+      }
+    : loaded
+      ? metricPage(loaded.metric, objectList(objectEntries(loaded.objects, { methods: loaded.methods, runs }), list.controls, loaded.metric.label), processes.notice)
+      : loadingView;
+  return (
+    <>
+      <ViewRenderer
+        view={view}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout, homeHref: routeHref({ name: 'todo' }) }}
       />
       {list.dialog}
     </>
@@ -193,7 +314,7 @@ export function TypeView({ type }: { type: string }) {
   const chat = useChat();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
-  const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]> }>();
+  const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]>; create?: { type: string; typeLabel: string; verb: 'New' } }>();
   const processes = useProcesses();
   const openMethod = useOpenMethod((object, method) => {
     const summary = loaded?.objects.find((o) => o.iri === object);
@@ -209,7 +330,8 @@ export function TypeView({ type }: { type: string }) {
       const entry = nav.flatMap((d) => d.types).find((t) => t.type === type);
       const objects = await client.find(principal, type);
       const methods = new Map(await Promise.all(objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
-      if (!cancelled) setLoaded({ pluralLabel: entry?.pluralLabel ?? type.split('#').pop()!, objects, methods });
+      const create = entry?.creatable ? { type, typeLabel: entry.label, verb: 'New' as const } : undefined;
+      if (!cancelled) setLoaded({ pluralLabel: entry?.pluralLabel ?? type.split('#').pop()!, objects, methods, ...(create ? { create } : {}) });
     })();
     return () => {
       cancelled = true;
@@ -217,12 +339,16 @@ export function TypeView({ type }: { type: string }) {
   }, [client, principal, type, processes.changes, changes]);
 
   const list = useObjectList(loaded?.objects ?? NONE);
-  const view = loaded ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: list.controls }) : loadingView;
+  // New, when the person may create objects of the type (platform spec 5.3).
+  const create = loaded?.create;
+  const view = loaded
+    ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: { ...list.controls, ...(create ? { create } : {}) } })
+    : loadingView;
   return (
     <>
       <ViewRenderer
         view={view}
-        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout }}
+        host={{ ...list.host, values: list.values, onField: list.onField, onIntent: list.onIntent, onAction: (action) => openMethod(action.target, action.method), onOpen: panel.open, onAsk: chat.askAbout, homeHref: routeHref({ name: 'todo' }) }}
       />
       {list.dialog}
     </>

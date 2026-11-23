@@ -51,7 +51,9 @@ describe('Compose a method (spec 3.4 and 5.4)', () => {
     await fresh.commit(chloe, 'SC-001', ls('CloseCase'));
     const flag = await fresh.compose(chloe, 'SC-003', ls('FlagDuplicate'));
     expect(flag).toMatchObject({ archetype: { label: 'Compare and decide' } });
-    expect(flag.inputs[0].choices?.map((c) => c.label)).toEqual(['SC-002', 'SC-004', 'SC-005', 'SC-006']);
+    // Each by its identifier, then its title.
+    expect(flag.inputs[0].choices?.map((c) => c.label.split(' · ')[0])).toEqual(['SC-002', 'SC-004', 'SC-005', 'SC-006']);
+    expect(flag.inputs[0].choices?.[0].label).toMatch(/^SC-002 · .+/);
   });
 
   it('refuses a method the role may not run', async () => {

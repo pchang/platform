@@ -53,6 +53,10 @@
             "type": "boolean",
             "description": "Not available. Prefer hiding methods that are not valid"
           },
+          "isAriaDisabled": {
+            "type": "boolean",
+            "description": "Not available, but still focusable, so a Tooltip around it can say why"
+          },
           "icon": {
             "enum": [
               "check-circle",
@@ -67,7 +71,8 @@
               "list",
               "outlined-check-square",
               "times",
-              "comments"
+              "comments",
+              "arrow-left"
             ],
             "description": "An icon from the catalog's Icon names, shown before the label, or alone in a plain button"
           },
@@ -311,7 +316,8 @@
               "list",
               "outlined-check-square",
               "times",
-              "comments"
+              "comments",
+              "arrow-left"
             ],
             "description": "Icon from @patternfly/react-icons"
           },
@@ -469,6 +475,11 @@
           "isDisabled": {
             "type": "boolean",
             "description": "Not available"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The value this option adds to its field when checked, such as an IRI"
           }
         },
         "required": [
@@ -478,7 +489,8 @@
       "children": null,
       "responsive": "Label wraps at narrow widths.",
       "accessibility": [
-        "Always has a visible label"
+        "Always has a visible label",
+        "Options in a set sit in a FormGroup with role group, whose label names the set"
       ],
       "examples": [
         {
@@ -951,6 +963,10 @@
           "isEditorial": {
             "type": "boolean",
             "description": "Larger, editorial style"
+          },
+          "isSubtle": {
+            "type": "boolean",
+            "description": "Quieter text, in the subtle text color: for a secondary fact such as an object's identifier beside its title (design system 4.3)"
           }
         },
         "required": [
@@ -1009,6 +1025,10 @@
               "secondary"
             ],
             "description": "Surface style"
+          },
+          "isHighlighted": {
+            "type": "boolean",
+            "description": "Outlined in the brand color, so it stands out in a row of cards without hiding the others, such as the one a skill recommends"
           },
           "isSelectable": {
             "type": "boolean",
@@ -1113,7 +1133,8 @@
       "children": {
         "accepts": [
           "Content",
-          "CardTitle"
+          "CardTitle",
+          "Flex"
         ]
       },
       "responsive": "Full width of its card.",
@@ -1335,9 +1356,10 @@
           "variant": {
             "enum": [
               "small",
-              "medium"
+              "medium",
+              "large"
             ],
-            "description": "Small for Confirm, medium for Fill in"
+            "description": "Small for Confirm, medium for Fill in, large to compare a set side by side"
           },
           "aria-label": {
             "type": "string",
@@ -2020,9 +2042,10 @@
           },
           "role": {
             "enum": [
-              "radiogroup"
+              "radiogroup",
+              "group"
             ],
-            "description": "Set for a group of radio buttons"
+            "description": "Set for a group of radio buttons, or group for a set of checkboxes"
           },
           "isInline": {
             "type": "boolean",
@@ -2038,13 +2061,14 @@
           "TextArea",
           "FormSelect",
           "Radio",
+          "Checkbox",
           "TextInput"
         ],
         "minItems": 1
       },
       "responsive": "Full width of its form. Inline radio buttons wrap onto new lines at narrow widths.",
       "accessibility": [
-        "The label names the control, or the group of radio buttons"
+        "The label names the control, the group of radio buttons, or the set of checkboxes"
       ],
       "examples": [
         {

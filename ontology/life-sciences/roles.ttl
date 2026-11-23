@@ -13,12 +13,16 @@
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
 <https://w3id.org/lsh-platform/life-sciences/roles> a owl:Ontology ;
   dcterms:title "LS&H life sciences roles" ;
-  rdfs:comment "The personas of domain spec section 6 and the external agent role." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.1.0> ;
+  rdfs:comment "The personas of domain spec section 6, the Design and Plan personas of section 3.4 and the external agent role." ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/roles/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ComputationalChemist a p:Role ;
+  p:watches ls:Metric-Candidates, ls:Metric-SimulationsAwaitingReview, ls:Metric-UnsignedExperiments ;
+  p:mayCreate ls:Compound, ls:Experiment, ls:AssayResult, ls:Formulation ;
+  p:mayEdit ls:Compound, ls:Experiment, ls:AssayResult, ls:Formulation ;
+  p:worksAcross ls:AssayResult ;
   p:worksIn ls:ScientificInnovation ;
   rdfs:label "Computational Chemist" ;
   rdfs:comment "Finds a better compound." ;
@@ -26,6 +30,10 @@ ls:ComputationalChemist a p:Role ;
   p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
 
 ls:ClinicalDataManager a p:Role ;
+  p:watches ls:Metric-OpenDataQueries, ls:Metric-RecordsAwaitingVerification, ls:Metric-EventsAwaitingReconciliation, ls:Metric-OverdueVisits ;
+  p:mayCreate ls:Study, ls:Site, ls:Protocol, ls:Visit ;
+  p:mayEdit ls:Study, ls:Site, ls:Protocol, ls:Visit ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Data Manager" ;
   rdfs:comment "Gets clean data to study lock." ;
@@ -34,6 +42,8 @@ ls:ClinicalDataManager a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchAssociate a p:Role ;
+  p:watches ls:Metric-RecordsAwaitingVerification, ls:Metric-EventsAwaitingVerification, ls:Metric-OpenDataQueries ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Research Associate" ;
   rdfs:comment "Monitors sites for the sponsor: verifies data against source documents and raises queries." ;
@@ -41,6 +51,10 @@ ls:ClinicalResearchAssociate a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchCoordinator a p:Role ;
+  p:watches ls:Metric-OverdueVisits, ls:Metric-EventsAwaitingVerification, ls:Metric-OpenDataQueries ;
+  p:mayCreate ls:Patient, ls:Visit ;
+  p:mayEdit ls:Patient, ls:Visit ;
+  p:worksAcross ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "Clinical Research Coordinator" ;
   rdfs:comment "Runs the study at a site: consents and randomizes patients, holds visits, records data and adverse events, and answers queries." ;
@@ -48,6 +62,10 @@ ls:ClinicalResearchCoordinator a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;
+  p:watches ls:Metric-SeriousCasesAwaitingAssessment, ls:Metric-SubmissionsDue, ls:Metric-SignalsAwaitingEvaluation ;
+  p:mayCreate ls:MedicalInquiry, ls:Product ;
+  p:mayEdit ls:MedicalInquiry, ls:Product ;
+  p:worksAcross ls:QualityEvent ;
   p:worksIn ls:SafetyAndRegulatory ;
   rdfs:label "Drug Safety Physician" ;
   rdfs:comment "Protects patients and meets reporting deadlines." ;
@@ -55,14 +73,315 @@ ls:DrugSafetyPhysician a p:Role ;
     ls:SendForReview, ls:Submit, ls:RunSignalDetection, ls:EvaluateSignal, ls:ConfirmSignal, ls:RefuteSignal, ls:UnblindPatient .
 
 ls:QualityLead a p:Role ;
+  p:watches ls:Metric-OpenQualityEvents, ls:Metric-HighRiskBatches, ls:Metric-QuarantinedBatches ;
+  p:mayCreate ls:Process, ls:Batch ;
+  p:mayEdit ls:Process, ls:Batch ;
+  p:worksAcross ls:QualityEvent, ls:CAPA ;
   p:worksIn ls:ScientificInnovation, ls:SafetyAndRegulatory ;
   rdfs:label "Quality Lead" ;
   rdfs:comment "Keeps every batch compliant." ;
   p:mayRun ls:ReleaseBatch, ls:QuarantineBatch, ls:OpenQualityEvent, ls:StartInvestigation, ls:AssignCAPA, ls:RecordCAPAOutcome, ls:CloseQualityEvent .
 
 ls:ExternalCROAgent a p:Role ;
+  p:watches ls:Metric-OpenDataQueries ;
+  p:worksAcross ls:DataQuery ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "External CRO agent" ;
   rdfs:comment "A contract research organization's agent. Answers and closes data queries at its own sites, through the gateway, under the same policy as people." ;
   p:mayRun ls:AnswerQuery, ls:CloseQuery ;
   p:mayNotRead ls:assignedArm .
+
+# Design and Plan (domain spec section 3.4). Their methods are specified in section 3.7 and not yet built,
+# so until then these roles read and navigate the design and plan graph and run only the protocol methods named here.
+
+ls:ClinicalScientist a p:Role ;
+  p:watches ls:Metric-ForecastsMissingTarget, ls:Metric-DesignSignalsRaised, ls:Metric-UntestableCriteria, ls:Metric-StudyConceptsInDraft ;
+  p:mayCreate ls:StudyConcept, ls:StudyScenario, ls:Protocol, ls:Population, ls:Objective, ls:Estimand, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment, ls:OutcomeTarget ;
+  p:mayEdit ls:StudyConcept, ls:StudyScenario, ls:Protocol, ls:Population, ls:Objective, ls:Estimand, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment, ls:OutcomeTarget ;
+  p:worksAcross ls:StudyConcept ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Scientist" ;
+  rdfs:comment "Shapes a design that answers the right question for the program: concepts, scenarios, objectives, criteria and assessments." ;
+  p:mayRun ls:AmendProtocol, ls:RunTrialSimulation, ls:CompareStudyScenarios ;
+  p:mayNotRead ls:assignedArm .
+
+ls:Biostatistician a p:Role ;
+  p:watches ls:Metric-IncompleteEstimands, ls:Metric-ForecastsMissingTarget ;
+  p:mayCreate ls:Objective, ls:Estimand, ls:Endpoint ;
+  p:mayEdit ls:Objective, ls:Estimand, ls:Endpoint ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Biostatistician" ;
+  rdfs:comment "Makes a design answer its question reliably and efficiently: estimands, sample size, allocation and the assumptions of trial simulations." ;
+  p:mayRun ls:RunTrialSimulation ;
+  p:mayNotRead ls:assignedArm .
+
+ls:MedicalWriter a p:Role ;
+  p:watches ls:Metric-ContributionsToConfirm, ls:Metric-ProtocolsInDraft ;
+  p:mayCreate ls:Protocol, ls:Contribution, ls:Population, ls:Objective, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment ;
+  p:mayEdit ls:Protocol, ls:Contribution, ls:Population, ls:Objective, ls:Endpoint, ls:EligibilityCriterion, ls:Arm, ls:Intervention, ls:PlannedVisit, ls:Assessment ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Medical Writer" ;
+  rdfs:comment "Accountable for one coherent, approvable protocol: confirms contributions, writes the narrative and sends each version for review." ;
+  p:mayRun ls:SendProtocolForReview ;
+  p:mayNotRead ls:assignedArm .
+
+ls:ClinicalOperationsLead a p:Role ;
+  p:watches ls:Metric-BudgetsOverCeiling, ls:Metric-ForecastsMissingTarget, ls:Metric-DesignSignalsRaised, ls:Metric-SitesStillProposed ;
+  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
+  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  rdfs:label "Clinical Operations Lead" ;
+  rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
+  p:mayRun ls:RunTrialSimulation, ls:CompareStudyScenarios ;
+  p:mayNotRead ls:assignedArm .
+
+ls:PortfolioStrategist a p:Role ;
+  p:watches ls:Metric-OpportunitiesExploring, ls:Metric-OpportunitiesAwaitingDecision, ls:Metric-ForecastsMissingTarget ;
+  p:mayCreate ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:OutcomeTarget ;
+  p:mayEdit ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:OutcomeTarget ;
+  p:worksIn ls:DesignAndPlan, ls:ScientificInnovation ;
+  rdfs:label "Portfolio Strategist" ;
+  rdfs:comment "Recommends which assets, indications and development options the organization should fund, from discovery's candidates and from simulated chance of success, time and cost." ;
+  p:mayNotRead ls:Patient, ls:Visit, ls:DataRecord, ls:DataQuery, ls:AdverseEvent .
+
+ls:ProgramLeader a p:Role ;
+  p:watches ls:Metric-StudyConceptsInDraft, ls:Metric-OpportunitiesAwaitingDecision, ls:Metric-ForecastsMissingTarget ;
+  p:mayCreate ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:StudyConcept, ls:OutcomeTarget ;
+  p:mayEdit ls:Program, ls:Opportunity, ls:DevelopmentOption, ls:TargetProductProfile, ls:StudyConcept, ls:OutcomeTarget ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  p:worksAcross ls:StudyConcept ;
+  p:mayRun ls:CompareStudyScenarios ;
+  rdfs:label "Program Leader" ;
+  rdfs:comment "Leads one asset's development: its target product profile, its development options and the study concepts it puts forward." ;
+  p:mayNotRead ls:assignedArm .
+
+# Home metrics (platform spec 5.1, Home; domain spec section 6, Home metrics).
+
+ls:Metric-OpenDataQueries a p:Metric ;
+  rdfs:label "Open data queries" ;
+  rdfs:comment "Data queries still open." ;
+  p:metricOf ls:DataQuery ;
+  p:inState lst:DataQueryStatus-open ;
+  p:watchAt 3 ;
+  p:riskAt 6 .
+
+ls:Metric-RecordsAwaitingVerification a p:Metric ;
+  rdfs:label "Data records awaiting verification" ;
+  rdfs:comment "Data records entered and not yet verified against their source." ;
+  p:metricOf ls:DataRecord ;
+  p:inState lst:DataRecordEntry-entered ;
+  p:watchAt 10 ;
+  p:riskAt 20 .
+
+ls:Metric-EventsAwaitingReconciliation a p:Metric ;
+  rdfs:label "Adverse events awaiting reconciliation" ;
+  rdfs:comment "Adverse events reported to safety and not yet reconciled with their cases." ;
+  p:metricOf ls:AdverseEvent ;
+  p:inState lst:AdverseEventReporting-reportedToSafety ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-EventsAwaitingVerification a p:Metric ;
+  rdfs:label "Adverse events awaiting verification" ;
+  rdfs:comment "Adverse events entered and not yet verified." ;
+  p:metricOf ls:AdverseEvent ;
+  p:inState lst:AdverseEventEntry-entered ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-OverdueVisits a p:Metric ;
+  rdfs:label "Overdue visits" ;
+  rdfs:comment "Visits still scheduled after the date they were scheduled for." ;
+  p:metricOf ls:Visit ;
+  p:inState lst:VisitStatus-scheduled ;
+  p:pastDue ls:scheduledOn ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-SeriousCasesAwaitingAssessment a p:Metric ;
+  rdfs:label "Serious cases awaiting assessment" ;
+  rdfs:comment "Serious safety cases received or triaged, not yet assessed." ;
+  p:metricOf ls:SafetyCase ;
+  p:inState lst:SafetyCaseSeriousness-serious, lst:SafetyCaseWorkflow-received, lst:SafetyCaseWorkflow-triaged ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-SubmissionsDue a p:Metric ;
+  rdfs:label "Submissions due soon or overdue" ;
+  rdfs:comment "Submissions within 3 days of their deadline or past it." ;
+  p:metricOf ls:Submission ;
+  p:inState lst:SubmissionDeadline-dueSoon, lst:SubmissionDeadline-overdue ;
+  p:watchAt 1 ;
+  p:riskAt 2 .
+
+ls:Metric-SignalsAwaitingEvaluation a p:Metric ;
+  rdfs:label "Signals awaiting evaluation" ;
+  rdfs:comment "Signals detected or under evaluation." ;
+  p:metricOf ls:Signal ;
+  p:inState lst:SignalStatus-detected, lst:SignalStatus-underEvaluation ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-OpenQualityEvents a p:Metric ;
+  rdfs:label "Open quality events" ;
+  rdfs:comment "Quality events not yet closed." ;
+  p:metricOf ls:QualityEvent ;
+  p:inState lst:QualityEventStatus-open, lst:QualityEventStatus-investigating, lst:QualityEventStatus-capaAssigned ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-HighRiskBatches a p:Metric ;
+  rdfs:label "Batches at high deviation risk" ;
+  rdfs:comment "Batches whose deviation risk is high." ;
+  p:metricOf ls:Batch ;
+  p:inState lst:BatchDeviationRisk-high ;
+  p:watchAt 1 ;
+  p:riskAt 2 .
+
+ls:Metric-QuarantinedBatches a p:Metric ;
+  rdfs:label "Quarantined batches" ;
+  rdfs:comment "Batches held in quarantine." ;
+  p:metricOf ls:Batch ;
+  p:inState lst:BatchQuality-quarantined ;
+  p:watchAt 1 ;
+  p:riskAt 2 .
+
+ls:Metric-Candidates a p:Metric ;
+  rdfs:label "Candidates" ;
+  rdfs:comment "Compounds promoted to candidate." ;
+  p:metricOf ls:Compound ;
+  p:inState lst:CompoundStage-candidate .
+
+ls:Metric-SimulationsAwaitingReview a p:Metric ;
+  rdfs:label "Simulations awaiting review" ;
+  rdfs:comment "Complete simulations not yet reviewed." ;
+  p:metricOf ls:Simulation ;
+  p:inState lst:SimulationReview-unreviewed ;
+  p:watchAt 2 ;
+  p:riskAt 5 .
+
+ls:Metric-UnsignedExperiments a p:Metric ;
+  rdfs:label "Unsigned experiments" ;
+  rdfs:comment "Experiments not yet signed." ;
+  p:metricOf ls:Experiment ;
+  p:inState lst:ExperimentSignOff-unsigned ;
+  p:watchAt 2 ;
+  p:riskAt 5 .
+
+ls:Metric-OpportunitiesExploring a p:Metric ;
+  rdfs:label "Opportunities being explored" ;
+  rdfs:comment "Opportunities still being explored." ;
+  p:metricOf ls:Opportunity ;
+  p:inState lst:OpportunityStatus-exploring .
+
+ls:Metric-OpportunitiesAwaitingDecision a p:Metric ;
+  rdfs:label "Opportunities awaiting a decision" ;
+  rdfs:comment "Opportunities recommended and not yet pursued, parked or stopped." ;
+  p:metricOf ls:Opportunity ;
+  p:inState lst:OpportunityStatus-recommended ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-ForecastsMissingTarget a p:Metric ;
+  rdfs:label "Forecasts missing their target" ;
+  rdfs:comment "Current forecasts that miss their outcome target." ;
+  p:metricOf ls:Forecast ;
+  p:inState lst:ForecastCurrency-current, lst:ForecastAgainstTarget-missed ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-StudyConceptsInDraft a p:Metric ;
+  rdfs:label "Study concepts in draft" ;
+  rdfs:comment "Study concepts still being drafted." ;
+  p:metricOf ls:StudyConcept ;
+  p:inState lst:StudyConceptStatus-draft .
+
+ls:Metric-DesignSignalsRaised a p:Metric ;
+  rdfs:label "Design signals raised" ;
+  rdfs:comment "Design signals not yet acknowledged or dismissed." ;
+  p:metricOf ls:DesignSignal ;
+  p:inState lst:DesignSignalStatus-raised ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-UntestableCriteria a p:Metric ;
+  rdfs:label "Criteria that cannot be tested yet" ;
+  rdfs:comment "Eligibility criteria that do not yet name the data that tests them." ;
+  p:metricOf ls:EligibilityCriterion ;
+  p:inState lst:EligibilityCriterionTestability-needsData ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-IncompleteEstimands a p:Metric ;
+  rdfs:label "Incomplete estimands" ;
+  rdfs:comment "Estimands missing some of their five attributes." ;
+  p:metricOf ls:Estimand ;
+  p:inState lst:EstimandCompleteness-incomplete ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-ContributionsToConfirm a p:Metric ;
+  rdfs:label "Contributions to confirm" ;
+  rdfs:comment "Contributions whose mapping to protocol objects is only proposed." ;
+  p:metricOf ls:Contribution ;
+  p:inState lst:ContributionMapping-proposed ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-ProtocolsInDraft a p:Metric ;
+  rdfs:label "Protocols in draft" ;
+  rdfs:comment "Protocol versions still in draft." ;
+  p:metricOf ls:Protocol ;
+  p:inState lst:ProtocolStatus-draft .
+
+ls:Metric-BudgetsOverCeiling a p:Metric ;
+  rdfs:label "Budgets over their ceiling" ;
+  rdfs:comment "Study budgets whose forecast total is over their ceiling." ;
+  p:metricOf ls:StudyBudget ;
+  p:inState lst:StudyBudgetFit-overCeiling ;
+  p:watchAt 1 ;
+  p:riskAt 2 .
+
+ls:Metric-SitesStillProposed a p:Metric ;
+  rdfs:label "Sites still proposed" ;
+  rdfs:comment "Proposed sites not yet shortlisted or rejected." ;
+  p:metricOf ls:ProposedSite ;
+  p:inState lst:ProposedSiteStatus-proposed .
+
+# Structure evolution (platform spec 3.7; domain spec section 6): the Structure Steward's metrics, and the roles that own
+# parts of the structure, as the roles that create and edit their types, approve or reject change sets to them.
+
+p:StructureSteward p:watches ls:Metric-ChangeSetsAwaitingApproval, ls:Metric-DeprecatedValues, ls:Metric-ChangeSetsApplied .
+
+ls:Metric-ChangeSetsAwaitingApproval a p:Metric ;
+  rdfs:label "Change sets awaiting approval" ;
+  rdfs:comment "Change sets proposed and not yet approved or rejected." ;
+  p:metricOf p:ChangeSet ;
+  p:inState p:ChangeSetStatus-proposed ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-DeprecatedValues a p:Metric ;
+  rdfs:label "Deprecated values" ;
+  rdfs:comment "Values deprecated in favor of another, kept so that history still reads." ;
+  p:metricOf skos:Concept ;
+  p:inState p:ValueStatus-deprecated ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-ChangeSetsApplied a p:Metric ;
+  rdfs:label "Change sets applied" ;
+  rdfs:comment "Change sets applied and in use, not rolled back." ;
+  p:metricOf p:ChangeSet ;
+  p:inState p:ChangeSetStatus-applied .
+ls:ComputationalChemist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalDataManager p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalResearchCoordinator p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:DrugSafetyPhysician p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:QualityLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalScientist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:Biostatistician p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:MedicalWriter p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalOperationsLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:PortfolioStrategist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ProgramLeader p:mayRun p:ApproveChangeSet, p:RejectChangeSet .

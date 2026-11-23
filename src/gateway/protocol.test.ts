@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { NS } from '../ontology/ontology';
 import { withSeed } from './node';
 
 // Protocol, added to the life sciences ontology and seed alone (domain spec 3.1 and 3.3): no code knows it. These run it
 // through the gateway as any other type: its relationships, its methods, a signed approval and an amendment.
+
+// Several validated commits in one test: allow for the seed's size, as the other gateway tests do.
+vi.setConfig({ testTimeout: 30_000 });
 
 const ls = (n: string) => `${NS.ls}${n}`;
 const ben = { person: `${NS.d}person-ben`, role: ls('ClinicalDataManager') };

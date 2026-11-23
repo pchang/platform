@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,6 +52,28 @@ describe('AppMasthead', () => {
     render(<Masthead />);
     const logo = await screen.findByRole('link', { name: product.name });
     expect(logo).toHaveAttribute('href', product.homeHref);
+  });
+
+  it('shows the brand’s logo as one image named for the whole product, with its reversed copy for dark mode', async () => {
+    const { container } = render(<Masthead />);
+    const link = await screen.findByRole('link', { name: product.name });
+    const images = [...link.querySelectorAll('img.app-brand__logo')];
+    expect(images.map((i) => i.getAttribute('src'))).toEqual([`/${product.logo.light}`, `/${product.logo.dark}`]);
+    // Both pictures are decorative, so the link's name never depends on which copy is showing (light or dark).
+    expect(images.map((i) => i.getAttribute('alt'))).toEqual(['', '']);
+    expect(link).toHaveAttribute('aria-label', product.name);
+    expect(container.querySelector('.app-masthead__name')).toBeNull();
+    // The link reads once, as the product name.
+    expect(screen.getAllByRole('link', { name: product.name })).toHaveLength(1);
+  });
+
+  it('falls back to the product name as text when a brand file cannot be loaded, never a broken image', async () => {
+    const { container } = render(<Masthead />);
+    const link = await screen.findByRole('link', { name: product.name });
+    fireEvent.error(link.querySelector('img.app-brand__logo')!);
+    expect(container.querySelectorAll('.app-brand')).toHaveLength(0);
+    expect(container.querySelector('.app-masthead__name')).toHaveTextContent(product.name);
+    expect(await screen.findByRole('link', { name: product.name })).toHaveAttribute('href', product.homeHref);
   });
 
   it('draws the menu button as two lines, and says whether the sidebar is open', async () => {

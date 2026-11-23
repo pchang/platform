@@ -1,6 +1,7 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
-import { daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, runLabels, runnable, stack, stateLabels, text, type ListControls } from './orientView';
+import { group, sections } from './layout';
+import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -58,18 +59,18 @@ const dl = (rows: [string, ViewNode[]][]): ViewNode => ({
 });
 
 const heading = (label: string): ViewNode => ({ component: 'Title', props: { label, headingLevel: 'h3', size: 'md' } });
-/** A section of the overview: its heading, then what it holds, with the standard gutter between. */
-const part = (title: string, body: ViewNode): ViewNode[] => [stack([[heading(title)], [body]])];
+/** A section of the overview: its heading, then what it holds, close together (design system spec 4.5). */
+const part = (title: string, body: ViewNode): ViewNode => group([heading(title), body]);
 
 function overview(view: ObjectView, today: Date): ViewNode {
-  const sections: ViewNode[][] = [];
+  const parts: ViewNode[] = [];
   const properties = Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b));
-  sections.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
+  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
 
   const linked = view.links.filter((end) => !isTab(end));
   if (linked.length) {
     const named = names(linked, view.type, (end) => end.typeLabel);
-    sections.push(
+    parts.push(
       part(
         'Linked',
         dl(
@@ -94,8 +95,8 @@ function overview(view: ObjectView, today: Date): ViewNode {
     'Last change',
     [text(view.lastChange ? `${view.lastChange.methodLabel} by ${view.lastChange.personName}, ${new Date(view.lastChange.at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` : 'None since it was recorded')],
   ]);
-  sections.push(part('About', dl(about)));
-  return stack(sections);
+  parts.push(part('About', dl(about)));
+  return sections(parts);
 }
 
 /** A tab's objects as an object list like any other (design system spec 4.4 and 4.3): the list bar, then cards or a list. */
@@ -106,8 +107,10 @@ function section(
   options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; controls?: ListControls },
 ): ViewNode {
   const sentence = `This ${inText(view.typeLabel)} ${end.label} ${end.objects.length === 1 ? `this ${inText(end.typeLabel)}` : `these ${inText(end.pluralLabel)}`}.`;
-  if (!end.objects.length) return stack([[text(`No ${inText(end.pluralLabel)} yet.`)]]);
-  return stack([[text(sentence)], ...objectList(objectEntries(end.objects, options), options.controls ?? NO_CONTROLS, name, 'h3')]);
+  // Add creates a new object inside this one, when the person may (platform spec 5.3; design system spec 4.3).
+  const create = end.canAdd ? { type: end.type, typeLabel: end.typeLabel, within: view.iri, verb: 'Add' as const } : undefined;
+  if (!end.objects.length) return group([text(`No ${inText(end.pluralLabel)} yet.`), ...(create ? [createButton(create)] : [])], 'gapMd');
+  return group([text(sentence), ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')], 'gapMd');
 }
 
 /**
@@ -116,7 +119,7 @@ function section(
  */
 export function buildObjectView(
   view: ObjectView,
-  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date; controls?: ListControls } = {},
+  options: { methods?: MethodOption[]; related?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; today?: Date; controls?: ListControls; editable?: boolean } = {},
 ): ViewSpec {
   const today = options.today ?? new Date();
   const status: ViewNode[] = [];
@@ -128,12 +131,21 @@ export function buildObjectView(
   status.push(...runLabels(view, options.runs ?? []));
 
   const header: ViewNode[][] = [
-    [text(`${view.identifier} · ${view.typeLabel}`, 'small'), { component: 'Title', props: { label: view.title, headingLevel: 'h2', size: '2xl' } }],
+    [
+      // The type's name, a link to its list, then the identifier, quiet (design system spec 4.4).
+      { component: 'Flex', props: { gap: { default: 'gapXs' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsBaseline' } }, children: [typeLink(view.type, view.typeLabel), quietId(`· ${view.identifier}`)] },
+      { component: 'Title', props: { label: view.title, headingLevel: 'h2', size: '2xl' } },
+    ],
   ];
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);
   const available = (options.methods ?? []).filter((m) => m.available);
-  if (available.length) header.push(...runnable(available, view.iri, false));
+  const actions = runnable(available, view.iri, false);
+  // Edit follows the methods, when the person may edit the object now (platform spec 5.3; design system spec 4.4).
+  const edit: ViewNode = { component: 'Button', props: { label: 'Edit', variant: 'secondary', size: 'sm' }, edits: view.iri };
+  if (options.editable && actions.length && actions[0][0].component === 'Flex') actions[0][0] = { ...actions[0][0], children: [...(actions[0][0].children ?? []), edit] };
+  else if (options.editable) actions.unshift([{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' } }, children: [edit] }]);
+  header.push(...actions);
 
   const tabs = view.links.filter(isTab);
   const named = names(tabs, view.type, (end) => end.pluralLabel);
@@ -149,10 +161,13 @@ export function buildObjectView(
   return {
     pattern: 'object',
     because: `${view.identifier}, as the person may read it: its header, overview and the objects at each relationship end its type has in the ontology`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
-      [stack(header)],
-      [{ component: 'Tabs', props: { 'aria-label': `${view.identifier} sections` }, field: OBJECT_TAB_FIELD, children: tabNodes }],
-    ]),
+    root: group(
+      [
+        ...(options.notice ? [options.notice] : []),
+        stack(header),
+        { component: 'Tabs', props: { 'aria-label': `${view.identifier} sections` }, field: OBJECT_TAB_FIELD, children: tabNodes },
+      ],
+      'gapLg',
+    ),
   };
 }

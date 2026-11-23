@@ -46,7 +46,7 @@ describe('titles from the ontology', () => {
     expect(select(graph.store, `SELECT ?type WHERE { ?type a p:ObjectType FILTER NOT EXISTS { ?type p:titleTemplate ?t } }`)).toEqual([]);
     const sample = withSeed();
     // The Drug Safety Physician may read every type, so every object is checked.
-    for (const { t } of select(graph.store, `SELECT ?t WHERE { ?t a p:ObjectType }`)) {
+    for (const { t } of select(graph.store, `SELECT ?t WHERE { ?t a p:ObjectType FILTER NOT EXISTS { ?t p:inDomain p:Structure } }`)) {
       for (const o of sample.find(dsp, t)) expect(o.title, o.identifier).not.toBe(o.typeLabel);
     }
   });

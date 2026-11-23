@@ -22,6 +22,8 @@ export interface ProcessSnapshot {
   run?: string;
   /** The draft a Review a draft process is deciding on. */
   draft?: string;
+  /** The skill's proposal the values started from (platform spec 3.3, Skills). */
+  proposal?: string;
   /** Whether the person was editing the draft. */
   editing?: boolean;
   progress: Progress;

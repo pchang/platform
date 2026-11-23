@@ -2,6 +2,7 @@ import { Divider, MenuToggle, Select, SelectGroup, SelectList, SelectOption } fr
 import UserIcon from '@patternfly/react-icons/dist/esm/icons/user-icon';
 import { useRef, useState } from 'react';
 import { usePrincipal } from '../principal/PrincipalProvider';
+import { routeHref } from '../routing';
 
 /**
  * Profile (design system spec 4.1): who you are and the role you act in, the signed-in account and Sign out where people
@@ -21,6 +22,7 @@ export function ProfileMenu() {
 
   return (
     <Select
+      className="app-header-menu"
       isOpen={isOpen}
       onOpenChange={setIsOpen}
       selected={key(principal.person, principal.role)}
@@ -30,8 +32,11 @@ export function ProfileMenu() {
           return;
         }
         const [person, role] = String(value).split(' ');
-        setPrincipal({ person, role });
         setIsOpen(false);
+        if (person === principal.person && role === principal.role) return;
+        setPrincipal({ person, role });
+        // Someone else, or another role, starts on their own Home: the page before may not apply to them (design system spec 4.1, Profile).
+        window.location.hash = routeHref({ name: 'todo' });
       }}
       popperProps={{ position: 'right', preventOverflow: true, maxWidth: 'calc(100vw - 2 * var(--pf-t--global--spacer--md))' }}
       toggle={{

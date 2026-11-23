@@ -3,7 +3,7 @@ import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import type { CommitResult, MethodComposition, MethodOption, ObjectSummary } from '../data/client';
 import { batchModeOf, batchNotice, buildBatchView, buildSequentialBatchView, countOf, inputsFor, isComplete, type ObjectPreview } from './batchView';
-import { buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientView';
+import { askAboutChosen, buildTypeView, commonMethods, type ListControls, type ListEntry } from './orientView';
 
 // Object lists in cards or a list, the list bar, and batch actions (design system spec 4.3; platform spec 5.4).
 
@@ -45,7 +45,7 @@ describe('the list bar (design system spec 4.3)', () => {
       ['Select all (3)', 'select-all'],
       ['Select none', 'clear-selection'],
     ]);
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Done']);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Ask about the 2 selected', 'Done']);
     // Once selecting, the card bar is the list bar, with Done to end select mode.
     const listBar = find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) }).root, (n) => n.component === 'Toolbar')[0];
     const dropDone = (n: ViewNode): ViewNode => ({
@@ -63,10 +63,48 @@ describe('the list bar (design system spec 4.3)', () => {
     expect(batch.map((n) => [n.batch, (n.props as { label: string }).label])).toEqual([['urn:Triage', 'Triage']]);
   });
 
-  it('says when no method applies to all the chosen objects', () => {
+  it('begins a type’s list with a Back to Home link above the heading', () => {
+    const json = JSON.stringify(buildTypeView('Safety Cases', cases, { methods, controls: controls() }));
+    expect(json).toContain('"label":"Back to Home","variant":"link","icon":"arrow-left","isInline":true},"goes":"home"');
+    expect(json.indexOf('Back to Home')).toBeLessThan(json.indexOf('"label":"Safety Cases"'));
+  });
+
+  it('leaves New out of the bar while objects are chosen, and keeps it otherwise (design system spec 4.3)', () => {
+    const create = { type: 'urn:SC', typeLabel: 'Safety Case', verb: 'New' as const };
+    const offered = (selected: string[]) => JSON.stringify(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(selected), create }) })).includes('"creates"');
+    expect(offered([])).toBe(true);
+    expect(offered(['urn:SC-4'])).toBe(false);
+  });
+
+  it('offers only Ask when no method applies to all the chosen objects, and says nothing about it', () => {
     const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ selecting: true, selected: new Set(['urn:SC-4', 'urn:SC-6']) }) });
     expect(find(view.root, (n) => Boolean(n.batch))).toEqual([]);
-    expect(JSON.stringify(view)).toContain('No action applies to all of them.');
+    expect(JSON.stringify(view)).not.toContain('No action applies');
+    // Ask is still there, as the free-text way forward when nothing anticipated fits (design system spec 4.3).
+    expect(find(view.root, (n) => Boolean(n.asks) && Array.isArray(n.asks)).map((n) => n.asks)).toEqual([['urn:SC-4', 'urn:SC-6']]);
+  });
+
+  it('ends the actions for what is chosen with Ask about the chosen, after the set and batch actions', () => {
+    const view = buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']), setActions: [{ method: 'urn:Compare', label: 'Compare' }] }) });
+    expect(validateView(view).errors).toEqual([]);
+    const bar = find(view.root, (n) => n.component === 'Toolbar')[0];
+    const start = (bar.children![0].children![0].children ?? []).map((item) => JSON.stringify(item));
+    const at = (needle: string) => start.findIndex((i) => i.includes(needle));
+    expect(at('"batch":"urn:Compare"')).toBeLessThan(at('"batch":"urn:Triage"'));
+    expect(at('"batch":"urn:Triage"')).toBeLessThan(at('Ask about the 2 selected'));
+    expect(at('Ask about the 2 selected')).toBe(start.length - 1);
+    const ask = find(bar, (n) => Boolean(n.asks))[0];
+    expect(ask).toMatchObject({ component: 'Button', props: { icon: 'comments', 'aria-label': 'Ask about the 2 selected' }, asks: ['urn:SC-4', 'urn:SC-5'] });
+    // Nothing chosen, nothing to ask about.
+    expect(find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list' }) }).root, (n) => Boolean(n.asks) && Array.isArray(n.asks))).toEqual([]);
+  });
+
+  it('asks about at most ten chosen objects, and says why not with more', () => {
+    expect(askAboutChosen(Array.from({ length: 10 }, (_, i) => `urn:o${i}`))).toMatchObject({ component: 'Tooltip', props: { content: 'Ask about the 10 selected' } });
+    const tooMany = askAboutChosen(Array.from({ length: 11 }, (_, i) => `urn:o${i}`));
+    expect(tooMany).toMatchObject({ component: 'Tooltip', props: { content: 'Choose ten or fewer to ask about them.' } });
+    expect(tooMany.children![0]).toMatchObject({ props: { isAriaDisabled: true } });
+    expect(tooMany.children![0].asks).toBeUndefined();
   });
 
   it('works out the common methods from what each chosen object has available now', () => {
@@ -94,20 +132,22 @@ describe('the list view (design system spec 4.3)', () => {
   it('heads a column for each state dimension, with the values in plain text, and leaves out Type when all are one type', () => {
     const head = find(view.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string; screenReaderText?: string }).label ?? `(${(n.props as { screenReaderText: string }).screenReaderText})`);
     // No object needs attention here, so there is no Attention column.
-    expect(head).toEqual(['Identifier', 'Title', 'Workflow', '(Actions)']);
+    expect(head).toEqual(['Title', 'Workflow', '(Actions)']);
     const [row] = bodyRows(view.root);
-    expect((row.children ?? []).map(cellText)).toEqual(['SC-4', 'Case SC-4', 'received', 'Triage ']);
+    // The identifier has no column: it follows the title on the same line, quiet.
+    expect((row.children ?? []).map(cellText)).toEqual(['Case SC-4 SC-4', 'received', 'Triage ']);
+    expect(JSON.stringify(row.children![0])).toContain('"label":"SC-4","component":"small","isSubtle":true');
     // Every cell keeps to one line; the actions column fits its content.
-    expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'nowrap', 'fitContent']);
+    expect(find(row, (n) => n.component === 'Td').map((n) => (n.props as { modifier?: string }).modifier)).toEqual(['nowrap', 'nowrap', 'fitContent']);
   });
 
   it('adds an Attention column for deadlines, urgency and runs once any object has one', () => {
     const runs = [{ run: 'urn:r', method: 'urn:Detect', methodLabel: 'Run signal detection', object: 'urn:SC-5', objectIdentifier: 'SC-5', status: 'running' as const, startedAt: '', startedBy: '', startedByName: '' }];
     const withRun = buildTypeView('Safety Cases', cases, { methods, runs: runs as never, controls: controls({ mode: 'list' }) });
     const head = find(withRun.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
-    expect(head).toEqual(['Identifier', 'Title', 'Attention', 'Workflow', undefined]);
+    expect(head).toEqual(['Title', 'Attention', 'Workflow', undefined]);
     const [, second] = bodyRows(withRun.root);
-    expect(cellText((second.children ?? [])[2])).toBe('Run signal detection: running');
+    expect(cellText((second.children ?? [])[1])).toBe('Run signal detection: running');
   });
 
   it('puts the lifecycle first among the state columns, adds Type for mixed types, and leaves cells empty where a type has no such dimension', () => {
@@ -119,9 +159,12 @@ describe('the list view (design system spec 4.3)', () => {
     const table = buildTypeView('Mixed', mixed, { controls: controls({ mode: 'list' }) });
     expect(validateView(table).errors).toEqual([]);
     const head = find(table.root, (n) => n.component === 'Th').map((n) => (n.props as { label?: string }).label);
-    expect(head).toEqual(['Identifier', 'Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
-    const [, sub] = bodyRows(table.root);
-    expect((sub.children ?? []).map(cellText).slice(0, 7)).toEqual(['SUB-1', 'Case SUB-1', 'Submission', '', '', 'draft', 'on track']);
+    expect(head).toEqual(['Title', 'Type', 'Workflow', 'Causality', 'Status', 'Deadline', undefined]);
+    const [first, sub] = bodyRows(table.root);
+    expect((sub.children ?? []).map(cellText).slice(0, 6)).toEqual(['Case SUB-1 SUB-1', 'Submission', '', '', 'draft', 'on track']);
+    // The Type column is plain text: a row stands for its object, so nothing in it leads elsewhere (design system spec 4.3, Type links).
+    expect(JSON.stringify(table.root)).not.toContain('"lists"');
+    expect(first).toBeDefined();
   });
 
   // Ask about this comes after the methods, at the right end of the actions column, so it lines up down the list (design system spec 4.1).

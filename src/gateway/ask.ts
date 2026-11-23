@@ -79,6 +79,39 @@ export interface AskModel {
   answer(request: AskRequest): Promise<ModelAnswer>;
 }
 
+/**
+ * Drafted in words (platform spec 3.7): the one tool that writes, offered only to people who may create change sets. It
+ * drafts a change set and nothing else; a person proposes it, its owners approve it, and only then is it applied.
+ */
+export const DRAFT_CHANGE_TOOL: AskTool = {
+  name: 'draft_change_set',
+  description:
+    'Drafts a change to the structure (the ontology and its value sets) as a change set, when the person asks for one. It changes nothing in use: the draft waits for the person to propose it and for its owners to approve it. Find the value sets and values first with find_objects (types "Value Set" and "Value"), and use their identifiers, such as StudyScenarioStatus or StudyScenarioStatus-setAside. Kinds: "add value" (value_set and label), "relabel" (value and label), "deprecate" (value and replacement, another value of the same set). Leave a field empty when the kind does not use it. Returns the draft with its impact: what changes, objects that move, objects that would no longer conform, and what refers to it. Tell the person the draft\'s identifier and the impact.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      summary: { type: 'string', description: 'What the change set changes and why, in one sentence for the people who approve it.' },
+      operations: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            kind: { type: 'string', enum: ['add value', 'relabel', 'deprecate'] },
+            value_set: { type: 'string', description: 'For add value: the value set\'s identifier.' },
+            value: { type: 'string', description: 'For relabel or deprecate: the value\'s identifier.' },
+            label: { type: 'string', description: 'For add value or relabel: how the value reads, in lower case unless a name.' },
+            replacement: { type: 'string', description: 'For deprecate: the identifier of the value that replaces it.' },
+          },
+          required: ['kind', 'value_set', 'value', 'label', 'replacement'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['summary', 'operations'],
+    additionalProperties: false,
+  },
+};
+
 /** The tool the model ends with. Defined here so every model ends the same way. */
 export const ANSWER_TOOL: AskTool = {
   name: 'give_answer',

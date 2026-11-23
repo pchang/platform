@@ -23,6 +23,19 @@ import { createMcpServer } from './mcp';
  *   POST /api/objects/:id/methods/:method/preview   preview a method; body { "inputs": { ... } }
  *   POST /api/objects/:id/methods/:method    commit a method; body { "inputs": { ... }, "signature": { "typedName": "..." }, "draft": { "draft": "...", "text": "..." } }
  *   POST /api/objects/:id/methods/:method/draft     a connected model drafts the method; recorded, changes nothing
+ *   GET  /api/types/:type/form?parent=:id    the form to create an object of a type, inside a parent when given
+ *   POST /api/types/:type/preview            preview a create; body { "values": { ... }, "parent": "..." }
+ *   POST /api/types/:type                    create an object; body { "values": { ... }, "parent": "..." }
+ *   GET  /api/objects/:id/editable           why the object cannot be edited now: { "blocks": [...] }
+ *   GET  /api/objects/:id/edit               the form to edit an object, with its current values
+ *   POST /api/objects/:id/edit/preview       preview an edit; body { "values": { ... } }
+ *   POST /api/objects/:id/edit               edit an object; body { "values": { ... } }
+ *   GET  /api/home                           the person's homepage: metrics, lifecycles and work done lately
+ *   GET  /api/metrics/:metric                a metric and exactly the objects it counts
+ *   POST /api/sets                           the set methods a selection qualifies for; body { "objects": [...] }
+ *   POST /api/sets/:method                   compose a set method for a selection; body { "objects": [...] }
+ *   POST /api/sets/:method/preview           preview a set method; body { "objects": [...], "inputs": { ... } }
+ *   POST /api/sets/:method/commit            commit a set method once; body { "objects": [...], "inputs": { ... } }
  *   GET  /api/drafts/:draft                  read a draft back, such as /api/drafts/1
  *   POST /api/drafts/:draft/discard          discard a draft, such as /api/drafts/1/discard
  *   GET  /api/runs?object=P-101&active=true  track background runs, optionally on one object, or only those not ended
@@ -162,6 +175,10 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         return send(res, 200, gateway.describe(principal));
       case 'GET navigation':
         return send(res, 200, gateway.navigation(principal));
+      case 'GET home':
+        return send(res, 200, gateway.home(principal));
+      case 'GET metrics/:':
+        return send(res, 200, gateway.metricObjects(principal, parts[2]));
       case 'GET todo':
         return send(res, 200, await gateway.todo(principal));
       case 'GET objects': {
@@ -186,11 +203,48 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {} } = (await body(req)) as { inputs?: Record<string, string> };
         return send(res, 200, await gateway.preview(principal, parts[2], expand(parts[4], NS.ls), inputs));
       }
+      case 'POST objects/:/methods/:/propose':
+        return send(res, 201, await gateway.propose(principal, [parts[2]], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:/draft':
         return send(res, 201, await gateway.draft(principal, parts[2], expand(parts[4], NS.ls)));
       case 'POST objects/:/methods/:': {
-        const { inputs = {}, signature, draft } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string } };
-        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft));
+        const { inputs = {}, signature, draft, proposal } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string }; proposal?: unknown };
+        return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft, checkProposal(proposal)));
+      }
+      case 'GET types/:/form':
+        return send(res, 200, gateway.createForm(principal, expand(parts[2], NS.ls), url.searchParams.get('parent') ?? undefined));
+      case 'POST types/:/preview': {
+        const given = await body(req);
+        return send(res, 200, await gateway.previewCreate(principal, expand(parts[2], NS.ls), checkValues(given), checkParent(given)));
+      }
+      case 'POST types/:': {
+        const given = await body(req);
+        return send(res, 201, await gateway.create(principal, expand(parts[2], NS.ls), checkValues(given), checkParent(given)));
+      }
+      case 'GET objects/:/editable':
+        return send(res, 200, { blocks: await gateway.editBlocks(principal, parts[2]) });
+      case 'GET objects/:/edit':
+        return send(res, 200, await gateway.editForm(principal, parts[2]));
+      case 'POST objects/:/edit/:': {
+        if (parts[4] !== 'preview') throw new GatewayError(404, ['Not found']);
+        return send(res, 200, await gateway.previewEdit(principal, parts[2], checkValues(await body(req))));
+      }
+      case 'POST objects/:/edit':
+        return send(res, 200, await gateway.edit(principal, parts[2], checkValues(await body(req))));
+      case 'POST sets':
+        return send(res, 200, await gateway.setMethods(principal, checkObjects(await body(req))));
+      case 'POST sets/:': {
+        return send(res, 200, await gateway.composeSet(principal, checkObjects(await body(req)), expand(parts[2], NS.ls)));
+      }
+      case 'POST sets/:/preview': {
+        const given = await body(req);
+        return send(res, 200, await gateway.previewSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given)));
+      }
+      case 'POST sets/:/propose':
+        return send(res, 201, await gateway.propose(principal, checkObjects(await body(req)), expand(parts[2], NS.ls)));
+      case 'POST sets/:/commit': {
+        const given = await body(req);
+        return send(res, 201, await gateway.commitSet(principal, checkObjects(given), expand(parts[2], NS.ls), checkInputs(given), checkProposal((given as { proposal?: unknown })?.proposal)));
       }
       case 'GET drafts/:':
         return send(res, 200, gateway.getDraft(principal, parts[2]));
@@ -263,4 +317,37 @@ async function mcp(gateway: Gateway, principal: Principal, req: IncomingMessage,
 
 export function createGatewayServer(gateway: Gateway, options: HttpOptions): Server {
   return createServer((req, res) => void handle(gateway, options, req, res));
+}
+
+/** The objects of a set, from a request body: identifiers or IRIs (spec 5.4, Acting on a set). */
+function checkObjects(given: unknown): string[] {
+  const objects = (given as { objects?: unknown })?.objects;
+  if (!Array.isArray(objects) || !objects.every((o) => typeof o === 'string') || objects.length > 50) throw new GatewayError(400, ['Give the objects as a list of identifiers']);
+  return objects;
+}
+
+/** The proposal a commit started from, if any (spec 3.3, Skills). */
+function checkProposal(proposal: unknown): string | undefined {
+  if (proposal === undefined || proposal === null) return undefined;
+  if (typeof proposal !== 'string' || !proposal.trim()) throw new GatewayError(400, ['Give the proposal as its address']);
+  return proposal;
+}
+
+function checkInputs(given: unknown): Record<string, string> {
+  const inputs = (given as { inputs?: unknown })?.inputs ?? {};
+  if (typeof inputs !== 'object' || inputs === null || !Object.values(inputs).every((v) => typeof v === 'string')) throw new GatewayError(400, ['Give the inputs as text values']);
+  return inputs as Record<string, string>;
+}
+
+/** A form's values, from a request body (spec 5.3, Creating and editing objects). */
+function checkValues(given: unknown): Record<string, string> {
+  const values = (given as { values?: unknown })?.values ?? {};
+  if (typeof values !== 'object' || values === null || !Object.values(values).every((v) => typeof v === 'string')) throw new GatewayError(400, ['Give the values as text']);
+  return values as Record<string, string>;
+}
+
+function checkParent(given: unknown): string | undefined {
+  const parent = (given as { parent?: unknown })?.parent;
+  if (parent !== undefined && typeof parent !== 'string') throw new GatewayError(400, ['Give the parent as an identifier']);
+  return parent;
 }

@@ -38,6 +38,8 @@ export function titleOf(store: oxigraph.Store, object: string, depth = 1): strin
           OPTIONAL { ?v skos:prefLabel ?label } OPTIONAL { ?v p:order ?order } OPTIONAL { ?v ls:identifier ?identifier } }
          ORDER BY ?order ?label ?identifier ?v`,
       ).map((r) => {
+        // A coded value reads as its label, though as part of the structure it has an identifier too (platform spec 3.7).
+        if (r.label && !id) return r.label;
         if (r.identifier) return id || depth === 0 ? r.identifier : (titleOf(store, r.v, depth - 1) ?? r.identifier);
         return r.label ?? r.v;
       });

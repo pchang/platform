@@ -38,6 +38,7 @@ function OpenButton() {
         Ask
       </button>
       <button onClick={() => chat.askAbout(ae.iri)}>From the card</button>
+      <button onClick={() => chat.askAbout([ae.iri, 'urn:AE-004'])}>From the list bar</button>
     </>
   );
 }
@@ -51,7 +52,7 @@ function renderChat(ask: (question: string, earlier: AskTurn[]) => Promise<AskRe
       calls.push({ question, earlier, about });
       return ask(question, earlier);
     }),
-    read: async () => ({ ...ae, state: { Reporting: 'not reported' }, domainLabel: 'Clinical Development', urgency: 0, links: [], properties: {} }),
+    read: async (_p: unknown, iri: string) => ({ ...ae, iri, identifier: iri.replace('urn:', ''), state: { Reporting: 'not reported' }, domainLabel: 'Clinical Development', urgency: 0, links: [], properties: {} }),
     methods: async () => [
       { method: 'urn:report', label: 'Report to safety', available: true, blocks: [], archetype: { archetype: 'urn:a', label: 'Fill in' } },
       { method: 'urn:lock', label: 'Reconcile', available: false, blocks: ['Not reported'], archetype: { archetype: 'urn:a', label: 'Confirm' } },
@@ -150,6 +151,24 @@ describe('the chat panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
     expect(screen.getByText('Search or ask anything')).toBeInTheDocument();
     expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
+  });
+
+  it('asks about the chosen objects together, led by a dense card for each without state or methods', async () => {
+    const { calls } = renderChat(async (q) => answered(q));
+    await userEvent.click(await screen.findByRole('button', { name: 'From the list bar' }));
+    expect(await screen.findByText('Ask about these 2')).toBeInTheDocument();
+    expect(screen.getByText('AE-003, AE-004')).toBeInTheDocument();
+    expect(screen.getByText('AE-004 · Adverse Event')).toBeInTheDocument();
+    // The list shows their state; the cards are only who they are.
+    expect(screen.queryByText('Reporting: not reported')).not.toBeInTheDocument();
+    // The list's batch actions run on them, so their cards have no methods.
+    expect(screen.queryByRole('button', { name: 'Report to safety' })).not.toBeInTheDocument();
+    expect(bar()).toHaveAttribute('placeholder', 'Ask about these 2');
+    await userEvent.click(screen.getByRole('button', { name: /How do they differ\?/ }));
+    await screen.findByText('AE-003 waits for you to report it.');
+    expect(calls).toEqual([{ question: 'How do they differ?', earlier: [], about: [ae.iri, 'urn:AE-004'] }]);
+    await userEvent.click(screen.getByRole('button', { name: 'Conversations' }));
+    expect((await screen.findAllByRole('menuitem')).map((i) => i.textContent)).toEqual(['AE-003, AE-004']);
   });
 
   it('starts a new conversation for each object asked about, and keeps the earlier ones in the history to return to', async () => {

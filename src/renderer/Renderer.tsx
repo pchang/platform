@@ -35,8 +35,20 @@ export interface RenderHost {
   selection?: { selecting: boolean; selected: ReadonlySet<string>; onSelect: (object: string, chosen: boolean) => void };
   /** Runs a method on every chosen object (view spec `batch`). */
   onBatch?: (method: string) => void;
+  /** Opens the form to create an object of a type, inside an object when given (platform spec 5.3). */
+  onCreate?: (type: string, within?: string) => void;
+  /** Opens the form to edit an object (platform spec 5.3). */
+  onEdit?: (object: string) => void;
+  /** The address of a metric's page, so a Button that shows it is a real link (platform spec 5.1, Home). */
+  metricHref?: (metric: string) => string;
+  /** Called when a type link is followed, so the host can step aside, as the object panel does (design system spec 4.3, Type links). */
+  onList?: () => void;
+  /** Where a Title or Button that lists a type links (view spec `lists`, design system spec 4.3, Home). */
+  typeHref?: (type: string) => string;
+  /** Where a Button that goes to Home links (view spec `goes`, design system spec 4.3, Home). */
+  homeHref?: string;
   /** Starts a conversation about a graph object in the chat (view spec `asks`, design system spec 4.1, Ask about this). */
-  onAsk?: (object: string) => void;
+  onAsk?: (objects: string | string[]) => void;
 }
 
 /** A card in select mode: whether it is chosen, how to change that, and its title for the control's name. */
@@ -199,6 +211,8 @@ function ActionsMenu({ node, host }: { node: ViewNode; host: RenderHost }) {
 
 /** The object the Card being drawn opens, so its title can be the card's button. */
 const OpensContext = createContext<string | undefined>(undefined);
+/** The address of the page a card shows, such as a metric's objects, for its title's link (design system spec 4.3, Home). */
+const ShowsContext = createContext<string | undefined>(undefined);
 
 /** Clicks on these, inside an openable card, do their own thing and do not open the card's object. */
 const INTERACTIVE = 'button, a, input, select, textarea, label, [role="tab"], [role="radio"], [role="checkbox"]';
@@ -234,6 +248,60 @@ function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
         </Card>
       </SelectContext.Provider>
     </OpensContext.Provider>
+  );
+}
+
+/**
+ * A card that shows a page of its own, such as a metric tile opening the objects it counts (design system spec 4.3, Home):
+ * choosing it anywhere goes there, and its title is the link, so it can be reached by keyboard and opened in a new tab.
+ */
+function ShowingCard({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const href = host.metricHref!(node.shows!);
+  const { Card } = library;
+  const onClick = (event: MouseEvent<HTMLElement>) => {
+    const control = (event.target as HTMLElement).closest(INTERACTIVE);
+    if (control && event.currentTarget.contains(control)) return;
+    if (window.getSelection()?.toString()) return;
+    if (event.metaKey || event.ctrlKey) window.open(href, '_blank', 'noopener');
+    else window.location.assign(href);
+  };
+  return (
+    <ShowsContext.Provider value={href}>
+      <Card {...(node.props ?? {})} className="app-openable-card" onClick={onClick}>
+        {(node.children ?? []).map((child, i) => (
+          <Node key={i} node={child} host={host} />
+        ))}
+      </Card>
+    </ShowsContext.Provider>
+  );
+}
+
+/**
+ * A sticky Toolbar, such as an object list's bar (design system spec 4.3), shows its shadow only once the list has
+ * scrolled under it. A marker just above the bar leaves view as the bar sticks; until then the bar has no shadow.
+ */
+function StickyToolbar({ node, host }: { node: ViewNode; host: RenderHost }) {
+  const { Toolbar } = library;
+  const marker = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = marker.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => {
+      // Out of view above the bar means the bar has stuck; out of view below it means the list is not yet in view.
+      const bar = el.nextElementSibling;
+      setStuck(!entry.isIntersecting && bar !== null && entry.boundingClientRect.top < bar.getBoundingClientRect().top);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <>
+      <div ref={marker} className="app-sticky-marker" aria-hidden="true" />
+      <Toolbar {...(node.props ?? {})} className={stuck ? 'app-is-stuck' : undefined}>
+        {node.children?.map((child, i) => <Node key={i} node={child} host={host} />)}
+      </Toolbar>
+    </>
   );
 }
 
@@ -404,20 +472,25 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   const generatedId = useId();
   const groupId = useContext(FieldIdContext);
   const opens = useContext(OpensContext);
+  const shows = useContext(ShowsContext);
   const select = useContext(SelectContext);
   const entry = componentsById.get(node.component)!;
   const Component = library[entry.import.export];
   if (entry.id === 'Chart') return <ChartFrame node={node} />;
   if (entry.id === 'Card' && node.field) return <SelectableCard node={node} host={host} />;
+  if (entry.id === 'Card' && node.shows && host.metricHref) return <ShowingCard node={node} host={host} />;
   if (entry.id === 'Card' && (node.opens || node.selects)) return <OpenableCard node={node} host={host} />;
   if (entry.id === 'Table') return <ObjectTable node={node} host={host} />;
   if (entry.id === 'Tr') return <TableRow node={node} host={host} />;
   if (entry.id === 'Dropdown') return <ActionsMenu node={node} host={host} />;
   if (entry.id === 'Tabs') return <BoundTabs node={node} host={host} />;
+  if (entry.id === 'Toolbar' && (node.props as { isSticky?: boolean } | undefined)?.isSticky) return <StickyToolbar node={node} host={host} />;
   const { label, name, ...props } = (node.props ?? {}) as Record<string, unknown>;
 
-  if (NEEDS_ID.has(entry.id)) props.id = entry.id !== 'Radio' && groupId ? groupId : generatedId;
-  if (entry.id === 'FormGroup' && props.role !== 'radiogroup') props.fieldId = generatedId;
+  // Radios and field-bound checkboxes come in sets, so each needs its own id, not the group's.
+  const inSet = entry.id === 'Radio' || (entry.id === 'Checkbox' && node.field);
+  if (NEEDS_ID.has(entry.id)) props.id = !inSet && groupId ? groupId : generatedId;
+  if (entry.id === 'FormGroup' && props.role !== 'radiogroup' && props.role !== 'group') props.fieldId = generatedId;
 
   // Fields: the value comes from the host, and changes go back to it.
   const field = node.field;
@@ -438,6 +511,15 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   }
   // A CardHeader in select mode carries the card's select control at its end (design system spec 4.3).
   if (entry.id === 'CardHeader' && select) props.actions = { actions: <SelectCircle />, hasNoOffset: true };
+  // A Checkbox bound to a field is one of a set: the field holds the chosen values separated by spaces (design system spec 5.2).
+  if (field && entry.id === 'Checkbox') {
+    const value = props.value as string;
+    const chosen = (host.values?.[field] ?? '').split(' ').filter(Boolean);
+    props.isChecked = chosen.includes(value);
+    props.onChange = (_event: unknown, checked: boolean) =>
+      host.onField?.(field, (checked ? [...chosen.filter((v) => v !== value), value] : chosen.filter((v) => v !== value)).join(' '));
+    delete props.value;
+  }
   if (field && entry.id === 'Radio') {
     const value = props.value as string;
     props.isChecked = host.values?.[field] === value;
@@ -511,6 +593,39 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const method = node.batch;
     props.onClick = () => host.onBatch?.(method);
   }
+  if (entry.id === 'Button' && node.creates) {
+    const type = node.creates;
+    const within = node.within;
+    props.onClick = () => host.onCreate?.(type, within);
+  }
+  if (entry.id === 'Button' && node.shows && host.metricHref) {
+    props.component = 'a';
+    props.href = host.metricHref(node.shows);
+  }
+  if (entry.id === 'Button' && node.lists && host.typeHref) {
+    props.component = 'a';
+    props.href = host.typeHref(node.lists);
+    // The list is where the link goes; the host may step aside to show it, as the object panel does.
+    props.onClick = () => host.onList?.();
+  }
+  // Outlined, to stand out in a row of cards (view spec Card.isHighlighted).
+  if (entry.id === 'Card' && props.isHighlighted) {
+    props.className = [props.className, 'app-highlighted'].filter(Boolean).join(' ');
+    delete props.isHighlighted;
+  }
+  // Quieter text, in the subtle text color (view spec Content.isSubtle).
+  if (entry.id === 'Content' && props.isSubtle) {
+    props.className = [props.className, 'app-subtle'].filter(Boolean).join(' ');
+    delete props.isSubtle;
+  }
+  if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
+    props.component = 'a';
+    props.href = host.homeHref;
+  }
+  if (entry.id === 'Button' && node.edits) {
+    const object = node.edits;
+    props.onClick = () => host.onEdit?.(object);
+  }
   if (entry.id === 'Button' && node.asks) {
     const object = node.asks;
     props.onClick = () => host.onAsk?.(object);
@@ -524,6 +639,26 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     const Button = library.Button;
     content = (
       <Button variant="link" isInline className="app-card-open" onClick={(event: MouseEvent<HTMLElement>) => host.onOpen?.(opens, event.currentTarget.closest<HTMLElement>('.app-openable-card') ?? undefined)}>
+        {content}
+      </Button>
+    );
+  }
+
+  // A heading that lists a type is a link to that list, set as the heading it is (design system spec 4.3, Home).
+  if (entry.id === 'Title' && node.lists && host.typeHref && content !== undefined) {
+    const Button = library.Button;
+    content = (
+      <Button variant="link" isInline component="a" href={host.typeHref(node.lists)} className="app-card-open app-title-link">
+        {content}
+      </Button>
+    );
+  }
+
+  // In a card that shows a page, the title is the link to it.
+  if (entry.id === 'CardTitle' && shows && content !== undefined) {
+    const Button = library.Button;
+    content = (
+      <Button variant="link" isInline component="a" href={shows} className="app-card-open">
         {content}
       </Button>
     );

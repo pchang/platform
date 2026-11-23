@@ -47,8 +47,8 @@ ls:BatchRelease a p:BusinessRule ;
 ls:DataIntegrity a p:BusinessRule ;
   rdfs:label "Data integrity" ;
   p:ruleNumber 4 ;
-  rdfs:comment "Signed experiments and verified data records cannot be edited. They can only be corrected by a new linked record." ;
-  p:freezes lsh:SignedExperiment, lsh:VerifiedDataRecord, lsh:VerifiedAdverseEvent .
+  rdfs:comment "Signed, verified, approved and closed records cannot be edited. They can only be corrected by a new linked record." ;
+  p:freezes lsh:SignedExperiment, lsh:VerifiedDataRecord, lsh:VerifiedAdverseEvent, lsh:ApprovedProtocol, lsh:LockedStudy, lsh:ClosedSafetyCase .
 
 ls:SeparationOfDuties a p:BusinessRule ;
   rdfs:label "Separation of duties" ;
@@ -109,3 +109,28 @@ lsh:VerifiedAdverseEvent a sh:NodeShape ;
 lsh:VerifiedAdverseEvent-entry a sh:PropertyShape ;
   sh:path ls:adverseEventEntry ;
   sh:hasValue lst:AdverseEventEntry-verified .
+
+lsh:ApprovedProtocol a sh:NodeShape ;
+  rdfs:label "Approved protocol version" ;
+  sh:class ls:Protocol ;
+  sh:property lsh:ApprovedProtocol-status .
+lsh:ApprovedProtocol-status a sh:PropertyShape ;
+  sh:path ls:protocolStatus ;
+  sh:in ( lst:ProtocolStatus-approved lst:ProtocolStatus-superseded ) ;
+  sh:minCount 1 .
+
+lsh:LockedStudy a sh:NodeShape ;
+  rdfs:label "Locked study" ;
+  sh:class ls:Study ;
+  sh:property lsh:LockedStudy-status .
+lsh:LockedStudy-status a sh:PropertyShape ;
+  sh:path ls:studyStatus ;
+  sh:hasValue lst:StudyStatus-locked .
+
+lsh:ClosedSafetyCase a sh:NodeShape ;
+  rdfs:label "Closed safety case" ;
+  sh:class ls:SafetyCase ;
+  sh:property lsh:ClosedSafetyCase-workflow .
+lsh:ClosedSafetyCase-workflow a sh:PropertyShape ;
+  sh:path ls:safetyCaseWorkflow ;
+  sh:hasValue lst:SafetyCaseWorkflow-closed .

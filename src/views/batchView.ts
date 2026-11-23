@@ -2,6 +2,7 @@ import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, MethodComposition, ObjectSummary } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import { changeLines, fieldFor } from './composeView';
+import { dialogBody, group } from './layout';
 
 /**
  * A batch action (platform spec 5.4, Acting on many objects; design system spec 4.3): the method's archetype once for
@@ -69,33 +70,37 @@ function previews(composition: MethodComposition, state: BatchPreview): ViewNode
   }
   return [
     heading,
-    ...[...groups.values()].map(({ objects, lines }) =>
-      stack([
-        [{ component: 'Title', props: { label: objects.map((o) => o.identifier).join(', '), headingLevel: 'h3', size: 'md' } }],
-        [
-          {
-            component: 'DescriptionList',
-            props: { isCompact: true, isHorizontal: true, termWidth: '16ch' },
-            children: lines.map((l) => ({
-              component: 'DescriptionListGroup',
-              children: [
-                { component: 'DescriptionListTerm', props: { label: l.term } },
-                { component: 'DescriptionListDescription', children: [text(l.value)] },
-              ],
-            })),
-          },
-        ],
-      ]),
+    // Each set of objects with the same changes is a group; the groups stand apart from one another (design system spec 4.5).
+    group(
+      [
+        ...[...groups.values()].map(({ objects, lines }) =>
+          group([
+            { component: 'Title', props: { label: objects.map((o) => o.identifier).join(', '), headingLevel: 'h3', size: 'md' } },
+            {
+              component: 'DescriptionList',
+              props: { isCompact: true, isHorizontal: true, termWidth: '16ch' },
+              children: lines.map((l) => ({
+                component: 'DescriptionListGroup',
+                children: [
+                  { component: 'DescriptionListTerm', props: { label: l.term } },
+                  { component: 'DescriptionListDescription', children: [text(l.value)] },
+                ],
+              })),
+            },
+          ]),
+        ),
+        ...state.previews
+          .filter((p) => p.reasons)
+          .map(
+            ({ object, reasons }): ViewNode => ({
+              component: 'Alert',
+              props: { variant: 'warning', title: `${object.identifier} will be left out`, isInline: true, component: 'h3' },
+              children: reasons!.map((r) => text(r)),
+            }),
+          ),
+      ],
+      'gapMd',
     ),
-    ...state.previews
-      .filter((p) => p.reasons)
-      .map(
-        ({ object, reasons }): ViewNode => ({
-          component: 'Alert',
-          props: { variant: 'warning', title: `${object.identifier} will be left out`, isInline: true, component: 'h3' },
-          children: reasons!.map((r) => text(r)),
-        }),
-      ),
   ];
 }
 
@@ -107,7 +112,7 @@ export function buildBatchView(composition: MethodComposition, objects: ObjectSu
   const title = `${composition.label} ${countOf(objects)}`;
   const ready = readyCount(state);
   const body: ViewNode[][] = [];
-  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
+  if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map((i) => fieldFor(i)) }]);
   body.push(previews(composition, state));
   const allReady = state.status === 'ready' && ready === objects.length;
   return {
@@ -118,7 +123,7 @@ export function buildBatchView(composition: MethodComposition, objects: ObjectSu
       props: { variant: 'medium', 'aria-label': title },
       children: [
         { component: 'ModalHeader', props: { title, description: objects.map((o) => o.identifier).join(', ') } },
-        { component: 'ModalBody', children: [stack(body)] },
+        { component: 'ModalBody', children: [dialogBody(body)] },
         {
           component: 'ModalFooter',
           children: [
@@ -192,7 +197,7 @@ export function buildSequentialBatchView(
     steps.push({
       component: 'WizardStep',
       props: { name: 'For all of them', id: 'shared', footer: { isNextDisabled: !shared.every((i) => values[i.name]?.trim()) } },
-      children: [stack([[text(`These hold for ${objects.map((o) => o.identifier).join(', ')}.`)], [{ component: 'Form', children: shared.map(fieldFor) }]])],
+      children: [stack([[text(`These hold for ${objects.map((o) => o.identifier).join(', ')}.`)], [{ component: 'Form', children: shared.map((i) => fieldFor(i)) }]])],
     });
   }
   for (const object of objects) {

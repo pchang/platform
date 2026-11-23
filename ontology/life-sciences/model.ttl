@@ -13,9 +13,9 @@
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
 <https://w3id.org/lsh-platform/life-sciences> a owl:Ontology ;
   dcterms:title "LS&H life sciences model" ;
-  rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5)." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.1.0> ;
+  rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5, and Design and Plan in section 3.4)." ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ScientificInnovation a p:Domain ;
@@ -1031,7 +1031,7 @@ lsh:Study-studyTitle a sh:PropertyShape ;
 
 lsh:Study a sh:NodeShape ;
   sh:targetClass ls:Study ;
-  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-conductedUnder, lsh:Study-studyTitle .
+  sh:property lsh:Study-identifier, lsh:Study-phase, lsh:Study-status, lsh:Study-blinding, lsh:Study-tests, lsh:Study-runsAt, lsh:Study-conductedUnder, lsh:Study-studyTitle, lsh:Study-belongsTo, lsh:Study-baselineFrom .
 
 lsh:Protocol-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1204,7 +1204,7 @@ lsh:Visit-missedReason a sh:PropertyShape ;
 
 lsh:Visit a sh:NodeShape ;
   sh:targetClass ls:Visit ;
-  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-visitName, lsh:Visit-scheduledOn, lsh:Visit-missedReason .
+  sh:property lsh:Visit-identifier, lsh:Visit-status, lsh:Visit-visitFor, lsh:Visit-visitName, lsh:Visit-scheduledOn, lsh:Visit-missedReason, lsh:Visit-scheduledFrom .
 
 lsh:DataRecord-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -1578,3 +1578,1945 @@ lsh:IsSafetyCase a sh:NodeShape ;
 
 lsh:IsSignal a sh:NodeShape ;
   sh:class ls:Signal .
+
+
+
+
+# Creating and editing (platform spec 5.3; domain spec section 6). Types whose objects come only through methods and models,
+# and the state dimensions that classify objects rather than track a lifecycle.
+
+ls:AdverseEvent p:onlyThroughMethods true .
+ls:DataRecord p:onlyThroughMethods true .
+ls:DataQuery p:onlyThroughMethods true .
+ls:SafetyCase p:onlyThroughMethods true .
+ls:Signal p:onlyThroughMethods true .
+ls:Submission p:onlyThroughMethods true .
+ls:QualityEvent p:onlyThroughMethods true .
+ls:CAPA p:onlyThroughMethods true .
+ls:Simulation p:onlyThroughMethods true .
+ls:TrialSimulation p:onlyThroughMethods true .
+ls:Forecast p:onlyThroughMethods true .
+ls:DesignSignal p:onlyThroughMethods true .
+ls:Decision p:onlyThroughMethods true .
+
+ls:armRole p:chosenOnCreate true .
+ls:assessmentPurpose p:chosenOnCreate true .
+ls:assessmentBurden p:chosenOnCreate true .
+ls:batchDeviationRisk p:chosenOnCreate true .
+ls:eligibilityCriterionKind p:chosenOnCreate true .
+ls:eligibilityCriterionTestability p:chosenOnCreate true .
+ls:endpointType p:chosenOnCreate true .
+ls:objectiveLevel p:chosenOnCreate true .
+ls:opportunityKind p:chosenOnCreate true .
+ls:targetMeasure p:chosenOnCreate true .
+ls:studyPhase p:chosenOnCreate true .
+ls:studyBlinding p:chosenOnCreate true .
+ls:sitePayment p:chosenOnCreate true .
+ls:proposedSiteStatus p:chosenOnCreate true .
+
+# ---------------------------------------------------------------------------
+# Design and Plan (domain spec section 3.4). Version 0.2.0.
+# ---------------------------------------------------------------------------
+
+ls:DesignAndPlan a p:Domain ;
+  rdfs:label "Design and Plan" .
+
+ls:Program a p:ObjectType, rdfs:Class ;
+  rdfs:label "Program" ;
+  p:pluralLabel "Programs" ;
+  rdfs:comment "Groups research at the organizational level, such as the development of one candidate. Persists across concepts and studies." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:programName}" .
+
+ls:programStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a program." ;
+  p:dimensionOf ls:Program ;
+  p:valuesFrom lst:ProgramStatus ;
+  p:order 1 .
+
+ls:programName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The program's name." .
+
+ls:TargetProductProfile a p:ObjectType, rdfs:Class ;
+  rdfs:label "Target Product Profile" ;
+  p:pluralLabel "Target Product Profiles" ;
+  rdfs:comment "The labeling a program aims for: indication, population, dosing, and its target and minimum efficacy and safety claims." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "Target product profile: {ls:tppIndication}" .
+
+ls:targetProductProfileStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a target product profile." ;
+  p:dimensionOf ls:TargetProductProfile ;
+  p:valuesFrom lst:TargetProductProfileStatus ;
+  p:order 1 .
+
+ls:tppIndication a owl:DatatypeProperty ;
+  rdfs:label "indication" ;
+  rdfs:comment "The indication the program aims to have approved." .
+
+ls:targetClaim a owl:DatatypeProperty ;
+  rdfs:label "target claim" ;
+  rdfs:comment "The efficacy and safety claims the program aims for." .
+
+ls:minimumClaim a owl:DatatypeProperty ;
+  rdfs:label "minimum claim" ;
+  rdfs:comment "The least the product must show to be worth developing." .
+
+ls:Opportunity a p:ObjectType, rdfs:Class ;
+  rdfs:label "Opportunity" ;
+  p:pluralLabel "Opportunities" ;
+  rdfs:comment "A portfolio or asset opportunity being explored: a new asset from discovery, a new indication for an existing one, or a scientific question that bears on several programs. It can lead to a new program, a change to one, or nothing." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:opportunityName}" .
+
+ls:opportunityStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of an opportunity." ;
+  p:dimensionOf ls:Opportunity ;
+  p:valuesFrom lst:OpportunityStatus ;
+  p:order 1 .
+
+ls:opportunityKind a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Kind" ;
+  rdfs:comment "The kind of an opportunity." ;
+  p:dimensionOf ls:Opportunity ;
+  p:valuesFrom lst:OpportunityKind ;
+  p:order 2 .
+
+ls:opportunityName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The opportunity's name." .
+
+ls:rationale a owl:DatatypeProperty ;
+  rdfs:label "rationale" ;
+  rdfs:comment "Why it is worth exploring." .
+
+ls:DevelopmentOption a p:ObjectType, rdfs:Class ;
+  rdfs:label "Development Option" ;
+  p:pluralLabel "Development Options" ;
+  rdfs:comment "One path to an opportunity's goal, or to a program's: the study concepts it would run and in what order, simulated together for its chance of success, time and cost." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:optionName}" .
+
+ls:developmentOptionStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a development option." ;
+  p:dimensionOf ls:DevelopmentOption ;
+  p:valuesFrom lst:DevelopmentOptionStatus ;
+  p:order 1 .
+
+ls:optionName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The option's name." .
+
+ls:optionSummary a owl:DatatypeProperty ;
+  rdfs:label "summary" ;
+  rdfs:comment "The path in words: the studies, their order and what each decides." .
+
+ls:StudyConcept a p:ObjectType, rdfs:Class ;
+  rdfs:label "Study Concept" ;
+  p:pluralLabel "Study Concepts" ;
+  rdfs:comment "A short proposal for one study, reviewed by governance before a protocol is written: its rationale, objectives, population and design outline. Its study scenarios test how the study could run." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:studyConceptName}" .
+
+ls:studyConceptStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a study concept." ;
+  p:dimensionOf ls:StudyConcept ;
+  p:valuesFrom lst:StudyConceptStatus ;
+  p:order 1 .
+
+ls:studyConceptName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The study concept's name." .
+
+ls:conceptRationale a owl:DatatypeProperty ;
+  rdfs:label "rationale" ;
+  rdfs:comment "Why the study is needed, and the decision it informs." .
+
+ls:StudyScenario a p:ObjectType, rdfs:Class ;
+  rdfs:label "Study Scenario" ;
+  p:pluralLabel "Study Scenarios" ;
+  rdfs:comment "One possible approach to a study concept or a study: a protocol, a study budget and a site selection, worked on together and simulated as one." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:scenarioName}" .
+
+ls:studyScenarioStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a study scenario." ;
+  p:dimensionOf ls:StudyScenario ;
+  p:valuesFrom lst:StudyScenarioStatus ;
+  p:order 1 .
+
+ls:scenarioName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The scenario's name." .
+
+ls:scenarioChange a owl:DatatypeProperty ;
+  rdfs:label "what it changes" ;
+  rdfs:comment "How this scenario differs from the one it was copied from." .
+
+ls:Population a p:ObjectType, rdfs:Class ;
+  rdfs:label "Population" ;
+  p:pluralLabel "Populations" ;
+  rdfs:comment "Who a study is for, defined by its eligibility criteria." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:exactMatch ncit:C70833 ;
+  p:titleTemplate "{ls:populationText}" .
+
+ls:populationText a owl:DatatypeProperty ;
+  rdfs:label "description" ;
+  rdfs:comment "The population in words." .
+
+ls:Objective a p:ObjectType, rdfs:Class ;
+  rdfs:label "Objective" ;
+  p:pluralLabel "Objectives" ;
+  rdfs:comment "A question a study asks." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:objectiveText}" .
+
+ls:objectiveLevel a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Level" ;
+  rdfs:comment "The level of an objective." ;
+  p:dimensionOf ls:Objective ;
+  p:valuesFrom lst:ObjectiveLevel ;
+  p:order 1 .
+
+ls:objectiveText a owl:DatatypeProperty ;
+  rdfs:label "statement" ;
+  rdfs:comment "The objective as the protocol states it." .
+
+ls:Estimand a p:ObjectType, rdfs:Class ;
+  rdfs:label "Estimand" ;
+  p:pluralLabel "Estimands" ;
+  rdfs:comment "The precise treatment effect an objective targets, with its five ICH E9(R1) attributes." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:exactMatch ncit:C188813 ;
+  p:titleTemplate "Estimand: {ls:estimandVariable}" .
+
+ls:estimandCompleteness a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Completeness" ;
+  rdfs:comment "The completeness of an estimand." ;
+  p:dimensionOf ls:Estimand ;
+  p:valuesFrom lst:EstimandCompleteness ;
+  p:order 1 .
+
+ls:estimandTreatment a owl:DatatypeProperty ;
+  rdfs:label "treatment" ;
+  rdfs:comment "The treatment condition and its comparator." .
+
+ls:estimandPopulation a owl:DatatypeProperty ;
+  rdfs:label "population" ;
+  rdfs:comment "The patients the effect is estimated for." .
+
+ls:estimandVariable a owl:DatatypeProperty ;
+  rdfs:label "variable" ;
+  rdfs:comment "The variable, or endpoint, that is measured." .
+
+ls:intercurrentEvents a owl:DatatypeProperty ;
+  rdfs:label "intercurrent events" ;
+  rdfs:comment "Events after treatment starts that affect the variable, and the strategy for each." .
+
+ls:populationSummary a owl:DatatypeProperty ;
+  rdfs:label "population-level summary" ;
+  rdfs:comment "How the variable is summarized to compare treatments." .
+
+ls:Endpoint a p:ObjectType, rdfs:Class ;
+  rdfs:label "Endpoint" ;
+  p:pluralLabel "Endpoints" ;
+  rdfs:comment "How an objective is measured: the variable and when it is measured." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:closeMatch ncit:C25212 ;
+  p:titleTemplate "{ls:endpointText}" .
+
+ls:endpointType a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Type" ;
+  rdfs:comment "The type of an endpoint." ;
+  p:dimensionOf ls:Endpoint ;
+  p:valuesFrom lst:EndpointType ;
+  p:order 1 .
+
+ls:endpointText a owl:DatatypeProperty ;
+  rdfs:label "statement" ;
+  rdfs:comment "The endpoint as the protocol states it." .
+
+ls:EligibilityCriterion a p:ObjectType, rdfs:Class ;
+  rdfs:label "Eligibility Criterion" ;
+  p:pluralLabel "Eligibility Criteria" ;
+  rdfs:comment "One inclusion or exclusion rule, with the data that tests it at screening." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:closeMatch ncit:C16112 ;
+  p:titleTemplate "{ls:criterionText}" .
+
+ls:eligibilityCriterionKind a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Kind" ;
+  rdfs:comment "The kind of an eligibility criterion." ;
+  p:dimensionOf ls:EligibilityCriterion ;
+  p:valuesFrom lst:EligibilityCriterionKind ;
+  p:order 1 .
+
+ls:eligibilityCriterionTestability a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Testability" ;
+  rdfs:comment "The testability of an eligibility criterion." ;
+  p:dimensionOf ls:EligibilityCriterion ;
+  p:valuesFrom lst:EligibilityCriterionTestability ;
+  p:order 2 .
+
+ls:criterionText a owl:DatatypeProperty ;
+  rdfs:label "criterion" ;
+  rdfs:comment "The criterion as the protocol states it." .
+
+ls:testedBy a owl:DatatypeProperty ;
+  rdfs:label "tested by" ;
+  rdfs:comment "The data that tests the criterion at screening." .
+
+ls:Arm a p:ObjectType, rdfs:Class ;
+  rdfs:label "Arm" ;
+  p:pluralLabel "Arms" ;
+  rdfs:comment "A planned treatment group." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:exactMatch ncit:C174447 ;
+  p:titleTemplate "{ls:armName}" .
+
+ls:armRole a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Role" ;
+  rdfs:comment "The role of an arm." ;
+  p:dimensionOf ls:Arm ;
+  p:valuesFrom lst:ArmRole ;
+  p:order 1 .
+
+ls:armName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The arm's name." .
+
+ls:allocationRatio a owl:DatatypeProperty ;
+  rdfs:label "allocation" ;
+  rdfs:comment "The arm's share of randomized patients, such as 1 in 1:1." .
+
+ls:Intervention a p:ObjectType, rdfs:Class ;
+  rdfs:label "Intervention" ;
+  p:pluralLabel "Interventions" ;
+  rdfs:comment "A drug, device or comparator given in an arm, with its dose and regimen." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:closeMatch ncit:C16197 ;
+  p:titleTemplate "{ls:interventionName}" .
+
+ls:interventionName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The intervention's name." .
+
+ls:regimen a owl:DatatypeProperty ;
+  rdfs:label "dose and regimen" ;
+  rdfs:comment "How much is given, how and how often." .
+
+ls:PlannedVisit a p:ObjectType, rdfs:Class ;
+  rdfs:label "Planned Visit" ;
+  p:pluralLabel "Planned Visits" ;
+  rdfs:comment "A point in the study timeline, with its timing and window. Each patient's Visit is scheduled from one." ;
+  p:inDomain ls:DesignAndPlan ;
+  skos:closeMatch ncit:C191214 ;
+  p:titleTemplate "{ls:plannedVisitName}" .
+
+ls:plannedVisitName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The visit's name, such as Week 12." .
+
+ls:studyDay a owl:DatatypeProperty ;
+  rdfs:label "study day" ;
+  rdfs:comment "The day of the study the visit falls on." .
+
+ls:windowDays a owl:DatatypeProperty ;
+  rdfs:label "window" ;
+  rdfs:comment "How many days either side of the study day the visit may happen." .
+
+ls:Assessment a p:ObjectType, rdfs:Class ;
+  rdfs:label "Assessment" ;
+  p:pluralLabel "Assessments" ;
+  rdfs:comment "A procedure or measurement in the schedule of activities, with its burden and cost." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:assessmentName}" .
+
+ls:assessmentPurpose a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Purpose" ;
+  rdfs:comment "The purpose of an assessment." ;
+  p:dimensionOf ls:Assessment ;
+  p:valuesFrom lst:AssessmentPurpose ;
+  p:order 1 .
+
+ls:assessmentBurden a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Burden" ;
+  rdfs:comment "The burden of an assessment." ;
+  p:dimensionOf ls:Assessment ;
+  p:valuesFrom lst:AssessmentBurden ;
+  p:order 2 .
+
+ls:assessmentName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The assessment's name." .
+
+ls:costPerVisit a owl:DatatypeProperty ;
+  rdfs:label "cost per visit" ;
+  rdfs:comment "What one performance costs, in US dollars." .
+
+ls:minutesOnSite a owl:DatatypeProperty ;
+  rdfs:label "time on site" ;
+  rdfs:comment "Minutes it adds to a visit." .
+
+ls:needsEquipment a owl:DatatypeProperty ;
+  rdfs:label "needs equipment" ;
+  rdfs:comment "Equipment a site must have to perform it, such as MRI." .
+
+ls:StudyBudget a p:ObjectType, rdfs:Class ;
+  rdfs:label "Study Budget" ;
+  p:pluralLabel "Study Budgets" ;
+  rdfs:comment "The cost of a study scenario, or a ceiling set first as a constraint the scenario must meet." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:budgetName}" .
+
+ls:studyBudgetStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a study budget." ;
+  p:dimensionOf ls:StudyBudget ;
+  p:valuesFrom lst:StudyBudgetStatus ;
+  p:order 1 .
+
+ls:studyBudgetFit a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Fit" ;
+  rdfs:comment "The fit of a study budget." ;
+  p:dimensionOf ls:StudyBudget ;
+  p:valuesFrom lst:StudyBudgetFit ;
+  p:order 2 .
+
+ls:budgetName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The budget's name." .
+
+ls:budgetTotal a owl:DatatypeProperty ;
+  rdfs:label "total" ;
+  rdfs:comment "The planned total cost, in millions of US dollars." .
+
+ls:budgetCeiling a owl:DatatypeProperty ;
+  rdfs:label "ceiling" ;
+  rdfs:comment "The most the study may cost, in millions of US dollars." .
+
+ls:SiteSelection a p:ObjectType, rdfs:Class ;
+  rdfs:label "Site Selection" ;
+  p:pluralLabel "Site Selections" ;
+  rdfs:comment "The proposed sites for a study scenario, with the countries they are in." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:selectionName}" .
+
+ls:siteSelectionStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a site selection." ;
+  p:dimensionOf ls:SiteSelection ;
+  p:valuesFrom lst:SiteSelectionStatus ;
+  p:order 1 .
+
+ls:selectionName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "The site selection's name." .
+
+ls:ProposedSite a p:ObjectType, rdfs:Class ;
+  rdfs:label "Proposed Site" ;
+  p:pluralLabel "Proposed Sites" ;
+  rdfs:comment "A site proposed in a site selection, with its expected enrollment and start-up time." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:candidateSite} | Proposed site in {ls:siteCountry}" .
+
+ls:proposedSiteStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a proposed site." ;
+  p:dimensionOf ls:ProposedSite ;
+  p:valuesFrom lst:ProposedSiteStatus ;
+  p:order 1 .
+
+ls:siteCountry a owl:DatatypeProperty ;
+  rdfs:label "country" ;
+  rdfs:comment "The country the site is in." .
+
+ls:siteCount a owl:DatatypeProperty ;
+  rdfs:label "site count" ;
+  rdfs:comment "How many sites this entry stands for: one named site, or a group of similar sites in its country." .
+
+ls:patientsPerMonth a owl:DatatypeProperty ;
+  rdfs:label "patients per month" ;
+  rdfs:comment "Patients each site is expected to screen each month." .
+
+ls:activationDays a owl:DatatypeProperty ;
+  rdfs:label "activation" ;
+  rdfs:comment "Days each site is expected to take to activate." .
+
+ls:equipment a owl:DatatypeProperty ;
+  rdfs:label "equipment" ;
+  rdfs:comment "Equipment each site has, such as MRI. One value per kind." .
+
+ls:startupCost a owl:DatatypeProperty ;
+  rdfs:label "start-up cost" ;
+  rdfs:comment "What it costs to start up each site, in thousands of US dollars." .
+
+ls:monthlyCost a owl:DatatypeProperty ;
+  rdfs:label "monthly cost" ;
+  rdfs:comment "What each active site costs each month, in thousands of US dollars." .
+
+ls:TrialSimulation a p:ObjectType, rdfs:Class ;
+  rdfs:label "Trial Simulation" ;
+  p:pluralLabel "Trial Simulations" ;
+  rdfs:comment "A simulation of a study scenario, or of a development option's sequence of studies, as it stood at one moment, run many times under stated assumptions to predict outcomes." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "Simulation of {ls:simulates}" .
+
+ls:trialSimulationRun a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Run" ;
+  rdfs:comment "The run of a trial simulation." ;
+  p:dimensionOf ls:TrialSimulation ;
+  p:valuesFrom lst:TrialSimulationRun ;
+  p:order 1 .
+
+ls:scenarioAsOf a owl:DatatypeProperty ;
+  rdfs:label "scenario as of" ;
+  rdfs:comment "The moment of the scenario the simulation ran on." .
+
+ls:simulatedTrials a owl:DatatypeProperty ;
+  rdfs:label "simulated trials" ;
+  rdfs:comment "How many virtual trials the simulation ran." .
+
+ls:recruitmentRate a owl:DatatypeProperty ;
+  rdfs:label "recruitment rate" ;
+  rdfs:comment "Assumed patients per site per month." .
+
+ls:screenFailureRate a owl:DatatypeProperty ;
+  rdfs:label "screen failure rate" ;
+  rdfs:comment "Assumed share of screened patients who are not eligible, as a percentage." .
+
+ls:dropoutRate a owl:DatatypeProperty ;
+  rdfs:label "dropout rate" ;
+  rdfs:comment "Assumed share of randomized patients who withdraw, as a percentage." .
+
+ls:controlResponse a owl:DatatypeProperty ;
+  rdfs:label "response on control" ;
+  rdfs:comment "Assumed share of patients on control who respond, as a percentage." .
+
+ls:treatmentResponse a owl:DatatypeProperty ;
+  rdfs:label "response on treatment" ;
+  rdfs:comment "Assumed share of patients on treatment who respond, as a percentage." .
+
+ls:saeRate a owl:DatatypeProperty ;
+  rdfs:label "serious adverse events per 100 patient-years" ;
+  rdfs:comment "Assumed rate of serious adverse events." .
+
+ls:assumedEffect a owl:DatatypeProperty ;
+  rdfs:label "assumed effect" ;
+  rdfs:comment "The treatment effect assumed, with its source." .
+
+ls:simulationModel a owl:DatatypeProperty ;
+  rdfs:label "model" ;
+  rdfs:comment "The model that ran the simulation, its version, and whether it is a reference model." .
+
+ls:Forecast a p:ObjectType, rdfs:Class ;
+  rdfs:label "Forecast" ;
+  p:pluralLabel "Forecasts" ;
+  rdfs:comment "One predicted outcome of a trial simulation, as a median with a range, such as the month the last patient is enrolled." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:forecastMeasure}: {ls:forecastMedian} {ls:forecastUnit}" .
+
+ls:forecastCurrency a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Currency" ;
+  rdfs:comment "The currency of a forecast." ;
+  p:dimensionOf ls:Forecast ;
+  p:valuesFrom lst:ForecastCurrency ;
+  p:order 1 .
+
+ls:forecastMeasure a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Measure" ;
+  rdfs:comment "The measure of a forecast." ;
+  p:dimensionOf ls:Forecast ;
+  p:valuesFrom lst:OutcomeMeasure ;
+  p:order 2 .
+
+ls:forecastAgainstTarget a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Against target" ;
+  rdfs:comment "The against target of a forecast." ;
+  p:dimensionOf ls:Forecast ;
+  p:valuesFrom lst:ForecastAgainstTarget ;
+  p:order 3 .
+
+ls:forecastMedian a owl:DatatypeProperty ;
+  rdfs:label "median" ;
+  rdfs:comment "The median of the simulated outcomes." .
+
+ls:forecastLow a owl:DatatypeProperty ;
+  rdfs:label "low" ;
+  rdfs:comment "The 10th percentile of the simulated outcomes." .
+
+ls:forecastHigh a owl:DatatypeProperty ;
+  rdfs:label "high" ;
+  rdfs:comment "The 90th percentile of the simulated outcomes." .
+
+ls:forecastUnit a owl:DatatypeProperty ;
+  rdfs:label "unit" ;
+  rdfs:comment "The unit of the forecast." .
+
+ls:OutcomeTarget a p:ObjectType, rdfs:Class ;
+  rdfs:label "Outcome Target" ;
+  p:pluralLabel "Outcome Targets" ;
+  rdfs:comment "What success means for an opportunity, a study concept or a study, on one measure, such as the last patient in within 20 months." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:targetMeasure} {ls:targetComparison} {ls:targetThreshold} {ls:targetUnit}" .
+
+ls:outcomeTargetStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of an outcome target." ;
+  p:dimensionOf ls:OutcomeTarget ;
+  p:valuesFrom lst:OutcomeTargetStatus ;
+  p:order 1 .
+
+ls:targetMeasure a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Measure" ;
+  rdfs:comment "The measure of an outcome target." ;
+  p:dimensionOf ls:OutcomeTarget ;
+  p:valuesFrom lst:OutcomeMeasure ;
+  p:order 2 .
+
+ls:targetComparison a owl:DatatypeProperty ;
+  rdfs:label "comparison" ;
+  rdfs:comment "Whether the forecast must be at most or at least the threshold." .
+
+ls:targetThreshold a owl:DatatypeProperty ;
+  rdfs:label "threshold" ;
+  rdfs:comment "The value a forecast must reach." .
+
+ls:targetUnit a owl:DatatypeProperty ;
+  rdfs:label "unit" ;
+  rdfs:comment "The unit of the threshold." .
+
+ls:Contribution a p:ObjectType, rdfs:Class ;
+  rdfs:label "Contribution" ;
+  p:pluralLabel "Contributions" ;
+  rdfs:comment "Protocol content a contributor authored or imported, mapped to protocol objects." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:contributionName}" .
+
+ls:contributionMapping a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Mapping" ;
+  rdfs:comment "The mapping of a contribution." ;
+  p:dimensionOf ls:Contribution ;
+  p:valuesFrom lst:ContributionMapping ;
+  p:order 1 .
+
+ls:contributionName a owl:DatatypeProperty ;
+  rdfs:label "name" ;
+  rdfs:comment "What the contribution is, such as a section and where it came from." .
+
+ls:sourceFormat a owl:DatatypeProperty ;
+  rdfs:label "source" ;
+  rdfs:comment "Where the content came from: authored, Word, Google Docs or text." .
+
+ls:DesignSignal a p:ObjectType, rdfs:Class ;
+  rdfs:label "Design Signal" ;
+  p:pluralLabel "Design Signals" ;
+  rdfs:comment "Feedback from historical study data on the design object it concerns, such as a criterion that slowed enrollment in similar studies." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:designSignalText}" .
+
+ls:designSignalStatus a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Status" ;
+  rdfs:comment "The status of a design signal." ;
+  p:dimensionOf ls:DesignSignal ;
+  p:valuesFrom lst:DesignSignalStatus ;
+  p:order 1 .
+
+ls:designSignalText a owl:DatatypeProperty ;
+  rdfs:label "signal" ;
+  rdfs:comment "What history shows about the object." .
+
+ls:Decision a p:ObjectType, rdfs:Class ;
+  rdfs:label "Decision" ;
+  p:pluralLabel "Decisions" ;
+  rdfs:comment "A recorded choice on an opportunity, a study concept or a study: to pursue, park or stop it, to select a development option or a study scenario, or to approve a study's baseline." ;
+  p:inDomain ls:DesignAndPlan ;
+  p:titleTemplate "{ls:decisionRationale}" .
+
+ls:decisionKind a p:StateDimension, owl:ObjectProperty ;
+  rdfs:label "Kind" ;
+  rdfs:comment "The kind of a decision." ;
+  p:dimensionOf ls:Decision ;
+  p:valuesFrom lst:DecisionKind ;
+  p:order 1 .
+
+ls:decisionRationale a owl:DatatypeProperty ;
+  rdfs:label "rationale" ;
+  rdfs:comment "Why the choice was made." .
+
+ls:decidedOn a owl:DatatypeProperty ;
+  rdfs:label "decided on" ;
+  rdfs:comment "The date of the decision." .
+
+ls:informs a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "informs" ;
+  p:inverseLabel "is informed by" ;
+  p:order 26 ;
+  rdfs:comment "An opportunity informs the programs it bears on, and a study concept the study it became." .
+
+ls:belongsTo a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "belongs to" ;
+  p:inverseLabel "includes" ;
+  p:order 27 ;
+  rdfs:comment "A study belongs to a program." .
+
+ls:aimsAt a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "aims at" ;
+  p:inverseLabel "is the aim of" ;
+  p:order 28 ;
+  p:hasPart true ;
+  rdfs:comment "A program or an opportunity aims at a target product profile, which is part of it." .
+
+ls:develops a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "develops" ;
+  p:inverseLabel "is developed in" ;
+  p:order 29 ;
+  rdfs:comment "A program develops a compound." .
+
+ls:evaluates a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "evaluates" ;
+  p:inverseLabel "is evaluated in" ;
+  p:order 30 ;
+  rdfs:comment "An opportunity evaluates the compounds it would develop, as discovery hands them over." .
+
+ls:optionFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is an option for" ;
+  p:inverseLabel "has" ;
+  p:order 31 ;
+  p:partOf true ;
+  rdfs:comment "A development option is one path for an opportunity or a program." .
+
+ls:proposedFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is proposed for" ;
+  p:inverseLabel "has proposed" ;
+  p:order 32 ;
+  p:partOf true ;
+  rdfs:comment "A study concept is proposed for an opportunity or a program." .
+
+ls:plans a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "plans" ;
+  p:inverseLabel "is planned in" ;
+  p:order 33 ;
+  rdfs:comment "A development option plans the study concepts it would run." .
+
+ls:explores a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "explores" ;
+  p:inverseLabel "is explored by" ;
+  p:order 34 ;
+  p:partOf true ;
+  rdfs:comment "A study scenario explores a study concept or a study. It has one parent." .
+
+ls:usesProtocol a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "uses" ;
+  p:inverseLabel "is used in" ;
+  p:order 35 ;
+  rdfs:comment "A study scenario uses one protocol version." .
+
+ls:usesBudget a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "uses" ;
+  p:inverseLabel "is used in" ;
+  p:order 36 ;
+  p:hasPart true ;
+  rdfs:comment "A study scenario uses one study budget, which is part of it." .
+
+ls:usesSiteSelection a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "uses" ;
+  p:inverseLabel "is used in" ;
+  p:order 37 ;
+  p:hasPart true ;
+  rdfs:comment "A study scenario uses one site selection, which is part of it." .
+
+ls:baselineFrom a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "began from" ;
+  p:inverseLabel "seeded" ;
+  p:order 38 ;
+  rdfs:comment "A study began from a study concept's selected scenario, copied as its baseline." .
+
+ls:simulates a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "simulates" ;
+  p:inverseLabel "is simulated by" ;
+  p:order 39 ;
+  p:partOf true ;
+  rdfs:comment "A trial simulation simulates a study scenario or a development option as it stood at one moment." .
+
+ls:forecastFrom a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "comes from" ;
+  p:inverseLabel "forecasts" ;
+  p:order 40 ;
+  p:partOf true ;
+  rdfs:comment "A forecast comes from a trial simulation." .
+
+ls:measuredAgainst a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is measured against" ;
+  p:inverseLabel "measures" ;
+  p:order 41 ;
+  rdfs:comment "A forecast is measured against an outcome target on the same measure." .
+
+ls:targetFor a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "sets success for" ;
+  p:inverseLabel "has" ;
+  p:order 42 ;
+  p:partOf true ;
+  rdfs:comment "An outcome target sets what success means for an opportunity, a study concept or a study." .
+
+ls:specifiedIn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "specified in" ;
+  p:inverseLabel "specifies" ;
+  p:order 43 ;
+  p:partOf true ;
+  rdfs:comment "A protocol version specifies its population, objectives, arms, interventions, planned visits and assessments." .
+
+ls:defines a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "defines" ;
+  p:inverseLabel "is defined by" ;
+  p:order 44 ;
+  p:partOf true ;
+  rdfs:comment "An eligibility criterion defines a population." .
+
+ls:measures a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "measures" ;
+  p:inverseLabel "is measured by" ;
+  p:order 45 ;
+  p:partOf true ;
+  rdfs:comment "An endpoint measures an objective." .
+
+ls:estimandOf a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is the estimand of" ;
+  p:inverseLabel "targets" ;
+  p:order 46 ;
+  p:partOf true ;
+  rdfs:comment "An estimand is the precise effect an objective targets." .
+
+ls:requires a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "requires" ;
+  p:inverseLabel "produces data for" ;
+  p:order 47 ;
+  rdfs:comment "An endpoint requires the assessments that produce its data." .
+
+ls:givenIn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "given in" ;
+  p:inverseLabel "gives" ;
+  p:order 48 ;
+  rdfs:comment "An intervention is given in an arm." .
+
+ls:administers a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "administers" ;
+  p:inverseLabel "is administered as" ;
+  p:order 49 ;
+  rdfs:comment "An intervention administers a formulation." .
+
+ls:performedAt a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "performed at" ;
+  p:inverseLabel "performs" ;
+  p:order 50 ;
+  rdfs:comment "An assessment is performed at planned visits." .
+
+ls:scheduledFrom a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "scheduled from" ;
+  p:inverseLabel "schedules" ;
+  p:order 51 ;
+  rdfs:comment "A patient's visit is scheduled from a planned visit." .
+
+ls:proposedIn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "proposed in" ;
+  p:inverseLabel "proposes" ;
+  p:order 52 ;
+  p:partOf true ;
+  rdfs:comment "A proposed site is proposed in a site selection." .
+
+ls:candidateSite a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "proposes" ;
+  p:inverseLabel "is proposed as" ;
+  p:order 53 ;
+  rdfs:comment "A proposed site names the site it proposes." .
+
+ls:contributesTo a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "contributes to" ;
+  p:inverseLabel "has" ;
+  p:order 54 ;
+  p:partOf true ;
+  rdfs:comment "A contribution contributes to a protocol version." .
+
+ls:isAbout a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "is about" ;
+  p:inverseLabel "has" ;
+  p:order 55 ;
+  p:partOf true ;
+  rdfs:comment "A design signal is about the design or plan object it concerns." .
+
+ls:decidesOn a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "decides on" ;
+  p:inverseLabel "is decided by" ;
+  p:order 56 ;
+  p:partOf true ;
+  rdfs:comment "A decision is about an opportunity, a study concept or a study." .
+
+ls:chooses a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "chooses" ;
+  p:inverseLabel "is chosen by" ;
+  p:order 57 ;
+  rdfs:comment "A decision chooses a development option or a study scenario." .
+
+ls:justifiedBy a p:Relationship, owl:ObjectProperty ;
+  rdfs:label "justified by" ;
+  p:inverseLabel "justifies" ;
+  p:order 58 ;
+  rdfs:comment "An eligibility criterion is justified by a nonclinical result or a known risk." .
+
+lsh:Program-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Program-programStatus a sh:PropertyShape ;
+  sh:path ls:programStatus ;
+  sh:in ( lst:ProgramStatus-active lst:ProgramStatus-onHold lst:ProgramStatus-discontinued ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Program-programName a sh:PropertyShape ;
+  sh:path ls:programName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:TargetProductProfile-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:TargetProductProfile-targetProductProfileStatus a sh:PropertyShape ;
+  sh:path ls:targetProductProfileStatus ;
+  sh:in ( lst:TargetProductProfileStatus-draft lst:TargetProductProfileStatus-endorsed lst:TargetProductProfileStatus-superseded ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:TargetProductProfile-tppIndication a sh:PropertyShape ;
+  sh:path ls:tppIndication ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "indication" .
+
+lsh:TargetProductProfile-targetClaim a sh:PropertyShape ;
+  sh:path ls:targetClaim ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "target claim" .
+
+lsh:TargetProductProfile-minimumClaim a sh:PropertyShape ;
+  sh:path ls:minimumClaim ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "minimum claim" .
+
+lsh:Opportunity-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Opportunity-opportunityStatus a sh:PropertyShape ;
+  sh:path ls:opportunityStatus ;
+  sh:in ( lst:OpportunityStatus-exploring lst:OpportunityStatus-recommended lst:OpportunityStatus-pursued lst:OpportunityStatus-parked lst:OpportunityStatus-notPursued ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:Opportunity-opportunityKind a sh:PropertyShape ;
+  sh:path ls:opportunityKind ;
+  sh:in ( lst:OpportunityKind-newAsset lst:OpportunityKind-newIndication lst:OpportunityKind-scientificQuestion ) ;
+  sh:maxCount 1 ;
+  sh:name "Kind" .
+
+lsh:Opportunity-opportunityName a sh:PropertyShape ;
+  sh:path ls:opportunityName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Opportunity-rationale a sh:PropertyShape ;
+  sh:path ls:rationale ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "rationale" .
+
+lsh:DevelopmentOption-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:DevelopmentOption-developmentOptionStatus a sh:PropertyShape ;
+  sh:path ls:developmentOptionStatus ;
+  sh:in ( lst:DevelopmentOptionStatus-draft lst:DevelopmentOptionStatus-selected lst:DevelopmentOptionStatus-setAside ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:DevelopmentOption-optionName a sh:PropertyShape ;
+  sh:path ls:optionName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:DevelopmentOption-optionSummary a sh:PropertyShape ;
+  sh:path ls:optionSummary ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "summary" .
+
+lsh:StudyConcept-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:StudyConcept-studyConceptStatus a sh:PropertyShape ;
+  sh:path ls:studyConceptStatus ;
+  sh:in ( lst:StudyConceptStatus-draft lst:StudyConceptStatus-inReview lst:StudyConceptStatus-approved lst:StudyConceptStatus-parked lst:StudyConceptStatus-rejected ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:StudyConcept-studyConceptName a sh:PropertyShape ;
+  sh:path ls:studyConceptName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:StudyConcept-conceptRationale a sh:PropertyShape ;
+  sh:path ls:conceptRationale ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "rationale" .
+
+lsh:StudyScenario-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:StudyScenario-studyScenarioStatus a sh:PropertyShape ;
+  sh:path ls:studyScenarioStatus ;
+  sh:in ( lst:StudyScenarioStatus-draft lst:StudyScenarioStatus-selected lst:StudyScenarioStatus-setAside ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:StudyScenario-scenarioName a sh:PropertyShape ;
+  sh:path ls:scenarioName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:StudyScenario-scenarioChange a sh:PropertyShape ;
+  sh:path ls:scenarioChange ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "what it changes" .
+
+lsh:Population-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Population-populationText a sh:PropertyShape ;
+  sh:path ls:populationText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "description" .
+
+lsh:Objective-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Objective-objectiveLevel a sh:PropertyShape ;
+  sh:path ls:objectiveLevel ;
+  sh:in ( lst:ObjectiveLevel-primary lst:ObjectiveLevel-secondary lst:ObjectiveLevel-exploratory ) ;
+  sh:maxCount 1 ;
+  sh:name "Level" .
+
+lsh:Objective-objectiveText a sh:PropertyShape ;
+  sh:path ls:objectiveText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "statement" .
+
+lsh:Estimand-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Estimand-estimandCompleteness a sh:PropertyShape ;
+  sh:path ls:estimandCompleteness ;
+  sh:in ( lst:EstimandCompleteness-incomplete lst:EstimandCompleteness-complete ) ;
+  sh:maxCount 1 ;
+  sh:name "Completeness" .
+
+lsh:Estimand-estimandTreatment a sh:PropertyShape ;
+  sh:path ls:estimandTreatment ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "treatment" .
+
+lsh:Estimand-estimandPopulation a sh:PropertyShape ;
+  sh:path ls:estimandPopulation ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "population" .
+
+lsh:Estimand-estimandVariable a sh:PropertyShape ;
+  sh:path ls:estimandVariable ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "variable" .
+
+lsh:Estimand-intercurrentEvents a sh:PropertyShape ;
+  sh:path ls:intercurrentEvents ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "intercurrent events" .
+
+lsh:Estimand-populationSummary a sh:PropertyShape ;
+  sh:path ls:populationSummary ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "population-level summary" .
+
+lsh:Endpoint-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Endpoint-endpointType a sh:PropertyShape ;
+  sh:path ls:endpointType ;
+  sh:in ( lst:EndpointType-efficacy lst:EndpointType-safety lst:EndpointType-pharmacokinetic lst:EndpointType-patientReported ) ;
+  sh:maxCount 1 ;
+  sh:name "Type" .
+
+lsh:Endpoint-endpointText a sh:PropertyShape ;
+  sh:path ls:endpointText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "statement" .
+
+lsh:EligibilityCriterion-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:EligibilityCriterion-eligibilityCriterionKind a sh:PropertyShape ;
+  sh:path ls:eligibilityCriterionKind ;
+  sh:in ( lst:EligibilityCriterionKind-inclusion lst:EligibilityCriterionKind-exclusion ) ;
+  sh:maxCount 1 ;
+  sh:name "Kind" .
+
+lsh:EligibilityCriterion-eligibilityCriterionTestability a sh:PropertyShape ;
+  sh:path ls:eligibilityCriterionTestability ;
+  sh:in ( lst:EligibilityCriterionTestability-testable lst:EligibilityCriterionTestability-needsData ) ;
+  sh:maxCount 1 ;
+  sh:name "Testability" .
+
+lsh:EligibilityCriterion-criterionText a sh:PropertyShape ;
+  sh:path ls:criterionText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "criterion" .
+
+lsh:EligibilityCriterion-testedBy a sh:PropertyShape ;
+  sh:path ls:testedBy ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "tested by" .
+
+lsh:Arm-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Arm-armRole a sh:PropertyShape ;
+  sh:path ls:armRole ;
+  sh:in ( lst:ArmRole-experimental lst:ArmRole-activeControl lst:ArmRole-placeboControl ) ;
+  sh:maxCount 1 ;
+  sh:name "Role" .
+
+lsh:Arm-armName a sh:PropertyShape ;
+  sh:path ls:armName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Arm-allocationRatio a sh:PropertyShape ;
+  sh:path ls:allocationRatio ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "allocation" .
+
+lsh:Intervention-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Intervention-interventionName a sh:PropertyShape ;
+  sh:path ls:interventionName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Intervention-regimen a sh:PropertyShape ;
+  sh:path ls:regimen ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "dose and regimen" .
+
+lsh:PlannedVisit-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:PlannedVisit-plannedVisitName a sh:PropertyShape ;
+  sh:path ls:plannedVisitName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:PlannedVisit-studyDay a sh:PropertyShape ;
+  sh:path ls:studyDay ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "study day" .
+
+lsh:PlannedVisit-windowDays a sh:PropertyShape ;
+  sh:path ls:windowDays ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "window" .
+
+lsh:Assessment-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Assessment-assessmentPurpose a sh:PropertyShape ;
+  sh:path ls:assessmentPurpose ;
+  sh:in ( lst:AssessmentPurpose-endpoint lst:AssessmentPurpose-eligibility lst:AssessmentPurpose-safety lst:AssessmentPurpose-regulatory lst:AssessmentPurpose-noneRecorded ) ;
+  sh:maxCount 1 ;
+  sh:name "Purpose" .
+
+lsh:Assessment-assessmentBurden a sh:PropertyShape ;
+  sh:path ls:assessmentBurden ;
+  sh:in ( lst:AssessmentBurden-low lst:AssessmentBurden-moderate lst:AssessmentBurden-high ) ;
+  sh:maxCount 1 ;
+  sh:name "Burden" .
+
+lsh:Assessment-assessmentName a sh:PropertyShape ;
+  sh:path ls:assessmentName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Assessment-costPerVisit a sh:PropertyShape ;
+  sh:path ls:costPerVisit ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "cost per visit" .
+
+lsh:Assessment-minutesOnSite a sh:PropertyShape ;
+  sh:path ls:minutesOnSite ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "time on site" .
+
+lsh:Assessment-needsEquipment a sh:PropertyShape ;
+  sh:path ls:needsEquipment ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "needs equipment" .
+
+lsh:StudyBudget-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:StudyBudget-studyBudgetStatus a sh:PropertyShape ;
+  sh:path ls:studyBudgetStatus ;
+  sh:in ( lst:StudyBudgetStatus-draft lst:StudyBudgetStatus-approved ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:StudyBudget-studyBudgetFit a sh:PropertyShape ;
+  sh:path ls:studyBudgetFit ;
+  sh:in ( lst:StudyBudgetFit-withinCeiling lst:StudyBudgetFit-overCeiling ) ;
+  sh:maxCount 1 ;
+  sh:name "Fit" .
+
+lsh:StudyBudget-budgetName a sh:PropertyShape ;
+  sh:path ls:budgetName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:StudyBudget-budgetTotal a sh:PropertyShape ;
+  sh:path ls:budgetTotal ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "total" .
+
+lsh:StudyBudget-budgetCeiling a sh:PropertyShape ;
+  sh:path ls:budgetCeiling ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "ceiling" .
+
+lsh:SiteSelection-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:SiteSelection-siteSelectionStatus a sh:PropertyShape ;
+  sh:path ls:siteSelectionStatus ;
+  sh:in ( lst:SiteSelectionStatus-draft lst:SiteSelectionStatus-approved ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:SiteSelection-selectionName a sh:PropertyShape ;
+  sh:path ls:selectionName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:ProposedSite-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:ProposedSite-proposedSiteStatus a sh:PropertyShape ;
+  sh:path ls:proposedSiteStatus ;
+  sh:in ( lst:ProposedSiteStatus-proposed lst:ProposedSiteStatus-shortlisted lst:ProposedSiteStatus-rejected ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:ProposedSite-siteCountry a sh:PropertyShape ;
+  sh:path ls:siteCountry ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "country" .
+
+lsh:ProposedSite-siteCount a sh:PropertyShape ;
+  sh:path ls:siteCount ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "site count" .
+
+lsh:ProposedSite-patientsPerMonth a sh:PropertyShape ;
+  sh:path ls:patientsPerMonth ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "patients per month" .
+
+lsh:ProposedSite-activationDays a sh:PropertyShape ;
+  sh:path ls:activationDays ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "activation" .
+
+lsh:ProposedSite-equipment a sh:PropertyShape ;
+  sh:path ls:equipment ;
+  sh:datatype xsd:string ;
+  sh:name "equipment" .
+
+lsh:ProposedSite-startupCost a sh:PropertyShape ;
+  sh:path ls:startupCost ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "start-up cost" .
+
+lsh:ProposedSite-monthlyCost a sh:PropertyShape ;
+  sh:path ls:monthlyCost ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "monthly cost" .
+
+lsh:TrialSimulation-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:TrialSimulation-trialSimulationRun a sh:PropertyShape ;
+  sh:path ls:trialSimulationRun ;
+  sh:in ( lst:TrialSimulationRun-queued lst:TrialSimulationRun-running lst:TrialSimulationRun-complete lst:TrialSimulationRun-failed ) ;
+  sh:maxCount 1 ;
+  sh:name "Run" .
+
+lsh:TrialSimulation-scenarioAsOf a sh:PropertyShape ;
+  sh:path ls:scenarioAsOf ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "scenario as of" .
+
+lsh:TrialSimulation-simulatedTrials a sh:PropertyShape ;
+  sh:path ls:simulatedTrials ;
+  sh:datatype xsd:integer ;
+  sh:maxCount 1 ;
+  sh:name "simulated trials" .
+
+lsh:TrialSimulation-recruitmentRate a sh:PropertyShape ;
+  sh:path ls:recruitmentRate ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "recruitment rate" .
+
+lsh:TrialSimulation-screenFailureRate a sh:PropertyShape ;
+  sh:path ls:screenFailureRate ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "screen failure rate" .
+
+lsh:TrialSimulation-dropoutRate a sh:PropertyShape ;
+  sh:path ls:dropoutRate ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "dropout rate" .
+
+lsh:TrialSimulation-controlResponse a sh:PropertyShape ;
+  sh:path ls:controlResponse ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "response on control" .
+
+lsh:TrialSimulation-treatmentResponse a sh:PropertyShape ;
+  sh:path ls:treatmentResponse ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "response on treatment" .
+
+lsh:TrialSimulation-saeRate a sh:PropertyShape ;
+  sh:path ls:saeRate ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "serious adverse events per 100 patient-years" .
+
+lsh:TrialSimulation-assumedEffect a sh:PropertyShape ;
+  sh:path ls:assumedEffect ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "assumed effect" .
+
+lsh:TrialSimulation-simulationModel a sh:PropertyShape ;
+  sh:path ls:simulationModel ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "model" .
+
+lsh:Forecast-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Forecast-forecastCurrency a sh:PropertyShape ;
+  sh:path ls:forecastCurrency ;
+  sh:in ( lst:ForecastCurrency-current lst:ForecastCurrency-outOfDate ) ;
+  sh:maxCount 1 ;
+  sh:name "Currency" .
+
+lsh:Forecast-forecastMeasure a sh:PropertyShape ;
+  sh:path ls:forecastMeasure ;
+  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess lst:OutcomeMeasure-timeToSubmission lst:OutcomeMeasure-developmentCost ) ;
+  sh:maxCount 1 ;
+  sh:name "Measure" .
+
+lsh:Forecast-forecastAgainstTarget a sh:PropertyShape ;
+  sh:path ls:forecastAgainstTarget ;
+  sh:in ( lst:ForecastAgainstTarget-met lst:ForecastAgainstTarget-missed lst:ForecastAgainstTarget-noTarget ) ;
+  sh:maxCount 1 ;
+  sh:name "Against target" .
+
+lsh:Forecast-forecastMedian a sh:PropertyShape ;
+  sh:path ls:forecastMedian ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "median" .
+
+lsh:Forecast-forecastLow a sh:PropertyShape ;
+  sh:path ls:forecastLow ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "low" .
+
+lsh:Forecast-forecastHigh a sh:PropertyShape ;
+  sh:path ls:forecastHigh ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "high" .
+
+lsh:Forecast-forecastUnit a sh:PropertyShape ;
+  sh:path ls:forecastUnit ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "unit" .
+
+lsh:OutcomeTarget-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:OutcomeTarget-outcomeTargetStatus a sh:PropertyShape ;
+  sh:path ls:outcomeTargetStatus ;
+  sh:in ( lst:OutcomeTargetStatus-proposed lst:OutcomeTargetStatus-agreed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:OutcomeTarget-targetMeasure a sh:PropertyShape ;
+  sh:path ls:targetMeasure ;
+  sh:in ( lst:OutcomeMeasure-lastPatientIn lst:OutcomeMeasure-probabilityOfSuccess lst:OutcomeMeasure-totalCost lst:OutcomeMeasure-seriousAdverseEvents lst:OutcomeMeasure-patientBurden lst:OutcomeMeasure-siteBurden lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess lst:OutcomeMeasure-timeToSubmission lst:OutcomeMeasure-developmentCost ) ;
+  sh:maxCount 1 ;
+  sh:name "Measure" .
+
+lsh:OutcomeTarget-targetComparison a sh:PropertyShape ;
+  sh:path ls:targetComparison ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "comparison" .
+
+lsh:OutcomeTarget-targetThreshold a sh:PropertyShape ;
+  sh:path ls:targetThreshold ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 ;
+  sh:name "threshold" .
+
+lsh:OutcomeTarget-targetUnit a sh:PropertyShape ;
+  sh:path ls:targetUnit ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "unit" .
+
+lsh:Contribution-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Contribution-contributionMapping a sh:PropertyShape ;
+  sh:path ls:contributionMapping ;
+  sh:in ( lst:ContributionMapping-proposed lst:ContributionMapping-confirmed ) ;
+  sh:maxCount 1 ;
+  sh:name "Mapping" .
+
+lsh:Contribution-contributionName a sh:PropertyShape ;
+  sh:path ls:contributionName ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "name" .
+
+lsh:Contribution-sourceFormat a sh:PropertyShape ;
+  sh:path ls:sourceFormat ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "source" .
+
+lsh:DesignSignal-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:DesignSignal-designSignalStatus a sh:PropertyShape ;
+  sh:path ls:designSignalStatus ;
+  sh:in ( lst:DesignSignalStatus-raised lst:DesignSignalStatus-acknowledged lst:DesignSignalStatus-dismissed ) ;
+  sh:maxCount 1 ;
+  sh:name "Status" .
+
+lsh:DesignSignal-designSignalText a sh:PropertyShape ;
+  sh:path ls:designSignalText ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "signal" .
+
+lsh:Decision-identifier a sh:PropertyShape ;
+  sh:path ls:identifier ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+lsh:Decision-decisionKind a sh:PropertyShape ;
+  sh:path ls:decisionKind ;
+  sh:in ( lst:DecisionKind-pursue lst:DecisionKind-park lst:DecisionKind-stop lst:DecisionKind-select lst:DecisionKind-approveBaseline ) ;
+  sh:maxCount 1 ;
+  sh:name "Kind" .
+
+lsh:Decision-decisionRationale a sh:PropertyShape ;
+  sh:path ls:decisionRationale ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "rationale" .
+
+lsh:Decision-decidedOn a sh:PropertyShape ;
+  sh:path ls:decidedOn ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:name "decided on" .
+
+lsh:Opportunity-informs a sh:PropertyShape ;
+  sh:path ls:informs ;
+  sh:class ls:Program ;
+  sh:name "informs" .
+
+lsh:StudyConcept-informs a sh:PropertyShape ;
+  sh:path ls:informs ;
+  sh:class ls:Study ;
+  sh:name "informs" .
+
+lsh:Study-belongsTo a sh:PropertyShape ;
+  sh:path ls:belongsTo ;
+  sh:class ls:Program ;
+  sh:maxCount 1 ;
+  sh:name "belongs to" .
+
+lsh:Program-aimsAt a sh:PropertyShape ;
+  sh:path ls:aimsAt ;
+  sh:class ls:TargetProductProfile ;
+  sh:name "aims at" .
+
+lsh:Opportunity-aimsAt a sh:PropertyShape ;
+  sh:path ls:aimsAt ;
+  sh:class ls:TargetProductProfile ;
+  sh:name "aims at" .
+
+lsh:Program-develops a sh:PropertyShape ;
+  sh:path ls:develops ;
+  sh:class ls:Compound ;
+  sh:name "develops" .
+
+lsh:Opportunity-evaluates a sh:PropertyShape ;
+  sh:path ls:evaluates ;
+  sh:class ls:Compound ;
+  sh:name "evaluates" .
+
+lsh:DevelopmentOption-optionFor a sh:PropertyShape ;
+  sh:path ls:optionFor ;
+  sh:or ( lsh:IsOpportunity lsh:IsProgram ) ;
+  sh:maxCount 1 ;
+  sh:name "is an option for" .
+
+lsh:StudyConcept-proposedFor a sh:PropertyShape ;
+  sh:path ls:proposedFor ;
+  sh:or ( lsh:IsOpportunity lsh:IsProgram ) ;
+  sh:maxCount 1 ;
+  sh:name "is proposed for" .
+
+lsh:DevelopmentOption-plans a sh:PropertyShape ;
+  sh:path ls:plans ;
+  sh:class ls:StudyConcept ;
+  sh:name "plans" .
+
+lsh:StudyScenario-explores a sh:PropertyShape ;
+  sh:path ls:explores ;
+  sh:or ( lsh:IsStudyConcept lsh:IsStudy ) ;
+  sh:maxCount 1 ;
+  sh:name "explores" .
+
+lsh:StudyScenario-usesProtocol a sh:PropertyShape ;
+  sh:path ls:usesProtocol ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "uses" .
+
+lsh:StudyScenario-usesBudget a sh:PropertyShape ;
+  sh:path ls:usesBudget ;
+  sh:class ls:StudyBudget ;
+  sh:maxCount 1 ;
+  sh:name "uses" .
+
+lsh:StudyScenario-usesSiteSelection a sh:PropertyShape ;
+  sh:path ls:usesSiteSelection ;
+  sh:class ls:SiteSelection ;
+  sh:maxCount 1 ;
+  sh:name "uses" .
+
+lsh:Study-baselineFrom a sh:PropertyShape ;
+  sh:path ls:baselineFrom ;
+  sh:class ls:StudyScenario ;
+  sh:maxCount 1 ;
+  sh:name "began from" .
+
+lsh:TrialSimulation-simulates a sh:PropertyShape ;
+  sh:path ls:simulates ;
+  sh:or ( lsh:IsStudyScenario lsh:IsDevelopmentOption ) ;
+  sh:maxCount 1 ;
+  sh:name "simulates" .
+
+lsh:Forecast-forecastFrom a sh:PropertyShape ;
+  sh:path ls:forecastFrom ;
+  sh:class ls:TrialSimulation ;
+  sh:maxCount 1 ;
+  sh:name "comes from" .
+
+lsh:Forecast-measuredAgainst a sh:PropertyShape ;
+  sh:path ls:measuredAgainst ;
+  sh:class ls:OutcomeTarget ;
+  sh:maxCount 1 ;
+  sh:name "is measured against" .
+
+lsh:OutcomeTarget-targetFor a sh:PropertyShape ;
+  sh:path ls:targetFor ;
+  sh:or ( lsh:IsOpportunity lsh:IsStudyConcept lsh:IsStudy ) ;
+  sh:maxCount 1 ;
+  sh:name "sets success for" .
+
+lsh:Population-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Objective-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Arm-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Intervention-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:PlannedVisit-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:Assessment-specifiedIn a sh:PropertyShape ;
+  sh:path ls:specifiedIn ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "specified in" .
+
+lsh:EligibilityCriterion-defines a sh:PropertyShape ;
+  sh:path ls:defines ;
+  sh:class ls:Population ;
+  sh:maxCount 1 ;
+  sh:name "defines" .
+
+lsh:Endpoint-measures a sh:PropertyShape ;
+  sh:path ls:measures ;
+  sh:class ls:Objective ;
+  sh:maxCount 1 ;
+  sh:name "measures" .
+
+lsh:Estimand-estimandOf a sh:PropertyShape ;
+  sh:path ls:estimandOf ;
+  sh:class ls:Objective ;
+  sh:maxCount 1 ;
+  sh:name "is the estimand of" .
+
+lsh:Endpoint-requires a sh:PropertyShape ;
+  sh:path ls:requires ;
+  sh:class ls:Assessment ;
+  sh:name "requires" .
+
+lsh:Intervention-givenIn a sh:PropertyShape ;
+  sh:path ls:givenIn ;
+  sh:class ls:Arm ;
+  sh:name "given in" .
+
+lsh:Intervention-administers a sh:PropertyShape ;
+  sh:path ls:administers ;
+  sh:class ls:Formulation ;
+  sh:maxCount 1 ;
+  sh:name "administers" .
+
+lsh:Assessment-performedAt a sh:PropertyShape ;
+  sh:path ls:performedAt ;
+  sh:class ls:PlannedVisit ;
+  sh:name "performed at" .
+
+lsh:Visit-scheduledFrom a sh:PropertyShape ;
+  sh:path ls:scheduledFrom ;
+  sh:class ls:PlannedVisit ;
+  sh:maxCount 1 ;
+  sh:name "scheduled from" .
+
+lsh:ProposedSite-proposedIn a sh:PropertyShape ;
+  sh:path ls:proposedIn ;
+  sh:class ls:SiteSelection ;
+  sh:maxCount 1 ;
+  sh:name "proposed in" .
+
+lsh:ProposedSite-candidateSite a sh:PropertyShape ;
+  sh:path ls:candidateSite ;
+  sh:class ls:Site ;
+  sh:maxCount 1 ;
+  sh:name "proposes" .
+
+lsh:Contribution-contributesTo a sh:PropertyShape ;
+  sh:path ls:contributesTo ;
+  sh:class ls:Protocol ;
+  sh:maxCount 1 ;
+  sh:name "contributes to" .
+
+lsh:DesignSignal-isAbout a sh:PropertyShape ;
+  sh:path ls:isAbout ;
+  sh:or ( lsh:IsEligibilityCriterion lsh:IsAssessment lsh:IsPlannedVisit lsh:IsObjective lsh:IsEndpoint lsh:IsProposedSite lsh:IsStudyBudget ) ;
+  sh:maxCount 1 ;
+  sh:name "is about" .
+
+lsh:Decision-decidesOn a sh:PropertyShape ;
+  sh:path ls:decidesOn ;
+  sh:or ( lsh:IsOpportunity lsh:IsStudyConcept lsh:IsStudy ) ;
+  sh:maxCount 1 ;
+  sh:name "decides on" .
+
+lsh:Decision-chooses a sh:PropertyShape ;
+  sh:path ls:chooses ;
+  sh:or ( lsh:IsDevelopmentOption lsh:IsStudyScenario ) ;
+  sh:maxCount 1 ;
+  sh:name "chooses" .
+
+lsh:EligibilityCriterion-justifiedBy a sh:PropertyShape ;
+  sh:path ls:justifiedBy ;
+  sh:or ( lsh:IsAssayResult lsh:IsSafetyCase ) ;
+  sh:name "justified by" .
+
+lsh:Program a sh:NodeShape ;
+  sh:targetClass ls:Program ;
+  sh:property lsh:Program-identifier, lsh:Program-programStatus, lsh:Program-programName, lsh:Program-aimsAt, lsh:Program-develops .
+
+lsh:TargetProductProfile a sh:NodeShape ;
+  sh:targetClass ls:TargetProductProfile ;
+  sh:property lsh:TargetProductProfile-identifier, lsh:TargetProductProfile-targetProductProfileStatus, lsh:TargetProductProfile-tppIndication, lsh:TargetProductProfile-targetClaim, lsh:TargetProductProfile-minimumClaim .
+
+lsh:Opportunity a sh:NodeShape ;
+  sh:targetClass ls:Opportunity ;
+  sh:property lsh:Opportunity-identifier, lsh:Opportunity-opportunityStatus, lsh:Opportunity-opportunityKind, lsh:Opportunity-opportunityName, lsh:Opportunity-rationale, lsh:Opportunity-informs, lsh:Opportunity-aimsAt, lsh:Opportunity-evaluates .
+
+lsh:DevelopmentOption a sh:NodeShape ;
+  sh:targetClass ls:DevelopmentOption ;
+  sh:property lsh:DevelopmentOption-identifier, lsh:DevelopmentOption-developmentOptionStatus, lsh:DevelopmentOption-optionName, lsh:DevelopmentOption-optionSummary, lsh:DevelopmentOption-optionFor, lsh:DevelopmentOption-plans .
+
+lsh:StudyConcept a sh:NodeShape ;
+  sh:targetClass ls:StudyConcept ;
+  sh:property lsh:StudyConcept-identifier, lsh:StudyConcept-studyConceptStatus, lsh:StudyConcept-studyConceptName, lsh:StudyConcept-conceptRationale, lsh:StudyConcept-informs, lsh:StudyConcept-proposedFor .
+
+lsh:StudyScenario a sh:NodeShape ;
+  sh:targetClass ls:StudyScenario ;
+  sh:property lsh:StudyScenario-identifier, lsh:StudyScenario-studyScenarioStatus, lsh:StudyScenario-scenarioName, lsh:StudyScenario-scenarioChange, lsh:StudyScenario-explores, lsh:StudyScenario-usesProtocol, lsh:StudyScenario-usesBudget, lsh:StudyScenario-usesSiteSelection .
+
+lsh:Population a sh:NodeShape ;
+  sh:targetClass ls:Population ;
+  sh:property lsh:Population-identifier, lsh:Population-populationText, lsh:Population-specifiedIn .
+
+lsh:Objective a sh:NodeShape ;
+  sh:targetClass ls:Objective ;
+  sh:property lsh:Objective-identifier, lsh:Objective-objectiveLevel, lsh:Objective-objectiveText, lsh:Objective-specifiedIn .
+
+lsh:Estimand a sh:NodeShape ;
+  sh:targetClass ls:Estimand ;
+  sh:property lsh:Estimand-identifier, lsh:Estimand-estimandCompleteness, lsh:Estimand-estimandTreatment, lsh:Estimand-estimandPopulation, lsh:Estimand-estimandVariable, lsh:Estimand-intercurrentEvents, lsh:Estimand-populationSummary, lsh:Estimand-estimandOf .
+
+lsh:Endpoint a sh:NodeShape ;
+  sh:targetClass ls:Endpoint ;
+  sh:property lsh:Endpoint-identifier, lsh:Endpoint-endpointType, lsh:Endpoint-endpointText, lsh:Endpoint-measures, lsh:Endpoint-requires .
+
+lsh:EligibilityCriterion a sh:NodeShape ;
+  sh:targetClass ls:EligibilityCriterion ;
+  sh:property lsh:EligibilityCriterion-identifier, lsh:EligibilityCriterion-eligibilityCriterionKind, lsh:EligibilityCriterion-eligibilityCriterionTestability, lsh:EligibilityCriterion-criterionText, lsh:EligibilityCriterion-testedBy, lsh:EligibilityCriterion-defines, lsh:EligibilityCriterion-justifiedBy .
+
+lsh:Arm a sh:NodeShape ;
+  sh:targetClass ls:Arm ;
+  sh:property lsh:Arm-identifier, lsh:Arm-armRole, lsh:Arm-armName, lsh:Arm-allocationRatio, lsh:Arm-specifiedIn .
+
+lsh:Intervention a sh:NodeShape ;
+  sh:targetClass ls:Intervention ;
+  sh:property lsh:Intervention-identifier, lsh:Intervention-interventionName, lsh:Intervention-regimen, lsh:Intervention-specifiedIn, lsh:Intervention-givenIn, lsh:Intervention-administers .
+
+lsh:PlannedVisit a sh:NodeShape ;
+  sh:targetClass ls:PlannedVisit ;
+  sh:property lsh:PlannedVisit-identifier, lsh:PlannedVisit-plannedVisitName, lsh:PlannedVisit-studyDay, lsh:PlannedVisit-windowDays, lsh:PlannedVisit-specifiedIn .
+
+lsh:Assessment a sh:NodeShape ;
+  sh:targetClass ls:Assessment ;
+  sh:property lsh:Assessment-identifier, lsh:Assessment-assessmentPurpose, lsh:Assessment-assessmentBurden, lsh:Assessment-assessmentName, lsh:Assessment-costPerVisit, lsh:Assessment-minutesOnSite, lsh:Assessment-needsEquipment, lsh:Assessment-specifiedIn, lsh:Assessment-performedAt .
+
+lsh:StudyBudget a sh:NodeShape ;
+  sh:targetClass ls:StudyBudget ;
+  sh:property lsh:StudyBudget-identifier, lsh:StudyBudget-studyBudgetStatus, lsh:StudyBudget-studyBudgetFit, lsh:StudyBudget-budgetName, lsh:StudyBudget-budgetTotal, lsh:StudyBudget-budgetCeiling .
+
+lsh:SiteSelection a sh:NodeShape ;
+  sh:targetClass ls:SiteSelection ;
+  sh:property lsh:SiteSelection-identifier, lsh:SiteSelection-siteSelectionStatus, lsh:SiteSelection-selectionName .
+
+lsh:ProposedSite a sh:NodeShape ;
+  sh:targetClass ls:ProposedSite ;
+  sh:property lsh:ProposedSite-identifier, lsh:ProposedSite-proposedSiteStatus, lsh:ProposedSite-siteCountry, lsh:ProposedSite-siteCount, lsh:ProposedSite-patientsPerMonth, lsh:ProposedSite-activationDays, lsh:ProposedSite-equipment, lsh:ProposedSite-startupCost, lsh:ProposedSite-monthlyCost, lsh:ProposedSite-proposedIn, lsh:ProposedSite-candidateSite .
+
+lsh:TrialSimulation a sh:NodeShape ;
+  sh:targetClass ls:TrialSimulation ;
+  sh:property lsh:TrialSimulation-identifier, lsh:TrialSimulation-trialSimulationRun, lsh:TrialSimulation-scenarioAsOf, lsh:TrialSimulation-simulatedTrials, lsh:TrialSimulation-recruitmentRate, lsh:TrialSimulation-screenFailureRate, lsh:TrialSimulation-dropoutRate, lsh:TrialSimulation-controlResponse, lsh:TrialSimulation-treatmentResponse, lsh:TrialSimulation-saeRate, lsh:TrialSimulation-assumedEffect, lsh:TrialSimulation-simulationModel, lsh:TrialSimulation-simulates .
+
+lsh:Forecast a sh:NodeShape ;
+  sh:targetClass ls:Forecast ;
+  sh:property lsh:Forecast-identifier, lsh:Forecast-forecastCurrency, lsh:Forecast-forecastMeasure, lsh:Forecast-forecastAgainstTarget, lsh:Forecast-forecastMedian, lsh:Forecast-forecastLow, lsh:Forecast-forecastHigh, lsh:Forecast-forecastUnit, lsh:Forecast-forecastFrom, lsh:Forecast-measuredAgainst .
+
+lsh:OutcomeTarget a sh:NodeShape ;
+  sh:targetClass ls:OutcomeTarget ;
+  sh:property lsh:OutcomeTarget-identifier, lsh:OutcomeTarget-outcomeTargetStatus, lsh:OutcomeTarget-targetMeasure, lsh:OutcomeTarget-targetComparison, lsh:OutcomeTarget-targetThreshold, lsh:OutcomeTarget-targetUnit, lsh:OutcomeTarget-targetFor .
+
+lsh:Contribution a sh:NodeShape ;
+  sh:targetClass ls:Contribution ;
+  sh:property lsh:Contribution-identifier, lsh:Contribution-contributionMapping, lsh:Contribution-contributionName, lsh:Contribution-sourceFormat, lsh:Contribution-contributesTo .
+
+lsh:DesignSignal a sh:NodeShape ;
+  sh:targetClass ls:DesignSignal ;
+  sh:property lsh:DesignSignal-identifier, lsh:DesignSignal-designSignalStatus, lsh:DesignSignal-designSignalText, lsh:DesignSignal-isAbout .
+
+lsh:Decision a sh:NodeShape ;
+  sh:targetClass ls:Decision ;
+  sh:property lsh:Decision-identifier, lsh:Decision-decisionKind, lsh:Decision-decisionRationale, lsh:Decision-decidedOn, lsh:Decision-decidesOn, lsh:Decision-chooses .
+
+lsh:IsAssayResult a sh:NodeShape ;
+  sh:class ls:AssayResult .
+
+lsh:IsAssessment a sh:NodeShape ;
+  sh:class ls:Assessment .
+
+lsh:IsDevelopmentOption a sh:NodeShape ;
+  sh:class ls:DevelopmentOption .
+
+lsh:IsEligibilityCriterion a sh:NodeShape ;
+  sh:class ls:EligibilityCriterion .
+
+lsh:IsEndpoint a sh:NodeShape ;
+  sh:class ls:Endpoint .
+
+lsh:IsObjective a sh:NodeShape ;
+  sh:class ls:Objective .
+
+lsh:IsOpportunity a sh:NodeShape ;
+  sh:class ls:Opportunity .
+
+lsh:IsPlannedVisit a sh:NodeShape ;
+  sh:class ls:PlannedVisit .
+
+lsh:IsProgram a sh:NodeShape ;
+  sh:class ls:Program .
+
+lsh:IsProposedSite a sh:NodeShape ;
+  sh:class ls:ProposedSite .
+
+lsh:IsStudy a sh:NodeShape ;
+  sh:class ls:Study .
+
+lsh:IsStudyBudget a sh:NodeShape ;
+  sh:class ls:StudyBudget .
+
+lsh:IsStudyConcept a sh:NodeShape ;
+  sh:class ls:StudyConcept .
+
+lsh:IsStudyScenario a sh:NodeShape ;
+  sh:class ls:StudyScenario .

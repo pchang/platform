@@ -12,6 +12,7 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core';
+import { useState } from 'react';
 import AttentionBellIcon from '@patternfly/react-icons/dist/esm/icons/attention-bell-icon';
 import BellIcon from '@patternfly/react-icons/dist/esm/icons/bell-icon';
 import CommentsIcon from '@patternfly/react-icons/dist/esm/icons/comments-icon';
@@ -21,6 +22,25 @@ import { ProfileMenu } from './ProfileMenu';
 import { MenuIcon } from './MenuIcon';
 import { SettingsMenu } from './SettingsMenu';
 import './AppMasthead.css';
+
+/**
+ * The logo: the parent brand's own file, with its reversed copy shown in dark mode. Both pictures are decorative: the link
+ * around them is named for the whole product, which begins with the short name they show, so the name never depends on which
+ * copy is showing. The product name as text stands in until the file is there, or if it cannot be loaded (design system spec
+ * 4.1, Brand logo).
+ */
+function BrandLogo() {
+  const [failed, setFailed] = useState(false);
+  const { logo } = product;
+  if (failed) return <span className="app-masthead__name">{product.name}</span>;
+  const src = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+  return (
+    <span className="app-brand">
+      <img src={src(logo.light)} alt="" className={`app-brand__logo${logo.dark ? ' app-brand__light' : ''}`} onError={() => setFailed(true)} />
+      {logo.dark && <img src={src(logo.dark)} alt="" aria-hidden="true" className="app-brand__logo app-brand__dark" onError={() => setFailed(true)} />}
+    </span>
+  );
+}
 
 /**
  * Platform chrome (design system spec, section 4.1): the sidebar's menu button and the text logo on the left;
@@ -51,8 +71,8 @@ export function AppMasthead({
           <PageToggleButton isSidebarOpen={isSidebarOpen} onSidebarToggle={onSidebarToggle} aria-label="Navigation" className="app-menu-toggle" icon={<MenuIcon />} />
         </MastheadToggle>
         <MastheadBrand className="app-masthead__brand">
-          <MastheadLogo href={product.homeHref} className="app-masthead__logo">
-            <span className="app-masthead__name">{product.name}</span>
+          <MastheadLogo href={product.homeHref} className="app-masthead__logo" aria-label={product.name}>
+            <BrandLogo />
           </MastheadLogo>
         </MastheadBrand>
       </MastheadMain>

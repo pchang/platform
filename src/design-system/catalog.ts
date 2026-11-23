@@ -37,12 +37,24 @@ export interface ViewNode {
   intent?: Intent;
   /** A graph object the node opens in the object panel (design system spec 4.4). Only on a Card or a Button. */
   opens?: string;
-  /** A graph object a Button starts a conversation about in the chat (design system spec 4.1, Ask about this). */
-  asks?: string;
+  /** A graph object, or the chosen objects, a Button starts a conversation about in the chat (design system spec 4.1, Ask about this). */
+  asks?: string | string[];
   /** A graph object the node chooses for a batch action (design system spec 4.3). Only on a Card or a table row (Tr). */
   selects?: string;
   /** A method a Button runs on every chosen object (design system spec 4.3). */
   batch?: string;
+  /** An object type a Button opens the create form for (platform spec 5.3). */
+  creates?: string;
+  /** With creates: the object the new one is created inside. */
+  within?: string;
+  /** An object a Button opens the edit form for (platform spec 5.3). */
+  edits?: string;
+  /** A type whose objects a Title or Button lists on a page of their own, as a link (design system spec 4.3, Home). */
+  lists?: string;
+  /** A place in the app a Button goes to, as a link, such as Back to Home (design system spec 4.3, Home). */
+  goes?: 'home';
+  /** A metric whose objects a Card or Button shows on a page of their own, as a link (platform spec 5.1, Home). */
+  shows?: string;
   children?: ViewNode[];
 }
 

@@ -9,11 +9,11 @@ const axePath = require.resolve('axe-core/axe.min.js');
 
 const bar = (page: Page) => page.getByRole('main').locator('.pf-v6-c-toolbar');
 const card = (page: Page, id: string) => page.locator('.app-object-drawer__content .pf-v6-c-card').filter({ has: eyebrow(page, id) });
-const row = (page: Page, id: string) => page.locator('.app-object-table tbody tr').filter({ has: page.getByRole('gridcell', { name: id, exact: true }) });
+const row = (page: Page, id: string) => page.locator('.app-object-table tbody tr').filter({ has: page.getByRole('gridcell', { name: new RegExp(`${id}$`) }) });
 
 async function openTodo(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await expect(card(page, 'SC-004')).toBeVisible({ timeout: 30_000 });
 }
 
@@ -44,8 +44,10 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await card(page, 'SC-005').getByRole('checkbox').click();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await expect(bar(page).getByText('3 selected')).toBeVisible();
-  // SC-002 waits to be assessed, not triaged: nothing applies to all three.
-  await expect(bar(page).getByText('No action applies to all of them.')).toBeVisible();
+  // SC-002 waits to be assessed, not triaged: nothing applies to all three, so only Ask follows, and nothing says so.
+  await expect(bar(page).getByRole('button', { name: 'Triage' })).toHaveCount(0);
+  await expect(bar(page).getByText('No action applies')).toHaveCount(0);
+  await expect(bar(page).getByRole('button', { name: 'Ask about the 3 selected' })).toBeVisible();
   await card(page, 'SC-002').getByRole('checkbox').click();
   await card(page, 'SC-006').getByRole('checkbox').click();
   await bar(page).getByRole('button', { name: 'Triage' }).click();
@@ -70,10 +72,11 @@ test('list: a checkbox on every row, one method raised and the rest in a … men
   await expect(card(page, 'SC-001')).toBeVisible({ timeout: 30_000 });
   await bar(page).getByRole('button', { name: 'List' }).click();
   await expect(bar(page).getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(row(page, 'SC-001').getByRole('checkbox', { name: 'Select SC-001' })).toBeVisible();
+  // The row's checkbox is named for its first cell: the title, with the identifier after it.
+  await expect(row(page, 'SC-001').getByRole('checkbox', { name: /^Select .*SC-001$/ })).toBeVisible();
   // A real table: a column per state dimension, headed by its name, with the value in each row.
   const table = page.getByRole('grid', { name: 'Safety Cases' });
-  await expect(table.getByRole('columnheader')).toHaveText(['Select', 'Identifier', 'Title', 'Workflow', 'Causality', 'Expectedness', 'Seriousness', 'Actions']);
+  await expect(table.getByRole('columnheader')).toHaveText(['Select', 'Title', 'Workflow', 'Causality', 'Expectedness', 'Seriousness', 'Actions']);
   await expect(row(page, 'SC-001').getByRole('gridcell', { name: 'assessed', exact: true })).toBeVisible();
   await expect(row(page, 'SC-002').getByRole('button', { name: 'Assess' })).toBeVisible();
   await row(page, 'SC-002').getByRole('button', { name: 'More actions for SC-002' }).click();
@@ -83,7 +86,8 @@ test('list: a checkbox on every row, one method raised and the rest in a … men
 
   // The title opens the object; the choice of view is kept on the device.
   await row(page, 'SC-002').getByRole('button', { name: /Skin rash, nausea/ }).click();
-  await expect(page.locator('.app-object-panel').getByText('SC-002 · Safety Case', { exact: true })).toBeVisible();
+  await expect(page.locator('.app-object-panel').getByRole('link', { name: 'Safety Case', exact: true })).toBeVisible();
+  await expect(page.locator('.app-object-panel').getByText('· SC-002', { exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.reload();
   await expect(row(page, 'SC-001')).toBeVisible({ timeout: 30_000 });

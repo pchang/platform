@@ -39,6 +39,8 @@ function checkNode(node: ViewNode, at: string): string[] {
 
   const errors: string[] = [];
   if (node.opens && entry.id !== 'Card' && entry.id !== 'Button') errors.push(`${at} only a Card or a Button opens an object`);
+  if (node.lists && entry.id !== 'Button' && entry.id !== 'Title') errors.push(`${at} only a Button or a Title lists a type`);
+  if (node.goes && entry.id !== 'Button') errors.push(`${at} only a Button goes to a place`);
   if (node.asks && entry.id !== 'Button') errors.push(`${at} only a Button asks about an object`);
   if (node.selects && entry.id !== 'Card' && entry.id !== 'Tr') errors.push(`${at} only a Card or a table row chooses an object`);
   if (node.batch && entry.id !== 'Button' && entry.id !== 'DropdownItem') errors.push(`${at} only a Button or a DropdownItem runs a batch action`);

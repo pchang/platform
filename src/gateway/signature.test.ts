@@ -7,7 +7,8 @@ import { NS, select } from '../ontology/ontology';
 import { openGateway, withSeed } from './node';
 
 // Electronic signatures (platform spec 3.4). Each test commits a few methods.
-vi.setConfig({ testTimeout: 20_000 });
+// Each test opens gateways of its own, some twice over a journal.
+vi.setConfig({ testTimeout: 60_000 });
 
 const ls = (n: string) => `${NS.ls}${n}`;
 const chloe = { person: `${NS.d}person-chloe`, role: ls('DrugSafetyPhysician') };

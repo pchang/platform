@@ -50,11 +50,18 @@ describe('reads', () => {
       view.links.map((l) => [l.label, l.pluralLabel, l.kind, l.one ? 'one' : 'many', l.objects.map((o) => o.identifier).join(' ')]);
 
     it('gives a study its patients first, as contained, then the sites it runs at and the formulation it tests', () => {
+      // The study also contains its own study scenarios, targets and decisions, and relates to its program and concepts (domain spec 3.4).
       expect(ends(withSeed().read(ben, 'ST-01'))).toEqual([
         ['enrolls', 'Patients', 'contains', 'many', 'PT-01 PT-02 PT-03 PT-04 PT-05 PT-06 PT-07 PT-08 PT-09 PT-10 PT-11 PT-12'],
+        ['is explored by', 'Study Scenarios', 'contains', 'many', 'SSC-4'],
+        ['has', 'Outcome Targets', 'contains', 'many', ''],
+        ['is decided by', 'Decisions', 'contains', 'many', ''],
         ['tests', 'Formulations', 'related', 'many', 'F-101'],
         ['runs at', 'Sites', 'related', 'many', 'SITE-1 SITE-2 SITE-3'],
         ['conducted under', 'Protocols', 'related', 'one', 'PROT-2'],
+        ['is informed by', 'Study Concepts', 'related', 'many', ''],
+        ['belongs to', 'Programs', 'related', 'one', 'PRG-1'],
+        ['began from', 'Study Scenarios', 'related', 'one', ''],
       ]);
     });
 
@@ -71,7 +78,7 @@ describe('reads', () => {
 
     it('keeps an end with nothing at the other end, so every object of a type has the same structure', () => {
       const site = withSeed().read(ben, 'SITE-1');
-      expect(ends(site).map(([label, plural]) => `${label} ${plural}`)).toEqual(['hosts Studies', 'enrolls Patients']);
+      expect(ends(site).map(([label, plural]) => `${label} ${plural}`)).toEqual(['hosts Studies', 'enrolls Patients', 'is proposed as Proposed Sites']);
       expect(withSeed().read(elena, 'QE-1').links.find((l) => l.relationship === ls('resolves'))).toMatchObject({ label: 'is resolved by', kind: 'contains', objects: [] });
     });
 
@@ -89,9 +96,15 @@ describe('reads', () => {
       expect(gateway.describe(ada).find((t) => t.label === 'Batch')?.relationships.map((r) => r.pluralLabel)).not.toContain('Patients');
       expect(gateway.describe(ben).find((t) => t.label === 'Study')?.relationships.map((r) => `${r.label} ${r.pluralLabel}`)).toEqual([
         'enrolls Patients',
+        'is explored by Study Scenarios',
+        'has Outcome Targets',
+        'is decided by Decisions',
         'tests Formulations',
         'runs at Sites',
         'conducted under Protocols',
+        'is informed by Study Concepts',
+        'belongs to Programs',
+        'began from Study Scenarios',
       ]);
     });
 

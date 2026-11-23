@@ -1,6 +1,10 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { AskResult, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
+import type { AskResult, HomeView, MethodOption, ObjectSummary, RunView, SearchResult, ToDoItem } from '../data/client';
 import { BATCH_ARCHETYPES } from './batchView';
+import { group, sections } from './layout';
+import { backToHome } from './homeView';
+import { MAX_ABOUT } from '../gateway/ask';
+import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
 import { BUILT_ARCHETYPES } from './composeView';
 
@@ -36,10 +40,31 @@ export const askAbout = (object: ObjectSummary): ViewNode => ({
 });
 
 /**
+ * The speech bubbles that start a conversation about the chosen objects, last in the list bar after the set and batch
+ * actions (design system spec 4.3, Ask about the chosen). With more than ten chosen it stays focusable and says why not.
+ */
+export function askAboutChosen(objects: string[]): ViewNode {
+  const label = `Ask about the ${objects.length} selected`;
+  const tooMany = objects.length > MAX_ABOUT;
+  return {
+    component: 'Tooltip',
+    props: { content: tooMany ? 'Choose ten or fewer to ask about them.' : label },
+    children: [{ component: 'Button', props: { variant: 'plain', icon: 'comments', 'aria-label': label, ...(tooMany ? { isAriaDisabled: true } : {}) }, ...(tooMany ? {} : { asks: objects }) }],
+  };
+}
+
+/** An object's identifier, quiet: small, subtle text, a reference to cite or look up (design system spec 4.3). */
+export const quietId = (identifier: string): ViewNode => ({ component: 'Content', props: { label: identifier, component: 'small', isSubtle: true } });
+
+/** A type's name as a small link to that type's list of objects: only in the object panel's header (design system spec 4.3, Type links). */
+export const typeLink = (type: string, typeLabel: string): ViewNode => ({ component: 'Button', props: { label: typeLabel, variant: 'link', isInline: true, size: 'sm' }, lists: type });
+
+/**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
  * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
+ * It leads with the title; the type's name, as plain text, only in a list of several types.
  */
-export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2'): ViewNode {
+export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2', options: { showType?: boolean } = {}): ViewNode {
   return {
     component: 'GalleryItem',
     children: [
@@ -49,11 +74,21 @@ export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 
         opens: object.iri,
         selects: object.iri,
         children: [
-          // The identifier and type in small text, then the object's title as the card's heading (design system spec 4.3).
+          // The object's title as the card's heading, with the type's name above it only in a list of several types.
           {
             component: 'CardHeader',
             children: [
-              text(`${object.identifier} · ${object.typeLabel}`, 'small'),
+              // In a list of several types the type's name, plain text, and the identifier share one line, the identifier quiet at
+              // its end. Nothing on a card but its buttons leads elsewhere: choosing it anywhere opens the object.
+              ...(options.showType
+                ? [
+                    {
+                      component: 'Flex',
+                      props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsBaseline' }, justifyContent: { default: 'justifyContentSpaceBetween' } },
+                      children: [text(object.typeLabel, 'small'), quietId(object.identifier)],
+                    } as ViewNode,
+                  ]
+                : []),
               { component: 'CardTitle', props: { label: object.title, component: heading } },
             ],
           },
@@ -100,8 +135,8 @@ export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
     .map((r) => ({ component: 'Label', props: { label: `${r.methodLabel}: ${r.status === 'queued' ? 'waiting to start' : 'running'}`, status: 'info' } }));
 }
 
-function header(title: string, summary: string): ViewNode[] {
-  return [{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)];
+function header(title: string, summary: string): ViewNode {
+  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)], 'gapXs');
 }
 
 // ---------------------------------------------------------------- the To do summary (design system spec 4.3)
@@ -171,6 +206,10 @@ export interface ListControls {
   /** Cards show their select control; list rows always have their checkbox. */
   selecting: boolean;
   selected: ReadonlySet<string>;
+  /** The set methods the chosen objects qualify for together, from the gateway (platform spec 5.4, Acting on a set). */
+  setActions?: { method: string; label: string }[];
+  /** New or Add at the bar's end, when the person may create the listed type (platform spec 5.3; design system spec 4.3). */
+  create?: { type: string; typeLabel: string; within?: string; verb: 'New' | 'Add' };
 }
 export const NO_CONTROLS: ListControls = { mode: 'cards', selecting: false, selected: new Set() };
 
@@ -197,6 +236,14 @@ export function commonMethods(entries: ListEntry[], selected: ReadonlySet<string
 }
 
 const barItem = (child: ViewNode): ViewNode => ({ component: 'ToolbarItem', children: [child] });
+
+/** New or Add and the type, opening the create form (platform spec 5.3; design system spec 4.3). */
+export const createButton = (create: NonNullable<ListControls['create']>): ViewNode => ({
+  component: 'Button',
+  props: { label: `${create.verb} ${create.typeLabel}`, variant: 'secondary', size: 'sm' },
+  creates: create.type,
+  ...(create.within ? { within: create.within } : {}),
+});
 const separator: ViewNode = { component: 'ToolbarItem', props: { variant: 'separator' } };
 /** A quiet link in the bar, such as Select. */
 const barLink = (label: string, intent: 'select'): ViewNode => ({ component: 'Button', props: { label, variant: 'link', isInline: true }, intent });
@@ -227,9 +274,11 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
     );
   }
   if (chosen) {
-    const batch = commonMethods(entries, controls.selected);
+    // Set actions first: methods on the chosen objects as one set (platform spec 5.4, Acting on a set). Then batch
+    // actions: the per-object methods every chosen object has, run once for each.
+    const sets = chosen > 1 ? (controls.setActions ?? []) : [];
+    const batch = [...sets, ...commonMethods(entries, controls.selected)];
     start.push(separator);
-    if (!batch.length) start.push(barItem(text(`No action applies to all ${chosen === 1 ? 'of it' : 'of them'}.`, 'small')));
     for (const m of batch.slice(0, SHOWN_BATCH_ACTIONS)) start.push(barItem({ component: 'Button', props: { label: m.label, variant: 'plain' }, batch: m.method }));
     const more = batch.slice(SHOWN_BATCH_ACTIONS);
     if (more.length) {
@@ -242,6 +291,7 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       );
     }
   }
+  if (chosen) start.push(barItem(askAboutChosen(entries.filter((e) => controls.selected.has(e.object.iri)).map((e) => e.object.iri))));
   const groups: ViewNode[] = [
     { component: 'ToolbarGroup', props: { variant: 'action-group-plain' }, children: start },
     {
@@ -250,6 +300,8 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       children: [
         // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
         ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
+        // While objects are chosen the bar is for acting on them; creating another waits until the choice is cleared (spec 4.3).
+        ...(controls.create && !chosen ? [barItem(createButton(controls.create))] : []),
         barItem({
           component: 'ToggleGroup',
           props: { 'aria-label': 'Show objects as', isCompact: true },
@@ -265,14 +317,26 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
   return { component: 'Toolbar', props: { isSticky: true }, children: [{ component: 'ToolbarContent', children: groups }] };
 }
 
-function entryCard(entry: ListEntry, heading: 'h2' | 'h3'): ViewNode {
+function entryCard(entry: ListEntry, heading: 'h2' | 'h3', showType: boolean): ViewNode {
   const body: ViewNode[][] = [];
   if (entry.status.length) body.push([flexOf(entry.status)]);
-  body.push([flexOf(stateLabels(entry.object))]);
+  // The state. In a list of one type the identifier is quiet at this row's end; in a list of several it is on the type's line
+  // above the title. Either way it takes no line of its own (design system spec 4.3).
+  body.push(
+    showType
+      ? [flexOf(stateLabels(entry.object))]
+      : [
+          {
+            component: 'Flex',
+            props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsCenter' }, justifyContent: { default: 'justifyContentSpaceBetween' } },
+            children: [flexOf(stateLabels(entry.object)), quietId(entry.object.identifier)],
+          },
+        ],
+  );
   if (entry.detail) body.push([text(entry.detail, 'small')]);
   if (entry.methods.length) body.push([text(entry.intro ?? 'You can:', 'small')]);
   body.push(...runnable(entry.methods, entry.object.iri, entry.firstIsPrimary, entry.object));
-  return card(entry.object, body, heading);
+  return card(entry.object, body, heading, { showType });
 }
 
 /** The state dimensions of the listed objects, as table columns: each object's lifecycle first, then the rest by name. */
@@ -326,7 +390,6 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
   // Attention only when some object needs it: a deadline, urgency or a run in progress.
   const hasAttention = entries.some((e) => e.status.length);
   const head: ViewNode[] = [
-    th('Identifier'),
     th('Title'),
     ...(mixed ? [th('Type')] : []),
     ...(hasAttention ? [th('Attention')] : []),
@@ -341,8 +404,14 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
       component: 'Tr',
       selects: o.iri,
       children: [
-        td('Identifier', [text(o.identifier)]),
-        td('Title', [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }]),
+        // The title, then the identifier after it, quiet: there is no column for it (design system spec 4.3).
+        td('Title', [
+          {
+            component: 'Flex',
+            props: { gap: { default: 'gapSm' }, flexWrap: { default: 'nowrap' }, alignItems: { default: 'alignItemsBaseline' } },
+            children: [{ component: 'Button', props: { label: o.title, variant: 'link', isInline: true }, opens: o.iri }, quietId(o.identifier)],
+          },
+        ]),
         ...(mixed ? [td('Type', [text(o.typeLabel)])] : []),
         ...(hasAttention ? [td('Attention', entry.status.length ? [flexOf(entry.status)] : [])] : []),
         ...columns.map((c) => td(c, o.state[c] ? [text(o.state[c])] : [])),
@@ -362,12 +431,15 @@ function objectTable(entries: ListEntry[], name: string): ViewNode {
 }
 
 /** An object list (design system spec 4.3): the list bar, then the objects as cards or as a list. */
-export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[][] {
-  if (!entries.length) return [];
+export function objectList(entries: ListEntry[], controls: ListControls, name: string, heading: 'h2' | 'h3' = 'h2'): ViewNode[] {
+  // An empty list still offers New, so the first object of a type can be made (platform spec 5.3).
+  if (!entries.length) return controls.create ? [{ component: 'Flex', props: { gap: { default: 'gapSm' } }, children: [createButton(controls.create)] }] : [];
+  // The type's name is shown, as a link, only when the list holds more than one type.
+  const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
   const objects: ViewNode =
-    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading)));
+    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, mixed)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
-  return [[listBar(entries, controls), objects]];
+  return [group([listBar(entries, controls), objects], 'gapMd')];
 }
 
 /** To do's items as list entries: deadline, urgency and runs as status, and the tasks waiting, else the actions. */
@@ -391,7 +463,7 @@ export function buildTodoView(
   who: { name: string; role: string },
   notice?: ViewNode,
   runs: RunView[] = [],
-  options: { filter?: TodoFilter; today?: Date; controls?: ListControls } = {},
+  options: { filter?: TodoFilter; today?: Date; controls?: ListControls; home?: HomeView } = {},
 ): ViewSpec {
   const today = options.today ?? new Date();
   const filter = options.filter ?? 'all';
@@ -403,14 +475,23 @@ export function buildTodoView(
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
-    because: `To do for ${who.name}, ${who.role}: objects with a task they can run now, or urgent objects they can act on`,
-    root: stack([
-      ...(notice ? [[notice]] : []),
+    because: `Home for ${who.name}, ${who.role}: the metrics their role watches, where things stand, and objects with a task they can run now or urgent objects they can act on`,
+    root: sections([
+      ...(notice ? [notice] : []),
       // The greeting is the page's main heading (design system spec 4.3, The greeting).
       header(greeting(who.name, today), summary),
-      // The heading and the summary in their own stack, so the standard gutter separates them (design system spec 4.3).
-      ...(allItems.length ? [[stack([[{ component: 'Title', props: { label: 'At a glance', headingLevel: 'h2', size: 'lg' } } as ViewNode], ...buildSummary(allItems, today).map((n) => [n])])]] : []),
-      ...(narrowed && !items.length ? [[text('Nothing matches. Choose Waiting to see every item.')]] : []),
+      // Home: the person's world and where things stand, then their work (platform spec 5.1, Home).
+      ...(options.home ? homeSections(options.home) : []),
+      ...(allItems.length || options.home
+        ? [
+            group([
+              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode,
+              ...(allItems.length ? buildSummary(allItems, today) : []),
+              ...(options.home ? [text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))] : []),
+            ]),
+          ]
+        : []),
+      ...(narrowed && !items.length ? [text('Nothing matches. Choose Waiting to see every item.')] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'To do'),
     ]),
   };
@@ -442,9 +523,10 @@ export function buildTypeView(
   return {
     pattern: 'card-view',
     because: `The ${pluralLabel.toLowerCase()} the person may read, with the methods they can run on each now`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
-      header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
+      // The way back to Home stands a little above the heading, as on a metric's page (design system spec 4.3, Home).
+      group([backToHome, header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`)], 'gapMd'),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };
@@ -484,12 +566,15 @@ export function buildSearchView(
   return {
     pattern: 'card-view',
     because: `Search for "${result.query}": the objects the person may read that it finds, best first`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
-      header('Search', `${count} for “${result.query}”${shown}.`),
-      // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
-      [...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])],
-      ...(result.total === 0 ? [[text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')]] : []),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
+      // The title and how many matched, then how the query was understood as one group beneath it.
+      group([
+        header('Search', `${count} for “${result.query}”${shown}.`),
+        // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
+        group([...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])]),
+      ], 'gapMd'),
+      ...(result.total === 0 ? [text('Try fewer words, a type such as “queries”, a state such as “open”, or an identifier such as SC-003.')] : []),
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'Search results'),
     ]),
   };
@@ -535,10 +620,10 @@ export function buildAnswerView(
   return {
     pattern: 'card-view',
     because: `The answer to "${result.question}", from what the person may read, and the objects it rests on`,
-    root: stack([
-      ...(options.notice ? [[options.notice]] : []),
+    root: sections([
+      ...(options.notice ? [options.notice] : []),
       header('Search', `“${result.question}”`),
-      [body],
+      body,
       ...objectList(entries, options.controls ?? NO_CONTROLS, 'Objects in the answer'),
     ]),
   };

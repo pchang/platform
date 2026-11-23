@@ -13,9 +13,9 @@
 @prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
 <https://w3id.org/lsh-platform/life-sciences/term> a owl:Ontology ;
   dcterms:title "LS&H life sciences terms" ;
-  rdfs:comment "The values of every state dimension, as SKOS concepts. NCIt mappings were checked against the NCI Thesaurus service on 2026-11-08." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.1.0> ;
+  rdfs:comment "The values of every state dimension, as SKOS concepts. NCIt mappings were checked against the NCI Thesaurus service on 2026-11-08; the Design and Plan mappings on 2026-11-20." ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/term/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 lst:CompoundStage a skos:ConceptScheme ;
@@ -897,3 +897,565 @@ lst:Reaction-diarrhea a skos:Concept ;
   skos:prefLabel "diarrhea" ;
   p:order 7 ;
   skos:closeMatch ncit:C2987 .
+
+
+
+# Design and Plan (domain spec section 3.4)
+
+lst:ProgramStatus a skos:ConceptScheme ;
+  skos:prefLabel "Program status" ;
+  skos:definition "The values of the status dimension of a program." .
+
+lst:ProgramStatus-active a skos:Concept ;
+  skos:inScheme lst:ProgramStatus ;
+  skos:prefLabel "active" ;
+  p:order 1 .
+
+lst:ProgramStatus-onHold a skos:Concept ;
+  skos:inScheme lst:ProgramStatus ;
+  skos:prefLabel "on hold" ;
+  p:order 2 .
+
+lst:ProgramStatus-discontinued a skos:Concept ;
+  skos:inScheme lst:ProgramStatus ;
+  skos:prefLabel "discontinued" ;
+  p:order 3 .
+
+lst:TargetProductProfileStatus a skos:ConceptScheme ;
+  skos:prefLabel "Target Product Profile status" ;
+  skos:definition "The values of the status dimension of a target product profile." .
+
+lst:TargetProductProfileStatus-draft a skos:Concept ;
+  skos:inScheme lst:TargetProductProfileStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:TargetProductProfileStatus-endorsed a skos:Concept ;
+  skos:inScheme lst:TargetProductProfileStatus ;
+  skos:prefLabel "endorsed" ;
+  p:order 2 .
+
+lst:TargetProductProfileStatus-superseded a skos:Concept ;
+  skos:inScheme lst:TargetProductProfileStatus ;
+  skos:prefLabel "superseded" ;
+  p:order 3 .
+
+lst:OpportunityStatus a skos:ConceptScheme ;
+  skos:prefLabel "Opportunity status" ;
+  skos:definition "The values of the status dimension of an opportunity." .
+
+lst:OpportunityStatus-exploring a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "exploring" ;
+  p:order 1 .
+
+lst:OpportunityStatus-recommended a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "recommended" ;
+  p:order 2 .
+
+lst:OpportunityStatus-pursued a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "pursued" ;
+  p:order 3 .
+
+lst:OpportunityStatus-parked a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "parked" ;
+  p:order 4 .
+
+lst:OpportunityStatus-notPursued a skos:Concept ;
+  skos:inScheme lst:OpportunityStatus ;
+  skos:prefLabel "not pursued" ;
+  p:order 5 .
+
+lst:OpportunityKind a skos:ConceptScheme ;
+  skos:prefLabel "Opportunity kind" ;
+  skos:definition "The values of the kind dimension of an opportunity." .
+
+lst:OpportunityKind-newAsset a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "new asset" ;
+  p:order 1 .
+
+lst:OpportunityKind-newIndication a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "new indication" ;
+  p:order 2 .
+
+lst:OpportunityKind-scientificQuestion a skos:Concept ;
+  skos:inScheme lst:OpportunityKind ;
+  skos:prefLabel "scientific question" ;
+  p:order 3 .
+
+lst:DevelopmentOptionStatus a skos:ConceptScheme ;
+  skos:prefLabel "Development Option status" ;
+  skos:definition "The values of the status dimension of a development option." .
+
+lst:DevelopmentOptionStatus-draft a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:DevelopmentOptionStatus-selected a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "selected" ;
+  p:order 2 .
+
+lst:DevelopmentOptionStatus-setAside a skos:Concept ;
+  skos:inScheme lst:DevelopmentOptionStatus ;
+  skos:prefLabel "set aside" ;
+  p:order 3 .
+
+lst:StudyConceptStatus a skos:ConceptScheme ;
+  skos:prefLabel "Study Concept status" ;
+  skos:definition "The values of the status dimension of a study concept." .
+
+lst:StudyConceptStatus-draft a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:StudyConceptStatus-inReview a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "in review" ;
+  p:order 2 .
+
+lst:StudyConceptStatus-approved a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "approved" ;
+  p:order 3 .
+
+lst:StudyConceptStatus-parked a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "parked" ;
+  p:order 4 .
+
+lst:StudyConceptStatus-rejected a skos:Concept ;
+  skos:inScheme lst:StudyConceptStatus ;
+  skos:prefLabel "rejected" ;
+  p:order 5 .
+
+lst:StudyScenarioStatus a skos:ConceptScheme ;
+  skos:prefLabel "Study Scenario status" ;
+  skos:definition "The values of the status dimension of a study scenario." .
+
+lst:StudyScenarioStatus-draft a skos:Concept ;
+  skos:inScheme lst:StudyScenarioStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:StudyScenarioStatus-selected a skos:Concept ;
+  skos:inScheme lst:StudyScenarioStatus ;
+  skos:prefLabel "selected" ;
+  p:order 2 .
+
+lst:StudyScenarioStatus-setAside a skos:Concept ;
+  skos:inScheme lst:StudyScenarioStatus ;
+  skos:prefLabel "set aside" ;
+  p:order 3 .
+
+lst:ObjectiveLevel a skos:ConceptScheme ;
+  skos:prefLabel "Objective level" ;
+  skos:definition "The values of the level dimension of an objective." .
+
+lst:ObjectiveLevel-primary a skos:Concept ;
+  skos:inScheme lst:ObjectiveLevel ;
+  skos:prefLabel "primary" ;
+  p:order 1 ;
+  skos:closeMatch ncit:C85826 .
+
+lst:ObjectiveLevel-secondary a skos:Concept ;
+  skos:inScheme lst:ObjectiveLevel ;
+  skos:prefLabel "secondary" ;
+  p:order 2 ;
+  skos:closeMatch ncit:C85827 .
+
+lst:ObjectiveLevel-exploratory a skos:Concept ;
+  skos:inScheme lst:ObjectiveLevel ;
+  skos:prefLabel "exploratory" ;
+  p:order 3 ;
+  skos:closeMatch ncit:C163559 .
+
+lst:EstimandCompleteness a skos:ConceptScheme ;
+  skos:prefLabel "Estimand completeness" ;
+  skos:definition "The values of the completeness dimension of an estimand." .
+
+lst:EstimandCompleteness-incomplete a skos:Concept ;
+  skos:inScheme lst:EstimandCompleteness ;
+  skos:prefLabel "incomplete" ;
+  p:order 1 .
+
+lst:EstimandCompleteness-complete a skos:Concept ;
+  skos:inScheme lst:EstimandCompleteness ;
+  skos:prefLabel "complete" ;
+  p:order 2 .
+
+lst:EndpointType a skos:ConceptScheme ;
+  skos:prefLabel "Endpoint type" ;
+  skos:definition "The values of the type dimension of an endpoint." .
+
+lst:EndpointType-efficacy a skos:Concept ;
+  skos:inScheme lst:EndpointType ;
+  skos:prefLabel "efficacy" ;
+  p:order 1 .
+
+lst:EndpointType-safety a skos:Concept ;
+  skos:inScheme lst:EndpointType ;
+  skos:prefLabel "safety" ;
+  p:order 2 .
+
+lst:EndpointType-pharmacokinetic a skos:Concept ;
+  skos:inScheme lst:EndpointType ;
+  skos:prefLabel "pharmacokinetic" ;
+  p:order 3 .
+
+lst:EndpointType-patientReported a skos:Concept ;
+  skos:inScheme lst:EndpointType ;
+  skos:prefLabel "patient-reported" ;
+  p:order 4 ;
+  skos:closeMatch ncit:C95401 .
+
+lst:EligibilityCriterionKind a skos:ConceptScheme ;
+  skos:prefLabel "Eligibility Criterion kind" ;
+  skos:definition "The values of the kind dimension of an eligibility criterion." .
+
+lst:EligibilityCriterionKind-inclusion a skos:Concept ;
+  skos:inScheme lst:EligibilityCriterionKind ;
+  skos:prefLabel "inclusion" ;
+  p:order 1 ;
+  skos:closeMatch ncit:C25532 .
+
+lst:EligibilityCriterionKind-exclusion a skos:Concept ;
+  skos:inScheme lst:EligibilityCriterionKind ;
+  skos:prefLabel "exclusion" ;
+  p:order 2 ;
+  skos:closeMatch ncit:C25370 .
+
+lst:EligibilityCriterionTestability a skos:ConceptScheme ;
+  skos:prefLabel "Eligibility Criterion testability" ;
+  skos:definition "The values of the testability dimension of an eligibility criterion." .
+
+lst:EligibilityCriterionTestability-testable a skos:Concept ;
+  skos:inScheme lst:EligibilityCriterionTestability ;
+  skos:prefLabel "testable" ;
+  p:order 1 .
+
+lst:EligibilityCriterionTestability-needsData a skos:Concept ;
+  skos:inScheme lst:EligibilityCriterionTestability ;
+  skos:prefLabel "needs data" ;
+  p:order 2 .
+
+lst:ArmRole a skos:ConceptScheme ;
+  skos:prefLabel "Arm role" ;
+  skos:definition "The values of the role dimension of an arm." .
+
+lst:ArmRole-experimental a skos:Concept ;
+  skos:inScheme lst:ArmRole ;
+  skos:prefLabel "experimental" ;
+  p:order 1 ;
+  skos:closeMatch ncit:C174266 .
+
+lst:ArmRole-activeControl a skos:Concept ;
+  skos:inScheme lst:ArmRole ;
+  skos:prefLabel "active control" ;
+  p:order 2 ;
+  skos:closeMatch ncit:C174267 .
+
+lst:ArmRole-placeboControl a skos:Concept ;
+  skos:inScheme lst:ArmRole ;
+  skos:prefLabel "placebo control" ;
+  p:order 3 ;
+  skos:closeMatch ncit:C174268 .
+
+lst:AssessmentPurpose a skos:ConceptScheme ;
+  skos:prefLabel "Assessment purpose" ;
+  skos:definition "The values of the purpose dimension of an assessment." .
+
+lst:AssessmentPurpose-endpoint a skos:Concept ;
+  skos:inScheme lst:AssessmentPurpose ;
+  skos:prefLabel "endpoint" ;
+  p:order 1 .
+
+lst:AssessmentPurpose-eligibility a skos:Concept ;
+  skos:inScheme lst:AssessmentPurpose ;
+  skos:prefLabel "eligibility" ;
+  p:order 2 .
+
+lst:AssessmentPurpose-safety a skos:Concept ;
+  skos:inScheme lst:AssessmentPurpose ;
+  skos:prefLabel "safety" ;
+  p:order 3 .
+
+lst:AssessmentPurpose-regulatory a skos:Concept ;
+  skos:inScheme lst:AssessmentPurpose ;
+  skos:prefLabel "regulatory" ;
+  p:order 4 .
+
+lst:AssessmentPurpose-noneRecorded a skos:Concept ;
+  skos:inScheme lst:AssessmentPurpose ;
+  skos:prefLabel "none recorded" ;
+  p:order 5 .
+
+lst:AssessmentBurden a skos:ConceptScheme ;
+  skos:prefLabel "Assessment burden" ;
+  skos:definition "The values of the burden dimension of an assessment." .
+
+lst:AssessmentBurden-low a skos:Concept ;
+  skos:inScheme lst:AssessmentBurden ;
+  skos:prefLabel "low" ;
+  p:order 1 .
+
+lst:AssessmentBurden-moderate a skos:Concept ;
+  skos:inScheme lst:AssessmentBurden ;
+  skos:prefLabel "moderate" ;
+  p:order 2 .
+
+lst:AssessmentBurden-high a skos:Concept ;
+  skos:inScheme lst:AssessmentBurden ;
+  skos:prefLabel "high" ;
+  p:order 3 .
+
+lst:StudyBudgetStatus a skos:ConceptScheme ;
+  skos:prefLabel "Study Budget status" ;
+  skos:definition "The values of the status dimension of a study budget." .
+
+lst:StudyBudgetStatus-draft a skos:Concept ;
+  skos:inScheme lst:StudyBudgetStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:StudyBudgetStatus-approved a skos:Concept ;
+  skos:inScheme lst:StudyBudgetStatus ;
+  skos:prefLabel "approved" ;
+  p:order 2 .
+
+lst:StudyBudgetFit a skos:ConceptScheme ;
+  skos:prefLabel "Study Budget fit" ;
+  skos:definition "The values of the fit dimension of a study budget." .
+
+lst:StudyBudgetFit-withinCeiling a skos:Concept ;
+  skos:inScheme lst:StudyBudgetFit ;
+  skos:prefLabel "within ceiling" ;
+  p:order 1 .
+
+lst:StudyBudgetFit-overCeiling a skos:Concept ;
+  skos:inScheme lst:StudyBudgetFit ;
+  skos:prefLabel "over ceiling" ;
+  p:order 2 .
+
+lst:SiteSelectionStatus a skos:ConceptScheme ;
+  skos:prefLabel "Site Selection status" ;
+  skos:definition "The values of the status dimension of a site selection." .
+
+lst:SiteSelectionStatus-draft a skos:Concept ;
+  skos:inScheme lst:SiteSelectionStatus ;
+  skos:prefLabel "draft" ;
+  p:order 1 .
+
+lst:SiteSelectionStatus-approved a skos:Concept ;
+  skos:inScheme lst:SiteSelectionStatus ;
+  skos:prefLabel "approved" ;
+  p:order 2 .
+
+lst:ProposedSiteStatus a skos:ConceptScheme ;
+  skos:prefLabel "Proposed Site status" ;
+  skos:definition "The values of the status dimension of a proposed site." .
+
+lst:ProposedSiteStatus-proposed a skos:Concept ;
+  skos:inScheme lst:ProposedSiteStatus ;
+  skos:prefLabel "proposed" ;
+  p:order 1 .
+
+lst:ProposedSiteStatus-shortlisted a skos:Concept ;
+  skos:inScheme lst:ProposedSiteStatus ;
+  skos:prefLabel "shortlisted" ;
+  p:order 2 .
+
+lst:ProposedSiteStatus-rejected a skos:Concept ;
+  skos:inScheme lst:ProposedSiteStatus ;
+  skos:prefLabel "rejected" ;
+  p:order 3 .
+
+lst:TrialSimulationRun a skos:ConceptScheme ;
+  skos:prefLabel "Trial Simulation run" ;
+  skos:definition "The values of the run dimension of a trial simulation." .
+
+lst:TrialSimulationRun-queued a skos:Concept ;
+  skos:inScheme lst:TrialSimulationRun ;
+  skos:prefLabel "queued" ;
+  p:order 1 .
+
+lst:TrialSimulationRun-running a skos:Concept ;
+  skos:inScheme lst:TrialSimulationRun ;
+  skos:prefLabel "running" ;
+  p:order 2 .
+
+lst:TrialSimulationRun-complete a skos:Concept ;
+  skos:inScheme lst:TrialSimulationRun ;
+  skos:prefLabel "complete" ;
+  p:order 3 .
+
+lst:TrialSimulationRun-failed a skos:Concept ;
+  skos:inScheme lst:TrialSimulationRun ;
+  skos:prefLabel "failed" ;
+  p:order 4 .
+
+lst:ForecastCurrency a skos:ConceptScheme ;
+  skos:prefLabel "Forecast currency" ;
+  skos:definition "The values of the currency dimension of a forecast." .
+
+lst:ForecastCurrency-current a skos:Concept ;
+  skos:inScheme lst:ForecastCurrency ;
+  skos:prefLabel "current" ;
+  p:order 1 .
+
+lst:ForecastCurrency-outOfDate a skos:Concept ;
+  skos:inScheme lst:ForecastCurrency ;
+  skos:prefLabel "out of date" ;
+  p:order 2 .
+
+lst:OutcomeMeasure a skos:ConceptScheme ;
+  skos:prefLabel "Outcome measure" ;
+  skos:definition "The measures an outcome can be forecast and targeted on." .
+
+lst:OutcomeMeasure-lastPatientIn a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "last patient in" ;
+  p:order 1 .
+
+lst:OutcomeMeasure-probabilityOfSuccess a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "probability of success" ;
+  p:order 2 .
+
+lst:OutcomeMeasure-totalCost a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "total cost" ;
+  p:order 3 .
+
+lst:OutcomeMeasure-seriousAdverseEvents a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "serious adverse events" ;
+  p:order 4 .
+
+lst:OutcomeMeasure-patientBurden a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "patient burden" ;
+  p:order 5 .
+
+lst:OutcomeMeasure-siteBurden a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "site burden" ;
+  p:order 6 .
+
+lst:OutcomeMeasure-probabilityOfTechnicalAndRegulatorySuccess a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "probability of technical and regulatory success" ;
+  p:order 7 .
+
+lst:OutcomeMeasure-timeToSubmission a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "time to submission" ;
+  p:order 8 .
+
+lst:OutcomeMeasure-developmentCost a skos:Concept ;
+  skos:inScheme lst:OutcomeMeasure ;
+  skos:prefLabel "development cost" ;
+  p:order 9 .
+
+lst:ForecastAgainstTarget a skos:ConceptScheme ;
+  skos:prefLabel "Forecast against target" ;
+  skos:definition "The values of the against target dimension of a forecast." .
+
+lst:ForecastAgainstTarget-met a skos:Concept ;
+  skos:inScheme lst:ForecastAgainstTarget ;
+  skos:prefLabel "met" ;
+  p:order 1 .
+
+lst:ForecastAgainstTarget-missed a skos:Concept ;
+  skos:inScheme lst:ForecastAgainstTarget ;
+  skos:prefLabel "missed" ;
+  p:order 2 ;
+  p:urgency 2 .
+
+lst:ForecastAgainstTarget-noTarget a skos:Concept ;
+  skos:inScheme lst:ForecastAgainstTarget ;
+  skos:prefLabel "no target" ;
+  p:order 3 .
+
+lst:OutcomeTargetStatus a skos:ConceptScheme ;
+  skos:prefLabel "Outcome Target status" ;
+  skos:definition "The values of the status dimension of an outcome target." .
+
+lst:OutcomeTargetStatus-proposed a skos:Concept ;
+  skos:inScheme lst:OutcomeTargetStatus ;
+  skos:prefLabel "proposed" ;
+  p:order 1 .
+
+lst:OutcomeTargetStatus-agreed a skos:Concept ;
+  skos:inScheme lst:OutcomeTargetStatus ;
+  skos:prefLabel "agreed" ;
+  p:order 2 .
+
+lst:ContributionMapping a skos:ConceptScheme ;
+  skos:prefLabel "Contribution mapping" ;
+  skos:definition "The values of the mapping dimension of a contribution." .
+
+lst:ContributionMapping-proposed a skos:Concept ;
+  skos:inScheme lst:ContributionMapping ;
+  skos:prefLabel "proposed" ;
+  p:order 1 .
+
+lst:ContributionMapping-confirmed a skos:Concept ;
+  skos:inScheme lst:ContributionMapping ;
+  skos:prefLabel "confirmed" ;
+  p:order 2 .
+
+lst:DesignSignalStatus a skos:ConceptScheme ;
+  skos:prefLabel "Design Signal status" ;
+  skos:definition "The values of the status dimension of a design signal." .
+
+lst:DesignSignalStatus-raised a skos:Concept ;
+  skos:inScheme lst:DesignSignalStatus ;
+  skos:prefLabel "raised" ;
+  p:order 1 .
+
+lst:DesignSignalStatus-acknowledged a skos:Concept ;
+  skos:inScheme lst:DesignSignalStatus ;
+  skos:prefLabel "acknowledged" ;
+  p:order 2 .
+
+lst:DesignSignalStatus-dismissed a skos:Concept ;
+  skos:inScheme lst:DesignSignalStatus ;
+  skos:prefLabel "dismissed" ;
+  p:order 3 .
+
+lst:DecisionKind a skos:ConceptScheme ;
+  skos:prefLabel "Decision kind" ;
+  skos:definition "The values of the kind dimension of a decision." .
+
+lst:DecisionKind-pursue a skos:Concept ;
+  skos:inScheme lst:DecisionKind ;
+  skos:prefLabel "pursue" ;
+  p:order 1 .
+
+lst:DecisionKind-park a skos:Concept ;
+  skos:inScheme lst:DecisionKind ;
+  skos:prefLabel "park" ;
+  p:order 2 .
+
+lst:DecisionKind-stop a skos:Concept ;
+  skos:inScheme lst:DecisionKind ;
+  skos:prefLabel "stop" ;
+  p:order 3 .
+
+lst:DecisionKind-select a skos:Concept ;
+  skos:inScheme lst:DecisionKind ;
+  skos:prefLabel "select" ;
+  p:order 4 .
+
+lst:DecisionKind-approveBaseline a skos:Concept ;
+  skos:inScheme lst:DecisionKind ;
+  skos:prefLabel "approve baseline" ;
+  p:order 5 .

@@ -25,6 +25,10 @@
     }
   },
   "$defs": {
+    "objectRef": {
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$"
+    },
     "node": {
       "type": "object",
       "required": [
@@ -100,9 +104,11 @@
           "description": "A graph object the node opens in the object panel when chosen (design system 4.4). Only a Card, anywhere but its buttons, or a Button."
         },
         "asks": {
-          "type": "string",
-          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
-          "description": "A graph object a Button starts a conversation about in the chat (design system 4.1, Ask about this). On a card or a list row it comes after the method buttons."
+          "oneOf": [
+            { "$ref": "#/$defs/objectRef" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/objectRef" } }
+          ],
+          "description": "A graph object, or the chosen objects, a Button starts a conversation about in the chat (design system 4.1, Ask about this and About the chosen). On a card or a list row it comes after the method buttons; in a list bar, after the set and batch actions."
         },
         "selects": {
           "type": "string",
@@ -113,6 +119,35 @@
           "type": "string",
           "minLength": 1,
           "description": "An ontology method a Button or a DropdownItem runs on every chosen object (design system 4.3). The gateway checks each object again."
+        },
+        "creates": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "An object type a Button opens the create form for (platform spec 5.3, Creating and editing objects; design system 4.3)."
+        },
+        "within": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "With creates: the object the new one is created inside, such as the object whose tab lists it."
+        },
+        "edits": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A graph object a Button opens the edit form for (platform spec 5.3; design system 4.4)."
+        },
+        "lists": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A type whose objects a Title or Button lists on a page of their own; a Title's text is the link, a Button is a link (design system 4.3, Home)."
+        },
+        "goes": {
+          "enum": ["home"],
+          "description": "A place in the app a Button goes to, as a link: Home. Used for Back (design system 4.3, Home)."
+        },
+        "shows": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
+          "description": "A metric whose objects a Card or Button shows on a page of their own: a Card is chosen anywhere to go there, its title the link; a Button is a link (platform spec 5.1, Home; design system 4.3)."
         }
       }
     }

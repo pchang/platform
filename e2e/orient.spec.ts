@@ -79,7 +79,7 @@ test('opens a list of objects from the navigation', async ({ page }) => {
   await actAs(page, 'Elena Kovacs');
   await page.getByRole('link', { name: /^Batches/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Batches' })).toBeVisible();
-  await expect(page.getByRole('main').locator('.pf-v6-c-card__header').getByText(/ · /)).toHaveText(['B-001 · Batch', 'B-002 · Batch', 'B-003 · Batch']);
+  await expect(page.getByRole('main').locator('.pf-v6-c-card .app-subtle')).toHaveText(['B-001', 'B-002', 'B-003']);
 });
 
 test('on a phone, navigation is a drawer that closes when a destination is chosen', async ({ page }) => {

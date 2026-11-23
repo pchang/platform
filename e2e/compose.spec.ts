@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
 import { cardFor, eyebrow } from './cards';
 
@@ -13,6 +13,12 @@ async function openTodo(page: Page) {
   await expect(page.getByRole('main').getByRole('heading', { level: 2 }).first()).toBeVisible({ timeout: 30_000 });
 }
 const card = cardFor;
+
+/** Chooses the option for an object by its identifier: options read as the identifier, then the title. */
+async function pick(select: Locator, identifier: string) {
+  const option = (await select.locator('option').allTextContents()).find((o) => o === identifier || o.startsWith(`${identifier} · `))!;
+  await select.selectOption({ label: option });
+}
 
 test('Fill in: triage a case, see what will change, commit, and see the case move on', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -78,7 +84,7 @@ test('Compare and decide: flag a duplicate side by side, then merge it', async (
 
   await expect(page.getByRole('heading', { level: 1, name: 'Flag duplicate SC-003' })).toBeVisible();
   await expect(page.getByText('Choose candidate case to compare')).toBeVisible();
-  await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
+  await pick(page.getByLabel('Candidate case'), 'SC-006');
   await expect(eyebrow(page, 'SC-006')).toBeVisible();
   await expect(page.getByText('Different').first()).toBeVisible();
   await expect(page.getByText('set to SC-006')).toBeVisible();
@@ -88,7 +94,7 @@ test('Compare and decide: flag a duplicate side by side, then merge it', async (
   await expect(page.getByText('Flag duplicate done on SC-003')).toBeVisible({ timeout: 20_000 });
   await card(page, 'SC-003').getByRole('button', { name: 'Merge duplicate' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Merge duplicate SC-003' })).toBeVisible();
-  await page.getByLabel('Target case').selectOption({ label: 'SC-006' });
+  await pick(page.getByLabel('Target case'), 'SC-006');
   await expect(page.getByText('assessed → closed')).toBeVisible();
   await expect(page.getByText("Moves this case's information into the target case and links them.")).toBeVisible();
   await page.getByRole('button', { name: 'Merge duplicate' }).click();
@@ -99,7 +105,7 @@ test('Compare and decide stacks the cards on a phone, with no accessibility viol
   await page.setViewportSize({ width: 320, height: 800 });
   await openTodo(page);
   await card(page, 'SC-003').getByRole('button', { name: 'Flag duplicate' }).click();
-  await page.getByLabel('Candidate case').selectOption({ label: 'SC-006' });
+  await pick(page.getByLabel('Candidate case'), 'SC-006');
   await expect(page.getByText('set to SC-006')).toBeVisible();
   const [a, b] = await Promise.all([
     eyebrow(page, 'SC-003').boundingBox(),

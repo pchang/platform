@@ -142,3 +142,19 @@ html .app-chat .pf-chatbot__sources-card-base.pf-m-wrap .pf-chatbot__sources-lis
     padding-inline-end: 30rem;
   }
 }
+
+/* The chosen objects a conversation is about lead it as a stack of compact cards (design system spec 4.1, About the chosen). */
+.app-chat__about-many {
+  margin-block-end: var(--pf-t--global--spacer--md);
+  flex-shrink: 0;
+  /* A Stack fills its container's height by default; here it is only as tall as its cards, so the welcome follows them. */
+  height: auto;
+}
+/* More than three cards scroll within themselves, so the welcome and its prompts always stay in view; up to three show whole. */
+.app-chat__about-many[data-count]:not([data-count='2'], [data-count='3']) {
+  max-block-size: 40%;
+  overflow-y: auto;
+}
+.app-chat__about-many .app-chat__about {
+  margin-block-end: 0;
+}

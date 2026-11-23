@@ -1,3 +1,4 @@
+import { eyebrow } from './cards';
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
 
@@ -11,7 +12,7 @@ const bar = (page: Page) => chat(page).locator('.pf-chatbot__message-bar').getBy
 
 async function openTodo(page: Page, person?: string) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: 'At a glance' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   if (person) {
     await page.getByRole('button', { name: /^Profile/ }).click();
     await page.getByRole('option', { name: new RegExp(`^${person}`) }).click();
@@ -85,7 +86,7 @@ test('each object asked about starts a new conversation, and the history returns
   await page.setViewportSize({ width: 1440, height: 900 });
   await openTodo(page, 'Ben Okafor');
   for (const id of ['AE-003', 'AE-005']) {
-    await page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: `${id} · Adverse Event` }).getByRole('button', { name: `Ask about ${id}` }).click();
+    await page.getByRole('main').locator('.pf-v6-c-card').filter({ has: eyebrow(page, id) }).getByRole('button', { name: `Ask about ${id}` }).click();
     await expect(chat(page).locator('.app-chat__about').getByText(`${id} · Adverse Event`)).toBeVisible();
     await chat(page).getByRole('button', { name: new RegExp(`Summarize ${id}`) }).click();
     await expect(chat(page).getByText(/here is what you asked about/)).toBeVisible();
@@ -118,7 +119,7 @@ test('on a phone the chat fills the screen, and opening an object closes it, kee
 test('asking from a card loads the object into the chat, with its methods ready to run', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openTodo(page, 'Ben Okafor');
-  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'AE-003 · Adverse Event' });
+  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ has: eyebrow(page, 'AE-003') });
   await card.getByRole('button', { name: 'Ask about AE-003' }).click();
   await expect(chat(page).getByText('Ask about AE-003', { exact: true })).toBeVisible();
   const about = chat(page).locator('.app-chat__about');

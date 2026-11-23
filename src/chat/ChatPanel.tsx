@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, CardHeader, CardTitle, Content, Flex, FlexItem, Label, Spinner } from '@patternfly/react-core';
+import { Button, Card, CardBody, CardHeader, CardTitle, Content, Flex, FlexItem, Label, Spinner, Stack } from '@patternfly/react-core';
 import PenToSquareIcon from '@patternfly/react-icons/dist/esm/icons/pen-to-square-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import HistoryIcon from '@patternfly/react-icons/dist/esm/icons/history-icon';
@@ -28,6 +28,9 @@ const PROMPTS = ['What needs me first today?', 'What is overdue or due this week
 
 /** Prompts about one object, in any domain (design system spec 4.1, Ask about this). */
 const promptsAbout = (identifier: string) => [`Summarize ${identifier}`, `What can I do next on ${identifier}, and why?`, `What is ${identifier} linked to?`];
+
+/** Prompts about the chosen objects, in any domain (design system spec 4.1, About the chosen). */
+const promptsAboutMany = (count: number) => [`Summarize these ${count}`, 'How do they differ?', 'What can I do next on them, and why?'];
 
 /** From PatternFly's lg breakpoint up, the panel sits beside the page; below it, over it. */
 export const SIDE_BY_SIDE = '(min-width: 992px)';
@@ -92,10 +95,11 @@ export function ChatPanel() {
    * The object a conversation is about, leading it as an object list's card does: its identifier and type, its title,
    * which opens it, its state, and the methods the person can run on it now, which run as they do anywhere.
    */
-  const aboutCard = ({ object, methods }: ChatAbout) => {
-    const runnable = methods.filter((m) => m.available && BUILT_ARCHETYPES.has(m.archetype.label));
+  const aboutCard = ({ object, methods }: ChatAbout, one = true) => {
+    // About several, the cards are dense: no methods, which the list's batch actions run, and no state (design system spec 4.1, About the chosen).
+    const runnable = one ? methods.filter((m) => m.available && BUILT_ARCHETYPES.has(m.archetype.label)) : [];
     return (
-      <Card className="app-chat__about" isCompact>
+      <Card key={object.iri} className="app-chat__about" isCompact>
         <CardHeader>
           <Content component="small">{`${object.identifier} · ${object.typeLabel}`}</Content>
           <CardTitle component="h3">
@@ -106,15 +110,17 @@ export function ChatPanel() {
         </CardHeader>
         <CardBody>
           <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
-            <Flex gap={{ default: 'gapSm' }}>
-              {Object.entries(object.state)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([dimension, value]) => (
-                  <FlexItem key={dimension}>
-                    <Label color="grey" variant="outline" isCompact>{`${dimension}: ${value}`}</Label>
-                  </FlexItem>
-                ))}
-            </Flex>
+            {one && (
+              <Flex gap={{ default: 'gapSm' }}>
+                {Object.entries(object.state)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([dimension, value]) => (
+                    <FlexItem key={dimension}>
+                      <Label color="grey" variant="outline" isCompact>{`${dimension}: ${value}`}</Label>
+                    </FlexItem>
+                  ))}
+              </Flex>
+            )}
             {runnable.length > 0 && (
               <>
                 <Content component="small">You can:</Content>
@@ -141,6 +147,15 @@ export function ChatPanel() {
       </Card>
     );
   };
+
+  // The welcome and message bar: general, about one object, or about the chosen (design system spec 4.1).
+  const [first] = chat.about;
+  const welcome =
+    chat.about.length > 1
+      ? { title: `Ask about these ${chat.about.length}`, description: chat.about.map((a) => a.object.identifier).join(', '), prompts: promptsAboutMany(chat.about.length), placeholder: `Ask about these ${chat.about.length}` }
+      : first
+        ? { title: `Ask about ${first.object.identifier}`, description: first.object.title, prompts: promptsAbout(first.object.identifier), placeholder: `Ask about ${first.object.identifier}` }
+        : { title: 'Search or ask anything', description: 'Find objects, or ask about the work you may see.', prompts: PROMPTS, placeholder: 'Search or ask' };
 
   const reply = (turn: ChatTurn) => {
     const common = {
@@ -182,7 +197,7 @@ export function ChatPanel() {
     }
     const search = result.search!;
     // About an object, without a model, the reply is the object itself (platform spec 5.2, About an object).
-    if (chat.about) {
+    if (chat.about.length) {
       return <Message key={`r${turn.id}`} {...common} content={result.searched ?? ''} {...sources(search.results.map((r) => r.object))} />;
     }
     const found = search.total
@@ -273,14 +288,19 @@ export function ChatPanel() {
                 <div className="app-chat__surface">
                   <ChatbotContent>
                     <MessageBox ariaLabel="Conversation">
-                      {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the object" />}
-                      {chat.about && aboutCard(chat.about)}
+                      {chat.aboutLoading && <Spinner size="lg" aria-valuetext="Reading the objects" />}
+                      {chat.about.length === 1 && aboutCard(chat.about[0])}
+                      {chat.about.length > 1 && (
+                        <Stack hasGutter className="app-chat__about-many" data-count={chat.about.length}>
+                          {chat.about.map((a) => aboutCard(a, false))}
+                        </Stack>
+                      )}
                       {chat.turns.length === 0 && !chat.aboutLoading && (
-                        // The chat's own welcome, not To do's greeting; about an object, the object's (design system spec 4.1).
+                        // The chat's own welcome, not To do's greeting; about objects, theirs (design system spec 4.1).
                         <ChatbotWelcomePrompt
-                          title={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask anything'}
-                          description={chat.about ? chat.about.object.title : 'Find objects, or ask about the work you may see.'}
-                          prompts={(chat.about ? promptsAbout(chat.about.object.identifier) : PROMPTS).map((p) => ({
+                          title={welcome.title}
+                          description={welcome.description}
+                          prompts={welcome.prompts.map((p) => ({
                             title: p,
                             onClick: () => chat.send(p),
                           }))}
@@ -293,7 +313,7 @@ export function ChatPanel() {
                   <ChatbotFooter>
                     <MessageBar
                       onSendMessage={(m) => chat.send(String(m))}
-                      placeholder={chat.about ? `Ask about ${chat.about.object.identifier}` : 'Search or ask'}
+                      placeholder={welcome.placeholder}
                       hasAttachButton={false}
                       alwayShowSendButton
                     />
