@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.69. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.70. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -169,7 +169,7 @@ To do, the list of a type's objects and the search page are object lists (patter
   - Its menu offers Select all, with how many there are, and Select none.
 - **At its end,** a compact toggle between Cards and List, as icon buttons with those names. The choice is kept on the device and applies to every object list.
 - **Cards.**
-  - Before selecting, the bar's start holds one Select link, the word "Select". Choosing it starts select mode: each card shows its select control, and the bar shows the same selection control and batch actions as List, and a Done link at the bar's end, before the view toggle and apart from the actions, that ends select mode and clears the choice. Once in select mode, Cards and List work the same way.
+  - Before selecting, the bar's start holds one Select link, the word "Select". Choosing it starts select mode: each card shows its select control, and the bar shows the same selection control and batch actions as List, led by Stop selecting: a plain × icon button, named "Stop selecting" in its tooltip and to assistive technology, first in the bar, just before the selection control and its count, as in Google Drive's and Photos' selection bars. It ends select mode and clears the choice. It stays beside the count, where the eye already is, never across the bar, and as an icon before the selection control it is never read as one of the text actions after it; on a phone it stays first in the row. Select none clears the choice but keeps select mode, so the person can choose again. Once in select mode, Cards and List work the same way; List has no select mode, as in Gmail, so it needs no way out.
   - In select mode, each card shows a round select control at its top right: an empty circle, or a green check when chosen. It is a checkbox named "Select" and the object's title.
   - Choosing anywhere on a card, except its buttons, chooses it, rather than opening it. The card's title still opens the object.
   - A chosen card's border shows it is chosen, as well as its check.
@@ -543,3 +543,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.67 | 2026-11-23 | Restored from 0.43 on another branch, lost when the branches diverged: in the object panel, Ask about this leaves the top bar and comes last in the header's row of methods and Edit, or alone there when there are none. |
 | 0.68 | 2026-11-23 | Restored from 0.44 on another branch, lost when the branches diverged: the object panel shows the object's journey under its header, as PatternFly's progress stepper, with passed, current, to come, skipped and exit stages, vertical below md. The catalog gains ProgressStepper and ProgressStep. |
 | 0.69 | 2026-11-23 | Starting points: when a skill names the ways to begin creating a type, New opens on a choice of cards, one per starting point; those not yet available are shown with Coming soon and why; Continue opens what the chosen one begins, such as the create form. |
+| 0.70 | 2026-11-23 | Card select mode ends with Stop selecting, a × icon button first in the list bar before the selection control and its count, as in Google Drive and Photos, in place of a Done link at the bar's far end. Select none keeps select mode. |

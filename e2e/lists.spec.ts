@@ -30,11 +30,15 @@ test('cards: Select shows a round control on each card; choosing three cases off
   await page.setViewportSize({ width: 1280, height: 900 });
   await openTodo(page);
   await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
-  // Select starts select mode: the cards show their controls, and the bar is the same as the list's, with Done.
+  // Select starts select mode: the cards show their controls, and the bar is the same as the list's, led by Stop selecting.
   await bar(page).getByRole('button', { name: 'Select', exact: true }).click();
   await expect(bar(page).getByRole('checkbox', { name: 'Select all' })).toBeVisible();
   await card(page, 'SC-001').getByRole('checkbox').click();
-  await bar(page).getByRole('button', { name: 'Done', exact: true }).click();
+  // Select none keeps select mode; Stop selecting, first in the bar, ends it.
+  await expect(bar(page).getByText('1 selected')).toBeVisible();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'test-results/stop-selecting.png' });
+  await bar(page).getByRole('button', { name: 'Stop selecting' }).click();
   await expect(page.locator('.pf-v6-c-card').getByRole('checkbox')).toHaveCount(0);
   await expect(bar(page).getByText('1 selected')).toHaveCount(0);
   await bar(page).getByRole('button', { name: 'Select', exact: true }).click();

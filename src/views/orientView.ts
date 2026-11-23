@@ -263,6 +263,17 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
     // Cards start select mode from a Select link; once selecting, the bar is the same as List's (design system spec 4.3).
     start.push(barItem(barLink('Select', 'select')));
   } else {
+    // Card select mode ends with Stop selecting, first in the bar beside the count, as in Google Drive's selection bar:
+    // an icon before the selection control, so it is never read as one of the actions after it (design system spec 4.3).
+    if (controls.mode === 'cards') {
+      start.push(
+        barItem({
+          component: 'Tooltip',
+          props: { content: 'Stop selecting' },
+          children: [{ component: 'Button', props: { variant: 'plain', icon: 'times', 'aria-label': 'Stop selecting' }, intent: 'select' }],
+        }),
+      );
+    }
     start.push(
       barItem({
         component: 'Dropdown',
@@ -299,8 +310,6 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       component: 'ToolbarGroup',
       props: { align: { default: 'alignEnd' } },
       children: [
-        // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
-        ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
         // While objects are chosen the bar is for acting on them; creating another waits until the choice is cleared (spec 4.3).
         ...(controls.create && !chosen ? [barItem(createButton(controls.create))] : []),
         barItem({

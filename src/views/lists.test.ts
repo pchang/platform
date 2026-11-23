@@ -45,17 +45,18 @@ describe('the list bar (design system spec 4.3)', () => {
       ['Select all (3)', 'select-all'],
       ['Select none', 'clear-selection'],
     ]);
-    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch))).toEqual(['Ask about the 2 selected', 'Done']);
-    // Once selecting, the card bar is the list bar, with Done to end select mode.
+    expect(labelsOf(find(bar, (n) => n.component === 'Button' && !n.batch && n.intent !== 'select'))).toEqual(['Ask about the 2 selected']);
+    // Stop selecting ends select mode: a × first in the bar, before the selection control and its count (spec 4.3).
+    const items = find(bar, (n) => n.component === 'ToolbarItem');
+    const stop = find(items[0], (n) => n.component === 'Button')[0];
+    expect(stop).toMatchObject({ props: { variant: 'plain', icon: 'times', 'aria-label': 'Stop selecting' }, intent: 'select' });
+    expect(find(items[1], (n) => (n.props as { toggle?: string } | undefined)?.toggle === 'bulk-select')).toHaveLength(1);
+    expect(labelsOf(find(bar, (n) => n.component === 'Button'))).not.toContain('Done');
+    // Once selecting, the card bar is the list bar, led by Stop selecting.
     const listBar = find(buildTypeView('Safety Cases', cases, { methods, controls: controls({ mode: 'list', selected: new Set(['urn:SC-4', 'urn:SC-5']) }) }).root, (n) => n.component === 'Toolbar')[0];
-    const dropDone = (n: ViewNode): ViewNode => ({
-      ...n,
-      ...(n.children
-        ? { children: n.children.filter((c) => !(c.component === 'ToolbarItem' && (c.children?.[0]?.props as { label?: string } | undefined)?.label === 'Done')).map(dropDone) }
-        : {}),
-    });
-    const withoutDone = dropDone(bar);
-    expect(withoutDone).toEqual(listBar);
+    const isStop = (c: ViewNode) => c.component === 'ToolbarItem' && (c.children?.[0]?.props as { content?: string } | undefined)?.content === 'Stop selecting';
+    const dropStop = (n: ViewNode): ViewNode => ({ ...n, ...(n.children ? { children: n.children.filter((c) => !isStop(c)).map(dropStop) } : {}) });
+    expect(dropStop(bar)).toEqual(listBar);
     // A thin divider before the actions for what is chosen.
     expect(find(bar, (n) => n.component === 'ToolbarItem' && (n.props as { variant?: string } | undefined)?.variant === 'separator')).toHaveLength(1);
     // Flag duplicate is common to both but is a comparison, so it stays with one object at a time.
