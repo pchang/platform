@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ViewNode } from '../design-system/catalog';
-import { RefusedError, type CommitResult, type DraftView, type MethodComposition, type ObjectView, type RunView } from '../data/client';
+import { RefusedError, type CommitResult, type DraftView, type MethodComposition, type ObjectView, type RunView, type SkillProposals } from '../data/client';
+import { fillEmpty, leadingProposal, type ProposalState } from './proposalView';
 import type { ProcessRecord, ProcessSnapshot } from '../processes/processes';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
@@ -71,6 +72,13 @@ export function ComposeDialog({
   const isCompare = isPage && !isDraft;
   const picked = composition?.inputs.find((i) => i.kind === 'object');
   const pickedValue = picked ? values[picked.name] : undefined;
+  // A skill's proposal (platform spec 3.3, Skills). A restored process keeps the one it started from, and does not ask again.
+  const [proposal, setProposal] = useState<ProposalState>({ status: 'none' });
+  const [proposalId, setProposalId] = useState<string | undefined>(process?.proposal);
+  const proposing = useRef<Promise<SkillProposals>>(undefined);
+  // Whether the dialog opened on a process that was set aside with values given: decided once, when it opens.
+  const [restored] = useState(() => Boolean(process?.run || process?.proposal || Object.values(process?.values ?? {}).some((v) => v?.trim())));
+  const wantsProposal = Boolean(composition?.skills?.length) && !isDraft && !restored;
 
   useEffect(() => {
     if (!isCompare) return;
@@ -102,8 +110,8 @@ export function ComposeDialog({
       (c) => {
         if (cancelled) return;
         setComposition(c);
-        // Defaults first, then whatever the person gave before setting the process aside.
-        setValues({ ...Object.fromEntries(c.inputs.filter((i) => i.default).map((i) => [i.name, i.default!])), ...(process?.values ?? {}) });
+        // Defaults first, then anything a skill already proposed, then whatever the person gave before setting the process aside.
+        setValues((v) => ({ ...Object.fromEntries(c.inputs.filter((i) => i.default).map((i) => [i.name, i.default!])), ...v, ...(process?.values ?? {}) }));
       },
       (e: unknown) => !cancelled && setError(e instanceof RefusedError ? e.reasons : [String(e)]),
     );
@@ -111,6 +119,28 @@ export function ComposeDialog({
       cancelled = true;
     };
   }, [client, principal, object, method]);
+
+  // Skills propose as soon as the composition says there are any; their values fill only the fields still empty.
+  useEffect(() => {
+    if (!wantsProposal) return;
+    let cancelled = false;
+    setProposal({ status: 'working' });
+    proposing.current ??= client.propose(principal, [object], method);
+    proposing.current.then(
+      (result) => {
+        if (cancelled) return;
+        const state: ProposalState = { status: 'ready', result };
+        setProposal(state);
+        const lead = leadingProposal(state);
+        setProposalId(lead?.proposal);
+        setValues((v) => fillEmpty(v, lead));
+      },
+      (e: unknown) => !cancelled && setProposal({ status: 'failed', reasons: reasonsOf(e) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, object, method, wantsProposal]);
 
   // The method's inputs: everything but the typed signature, which is not an input and never previewed.
   const inputs = useMemo(() => {
@@ -159,9 +189,9 @@ export function ComposeDialog({
   // Keep what has been given, and how far along it is, for the dock.
   useEffect(() => {
     if (!composition || composition.archetype.label === 'Review a draft') return;
-    onChange?.({ values, run: run?.run, progress: processProgress(composition, state, values, { run }) });
+    onChange?.({ values, run: run?.run, ...(proposalId ? { proposal: proposalId } : {}), progress: processProgress(composition, state, values, { run }) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [composition, values, state, run]);
+  }, [composition, values, state, run, proposalId]);
 
   // Follow the run until it ends (design system spec 5.1, Start and track, steps 4 and 5).
   const runId = run?.run;
@@ -187,10 +217,10 @@ export function ComposeDialog({
   const view = isPage
     ? buildCompareView(composition, state, self!, other, submitting, Boolean(onMinimize))
     : isStart
-      ? buildStartView(composition, state, run, submitting, Boolean(onMinimize))
+      ? buildStartView(composition, state, run, submitting, Boolean(onMinimize), proposal)
       : composition.signature
-      ? buildSignView(composition, state, values, submitting, Boolean(onMinimize))
-      : buildComposeView(composition, state, submitting, Boolean(onMinimize));
+      ? buildSignView(composition, state, values, submitting, Boolean(onMinimize), proposal)
+      : buildComposeView(composition, state, submitting, Boolean(onMinimize), proposal);
   return (
     <ViewRenderer
       view={view}
@@ -205,7 +235,7 @@ export function ComposeDialog({
           if (state.status !== 'ready' || submitting) return;
           setSubmitting(true);
           const signature = composition.signature ? { typedName: values[SIGNATURE_FIELD] ?? '' } : undefined;
-          client.commit(principal, object, method, inputs, signature).then(
+          client.commit(principal, object, method, inputs, signature, undefined, proposalId).then(
             (result) => {
               if (!result.run) return onDone(composition, result);
               setStarted(result);

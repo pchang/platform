@@ -1026,6 +1026,10 @@
             ],
             "description": "Surface style"
           },
+          "isHighlighted": {
+            "type": "boolean",
+            "description": "Outlined in the brand color, so it stands out in a row of cards without hiding the others, such as the one a skill recommends"
+          },
           "isSelectable": {
             "type": "boolean",
             "description": "Chosen like a radio button, with a field and a value"

@@ -25,6 +25,14 @@ test('run a trial simulation on a study scenario and read its forecasts against 
   const dialog = page.getByRole('dialog', { name: /Run trial simulation SSC-1/ });
   const measures = dialog.getByRole('group', { name: /Outcome measures/ });
   await expect(measures.getByRole('checkbox')).toHaveCount(6);
+  // The Simulation assumptions skill (domain spec 3.9) proposes the assumptions from TS-1, and pre-fills them.
+  await expect(dialog.getByRole('heading', { name: 'Proposed by Simulation assumptions' })).toBeVisible({ timeout: 15_000 });
+  await expect(dialog.getByText('Version 1.0 · reference procedure · from TS-1')).toBeVisible();
+  await expect(dialog.getByText(/^Carried over from TS-1, the most recent trial simulation of SSC-1, as of Nov 19, 2026\./)).toBeVisible();
+  await expect(dialog.getByRole('spinbutton', { name: 'Screen failure rate, percent' })).toHaveValue('48');
+  await expect(dialog.getByRole('spinbutton', { name: 'Response on treatment, percent' })).toHaveValue('46');
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: 'test-results/simulation-proposed.png' });
   for (const m of ['last patient in', 'total cost']) await measures.getByRole('checkbox', { name: m }).check();
   await dialog.getByRole('spinbutton', { name: 'Screen failure rate, percent' }).fill('48');
   await dialog.getByRole('spinbutton', { name: 'Dropout rate, percent' }).fill('15');

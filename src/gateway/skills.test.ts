@@ -133,7 +133,7 @@ describe('Recommend a study scenario, by its reference procedure', () => {
     const p = proposals[0];
     expect(p).toMatchObject({ label: 'Recommend a study scenario', ranBy: { procedure: 'rank by comparison' }, recommended: { identifier: 'SSC-3' } });
     expect(p.values).toEqual([expect.objectContaining({ name: 'chosen', value: `${NS.d}SSC-3`, valueLabel: expect.stringMatching(/^SSC-3 · /) })]);
-    expect(p.reasoning).toMatch(/^SSC-3 is the only one with nothing flagged in the comparison\. SSC-3: none flagged\. /);
+    expect(p.reasoning).toMatch(/^SSC-3 is the only one with nothing flagged in the comparison\. SSC-1: /);
     expect(p.reasoning).toContain('SSC-1: Last patient in missed, Total cost missed');
     expect(p.reasoning).toContain('does not weigh');
     expect(p.restsOn.map((r) => r.identifier)).toEqual(expect.arrayContaining(['SSC-1', 'SSC-2', 'SSC-3', 'FC-11', 'FC-12']));

@@ -40,12 +40,23 @@ test('choose study scenarios together, compare them side by side, and select one
   await expect(figure('14.6 months Against target: met')).toBeVisible();
   await expect(figure('37.7 million USD Against target: met')).toBeVisible();
   await expect(modal.getByText('Nothing to compare yet.')).toHaveCount(0);
-  // Before a choice the button says only what it will do, and cannot be pressed.
-  await expect(modal.getByRole('button', { name: 'Select', exact: true })).toBeDisabled();
-  await expect(modal.getByRole('button', { name: 'Compare study scenarios' })).toHaveCount(0);
+  // The Recommend a study scenario skill (domain spec 3.9) recommends SSC-3 by its reference procedure: its card is outlined
+  // and labeled, its reasoning sits between Side by side and Decide, and the choice starts with it.
+  await expect(modal.getByRole('heading', { name: 'Recommendation' })).toBeVisible({ timeout: 15_000 });
+  await expect(modal.getByText(/^SSC-3 is the only one with nothing flagged in the comparison\./)).toBeVisible();
+  const recommended = modal.locator('.pf-v6-c-card.app-highlighted');
+  await expect(recommended).toHaveCount(1);
+  await expect(recommended).toContainText('VELOCITY-3 without hand MRI');
+  await expect(recommended.getByText('Recommended', { exact: true })).toBeVisible();
   const choice = modal.getByRole('combobox', { name: 'Scenario to select' });
-  const option = (await choice.locator('option').allTextContents()).find((o) => o.startsWith('SSC-3'))!;
-  await choice.selectOption({ label: option });
+  await expect(choice.locator('option:checked')).toHaveText(/^SSC-3/);
+  // The rationale is the person's own: empty, so the decision cannot be made yet. The button already names the choice.
+  await expect(modal.getByRole('textbox', { name: 'Rationale' })).toHaveValue('');
+  await expect(modal.getByRole('button', { name: 'Select SSC-3', exact: true })).toBeDisabled();
+  await expect(modal.getByRole('button', { name: 'Compare study scenarios' })).toHaveCount(0);
+  await modal.getByRole('heading', { name: 'Side by side' }).scrollIntoViewIfNeeded();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: 'test-results/compare-recommendation.png' });
   await modal.getByRole('textbox', { name: 'Rationale' }).fill('Within budget, without hand MRI');
   await expect(modal.getByText('SSC-1 Status')).toBeVisible({ timeout: 15_000 });
   await expect(modal.getByText('SSC-2 Status')).toBeVisible();

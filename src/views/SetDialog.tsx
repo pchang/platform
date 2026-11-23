@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ViewNode } from '../design-system/catalog';
 import { RefusedError, type MethodComposition, type ObjectSummary } from '../data/client';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { ViewRenderer } from '../renderer/Renderer';
 import { buildRefusedView } from './composeView';
 import { buildSetView, setNotice, type SetPreview } from './setView';
+import { fillEmpty, leadingProposal, type ProposalState } from './proposalView';
+import type { SkillProposals } from '../data/client';
 
 const reasonsOf = (e: unknown) => (e instanceof RefusedError ? e.reasons : [String(e)]);
 
@@ -29,6 +31,9 @@ export function SetDialog({
   const [state, setState] = useState<SetPreview>({ status: 'incomplete' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string[]>();
+  const [proposal, setProposal] = useState<ProposalState>({ status: 'none' });
+  // One request per dialog: each proposal is recorded, and with a model each is a paid call.
+  const proposing = useRef<Promise<SkillProposals>>(undefined);
   const ids = objects.map((o) => o.iri);
   const idsKey = ids.join('|');
 
@@ -42,6 +47,28 @@ export function SetDialog({
       cancelled = true;
     };
   }, [client, principal, idsKey, method]);
+
+  // Skills propose once the composition says there are any (platform spec 3.3, Skills): the recommendation pre-selects the
+  // choice, unless the person has already chosen. The rationale is never proposed.
+  const hasSkills = Boolean(composition?.skills?.length);
+  useEffect(() => {
+    if (!hasSkills) return;
+    let cancelled = false;
+    setProposal({ status: 'working' });
+    proposing.current ??= client.propose(principal, idsKey.split('|'), method);
+    proposing.current.then(
+      (result) => {
+        if (cancelled) return;
+        const state: ProposalState = { status: 'ready', result };
+        setProposal(state);
+        setValues((v) => fillEmpty(v, leadingProposal(state)));
+      },
+      (e: unknown) => !cancelled && setProposal({ status: 'failed', reasons: reasonsOf(e) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [client, principal, idsKey, method, hasSkills]);
 
   const inputsKey = JSON.stringify(values);
   const complete = Boolean(composition?.inputs.every((i) => values[i.name]?.trim()));
@@ -70,7 +97,7 @@ export function SetDialog({
 
   return (
     <ViewRenderer
-      view={buildSetView(composition, state, submitting, values)}
+      view={buildSetView(composition, state, submitting, values, proposal)}
       host={{
         values,
         onField: (field, value) => setValues((v) => ({ ...v, [field]: value })),
@@ -80,7 +107,7 @@ export function SetDialog({
           setSubmitting(true);
           try {
             const chosen = composition.inputs.find((i) => i.kind === 'object')?.name;
-            const result = await client.commitSet(principal, ids, method, values);
+            const result = await client.commitSet(principal, ids, method, values, leadingProposal(proposal)?.proposal ?? (proposal.status === 'ready' ? proposal.result.proposals[0]?.proposal : undefined));
             onDone(setNotice(composition, chosen ? values[chosen] : '', result));
           } catch (e) {
             setSubmitting(false);

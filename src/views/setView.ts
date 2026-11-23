@@ -3,6 +3,7 @@ import type { CommitResult, MethodComposition } from '../data/client';
 import { changeLines, fieldFor } from './composeView';
 import { countOf } from './batchView';
 import { dialogBody } from './layout';
+import { recommendationOf, recommendationSection, type ProposalState } from './proposalView';
 
 /**
  * A set method (platform spec 5.4, Acting on a set; design system spec 5.1, Compare and decide over a set): the set's
@@ -18,8 +19,11 @@ function valueOf(title: string, row: string): string {
   return title.toLowerCase().startsWith(`${row.toLowerCase()}: `) ? title.slice(row.length + 2) : title;
 }
 
-/** One card per object of the set: its title, then each comparison row, marked where the objects differ or it is urgent. */
-function setCards(composition: MethodComposition): ViewNode {
+/**
+ * One card per object of the set: its title, then each comparison row, marked where the objects differ or it is urgent.
+ * The one a skill recommends is outlined and labeled Recommended, beside its identifier (design system spec 4.3).
+ */
+function setCards(composition: MethodComposition, recommended?: string): ViewNode {
   const objects = composition.objects ?? [];
   const rows = composition.comparison?.rows ?? [];
   const span = objects.length >= 3 ? 4 : 6;
@@ -32,9 +36,21 @@ function setCards(composition: MethodComposition): ViewNode {
       children: [
         {
           component: 'Card',
-          props: { isFullHeight: true },
+          props: { isFullHeight: true, ...(object.iri === recommended ? { isHighlighted: true } : {}) },
           children: [
-            { component: 'CardHeader', children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'CardTitle', props: { label: object.title, component: 'h3' } }] },
+            {
+              component: 'CardHeader',
+              children: [
+                object.iri === recommended
+                  ? {
+                      component: 'Flex',
+                      props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' }, alignItems: { default: 'alignItemsCenter' } },
+                      children: [text(`${object.identifier} · ${object.typeLabel}`, 'small'), { component: 'Label', props: { label: 'Recommended', color: 'blue', isCompact: true } }],
+                    }
+                  : text(`${object.identifier} · ${object.typeLabel}`, 'small'),
+                { component: 'CardTitle', props: { label: object.title, component: 'h3' } },
+              ],
+            },
             {
               component: 'CardBody',
               children: [
@@ -116,11 +132,13 @@ export function commitLabelOf(composition: MethodComposition, values: Record<str
   return chosen ? `${composition.commitLabel} ${chosen.identifier}` : composition.commitLabel;
 }
 
-export function buildSetView(composition: MethodComposition, state: SetPreview, submitting = false, values: Record<string, string> = {}): ViewSpec {
+export function buildSetView(composition: MethodComposition, state: SetPreview, submitting = false, values: Record<string, string> = {}, proposal: ProposalState = { status: 'none' }): ViewSpec {
   const objects = composition.objects ?? [];
   const title = `${composition.label}: ${countOf(objects)}`;
+  const recommendation = recommendationSection(proposal);
   const body: ViewNode[][] = [
-    [{ component: 'Title', props: { label: 'Side by side', headingLevel: 'h2', size: 'md' } }, text('Each scenario’s current forecasts, against their targets.', 'small'), setCards(composition)],
+    [{ component: 'Title', props: { label: 'Side by side', headingLevel: 'h2', size: 'md' } }, text('Each scenario’s current forecasts, against their targets.', 'small'), setCards(composition, recommendationOf(proposal)?.recommended?.iri)],
+    ...(recommendation ? [recommendation] : []),
     [{ component: 'Title', props: { label: 'Decide', headingLevel: 'h2', size: 'md' } }, { component: 'Form', children: composition.inputs.map(fieldFor) }],
     preview(composition, state),
   ];

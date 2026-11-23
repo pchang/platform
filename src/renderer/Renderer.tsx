@@ -608,6 +608,11 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     // The list is where the link goes; the host may step aside to show it, as the object panel does.
     props.onClick = () => host.onList?.();
   }
+  // Outlined, to stand out in a row of cards (view spec Card.isHighlighted).
+  if (entry.id === 'Card' && props.isHighlighted) {
+    props.className = [props.className, 'app-highlighted'].filter(Boolean).join(' ');
+    delete props.isHighlighted;
+  }
   // Quieter text, in the subtle text color (view spec Content.isSubtle).
   if (entry.id === 'Content' && props.isSubtle) {
     props.className = [props.className, 'app-subtle'].filter(Boolean).join(' ');

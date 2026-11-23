@@ -1,3 +1,4 @@
+import { proposedSection, type ProposalState } from './proposalView';
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { CommitResult, DraftView, MethodComposition, ObjectView, RunView } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
@@ -123,10 +124,13 @@ function previewSection(composition: MethodComposition, state: PreviewState, pro
   ];
 }
 
-export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false): ViewSpec {
+export function buildComposeView(composition: MethodComposition, state: PreviewState, submitting = false, minimizable = false, proposal: ProposalState = { status: 'none' }): ViewSpec {
   const isConfirm = composition.archetype.label === 'Confirm';
   const title = `${composition.label} ${composition.object.identifier}`;
   const body: ViewNode[][] = [];
+  // A skill's proposal leads the body, before the fields it pre-fills (design system spec 4.3, Proposals from skills).
+  const proposed = proposedSection(proposal);
+  if (proposed) body.push(proposed);
   if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   body.push(previewSection(composition, state));
   return {
@@ -190,11 +194,13 @@ function runSection(run: RunView): ViewNode[] {
  * Start and track (design system spec 5.1): a small modal that starts a background run, then follows it.
  * Before the start: any inputs and the preview, with what the run will do. After: the run's progress and outcome.
  */
-export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false, minimizable = false): ViewSpec {
+export function buildStartView(composition: MethodComposition, state: PreviewState, run?: RunView, submitting = false, minimizable = false, proposal: ProposalState = { status: 'none' }): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const body: ViewNode[][] = [];
   if (run) body.push(runSection(run));
   else {
+    const proposed = proposedSection(proposal);
+    if (proposed) body.push(proposed);
     if (composition.inputs.length) body.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
     body.push(previewSection(composition, state));
   }
@@ -450,10 +456,12 @@ export function nameMatches(composition: MethodComposition, typed: string | unde
  * Review and sign (design system spec 5.1): a Wizard in a modal. Review shows the inputs and the preview;
  * Sign shows who signs, what the signature means and when it is recorded, then takes the typed name.
  */
-export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false, minimizable = false): ViewSpec {
+export function buildSignView(composition: MethodComposition, state: PreviewState, values: Record<string, string>, submitting = false, minimizable = false, proposal: ProposalState = { status: 'none' }): ViewSpec {
   const title = `${composition.label} ${composition.object.identifier}`;
   const signature = composition.signature!;
   const review: ViewNode[][] = [];
+  const proposed = proposedSection(proposal);
+  if (proposed) review.push(proposed);
   if (composition.inputs.length) review.push([{ component: 'Form', children: composition.inputs.map(fieldFor) }]);
   review.push(previewSection(composition, state));
   const sign: ViewNode[][] = [

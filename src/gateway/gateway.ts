@@ -175,6 +175,8 @@ export interface MethodComposition {
   comparison?: ComparisonView;
   /** The word that names the commit button, when the method names one (platform spec 5.4), such as Select. */
   commitLabel?: string;
+  /** The approved skills that would propose its inputs for this person (spec 3.3, Skills); ask for their proposals with propose. */
+  skills?: { skill: string; label: string }[];
 }
 
 /** A set method's comparison (spec 5.4, Acting on a set): rows keyed by a state value, a cell per object of the set. */
@@ -1625,6 +1627,7 @@ export class Gateway {
       inputs,
       ...(commitLabel ? { commitLabel } : {}),
       ...(this.comparison(method, objects) ?? {}),
+      ...this.skillsOffered(principal, method),
     };
   }
 
@@ -1892,6 +1895,12 @@ export class Gateway {
     return result;
   }
 
+  /** The skills a composition names, so the experience asks for proposals only when there are any. */
+  private skillsOffered(principal: Principal, method: string): { skills?: { skill: string; label: string }[] } {
+    const skills = this.skillsFor(principal, method).map((s) => ({ skill: s.skill, label: s.label }));
+    return skills.length ? { skills } : {};
+  }
+
   /** The approved skills that serve a method and that the principal's role may use. */
   private skillsFor(principal: Principal, method: string): SkillRow[] {
     const today = this.now().toISOString().slice(0, 10);
@@ -1998,7 +2007,7 @@ export class Gateway {
     const lead = first.urgent.length
       ? `${first.s.identifier} has the fewest flagged in the comparison.`
       : `${first.s.identifier} is the only one with nothing flagged in the comparison.`;
-    const reasoning = `${lead} ${[first, ...others].map(describe).join('. ')}. ${counted}`;
+    const reasoning = `${lead} ${[...(first.urgent.length || first.missing.length ? [first] : []), ...others].map(describe).join('. ')}. ${counted}`;
     const value = { name: chosen.name, label: chosen.label, value: first.s.iri, valueLabel: `${first.s.identifier} · ${first.s.title}`, restsOn: [{ iri: first.s.iri, identifier: first.s.identifier }, ...cite(first).map((identifier) => ({ iri: this.resolve(identifier), identifier }))] };
     return { values: [value], recommended: { iri: first.s.iri, identifier: first.s.identifier }, reasoning, restsOn };
   }
@@ -2377,7 +2386,7 @@ export class Gateway {
       for (const c of candidates) if (!(await conformanceProblems(this.graph, c.value, shapes, validator)).length) qualifying.push(c);
       return { ...base, kind: 'object', choices: asChoices(qualifying) };
     }));
-    return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs, ...(signature ? { signature } : {}) };
+    return { method, label: m.label, archetype: archetypeOf(this.graph.store, method), object: this.summary(object), inputs, ...(signature ? { signature } : {}), ...this.skillsOffered(principal, method) };
   }
 
   private async checkInputs(principal: Principal, object: string, method: string, given: Record<string, string>): Promise<Map<string, Term>> {

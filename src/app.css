@@ -214,3 +214,14 @@ html body .pf-v6-l-flex > .pf-v6-c-content--small {
 html body .app-subtle {
   color: var(--pf-t--global--text--color--subtle);
 }
+
+/* A card that stands out in a row, such as the one a skill recommends (design system spec 4.3, Proposals from skills). */
+html body .pf-v6-c-card.app-highlighted {
+  outline: var(--pf-t--global--border--width--strong) solid var(--pf-t--global--border--color--brand--default);
+  outline-offset: -1px;
+}
+
+/* An eyebrow row in a card's header, such as an identifier with its Recommended label, keeps the eyebrow's own space above the title. */
+html body .pf-v6-c-card__header .pf-v6-l-flex:has(> .pf-v6-c-content--small):not(:last-child) {
+  margin-block-end: var(--pf-t--global--spacer--md);
+}
