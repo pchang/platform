@@ -164,3 +164,53 @@ describe('J7: evolving the structure', () => {
     expect(await scenarioStages(openGateway(path))).toEqual(['draft', 'selected', 'set aside']);
   });
 });
+
+describe('drafted in words (platform spec 3.7)', () => {
+  it('lets a connected model draft a change set for the Steward, and nothing more', async () => {
+    const seen: string[][] = [];
+    const g = withSeed([], {
+      askModel: {
+        model: 'test-model',
+        async answer({ toolbox }) {
+          seen.push(toolbox.tools.map((t) => t.name));
+          const out = await toolbox.run('draft_change_set', {
+            summary: 'Study scenarios can wait on a budget decision',
+            operations: [{ kind: 'add value', value_set: 'StudyScenarioStatus', value: '', label: 'on hold', replacement: '' }],
+          });
+          const draft = JSON.parse(out.content) as { identifier: string; operations: string[] };
+          expect(draft.operations).toEqual(['Study Scenario status: adds on hold']);
+          return { status: 'answered', text: `Drafted ${draft.identifier}.`, cited: [draft.identifier], model: 'test-model-1' };
+        },
+      },
+    });
+    const result = await g.ask(noor, 'Add an on hold status to study scenarios');
+    expect(seen[0]).toContain('draft_change_set');
+    const cited = result.answer!.cited[0];
+    expect(g.read(noor, cited.iri).state).toMatchObject({ Status: 'draft' });
+    // Nothing in use changed: the status is not there until the draft is proposed, approved and applied.
+    expect(await scenarioStages(g)).toEqual(['draft', 'selected', 'set aside']);
+    // A person who may not create change sets is never offered the tool.
+    await g.ask(marcus, 'Add an on hold status to study scenarios');
+    expect(seen[1]).not.toContain('draft_change_set');
+  });
+
+  it('withdraws the draft and gives the reasons back when an operation is refused', async () => {
+    let reply = '';
+    const g = withSeed([], {
+      askModel: {
+        model: 'test-model',
+        async answer({ toolbox }) {
+          const out = await toolbox.run('draft_change_set', {
+            summary: 'Rename a change set status',
+            operations: [{ kind: 'relabel', value_set: '', value: 'ChangeSetStatus-draft', label: 'sketch', replacement: '' }],
+          });
+          reply = out.content;
+          return { status: 'cannot answer', text: 'That cannot be changed here.', cited: [], model: 'test-model-1' };
+        },
+      },
+    });
+    await g.ask(noor, 'Call draft change sets sketches');
+    expect(reply).toMatch(/^Operation 1 \(relabel\): .*platform/);
+    expect(g.find(noor, p('ChangeSet')).map((c) => c.state.Outcome)).toEqual(['withdrawn']);
+  });
+});

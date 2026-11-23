@@ -5,7 +5,7 @@ import { templateProperties } from '../ontology/titles';
 import { DraftingError, sha256, type Drafter } from './drafting';
 import { containsWords, interpret, normalize, type Interpretation, type SearchModel, type SearchPlan } from './search';
 import { PROPOSAL_TOOL, type SkillModel } from './skills';
-import { ANSWER_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
+import { ANSWER_TOOL, DRAFT_CHANGE_TOOL, checkTurns, MAX_ABOUT, type AnswerStatus, type AskModel, type AskTool, type AskToolOutput, type AskTurn } from './ask';
 import { archetypeOf, type Archetype } from '../ontology/archetypes';
 import { titleOf } from '../ontology/titles';
 import { conformanceProblems, methodsFor, validateData, validatorFor, type MethodOption } from '../ontology/methods';
@@ -1042,7 +1042,8 @@ export class Gateway {
     // What the model met through the tools in this question: only these may be cited.
     const seen = new Map<string, string>();
     const toolbox = {
-      tools: [...ASK_TOOLS, ANSWER_TOOL],
+      // A person who may create change sets may also have one drafted from their words (spec 3.7, Drafted in words).
+      tools: [...ASK_TOOLS, ...(ask(this.graph.store, `ASK { <${principal.role}> p:mayCreate p:ChangeSet }`) ? [DRAFT_CHANGE_TOOL] : []), ANSWER_TOOL],
       run: (name: string, input: unknown) => this.runAskTool(principal, name, input, seen),
     };
     try {
@@ -1175,6 +1176,11 @@ export class Gateway {
           const methods = await this.methods(principal, object.iri);
           return out({ identifier: object.identifier, methods: methods.map((m) => ({ method: m.label, available: m.available, ...(m.blocks.length ? { blockedBecause: m.blocks } : {}) })) });
         }
+        case 'draft_change_set': {
+          const drafted = await this.draftChangeSet(principal, args);
+          meet({ iri: drafted.iri, identifier: drafted.identifier });
+          return out(drafted.view);
+        }
         default:
           return { content: `There is no tool called ${name}.`, isError: true };
       }
@@ -1182,6 +1188,46 @@ export class Gateway {
       if (error instanceof GatewayError) return { content: error.reasons.join(' '), isError: true };
       throw error;
     }
+  }
+
+  /**
+   * Drafted in words (spec 3.7): a change set made from what a model drafted, as the principal, through the same create
+   * and method requests a person uses. It is only a draft: proposing, approving and applying stay with people. When an
+   * operation is refused, the draft is withdrawn and the reasons go back to the model to correct.
+   */
+  private async draftChangeSet(principal: Principal, args: Record<string, unknown>) {
+    const summary = typeof args.summary === 'string' ? args.summary.trim() : '';
+    if (!summary) throw new GatewayError(400, ['Say in a sentence what the change set changes and why']);
+    const operations = Array.isArray(args.operations) ? (args.operations as Record<string, unknown>[]) : [];
+    if (!operations.length) throw new GatewayError(400, ['A change set needs at least one operation']);
+    const created = await this.create(principal, `${NS.p}ChangeSet`, { changeSummary: summary });
+    const changeSet = created.created[0];
+    const str = (o: Record<string, unknown>, k: string) => (typeof o[k] === 'string' ? (o[k] as string).trim() : '');
+    try {
+      for (const [i, op] of operations.entries()) {
+        const kind = str(op, 'kind');
+        const step = `Operation ${i + 1} (${kind || 'no kind'})`;
+        try {
+          if (kind === 'add value') await this.commit(principal, changeSet, `${NS.p}AddValue`, { valueSet: str(op, 'value_set'), label: str(op, 'label') });
+          else if (kind === 'relabel') await this.commit(principal, changeSet, `${NS.p}RelabelValue`, { value: str(op, 'value'), label: str(op, 'label') });
+          else if (kind === 'deprecate') await this.commit(principal, changeSet, `${NS.p}DeprecateValue`, { value: str(op, 'value'), replacement: str(op, 'replacement') });
+          else throw new GatewayError(400, ['The kind must be add value, relabel or deprecate']);
+        } catch (error) {
+          if (error instanceof GatewayError) throw new GatewayError(400, error.reasons.map((r) => `${step}: ${r}`));
+          throw error;
+        }
+      }
+    } catch (error) {
+      await this.commit(principal, changeSet, `${NS.p}WithdrawChangeSet`).catch(() => undefined);
+      throw error;
+    }
+    const summaryOf = this.summary(changeSet);
+    const impact = await this.structureImpact(changeSet, 'apply');
+    return {
+      iri: changeSet,
+      identifier: summaryOf.identifier,
+      view: { identifier: summaryOf.identifier, title: summaryOf.title, status: 'draft', operations: impact.structure, impact, next: 'A person reviews the draft and proposes it; its owners approve it before it is applied.' },
+    };
   }
 
   /** Names the model may use, resolved to what the principal may read: types, state values and identifiers. */
