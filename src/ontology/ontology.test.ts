@@ -26,7 +26,7 @@ describe('ontology files', () => {
   });
 
   it('carry a semantic version on every ontology', () => {
-    const unversioned = q(`SELECT ?o WHERE { ?o a owl:Ontology FILTER NOT EXISTS { ?o owl:versionInfo ?v } FILTER(?o != lsh:prefixes) }`);
+    const unversioned = q(`SELECT ?o WHERE { ?o a owl:Ontology FILTER NOT EXISTS { ?o owl:versionInfo ?v } FILTER(?o NOT IN (lsh:prefixes, p:prefixes)) }`);
     expect(unversioned).toEqual([]);
   });
 });
@@ -62,15 +62,16 @@ describe('terms are documented', () => {
 
 describe('model', () => {
   it('gives every object type a node shape', () => {
-    expect(q(`SELECT ?t WHERE { ?t a p:ObjectType FILTER NOT EXISTS { ?shape sh:targetClass ?t } }`)).toEqual([]);
+    expect(q(`SELECT ?t WHERE { ?t a p:ObjectType FILTER NOT EXISTS { ?shape (sh:targetClass|p:describes) ?t } }`)).toEqual([]);
   });
 
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
-    expect(dims.length).toBe(69);
+    // The domain's 69 and the platform's own: a change set's status and outcome, an operation's kind, a value's status.
+    expect(dims.length).toBe(73);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
-      const allowed = q(`SELECT ?c WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
+      const allowed = q(`SELECT ?c WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
       expect(allowed, dim).toEqual(inScheme);
     }
   });
@@ -86,7 +87,7 @@ describe('model', () => {
     // The domain spec's containment: a study's patients, a patient's visits and adverse events, a visit's records, a record's queries;
     // and in Design and Plan (section 3.4), an opportunity's or program's options and study concepts, a parent's scenarios, targets and decisions, a scenario's simulations, a simulation's forecasts,
     // a protocol's design objects, a population's criteria, an objective's estimand and a site selection's proposed sites.
-    const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true }`).map((r) => r.rel.split('#').pop()).sort();
+    const partOf = q(`SELECT ?rel WHERE { ?rel p:partOf true FILTER(STRSTARTS(STR(?rel), STR(ls:))) }`).map((r) => r.rel.split('#').pop()).sort();
     expect(partOf).toEqual(['capturedAt', 'contributesTo', 'decidesOn', 'defines', 'enrolledIn', 'estimandOf', 'experiencedBy', 'explores', 'forecastFrom',
       'isAbout', 'measures', 'optionFor', 'proposedFor', 'proposedIn', 'raisedOn', 'resolves', 'simulates', 'specifiedIn', 'targetFor', 'visitFor']);
     // An experiment's results, a program's target product profiles, and a study scenario's budget and site selection.
@@ -94,7 +95,7 @@ describe('model', () => {
   });
 
   it('says an end holds at most one object only where the domain is certain', () => {
-    const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship }`);
+    const one = q(`SELECT ?type ?rel WHERE { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 . ?rel a p:Relationship FILTER(STRSTARTS(STR(?type), STR(ls:))) }`);
     expect(one.length).toBe(47);
     expect(one).toContainEqual({ type: `${NS.ls}Patient`, rel: `${NS.ls}enrolledIn` });
     expect(one).not.toContainEqual({ type: `${NS.ls}Study`, rel: `${NS.ls}runsAt` });
@@ -226,13 +227,14 @@ describe('agrees with the domain spec', () => {
       }
     }
     expect(count).toBe(48);
-    expect(q(`SELECT ?m WHERE { ?m a p:Method }`).length).toBe(48);
+    // The domain's methods; the platform's own, such as a change set's, are in the platform spec (section 3.7).
+    expect(q(`SELECT ?m WHERE { ?m a p:Method FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).length).toBe(48);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {
     const line = spec.split('### To do')[1].split('\n').find((l) => l.startsWith('- **On-demand methods**'))!;
     const listed = line.split(': ')[1].replace(/\.$/, '').split(', ').sort();
-    const marked = q(`SELECT ?l WHERE { ?m p:onDemand true ; rdfs:label ?l }`).map((r) => r.l).sort();
+    const marked = q(`SELECT ?l WHERE { ?m p:onDemand true ; rdfs:label ?l FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).map((r) => r.l).sort();
     expect(marked).toEqual(listed);
   });
 

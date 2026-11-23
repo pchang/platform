@@ -347,3 +347,41 @@ ls:Metric-SitesStillProposed a p:Metric ;
   rdfs:comment "Proposed sites not yet shortlisted or rejected." ;
   p:metricOf ls:ProposedSite ;
   p:inState lst:ProposedSiteStatus-proposed .
+
+# Structure evolution (platform spec 3.7; domain spec section 6): the Structure Steward's metrics, and the roles that own
+# parts of the structure, as the roles that create and edit their types, approve or reject change sets to them.
+
+p:StructureSteward p:watches ls:Metric-ChangeSetsAwaitingApproval, ls:Metric-DeprecatedValues, ls:Metric-ChangeSetsApplied .
+
+ls:Metric-ChangeSetsAwaitingApproval a p:Metric ;
+  rdfs:label "Change sets awaiting approval" ;
+  rdfs:comment "Change sets proposed and not yet approved or rejected." ;
+  p:metricOf p:ChangeSet ;
+  p:inState p:ChangeSetStatus-proposed ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-DeprecatedValues a p:Metric ;
+  rdfs:label "Deprecated values" ;
+  rdfs:comment "Values deprecated in favor of another, kept so that history still reads." ;
+  p:metricOf skos:Concept ;
+  p:inState p:ValueStatus-deprecated ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-ChangeSetsApplied a p:Metric ;
+  rdfs:label "Change sets applied" ;
+  rdfs:comment "Change sets applied and in use, not rolled back." ;
+  p:metricOf p:ChangeSet ;
+  p:inState p:ChangeSetStatus-applied .
+ls:ComputationalChemist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalDataManager p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalResearchCoordinator p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:DrugSafetyPhysician p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:QualityLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalScientist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:Biostatistician p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:MedicalWriter p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ClinicalOperationsLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:PortfolioStrategist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+ls:ProgramLeader p:mayRun p:ApproveChangeSet, p:RejectChangeSet .

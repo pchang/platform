@@ -14,31 +14,31 @@
 <https://w3id.org/lsh-platform/platform> a owl:Ontology ;
   dcterms:title "LS&H platform vocabulary" ;
   rdfs:comment "Domain-free vocabulary for what SHACL does not describe: object types, state dimensions, methods, inputs, effects, business rules and roles (platform spec section 3.1)." ;
-  owl:versionInfo "0.1.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.1.0> ;
+  owl:versionInfo "0.2.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.2.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 p:Domain a rdfs:Class ;
-  rdfs:label "domain" ;
+  rdfs:label "Domain" ;
   rdfs:comment "A business domain that groups object types." .
 
 p:ObjectType a rdfs:Class ;
-  rdfs:label "object type" ;
+  rdfs:label "Object Type" ;
   rdfs:comment "A class whose instances are objects people and agents find and act on." ;
   rdfs:subClassOf rdfs:Class .
 
 p:StateDimension a rdfs:Class ;
-  rdfs:label "state dimension" ;
+  rdfs:label "State Dimension" ;
   rdfs:comment "A property that places an object in one dimension of its state space. Its values come from a SKOS concept scheme." ;
   rdfs:subClassOf rdf:Property .
 
 p:Relationship a rdfs:Class ;
-  rdfs:label "relationship" ;
+  rdfs:label "Relationship" ;
   rdfs:comment "A typed link between objects." ;
   rdfs:subClassOf rdf:Property .
 
 p:Method a rdfs:Class ;
-  rdfs:label "method" ;
+  rdfs:label "Method" ;
   rdfs:comment "An operation an object type supports: what it needs, what must be true before it runs, and what it changes." .
 
 p:Input a rdfs:Class ;
@@ -78,7 +78,7 @@ p:Parameter a rdfs:Class ;
   rdfs:comment "A value a business rule depends on, such as a number of days." .
 
 p:Role a rdfs:Class ;
-  rdfs:label "role" ;
+  rdfs:label "Role" ;
   rdfs:comment "A persona or agent role: the methods it may run and what it may not read." .
 
 p:Commit a rdfs:Class ;
@@ -122,7 +122,7 @@ p:DisproportionalityAnalysis a rdfs:Class ;
   rdfs:subClassOf p:Analysis .
 
 p:Metric a rdfs:Class ;
-  rdfs:label "metric" ;
+  rdfs:label "Metric" ;
   rdfs:comment "A count of the objects of one type in given states, with the thresholds at which its health turns from on track to watch and at risk (platform spec 5.1, Home)." .
 
 p:watches a rdf:Property ;
@@ -1079,7 +1079,7 @@ p:Confirm a p:Archetype ;
 # Skills (platform spec 3.3, Skills): an organization's know-how for a method. Context, not ontology.
 
 p:Skill a rdfs:Class ;
-  rdfs:label "skill" ;
+  rdfs:label "Skill" ;
   rdfs:comment "How one organization does a method's work well: the method it serves, what it proposes, its version, owner and approval, its instructions, and its reference procedure, if any. It proposes and never commits (platform spec 3.3, Skills)." .
 
 p:ReferenceProcedure a rdfs:Class ;
@@ -1171,8 +1171,8 @@ p:inputSource a rdf:Property ;
   rdfs:domain p:Skill ;
   rdfs:range p:InputSource .
 
-p:forInput a rdf:Property ;
-  rdfs:label "for input" ;
+p:givesInput a rdf:Property ;
+  rdfs:label "gives input" ;
   rdfs:comment "The input an input source gives a value for." ;
   rdfs:domain p:InputSource ;
   rdfs:range p:Input .
@@ -1269,3 +1269,526 @@ p:ReuseRecordedInputs a p:ReferenceProcedure ;
 p:RankByComparison a p:ReferenceProcedure ;
   rdfs:label "rank by comparison" ;
   rdfs:comment "Recommends the object of the set whose comparison has the fewest cells that miss their target, then the fewest missing; recommends none on a tie. Cites the rows it counted." .
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Structure evolution (platform spec 3.7): the structure describes itself as objects in the Structure domain, and every
+# change to it is a change set. Domain-free: every domain's ontology is browsed and changed the same way.
+
+p:Structure a p:Domain ;
+  rdfs:label "Structure" ;
+  rdfs:comment "The platform's own domain: the ontology and the context layer, as objects (platform spec 3.7)." .
+
+# The kinds of structure, as object types. Their objects are the ontology's own resources, read where they are declared.
+
+p:Domain a p:ObjectType ;
+  p:pluralLabel "Domains" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:ObjectType a p:ObjectType ;
+  p:pluralLabel "Object Types" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:StateDimension a p:ObjectType ;
+  p:pluralLabel "State Dimensions" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label} of {p:dimensionOf}" .
+
+skos:ConceptScheme a p:ObjectType ;
+  rdfs:label "Value Set" ;
+  p:pluralLabel "Value Sets" ;
+  rdfs:comment "The values a state dimension or a classification takes: a SKOS concept scheme." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{skos:prefLabel}" .
+
+skos:Concept a p:ObjectType ;
+  rdfs:label "Value" ;
+  p:pluralLabel "Values" ;
+  rdfs:comment "One value of a value set: a SKOS concept." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{skos:prefLabel}" .
+
+p:Relationship a p:ObjectType ;
+  p:pluralLabel "Relationships" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:Method a p:ObjectType ;
+  p:pluralLabel "Methods" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:Role a p:ObjectType ;
+  p:pluralLabel "Roles" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:Metric a p:ObjectType ;
+  p:pluralLabel "Metrics" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:Skill a p:ObjectType ;
+  p:pluralLabel "Skills" ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:ChangeSet a p:ObjectType, rdfs:Class ;
+  rdfs:label "Change Set" ;
+  p:pluralLabel "Change Sets" ;
+  rdfs:comment "A change to the structure in use: named operations, previewed for their impact, approved by the owners of what they touch, applied as a new version and reversible (platform spec 3.7)." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{p:changeSummary}" .
+
+p:Operation a p:ObjectType, rdfs:Class ;
+  rdfs:label "Operation" ;
+  p:pluralLabel "Operations" ;
+  rdfs:comment "One small change in a change set, with its parameters." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{p:operationKind}: {p:onValue} as {p:newLabel} | {p:operationKind}: {p:onValue} for {p:replacement} | {p:operationKind}: {p:newLabel} in {p:onValueSet} | {p:operationKind}" .
+
+# How each kind of structure is read and linked.
+
+p:changeSetStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Where a change set is in its life." ;
+  p:dimensionOf p:ChangeSet ;
+  p:valuesFrom p:ChangeSetStatus ;
+  p:order 1 .
+
+p:changeSetOutcome a p:StateDimension, rdf:Property ;
+  rdfs:label "Outcome" ;
+  rdfs:comment "How a change set ended, once it has: withdrawn, rejected or rolled back." ;
+  p:dimensionOf p:ChangeSet ;
+  p:valuesFrom p:ChangeSetOutcome ;
+  p:order 2 .
+
+p:operationKind a p:StateDimension, rdf:Property ;
+  rdfs:label "Kind" ;
+  rdfs:comment "What an operation does." ;
+  p:dimensionOf p:Operation ;
+  p:valuesFrom p:OperationKind ;
+  p:chosenOnCreate true ;
+  p:order 1 .
+
+p:valueStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Whether a value is current or deprecated. A value with no status is current." ;
+  p:dimensionOf skos:Concept ;
+  p:valuesFrom p:ValueStatus ;
+  p:order 1 .
+
+p:changeSummary a rdf:Property ;
+  rdfs:label "what it changes" ;
+  rdfs:comment "What the change set changes and why, in a sentence." ;
+  rdfs:domain p:ChangeSet ;
+  rdfs:range xsd:string .
+
+p:patch a rdf:Property ;
+  rdfs:label "Turtle patch" ;
+  rdfs:comment "The statements an applied change set removed and added, as Turtle, for review into the repository's files." ;
+  rdfs:domain p:ChangeSet ;
+  rdfs:range xsd:string .
+
+p:versionChange a rdf:Property ;
+  rdfs:label "version" ;
+  rdfs:comment "Each ontology version the change set moved, such as Life sciences terms 0.2.0 to 0.3.0." ;
+  rdfs:domain p:ChangeSet ;
+  rdfs:range xsd:string .
+
+p:newLabel a rdf:Property ;
+  rdfs:label "new label" ;
+  rdfs:comment "The label an added or relabeled value reads as." ;
+  rdfs:domain p:Operation ;
+  rdfs:range xsd:string .
+
+p:operationOf a p:Relationship, rdf:Property ;
+  rdfs:label "is part of" ;
+  p:inverseLabel "is made of" ;
+  p:order 101 ;
+  p:partOf true ;
+  rdfs:comment "An operation is part of one change set." .
+
+p:onValueSet a p:Relationship, rdf:Property ;
+  rdfs:label "adds to" ;
+  p:inverseLabel "is changed by" ;
+  p:order 102 ;
+  rdfs:comment "The value set an operation adds a value to." .
+
+p:onValue a p:Relationship, rdf:Property ;
+  rdfs:label "changes" ;
+  p:inverseLabel "is changed by" ;
+  p:order 103 ;
+  rdfs:comment "The value an operation relabels or deprecates." .
+
+p:replacement a p:Relationship, rdf:Property ;
+  rdfs:label "replaces it with" ;
+  p:inverseLabel "replaces values in" ;
+  p:order 104 ;
+  rdfs:comment "The value that replaces a deprecated value, which objects holding it move to." .
+
+p:replacedBy a p:Relationship, rdf:Property ;
+  rdfs:label "is replaced by" ;
+  p:inverseLabel "replaces" ;
+  p:order 105 ;
+  rdfs:comment "The value a deprecated value points to (platform spec 3.1, Additive evolution)." .
+
+p:createdValue a p:Relationship, rdf:Property ;
+  rdfs:label "added" ;
+  p:inverseLabel "was added by" ;
+  p:order 106 ;
+  rdfs:comment "The value an applied operation added." .
+
+# The structure's own relationships, so its objects link as the structure does.
+p:inDomain a p:Relationship ; p:inverseLabel "holds" ; p:order 110 .
+p:dimensionOf a p:Relationship ; p:inverseLabel "has" ; p:order 111 ; p:partOf true .
+p:valuesFrom a p:Relationship ; p:inverseLabel "gives the values of" ; p:order 112 .
+skos:inScheme a p:Relationship ; rdfs:label "is in" ; p:inverseLabel "holds" ; p:order 113 ; p:partOf true ;
+  rdfs:comment "A value is in its value set (SKOS)." .
+p:appliesTo a p:Relationship ; p:inverseLabel "has the method" ; p:order 114 .
+p:mayRun a p:Relationship ; p:inverseLabel "may be run by" ; p:order 115 .
+p:watches a p:Relationship ; p:inverseLabel "is watched by" ; p:order 116 .
+p:worksIn a p:Relationship ; p:inverseLabel "is the work of" ; p:order 117 .
+p:metricOf a p:Relationship ; p:inverseLabel "is counted by" ; p:order 118 .
+p:serves a p:Relationship ; p:inverseLabel "is served by" ; p:order 119 .
+p:owner a p:Relationship ; p:inverseLabel "owns" ; p:order 120 .
+
+p:ChangeSetStatus a skos:ConceptScheme ;
+  skos:prefLabel "Change set status" ;
+  skos:definition "Where a change set is in its life (platform spec 3.7)." .
+p:ChangeSetStatus-draft a skos:Concept ; skos:inScheme p:ChangeSetStatus ; skos:prefLabel "draft" ; p:order 1 .
+p:ChangeSetStatus-proposed a skos:Concept ; skos:inScheme p:ChangeSetStatus ; skos:prefLabel "proposed" ; p:order 2 .
+p:ChangeSetStatus-approved a skos:Concept ; skos:inScheme p:ChangeSetStatus ; skos:prefLabel "approved" ; p:order 3 .
+p:ChangeSetStatus-applied a skos:Concept ; skos:inScheme p:ChangeSetStatus ; skos:prefLabel "applied" ; p:order 4 .
+p:ChangeSetStatus-ended a skos:Concept ; skos:inScheme p:ChangeSetStatus ; skos:prefLabel "ended" ; p:order 5 ;
+  skos:definition "Withdrawn, rejected or rolled back: its outcome says which." .
+
+p:ChangeSetOutcome a skos:ConceptScheme ;
+  skos:prefLabel "Change set outcome" ;
+  skos:definition "How a change set that is no longer open ended." .
+p:ChangeSetOutcome-withdrawn a skos:Concept ; skos:inScheme p:ChangeSetOutcome ; skos:prefLabel "withdrawn" ; p:order 1 .
+p:ChangeSetOutcome-rejected a skos:Concept ; skos:inScheme p:ChangeSetOutcome ; skos:prefLabel "rejected" ; p:order 2 .
+p:ChangeSetOutcome-rolledBack a skos:Concept ; skos:inScheme p:ChangeSetOutcome ; skos:prefLabel "rolled back" ; p:order 3 .
+
+p:OperationKind a skos:ConceptScheme ;
+  skos:prefLabel "Operation kind" ;
+  skos:definition "What an operation of a change set does. These are the first; others follow (platform spec 3.7)." .
+p:OperationKind-addValue a skos:Concept ; skos:inScheme p:OperationKind ; skos:prefLabel "add value" ; p:order 1 ;
+  skos:definition "Adds a value to a value set, and to every shape that allows each of its values." .
+p:OperationKind-relabel a skos:Concept ; skos:inScheme p:OperationKind ; skos:prefLabel "relabel" ; p:order 2 ;
+  skos:definition "Changes how a value reads. Its address and meaning stay." .
+p:OperationKind-deprecate a skos:Concept ; skos:inScheme p:OperationKind ; skos:prefLabel "deprecate" ; p:order 3 ;
+  skos:definition "Deprecates a value in favor of another of its value set, and moves every object holding it to the replacement." .
+
+p:ValueStatus a skos:ConceptScheme ;
+  skos:prefLabel "Value status" ;
+  skos:definition "Whether a value is current or deprecated." .
+p:ValueStatus-current a skos:Concept ; skos:inScheme p:ValueStatus ; skos:prefLabel "current" ; p:order 1 .
+p:ValueStatus-deprecated a skos:Concept ; skos:inScheme p:ValueStatus ; skos:prefLabel "deprecated" ; p:order 2 .
+
+# Shapes. Those of the ontology's own resources describe them (p:describes): how each kind is read and linked, never
+# validated with every commit, since the files are checked when they are loaded and tested. Change sets are validated.
+
+p:describes a rdf:Property ;
+  rdfs:label "describes" ;
+  rdfs:comment "The kind of structure a shape describes for reading and linking, without targeting it for validation (platform spec 3.7)." ;
+  rdfs:domain sh:NodeShape .
+
+p:Shape-Domain a sh:NodeShape ; p:describes p:Domain ; sh:property p:Shape-Domain-label .
+p:Shape-Domain-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+
+p:Shape-ObjectType a sh:NodeShape ; p:describes p:ObjectType ;
+  sh:property p:Shape-ObjectType-label, p:Shape-ObjectType-plural, p:Shape-ObjectType-comment, p:Shape-ObjectType-inDomain .
+p:Shape-ObjectType-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-ObjectType-plural a sh:PropertyShape ; sh:path p:pluralLabel ; sh:name "plural name" .
+p:Shape-ObjectType-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-ObjectType-inDomain a sh:PropertyShape ; sh:path p:inDomain ; sh:class p:Domain ; sh:maxCount 1 ; sh:name "in domain" .
+
+p:Shape-StateDimension a sh:NodeShape ; p:describes p:StateDimension ;
+  sh:property p:Shape-StateDimension-label, p:Shape-StateDimension-comment, p:Shape-StateDimension-dimensionOf, p:Shape-StateDimension-valuesFrom .
+p:Shape-StateDimension-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-StateDimension-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-StateDimension-dimensionOf a sh:PropertyShape ; sh:path p:dimensionOf ; sh:class p:ObjectType ; sh:maxCount 1 ; sh:name "dimension of" .
+p:Shape-StateDimension-valuesFrom a sh:PropertyShape ; sh:path p:valuesFrom ; sh:class skos:ConceptScheme ; sh:maxCount 1 ; sh:name "values from" .
+
+p:Shape-ValueSet a sh:NodeShape ; p:describes skos:ConceptScheme ;
+  sh:property p:Shape-ValueSet-label, p:Shape-ValueSet-definition .
+p:Shape-ValueSet-label a sh:PropertyShape ; sh:path skos:prefLabel ; sh:name "name" .
+p:Shape-ValueSet-definition a sh:PropertyShape ; sh:path skos:definition ; sh:name "definition" .
+
+p:Shape-Value a sh:NodeShape ; p:describes skos:Concept ;
+  sh:property p:Shape-Value-label, p:Shape-Value-definition, p:Shape-Value-status, p:Shape-Value-inScheme, p:Shape-Value-replacedBy .
+p:Shape-Value-label a sh:PropertyShape ; sh:path skos:prefLabel ; sh:name "label" .
+p:Shape-Value-definition a sh:PropertyShape ; sh:path skos:definition ; sh:name "definition" .
+p:Shape-Value-status a sh:PropertyShape ; sh:path p:valueStatus ; sh:in ( p:ValueStatus-current p:ValueStatus-deprecated ) ; sh:maxCount 1 ; sh:name "Status" .
+p:Shape-Value-inScheme a sh:PropertyShape ; sh:path skos:inScheme ; sh:class skos:ConceptScheme ; sh:name "is in" .
+p:Shape-Value-replacedBy a sh:PropertyShape ; sh:path p:replacedBy ; sh:class skos:Concept ; sh:maxCount 1 ; sh:name "is replaced by" .
+
+p:Shape-Relationship a sh:NodeShape ; p:describes p:Relationship ;
+  sh:property p:Shape-Relationship-label, p:Shape-Relationship-inverse, p:Shape-Relationship-comment .
+p:Shape-Relationship-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "reads as" .
+p:Shape-Relationship-inverse a sh:PropertyShape ; sh:path p:inverseLabel ; sh:name "reads back as" .
+p:Shape-Relationship-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+
+p:Shape-Method a sh:NodeShape ; p:describes p:Method ;
+  sh:property p:Shape-Method-label, p:Shape-Method-comment, p:Shape-Method-appliesTo .
+p:Shape-Method-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Method-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-Method-appliesTo a sh:PropertyShape ; sh:path p:appliesTo ; sh:class p:ObjectType ; sh:maxCount 1 ; sh:name "applies to" .
+
+p:Shape-Role a sh:NodeShape ; p:describes p:Role ;
+  sh:property p:Shape-Role-label, p:Shape-Role-comment, p:Shape-Role-mayRun, p:Shape-Role-watches, p:Shape-Role-worksIn .
+p:Shape-Role-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Role-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-Role-mayRun a sh:PropertyShape ; sh:path p:mayRun ; sh:class p:Method ; sh:name "may run" .
+p:Shape-Role-watches a sh:PropertyShape ; sh:path p:watches ; sh:class p:Metric ; sh:name "watches" .
+p:Shape-Role-worksIn a sh:PropertyShape ; sh:path p:worksIn ; sh:class p:Domain ; sh:name "works in" .
+
+p:Shape-Metric a sh:NodeShape ; p:describes p:Metric ;
+  sh:property p:Shape-Metric-label, p:Shape-Metric-comment, p:Shape-Metric-metricOf .
+p:Shape-Metric-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Metric-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-Metric-metricOf a sh:PropertyShape ; sh:path p:metricOf ; sh:class p:ObjectType ; sh:maxCount 1 ; sh:name "counts" .
+
+p:Shape-Skill a sh:NodeShape ; p:describes p:Skill ;
+  sh:property p:Shape-Skill-label, p:Shape-Skill-comment, p:Shape-Skill-version, p:Shape-Skill-serves, p:Shape-Skill-owner .
+p:Shape-Skill-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Skill-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-Skill-version a sh:PropertyShape ; sh:path p:skillVersion ; sh:name "version" .
+p:Shape-Skill-serves a sh:PropertyShape ; sh:path p:serves ; sh:class p:Method ; sh:maxCount 1 ; sh:name "serves" .
+p:Shape-Skill-owner a sh:PropertyShape ; sh:path p:owner ; sh:class p:Role ; sh:maxCount 1 ; sh:name "owner" .
+
+p:Shape-ChangeSet a sh:NodeShape ; sh:targetClass p:ChangeSet ;
+  sh:property p:Shape-ChangeSet-status, p:Shape-ChangeSet-outcome, p:Shape-ChangeSet-summary, p:Shape-ChangeSet-version, p:Shape-ChangeSet-patch .
+p:Shape-ChangeSet-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
+  sh:in ( p:ChangeSetStatus-draft p:ChangeSetStatus-proposed p:ChangeSetStatus-approved p:ChangeSetStatus-applied p:ChangeSetStatus-ended ) .
+p:Shape-ChangeSet-outcome a sh:PropertyShape ; sh:path p:changeSetOutcome ; sh:maxCount 1 ; sh:name "Outcome" ;
+  sh:in ( p:ChangeSetOutcome-withdrawn p:ChangeSetOutcome-rejected p:ChangeSetOutcome-rolledBack ) .
+p:Shape-ChangeSet-summary a sh:PropertyShape ; sh:path p:changeSummary ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "what it changes" .
+p:Shape-ChangeSet-version a sh:PropertyShape ; sh:path p:versionChange ; sh:datatype xsd:string ; sh:name "version" .
+p:Shape-ChangeSet-patch a sh:PropertyShape ; sh:path p:patch ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "Turtle patch" .
+
+p:Shape-Operation a sh:NodeShape ; sh:targetClass p:Operation ;
+  sh:property p:Shape-Operation-kind, p:Shape-Operation-of, p:Shape-Operation-onValueSet, p:Shape-Operation-onValue, p:Shape-Operation-newLabel, p:Shape-Operation-replacement, p:Shape-Operation-createdValue .
+p:Shape-Operation-addNeeds-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-addNeeds .
+p:Shape-Operation-relabelNeeds-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-relabelNeeds .
+p:Shape-Operation-deprecateNeeds-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-deprecateNeeds .
+p:Shape-Operation-sameSet-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-sameSet .
+p:Shape-Operation-labelFree-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-labelFree .
+p:Shape-Operation-notStructure-shape a sh:NodeShape ; sh:targetClass p:Operation ; sh:sparql p:Shape-Operation-notStructure .
+
+p:Shape-Operation-kind a sh:PropertyShape ; sh:path p:operationKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Kind" ;
+  sh:in ( p:OperationKind-addValue p:OperationKind-relabel p:OperationKind-deprecate ) .
+p:Shape-Operation-of a sh:PropertyShape ; sh:path p:operationOf ; sh:class p:ChangeSet ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "is part of" .
+p:Shape-Operation-onValueSet a sh:PropertyShape ; sh:path p:onValueSet ; sh:class skos:ConceptScheme ; sh:maxCount 1 ; sh:name "adds to" .
+p:Shape-Operation-onValue a sh:PropertyShape ; sh:path p:onValue ; sh:class skos:Concept ; sh:maxCount 1 ; sh:name "changes" .
+p:Shape-Operation-newLabel a sh:PropertyShape ; sh:path p:newLabel ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "new label" .
+p:Shape-Operation-replacement a sh:PropertyShape ; sh:path p:replacement ; sh:class skos:Concept ; sh:maxCount 1 ; sh:name "replaces it with" .
+p:Shape-Operation-createdValue a sh:PropertyShape ; sh:path p:createdValue ; sh:nodeKind sh:IRI ; sh:maxCount 1 ; sh:name "added" .
+
+p:Shape-Operation-addNeeds a sh:SPARQLConstraint ;
+  sh:message "Adding a value needs the value set to add it to and its label" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:operationKind p:OperationKind-addValue .
+    FILTER (NOT EXISTS { $this p:onValueSet ?s } || NOT EXISTS { $this p:newLabel ?l }) }""" .
+p:Shape-Operation-relabelNeeds a sh:SPARQLConstraint ;
+  sh:message "Relabeling needs the value and its new label" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:operationKind p:OperationKind-relabel .
+    FILTER (NOT EXISTS { $this p:onValue ?v } || NOT EXISTS { $this p:newLabel ?l }) }""" .
+p:Shape-Operation-deprecateNeeds a sh:SPARQLConstraint ;
+  sh:message "Deprecating needs the value and the value that replaces it, another current value of the same value set" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:operationKind p:OperationKind-deprecate .
+    FILTER (NOT EXISTS { $this p:onValue ?v ; p:replacement ?r . ?v skos:inScheme ?s . ?r skos:inScheme ?s FILTER(?r != ?v)
+      FILTER NOT EXISTS { ?r p:valueStatus p:ValueStatus-deprecated } }) }""" .
+p:Shape-Operation-sameSet a sh:SPARQLConstraint ;
+  sh:message "Deprecating or relabeling acts on a current value" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:onValue ?v . ?v p:valueStatus p:ValueStatus-deprecated .
+    $this p:operationOf/p:changeSetStatus ?s FILTER(?s IN (p:ChangeSetStatus-draft, p:ChangeSetStatus-proposed, p:ChangeSetStatus-approved)) }""" .
+p:Shape-Operation-labelFree a sh:SPARQLConstraint ;
+  sh:message "Another value of that value set already reads so" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:newLabel ?l . { $this p:onValueSet ?s } UNION { $this p:onValue/skos:inScheme ?s }
+    ?other skos:inScheme ?s ; skos:prefLabel ?o FILTER(LCASE(STR(?o)) = LCASE(STR(?l)))
+    FILTER NOT EXISTS { $this p:createdValue ?other } FILTER NOT EXISTS { $this p:onValue ?other }
+    $this p:operationOf/p:changeSetStatus ?st FILTER(?st IN (p:ChangeSetStatus-draft, p:ChangeSetStatus-proposed, p:ChangeSetStatus-approved)) }""" .
+p:Shape-Operation-notStructure a sh:SPARQLConstraint ;
+  sh:message "The platform's own value sets, such as a change set's status, change only with a release" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { { $this p:onValueSet ?s } UNION { $this p:onValue/skos:inScheme ?s }
+    FILTER(STRSTARTS(STR(?s), "https://w3id.org/lsh-platform/platform#")) }""" .
+
+p:prefixes a owl:Ontology ;
+  sh:declare p:prefixes-p, p:prefixes-skos .
+p:prefixes-p a sh:PrefixDeclaration ; sh:prefix "p" ; sh:namespace "https://w3id.org/lsh-platform/platform#"^^xsd:anyURI .
+p:prefixes-skos a sh:PrefixDeclaration ; sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI .
+
+# The lifecycle of a change set, as methods (platform spec 3.7). Apply and Roll back carry structure effects.
+
+p:ApplyStructureChange a rdfs:Class ;
+  rdfs:label "apply structure change" ;
+  rdfs:comment "An effect that carries out a change set's operations and their migration on the working copy, so the whole graph is validated against the changed structure (platform spec 3.4, Structure changes)." ;
+  rdfs:subClassOf p:Effect .
+
+p:RollBackStructureChange a rdfs:Class ;
+  rdfs:label "roll back structure change" ;
+  rdfs:comment "An effect that applies the inverse of the commit that applied a change set, as a new change." ;
+  rdfs:subClassOf p:Effect .
+
+p:approvedByOwners a rdf:Property ;
+  rdfs:label "approved by owners" ;
+  rdfs:comment "True when only an owner of every part a change set touches may run the method, and never the person who drafted it alone (platform spec 3.7)." ;
+  rdfs:domain p:Method .
+
+p:readsNoPersonalData a rdf:Property ;
+  rdfs:label "reads no personal data" ;
+  rdfs:comment "True when the role may read no type that holds personal data." ;
+  rdfs:domain p:Role .
+
+p:Shape-ChangeSet-isDraft a sh:NodeShape ; rdfs:label "The change set is a draft" ;
+  sh:property p:Shape-ChangeSet-isDraft-status ; sh:sparql p:Shape-ChangeSet-hasOperations .
+p:Shape-ChangeSet-isDraft-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:hasValue p:ChangeSetStatus-draft ; sh:message "The change set is not a draft" .
+p:Shape-ChangeSet-hasOperations a sh:SPARQLConstraint ;
+  sh:message "The change set has no operations yet" ;
+  sh:prefixes p:prefixes ;
+  sh:select "SELECT $this WHERE { FILTER NOT EXISTS { ?op p:operationOf $this } }" .
+p:Shape-ChangeSet-isProposed a sh:NodeShape ; rdfs:label "The change set is proposed" ; sh:property p:Shape-ChangeSet-isProposed-status .
+p:Shape-ChangeSet-isProposed-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:hasValue p:ChangeSetStatus-proposed ; sh:message "The change set is not waiting for approval" .
+p:Shape-ChangeSet-isOpen a sh:NodeShape ; rdfs:label "The change set is open" ; sh:property p:Shape-ChangeSet-isOpen-status .
+p:Shape-ChangeSet-isOpen-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:in ( p:ChangeSetStatus-draft p:ChangeSetStatus-proposed ) ; sh:message "Only a draft or proposed change set can be withdrawn" .
+p:Shape-ChangeSet-isApproved a sh:NodeShape ; rdfs:label "The change set is approved" ; sh:property p:Shape-ChangeSet-isApproved-status .
+p:Shape-ChangeSet-isApproved-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:hasValue p:ChangeSetStatus-approved ; sh:message "The change set is not approved" .
+p:Shape-ChangeSet-isApplied a sh:NodeShape ; rdfs:label "The change set is applied" ; sh:property p:Shape-ChangeSet-isApplied-status .
+p:Shape-ChangeSet-isApplied-status a sh:PropertyShape ; sh:path p:changeSetStatus ; sh:hasValue p:ChangeSetStatus-applied ; sh:message "The change set is not applied" .
+
+p:ProposeChangeSet-effect1 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-proposed .
+p:ApproveChangeSet-effect1 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-approved .
+p:RejectChangeSet-effect1 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-ended .
+p:RejectChangeSet-effect2 a p:StateChange ; p:dimension p:changeSetOutcome ; p:value p:ChangeSetOutcome-rejected .
+p:WithdrawChangeSet-effect1 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-ended .
+p:WithdrawChangeSet-effect2 a p:StateChange ; p:dimension p:changeSetOutcome ; p:value p:ChangeSetOutcome-withdrawn .
+p:ApplyChangeSet-effect1 a p:ApplyStructureChange .
+p:ApplyChangeSet-effect2 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-applied .
+p:RollBackChangeSet-effect1 a p:RollBackStructureChange .
+p:RollBackChangeSet-effect2 a p:StateChange ; p:dimension p:changeSetStatus ; p:value p:ChangeSetStatus-ended .
+p:RollBackChangeSet-effect3 a p:StateChange ; p:dimension p:changeSetOutcome ; p:value p:ChangeSetOutcome-rolledBack .
+
+p:ProposeChangeSet a p:Method ;
+  rdfs:label "Propose" ;
+  rdfs:comment "Sends a draft change set to the owners of what it touches, for approval." ;
+  p:appliesTo p:ChangeSet ;
+  p:precondition p:Shape-ChangeSet-isDraft ;
+  p:effect p:ProposeChangeSet-effect1 .
+
+p:ApproveChangeSet a p:Method ;
+  rdfs:label "Approve" ;
+  rdfs:comment "Approves a proposed change set, as an owner of every part it touches." ;
+  p:appliesTo p:ChangeSet ;
+  p:approvedByOwners true ;
+  p:precondition p:Shape-ChangeSet-isProposed ;
+  p:effect p:ApproveChangeSet-effect1 .
+
+p:RejectChangeSet a p:Method ;
+  rdfs:label "Reject" ;
+  rdfs:comment "Rejects a proposed change set, as an owner of what it touches." ;
+  p:appliesTo p:ChangeSet ;
+  p:approvedByOwners true ;
+  p:onDemand true ;
+  p:precondition p:Shape-ChangeSet-isProposed ;
+  p:effect p:RejectChangeSet-effect1, p:RejectChangeSet-effect2 .
+
+p:WithdrawChangeSet a p:Method ;
+  rdfs:label "Withdraw" ;
+  rdfs:comment "Withdraws a draft or proposed change set. Nothing in the structure changes." ;
+  p:appliesTo p:ChangeSet ;
+  p:onDemand true ;
+  p:precondition p:Shape-ChangeSet-isOpen ;
+  p:effect p:WithdrawChangeSet-effect1, p:WithdrawChangeSet-effect2 .
+
+p:ApplyChangeSet a p:Method ;
+  rdfs:label "Apply" ;
+  rdfs:comment "Applies an approved change set: its operations and their migration, in one transaction, as a new version of the ontology." ;
+  p:appliesTo p:ChangeSet ;
+  p:precondition p:Shape-ChangeSet-isApproved ;
+  p:effect p:ApplyChangeSet-effect1, p:ApplyChangeSet-effect2 .
+
+p:RollBackChangeSet a p:Method ;
+  rdfs:label "Roll back" ;
+  rdfs:comment "Applies the inverse of an applied change set, as a new change. Refused when the inverse would break something." ;
+  p:appliesTo p:ChangeSet ;
+  p:onDemand true ;
+  p:precondition p:Shape-ChangeSet-isApplied ;
+  p:effect p:RollBackChangeSet-effect1, p:RollBackChangeSet-effect2, p:RollBackChangeSet-effect3 .
+
+# The Structure Steward: the platform's own canonical role (platform spec 3.7). Each domain gives it its metrics.
+
+p:StructureSteward a p:Role ;
+  rdfs:label "Structure Steward" ;
+  rdfs:comment "Tends the structure: drafts, proposes, applies and rolls back change sets, and approves those for parts nobody else owns." ;
+  p:worksIn p:Structure ;
+  p:mayCreate p:ChangeSet, p:Operation ;
+  p:mayEdit p:ChangeSet, p:Operation ;
+  p:mayRun p:ProposeChangeSet, p:ApproveChangeSet, p:RejectChangeSet, p:WithdrawChangeSet, p:ApplyChangeSet, p:RollBackChangeSet ;
+  p:readsNoPersonalData true .
+
+# Operations are added to a draft change set by methods, each a Choose an object with the operation's parameters.
+
+p:Operation p:onlyThroughMethods true .
+
+p:AddValue-valueSet a p:Input ; p:inputName "valueSet" ; rdfs:label "Value set" ; p:order 1 ; p:objectOf skos:ConceptScheme ; p:recordedAs p:onValueSet .
+p:AddValue-label a p:Input ; p:inputName "label" ; rdfs:label "Label" ; p:order 2 ; p:datatype xsd:string ; p:recordedAs p:newLabel .
+p:AddValue-effect1 a p:Creation ; p:createsType p:Operation ; p:linkedBy p:operationOf ; p:initialState p:OperationKind-addValue .
+
+p:AddValue a p:Method ;
+  rdfs:label "Add a value" ;
+  rdfs:comment "Adds an operation to the change set: a new value for a value set, such as a new status." ;
+  p:appliesTo p:ChangeSet ;
+  p:onDemand true ;
+  p:input p:AddValue-valueSet, p:AddValue-label ;
+  p:precondition p:Shape-ChangeSet-isOpenDraft ;
+  p:effect p:AddValue-effect1 .
+
+p:RelabelValue-value a p:Input ; p:inputName "value" ; rdfs:label "Value" ; p:order 1 ; p:objectOf skos:Concept ; p:recordedAs p:onValue ;
+  p:inputShape p:Shape-IsCurrentValue .
+p:RelabelValue-label a p:Input ; p:inputName "label" ; rdfs:label "New label" ; p:order 2 ; p:datatype xsd:string ; p:recordedAs p:newLabel .
+p:RelabelValue-effect1 a p:Creation ; p:createsType p:Operation ; p:linkedBy p:operationOf ; p:initialState p:OperationKind-relabel .
+
+p:RelabelValue a p:Method ;
+  rdfs:label "Relabel a value" ;
+  rdfs:comment "Adds an operation to the change set: a value reads differently. Its address and meaning stay." ;
+  p:appliesTo p:ChangeSet ;
+  p:onDemand true ;
+  p:input p:RelabelValue-value, p:RelabelValue-label ;
+  p:precondition p:Shape-ChangeSet-isOpenDraft ;
+  p:effect p:RelabelValue-effect1 .
+
+p:DeprecateValue-value a p:Input ; p:inputName "value" ; rdfs:label "Value" ; p:order 1 ; p:objectOf skos:Concept ; p:recordedAs p:onValue ;
+  p:inputShape p:Shape-IsCurrentValue .
+p:DeprecateValue-replacement a p:Input ; p:inputName "replacement" ; rdfs:label "Replace it with" ; p:order 2 ; p:objectOf skos:Concept ; p:recordedAs p:replacement ;
+  p:inputShape p:Shape-IsCurrentValue .
+p:DeprecateValue-effect1 a p:Creation ; p:createsType p:Operation ; p:linkedBy p:operationOf ; p:initialState p:OperationKind-deprecate .
+
+p:DeprecateValue a p:Method ;
+  rdfs:label "Deprecate a value" ;
+  rdfs:comment "Adds an operation to the change set: a value is deprecated in favor of another of its value set, and objects holding it move to the replacement." ;
+  p:appliesTo p:ChangeSet ;
+  p:onDemand true ;
+  p:input p:DeprecateValue-value, p:DeprecateValue-replacement ;
+  p:precondition p:Shape-ChangeSet-isOpenDraft ;
+  p:effect p:DeprecateValue-effect1 .
+
+p:Shape-ChangeSet-isOpenDraft a sh:NodeShape ; rdfs:label "The change set is a draft" ; sh:property p:Shape-ChangeSet-isDraft-status .
+
+p:Shape-IsCurrentValue a sh:NodeShape ;
+  rdfs:label "A current value of a domain's value set" ;
+  sh:sparql p:Shape-IsCurrentValue-query .
+p:Shape-IsCurrentValue-query a sh:SPARQLConstraint ;
+  sh:message "The value is deprecated, or belongs to the platform's own value sets" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { { $this p:valueStatus p:ValueStatus-deprecated }
+    UNION { $this skos:inScheme ?s FILTER(STRSTARTS(STR(?s), "https://w3id.org/lsh-platform/platform#")) } }""" .
+
+p:StructureSteward p:mayRun p:AddValue, p:RelabelValue, p:DeprecateValue .

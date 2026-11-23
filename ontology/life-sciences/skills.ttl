@@ -21,23 +21,23 @@
 # Simulation assumptions: proposes Run trial simulation's assumptions.
 
 ls:SimulationAssumptions-screenFailureRate a p:InputSource ;
-  p:forInput ls:RunTrialSimulation-screenFailureRate ;
+  p:givesInput ls:RunTrialSimulation-screenFailureRate ;
   p:readFrom ls:screenFailureRate .
 
 ls:SimulationAssumptions-dropoutRate a p:InputSource ;
-  p:forInput ls:RunTrialSimulation-dropoutRate ;
+  p:givesInput ls:RunTrialSimulation-dropoutRate ;
   p:readFrom ls:dropoutRate .
 
 ls:SimulationAssumptions-controlResponse a p:InputSource ;
-  p:forInput ls:RunTrialSimulation-controlResponse ;
+  p:givesInput ls:RunTrialSimulation-controlResponse ;
   p:readFrom ls:controlResponse .
 
 ls:SimulationAssumptions-treatmentResponse a p:InputSource ;
-  p:forInput ls:RunTrialSimulation-treatmentResponse ;
+  p:givesInput ls:RunTrialSimulation-treatmentResponse ;
   p:readFrom ls:treatmentResponse .
 
 ls:SimulationAssumptions-saeRate a p:InputSource ;
-  p:forInput ls:RunTrialSimulation-saeRate ;
+  p:givesInput ls:RunTrialSimulation-saeRate ;
   p:readFrom ls:saeRate .
 
 ls:SimulationAssumptions a p:Skill ;

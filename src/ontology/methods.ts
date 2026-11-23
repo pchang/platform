@@ -73,9 +73,11 @@ export async function conformanceProblems(graph: Graph, focus: string, shapes: s
   return [...new Set(problems)];
 }
 
-/** Validates instance data against every shape that targets it. Returns the problems found. */
-export async function validateData(graph: Graph): Promise<string[]> {
-  const validator = new Validator(graph.dataset, { factory: rdf, validations });
+/**
+ * Validates instance data against every shape that targets it. Returns the problems found. A validator compiled once
+ * from the same shapes may be given, so the shapes are not compiled again for every check.
+ */
+export async function validateData(graph: Graph, validator = new Validator(graph.dataset, { factory: rdf, validations })): Promise<string[]> {
   const report = await validator.validate({ dataset: graph.dataset });
   return report.results.map(
     (r) => `${r.focusNode.term.value}: ${r.message.map((m) => m.value).join('; ') || r.sourceShape?.term.value}`,

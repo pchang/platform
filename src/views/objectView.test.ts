@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { withSeed } from '../gateway/node';
 import { NS } from '../ontology/ontology';
 import { buildObjectView, endKey, OVERVIEW_TAB } from './objectView';
+
+// Some tests here run a commit on a gateway of their own, which takes longer than the default under a full parallel run.
+vi.setConfig({ testTimeout: 30_000 });
 
 // The object panel's content (platform spec 5.1, Within an object; design system spec 4.4), built from real gateway reads.
 

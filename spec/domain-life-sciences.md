@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.32. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.39.
+Version 0.33. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.40.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -567,7 +567,7 @@ The metrics each persona watches on Home (platform spec 5.1, Home), declared in 
 | | Sites still proposed | Proposed sites proposed | Information |
 | External CRO agent | Open data queries | As above | 3, 6 |
 | Structure Steward | Change sets awaiting approval | Change sets proposed | 1, 3 |
-| | Deprecated terms still in use | Terms deprecated and in use | 1, 3 |
+| | Deprecated values | Values deprecated | 1, 3 |
 | | Change sets applied | Change sets applied | Information |
 
 ### To do
@@ -855,7 +855,7 @@ A second candidate edge case: the same adverse event arrives twice, once from th
 In any journey, any persona can ask "why am I seeing this?" on any view or element. The platform shows the `because` of each view node, the graph object it binds to, the method and its precondition, and the business rule that allowed or blocked it. This satisfies the inspection requirement in section 6 of the platform spec.
 
 ### J7. Evolving the structure
-Structure Steward, then Clinical Operations Lead. Study scenarios sometimes wait on a budget decision, and teams have been writing "on hold" in the scenario's change. The Steward asks the chat to add an on hold status to study scenarios. The model drafts a change set with one operation, add a value to Study Scenario's status, and its impact shows: no object moves, nothing stops conforming, and Compare study scenarios' precondition names the statuses it allows, so a scenario on hold cannot be compared. The Steward proposes it. It waits on To do for the owners of study scenarios; the Clinical Operations Lead reads the impact and approves. The Steward applies it, and the new status appears at once wherever study scenarios' statuses do: the lifecycle stages, Where things stand and the Edit form. The Steward then rolls it back, which is allowed because no scenario holds it yet. Without a connected model, the Steward makes the same change set through forms.
+Structure Steward, then Clinical Operations Lead. Study scenarios sometimes wait on a budget decision, and teams have been writing "on hold" in the scenario's change. The Steward asks the chat to add an on hold status to study scenarios. The model drafts a change set with one operation, add a value to the Study Scenario status value set, and its impact shows: no object moves, nothing stops conforming, and Compare study scenarios' precondition names the statuses it allows, so a scenario on hold cannot be compared. The Steward proposes it. It waits on To do for the owners of study scenarios; the Clinical Operations Lead reads the impact and approves. The Steward applies it, and the new status appears at once wherever study scenarios' statuses are shown or chosen, such as each scenario's lifecycle stages. The Steward then rolls it back, which is allowed because no scenario holds it yet. Without a connected model, the Steward makes the same change set through forms.
 
 ### External agent
 A contract research organization's agent connects through the gateway with no UI. It lists open Data Queries at its sites, answers them from its own records and closes the ones it can. Everything it does is checked by the same policy and appears in the same log as a human's actions.
@@ -973,3 +973,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.30 | 2026-11-21 | Compare study scenarios names its commit action Select, so the button reads "Select SSC-3", not the comparison already made. It selects and records the decision; creating the study from the selected scenario is still to come. |
 | 0.31 | 2026-11-23 | Design and Plan skills (section 3.9): Simulation assumptions for Run trial simulation and Recommend a study scenario for Compare study scenarios, each with its instructions and reference procedure. A trial simulation records each assumption as a number. Section 3.8 calls its methods methods. |
 | 0.32 | 2026-11-23 | The Structure Steward, the platform's own role (platform spec section 3.7), joins the personas with its metrics and a seed person. Who owns each part of the structure, for approving change sets. Journey J7, Evolving the structure. One open question. |
+| 0.33 | 2026-11-23 | The Structure Steward watches Deprecated values, not deprecated terms still in use, until derived states are built (platform spec section 9). J7 adds to a value set and shows the new status wherever study scenarios' statuses are shown or chosen. |

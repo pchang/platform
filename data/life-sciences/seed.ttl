@@ -1275,6 +1275,11 @@ d:person-marcus a p:Person ;
   rdfs:label "Marcus Bell" ;
   p:actsAs ls:ClinicalOperationsLead .
 
+# The Structure Steward (platform spec 3.7; domain spec section 11). No change sets: the structure starts as the files publish it.
+d:person-noor a p:Person ;
+  rdfs:label "Noor Haddad" ;
+  p:actsAs p:StructureSteward .
+
 d:person-ingrid a p:Person ;
   rdfs:label "Ingrid Solberg" ;
   p:actsAs ls:PortfolioStrategist .

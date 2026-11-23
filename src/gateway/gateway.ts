@@ -229,6 +229,8 @@ export interface CommitResult {
   run?: RunView;
   /** The draft the commit accepted, for a method that produces a draft. */
   fromDraft?: { draft: string; model: string; edited: boolean };
+  /** For a change set (spec 3.7): what applying it, or rolling it back, would do to the structure and the graph. */
+  impact?: StructureImpact;
   /** The skill's proposal the inputs started from, with the inputs kept as proposed and those changed (spec 3.3, Skills). */
   fromProposal?: { proposal: string; kept: string[]; changed: string[]; followedRecommendation?: boolean };
 }
@@ -456,6 +458,36 @@ const ASK_TOOLS: AskTool[] = [
   },
 ];
 
+/** What a change set would do (spec 3.7, Impact before approval), as the person deciding on it sees it. */
+export interface StructureImpact {
+  /** What changes in the structure, one line per operation. */
+  structure: string[];
+  /** Objects whose state moves, such as from a deprecated value to its replacement. */
+  moves: { identifier: string; from: string; to: string }[];
+  /** Objects that would no longer conform, with the reasons, or why the change cannot be made at all. */
+  notConforming: string[];
+  /** Methods, metrics, states and titles that refer to what changes. */
+  refersTo: string[];
+  /** Each ontology version it would move. */
+  versions: string[];
+}
+
+/** Frees a working copy's store at once, rather than when the collector next finds it: each holds the whole graph. */
+function freeStore(store: oxigraph.Store) {
+  (store as unknown as { free?: () => void }).free?.();
+}
+
+/** Changes as a Turtle patch (spec 3.7): the statements removed, then those added, in N-Triples, which is Turtle. */
+function turtlePatch(changes: { subject: string; property: string; oldValue?: Term; newValue?: Term }[]): string {
+  const term = (t: Term) =>
+    t.termType === 'NamedNode' ? `<${t.value}>`
+    : `${JSON.stringify(t.value)}${t.termType === 'Literal' && t.datatype && t.datatype.value !== `${NS.xsd}string` ? `^^<${t.datatype.value}>` : ''}`;
+  const line = (c: { subject: string; property: string }, t: Term) => `<${c.subject}> <${c.property}> ${term(t)} .`;
+  const removed = changes.filter((c) => c.oldValue).map((c) => line(c, c.oldValue!));
+  const added = changes.filter((c) => c.newValue).map((c) => line(c, c.newValue!));
+  return [`# Removed`, ...removed, `# Added`, ...added].join('\n');
+}
+
 /** A skill that serves a method, as the gateway runs it. */
 interface SkillRow {
   skill: string;
@@ -493,6 +525,7 @@ export class Gateway {
     this.notificationCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Notification } }`)[0].n);
     this.draftCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Draft } }`)[0].n);
     this.proposalCount = Number(this.q(`SELECT (COUNT(?x) AS ?n) WHERE { GRAPH ?x { ?x a p:Proposal } }`)[0].n);
+    this.identifyStructure();
     // A run that had not ended when the gateway stopped starts again (spec 3.4, Background runs).
     for (const { run } of this.q(`SELECT ?run WHERE { GRAPH ?run { ?run a p:Run ; p:runStatus ?s ; prov:startedAtTime ?at FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running)) } } ORDER BY ?at STRLEN(STR(?run)) ?run`)) {
       void this.enqueue(() => this.work(run));
@@ -537,7 +570,10 @@ export class Gateway {
   }
 
   private unreadable(role: string): Set<string> {
-    return new Set(this.q(`SELECT ?x WHERE { <${role}> p:mayNotRead ?x }`).map((r) => r.x));
+    const hidden = this.q(`SELECT ?x WHERE { <${role}> p:mayNotRead ?x }`).map((r) => r.x);
+    // A role that reads no personal data, such as the Structure Steward, reads no type that holds it (spec 3.7).
+    if (ask(this.graph.store, `ASK { <${role}> p:readsNoPersonalData true }`)) hidden.push(...this.q(`SELECT ?t WHERE { ?t p:holdsPersonalData true }`).map((r) => r.t));
+    return new Set(hidden);
   }
 
   // ---------------------------------------------------------------- describe
@@ -561,6 +597,28 @@ export class Gateway {
   }
 
   private endsCache = new Map<string, RelationshipEndDescription[]>();
+  /** The shapes, compiled once for validating commits, until the structure changes (spec 3.7). */
+  private compiledShapes?: ReturnType<typeof validatorFor>;
+
+  private shapesValidator() {
+    this.compiledShapes ??= validatorFor(this.graph);
+    return this.compiledShapes;
+  }
+
+  /**
+   * A working copy of the current state (spec 3.4, commit step 4): the default graph only, copied inside the store's own
+   * engine, as N-Triples, so no statement becomes a JavaScript object on the way.
+   */
+  private workingCopy(): oxigraph.Store {
+    const copy = new oxigraph.Store();
+    copy.load(this.graph.store.dump({ format: 'application/n-triples', from_graph_name: defaultGraph() }), { format: 'application/n-triples' });
+    return copy;
+  }
+
+  /** Whether a method changes the structure itself (spec 3.7). */
+  private changesStructure(method: string): boolean {
+    return ask(this.graph.store, `ASK { <${method}> p:effect/a ?k FILTER(?k IN (p:ApplyStructureChange, p:RollBackStructureChange)) }`);
+  }
 
   /**
    * A type's relationship ends, from its shapes and the shapes that point at it (spec 3.1): each relationship read from
@@ -574,11 +632,11 @@ export class Gateway {
     type EndRow = { rel: string; label: string; order: string; partOf?: string; hasPart?: string; max?: string; other: string; direction: 'out' | 'in' };
     const rows: EndRow[] = [
       ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?max ?other WHERE {
-          ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; rdfs:label ?label ; p:order ?order .
+          ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; rdfs:label ?label ; p:order ?order .
           OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart } OPTIONAL { ?ps sh:maxCount ?max }
           ${target('?ps', '?other')} }`).map((r) => ({ ...r, direction: 'out' }) as EndRow),
       ...this.q(`SELECT ?rel ?label ?order ?partOf ?hasPart ?other WHERE {
-          ?shape sh:targetClass ?other ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; p:inverseLabel ?label ; p:order ?order .
+          ?shape (sh:targetClass|p:describes) ?other ; sh:property ?ps . ?ps sh:path ?rel . ?rel a p:Relationship ; p:inverseLabel ?label ; p:order ?order .
           OPTIONAL { ?rel p:partOf ?partOf } OPTIONAL { ?rel p:hasPart ?hasPart }
           ${target('?ps', `<${type}>`)} }`).map((r) => ({ ...r, direction: 'in' }) as EndRow),
     ];
@@ -658,7 +716,7 @@ export class Gateway {
     this.authorize(principal);
     const hidden = this.unreadable(principal.role);
     const contained = new Set(this.q(`SELECT DISTINCT ?type WHERE {
-        { ?shape sh:targetClass ?type ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true }
+        { ?shape (sh:targetClass|p:describes) ?type ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true }
         UNION { ?ps sh:path ?rel . ?rel p:hasPart true . ?ps (sh:class|sh:or/rdf:rest*/rdf:first/sh:class) ?type }
       }`).map((r) => r.type));
     for (const { type } of this.q(`SELECT ?type WHERE { <${principal.role}> p:worksAcross ?type }`)) contained.delete(type);
@@ -699,6 +757,7 @@ export class Gateway {
           const isTask = m.onDemand !== 'true';
           if (!isTask && urgency < 3) continue;
           if (this.unavailable(m.method).length) continue;
+          if (this.ownerBlocks(principal, o, m.method).length) continue;
           if ((await conformanceProblems(this.graph, o, preconditions.get(m.method)!, validator)).length) continue;
           (isTask ? tasks : actions).push({ method: m.method, label: m.label, archetype: archetypeOf(this.graph.store, m.method) });
         }
@@ -757,7 +816,7 @@ export class Gateway {
   private lifecycleOf(object: string, type: string): { lifecycle?: ObjectSummary['lifecycle'] } {
     const dim = this.q(`SELECT ?d ?label ?scheme WHERE { ?d p:dimensionOf <${type}> ; rdfs:label ?label ; p:valuesFrom ?scheme ; p:order 1 }`)[0];
     if (!dim) return {};
-    const stages = this.q(`SELECT ?v ?label WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o } ORDER BY ?o`);
+    const stages = this.q(`SELECT ?v ?label WHERE { ?v skos:inScheme <${dim.scheme}> ; skos:prefLabel ?label ; p:order ?o FILTER NOT EXISTS { ?v p:valueStatus p:ValueStatus-deprecated } } ORDER BY ?o`);
     const value = this.q(`SELECT ?v WHERE { <${object}> <${dim.d}> ?v }`)[0]?.v;
     const position = stages.findIndex((s) => s.v === value);
     if (position < 0) return {};
@@ -1018,7 +1077,7 @@ export class Gateway {
       const dims = new Map<string, string[]>();
       for (const r of states) dims.set(r.dim, [...(dims.get(r.dim) ?? []), r.value]);
       // Names only, and only of properties the role may read: an unreadable property is not even named.
-      const properties = this.q(`SELECT DISTINCT ?prop ?label WHERE { ?shape sh:targetClass <${t.type}> ; sh:property/sh:path ?prop . ?prop rdfs:label ?label .
+      const properties = this.q(`SELECT DISTINCT ?prop ?label WHERE { ?shape (sh:targetClass|p:describes) <${t.type}> ; sh:property/sh:path ?prop . ?prop rdfs:label ?label .
           FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label`)
         .filter((r) => !hidden.has(r.prop))
         .map((r) => r.label);
@@ -1211,7 +1270,7 @@ export class Gateway {
     if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
     // Methods the platform cannot run yet, for want of a worker or a connected model, are blocked with that reason.
     return (await methodsFor(this.graph, object, principal.role)).map((m) => {
-      const missing = this.draftBlocks(m.method, true).filter((b) => !m.blocks.includes(b));
+      const missing = [...this.draftBlocks(m.method, true), ...this.ownerBlocks(principal, object, m.method)].filter((b) => !m.blocks.includes(b));
       return missing.length ? { ...m, available: false, blocks: [...missing, ...m.blocks] } : m;
     });
   }
@@ -1281,7 +1340,7 @@ export class Gateway {
     for (const t of types.values()) {
       const dim = this.q(`SELECT ?d ?label WHERE { ?d p:dimensionOf <${t.type}> ; p:order ?order ; rdfs:label ?label FILTER NOT EXISTS { ?d p:chosenOnCreate true } } ORDER BY ?order LIMIT 1`)[0];
       if (!dim || !t.count) continue;
-      const stages = this.q(`SELECT ?v ?label (COUNT(?o) AS ?n) WHERE { <${dim.d}> p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order .
+      const stages = this.q(`SELECT ?v ?label (COUNT(?o) AS ?n) WHERE { <${dim.d}> p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order . FILTER NOT EXISTS { ?v p:valueStatus p:ValueStatus-deprecated }
           OPTIONAL { ?o a <${t.type}> ; <${dim.d}> ?v } } GROUP BY ?v ?label ?order ORDER BY ?order`).map((r) => ({ value: r.v, label: r.label, count: Number(r.n) }));
       const total = stages.reduce((a, b) => a + b.count, 0);
       if (total) lifecycles.push({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, dimension: dim.label, total, stages });
@@ -1336,7 +1395,7 @@ export class Gateway {
 
   /** The containment that makes a type part of another: its one-valued link to the object it belongs to, and that object's types. */
   private parentLinkOf(type: string): { property: string; label: string; targets: string[] } | undefined {
-    const r = this.q(`SELECT ?rel ?label ?ps WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 .
+    const r = this.q(`SELECT ?rel ?label ?ps WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?rel ; sh:maxCount 1 .
         ?rel p:partOf true ; rdfs:label ?label }`)[0];
     if (!r) return undefined;
     return { property: r.rel, label: r.label, targets: this.targetsOf(r.ps) };
@@ -1352,7 +1411,7 @@ export class Gateway {
     const template = this.q(`SELECT ?t WHERE { <${type}> p:titleTemplate ?t }`)[0]?.t ?? '';
     const titled = new Set(templateProperties(template.split(' | ')[0]));
     const parent = this.parentLinkOf(type);
-    const shapes = this.q(`SELECT ?ps ?path ?dt ?max ?name ?label ?order WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?path .
+    const shapes = this.q(`SELECT ?ps ?path ?dt ?max ?name ?label ?order WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?path .
         OPTIONAL { ?ps sh:datatype ?dt } OPTIONAL { ?ps sh:maxCount ?max } OPTIONAL { ?ps sh:name ?name } OPTIONAL { ?path rdfs:label ?label } OPTIONAL { ?path p:order ?order }
         FILTER(?path != ls:identifier) }`);
     const current = (property: string) => (object ? this.q(`SELECT ?v WHERE { <${object}> <${property}> ?v }`)[0]?.v : undefined);
@@ -1371,7 +1430,7 @@ export class Gateway {
       if (isDimension) {
         // Only classifying states are chosen; lifecycles start at their first value and only methods move them.
         if (!ask(this.graph.store, `ASK { <${sh.path}> p:chosenOnCreate true }`)) continue;
-        const choices = this.q(`SELECT ?value ?label WHERE { <${sh.path}> p:valuesFrom ?s . ?value skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`);
+        const choices = this.q(`SELECT ?value ?label WHERE { <${sh.path}> p:valuesFrom ?s . ?value skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order FILTER NOT EXISTS { ?value p:valueStatus p:ValueStatus-deprecated } } ORDER BY ?order`);
         fields.push({ ...base, kind: 'choice', required: true, choices: choices.map((c) => ({ value: c.value, label: c.label })), ...(value ? { value } : {}) });
       } else if (isRelationship) {
         if (sh.max !== '1') continue; // Many-valued links are kept in the object's tabs.
@@ -1443,10 +1502,10 @@ export class Gateway {
   /** How a new object of a type belongs to a parent: its own link to the parent, or the parent's link to it. */
   private parentLinkFor(type: string, parent: string): { property: string; fromParent: boolean } {
     const parentType = this.typeOf(parent).type;
-    const own = this.q(`SELECT ?rel WHERE { ?shape sh:targetClass <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true .
+    const own = this.q(`SELECT ?rel WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:partOf true .
         { ?ps sh:class <${parentType}> } UNION { ?ps sh:or/rdf:rest*/rdf:first/sh:class <${parentType}> } }`)[0];
     if (own) return { property: own.rel, fromParent: false };
-    const theirs = this.q(`SELECT ?rel WHERE { ?shape sh:targetClass <${parentType}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:hasPart true .
+    const theirs = this.q(`SELECT ?rel WHERE { ?shape (sh:targetClass|p:describes) <${parentType}> ; sh:property ?ps . ?ps sh:path ?rel . ?rel p:hasPart true .
         { ?ps sh:class <${type}> } UNION { ?ps sh:or/rdf:rest*/rdf:first/sh:class <${type}> } }`)[0];
     if (theirs) return { property: theirs.rel, fromParent: true };
     throw new GatewayError(400, ['A new object of this type cannot be created inside that object']);
@@ -1456,7 +1515,7 @@ export class Gateway {
   private async planCreate(principal: Principal, type: string, values: Record<string, string>, parentId?: string) {
     const form = this.createForm(principal, type, parentId);
     const resolved = this.checkForm(form.fields, values, false);
-    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const changes: Change[] = [];
     const created = this.mint(work, type, changes);
     for (const { d, first } of this.q(`SELECT ?d ?first WHERE { ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?first skos:inScheme ?s ; p:order 1
@@ -1502,7 +1561,7 @@ export class Gateway {
     const form = await this.editForm(principal, idOrIri);
     const object = form.object!.iri;
     const resolved = this.checkForm(form.fields, values, true);
-    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const changes: Change[] = [];
     for (const [f, v] of resolved) {
       if ((f.value ?? '') === (v?.value ?? '')) continue;
@@ -1711,6 +1770,8 @@ export class Gateway {
 
     // 1. The role may run the method.
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    const notOwner = this.ownerBlocks(principal, object, method);
+    if (notOwner.length) throw new GatewayError(403, notOwner);
 
     // 2. Every input is present, of the right kind, and meets its constraints.
     const resolvedInputs = await this.checkInputs(principal, object, method, inputs);
@@ -1722,7 +1783,7 @@ export class Gateway {
 
     // 4. Apply the declared effects, to a working copy that readers never see.
     // Only the current state is copied; commit and audit records live in named graphs, which grow with history.
-    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const at = this.now();
     const changes: Change[] = [];
     const created: string[] = [];
@@ -1735,6 +1796,8 @@ export class Gateway {
       else if (kind === 'Creation') created.push(this.applyCreation(work, object, effect.e, resolvedInputs, principal, at, changes));
       else if (kind === 'Link') this.applyLink(work, object, effect.e, resolvedInputs, changes);
       else if (kind === 'DescribedEffect') pending.push(effect.e);
+      else if (kind === 'ApplyStructureChange') this.applyStructure(work, object, changes);
+      else if (kind === 'RollBackStructureChange') this.rollBackStructure(work, object, changes);
       else if (kind === 'Drafting') {
         if (draftText === undefined) throw new GatewayError(400, ['This method needs a draft. Ask for one, then accept it.']);
         this.set(work, object, this.draftingOf(method)!.property, literal(draftText), changes);
@@ -1748,24 +1811,34 @@ export class Gateway {
       for (const target of created.length ? created : [object]) this.set(work, target, property, value, changes);
     }
 
-    // 5. Validate the changed copy against every shape. Any violation discards it.
+    // 5. Validate the changed copy against every shape. Any violation discards it. A change to the structure brings its
+    // own shapes, so it is validated against them; any other commit, against the shapes compiled once.
     work.dataset = defaultGraphDataset(work.store);
-    const problems = await validateData(work);
-    if (problems.length) throw new GatewayError(400, problems);
+    const problems = await validateData(work, this.changesStructure(method) ? undefined : this.shapesValidator());
+    if (problems.length) {
+      freeStore(work.store);
+      throw new GatewayError(400, problems);
+    }
 
     return { object, method, resolvedInputs, work, at, changes, created, pending };
   }
 
   /** Preview a method (spec 3.4): what a commit would change, without saving anything. */
   async preview(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
-    const { changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
-    return {
+    const { object, changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
+    // Deciding on a change set shows its impact (spec 3.7): of applying it, or for Roll back, of undoing it.
+    const decidesChangeSet = ask(this.graph.store, `ASK { <${object}> a p:ChangeSet FILTER NOT EXISTS { <${method}> p:effect/a p:Creation } }`);
+    const rollsBack = ask(this.graph.store, `ASK { <${method}> p:effect/a p:RollBackStructureChange }`);
+    const result = {
       changes: changes.map((c) => this.changeView(c, work)),
       created,
       pending,
       pendingDescriptions: this.describe_(pending),
       background: analysisDescriptions(this.graph.store, method),
+      ...(decidesChangeSet ? { impact: await this.structureImpact(object, rollsBack ? 'rollBack' : 'apply') } : {}),
     };
+    freeStore(work.store);
+    return result;
   }
 
   private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven, others: string[] = [], proposalGiven?: string): Promise<CommitResult> {
@@ -1810,15 +1883,22 @@ export class Gateway {
     for (const q of added) this.graph.store.add(q);
     // The working copy's default graph is now exactly the live one, so its validated dataset is reused.
     this.graph.dataset = work.dataset;
+    // A change to the structure changes what is derived from it (spec 3.7): from the next request on, views use the new structure.
+    if (this.changesStructure(method)) {
+      this.endsCache.clear();
+      this.compiledShapes = undefined;
+    }
     this.commitCount++;
     if (run) {
       this.runCount++;
       void this.enqueue(() => this.work(run));
     }
 
+    const changeViews = changes.map((c) => this.changeView(c, work));
+    freeStore(work.store);
     return {
       commit,
-      changes: changes.map((c) => this.changeView(c, work)),
+      changes: changeViews,
       created,
       pending,
       pendingDescriptions: this.describe_(pending),
@@ -1837,6 +1917,262 @@ export class Gateway {
           }
         : {}),
     };
+  }
+
+  // ---------------------------------------------------------------- structure evolution (spec 3.7)
+
+  /**
+   * The structure's own objects (spec 3.7) are the ontology's resources, so they carry no identifier in the files. Each is
+   * identified by its local name, such as StudyScenario; where two share one, by its namespace's prefix as well.
+   */
+  private identifyStructure(): void {
+    const rows = this.q(`SELECT DISTINCT ?r WHERE { ?t a p:ObjectType ; p:inDomain p:Structure . ?r a ?t FILTER(isIRI(?r)) FILTER NOT EXISTS { ?r ls:identifier ?i } }`);
+    if (!rows.length) return;
+    const local = (iri: string) => iri.slice(Math.max(iri.lastIndexOf('#'), iri.lastIndexOf('/')) + 1);
+    const taken = new Set(this.q(`SELECT ?i WHERE { ?r ls:identifier ?i }`).map((r) => r.i));
+    const byLocal = new Map<string, string[]>();
+    for (const { r } of rows) byLocal.set(local(r), [...(byLocal.get(local(r)) ?? []), r]);
+    const prefixOf = (iri: string) => Object.entries(NS).find(([, ns]) => iri.startsWith(ns) && !iri.slice(ns.length).includes('/'))?.[0] ?? 'x';
+    for (const [name, iris] of byLocal) {
+      for (const iri of iris) {
+        const identifier = iris.length > 1 || taken.has(name) ? `${prefixOf(iri)}:${name}` : name;
+        this.graph.store.add(quad(namedNode(iri), namedNode(`${NS.ls}identifier`), literal(identifier), defaultGraph()));
+      }
+    }
+    this.graph.dataset = defaultGraphDataset(this.graph.store);
+  }
+
+  /** The operations of a change set, in the order they were added. */
+  private operationsOf(changeSet: string, graph: Graph = this.graph) {
+    return this.q(`SELECT ?op ?id ?kind ?set ?value ?label ?replacement ?created WHERE { ?op p:operationOf <${changeSet}> ; ls:identifier ?id ; p:operationKind ?kind .
+        OPTIONAL { ?op p:onValueSet ?set } OPTIONAL { ?op p:onValue ?value } OPTIONAL { ?op p:newLabel ?label } OPTIONAL { ?op p:replacement ?replacement }
+        OPTIONAL { ?op p:createdValue ?created } }`, graph).sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  }
+
+  /** The value sets a change set touches: those it adds to, and those of the values it changes. */
+  private valueSetsTouched(changeSet: string): string[] {
+    return [...new Set(this.operationsOf(changeSet).flatMap((op) => (op.set ? [op.set] : this.q(`SELECT ?s WHERE { <${op.value}> skos:inScheme ?s }`).map((r) => r.s))))];
+  }
+
+  /**
+   * Who owns a value set (spec 3.7, Owners approve): the roles that create or edit the types whose state dimensions take
+   * their values from it; the Structure Steward when no role does.
+   */
+  private ownersOf(valueSet: string): string[] {
+    const roles = this.q(`SELECT DISTINCT ?role WHERE { ?d p:valuesFrom <${valueSet}> ; p:dimensionOf ?t . { ?role p:mayEdit ?t } UNION { ?role p:mayCreate ?t } } ORDER BY ?role`).map((r) => r.role);
+    return roles.length ? roles : [`${NS.p}StructureSteward`];
+  }
+
+  /** The person who drafted a change set: who created it. */
+  private drafterOf(changeSet: string): string | undefined {
+    return this.q(`SELECT ?who WHERE { GRAPH ?c { ?c p:target <${changeSet}> ; p:method p:Create ; prov:wasAssociatedWith ?who } }`)[0]?.who;
+  }
+
+  /** Why the principal may not approve or reject this change set (spec 3.7): only an owner of every part, never its drafter alone, never an agent. */
+  private ownerBlocks(principal: Principal, object: string, method: string): string[] {
+    if (!ask(this.graph.store, `ASK { <${method}> p:approvedByOwners true }`)) return [];
+    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) return ['Agents never approve or reject a change to the structure'];
+    if (this.drafterOf(object) === principal.person) return ['You drafted this change set, so someone else must decide on it'];
+    const label = (iri: string) => this.q(`SELECT ?l WHERE { { <${iri}> skos:prefLabel ?l } UNION { <${iri}> rdfs:label ?l } } LIMIT 1`)[0]?.l ?? iri;
+    const blocks: string[] = [];
+    for (const set of this.valueSetsTouched(object)) {
+      const owners = this.ownersOf(set);
+      if (!owners.includes(principal.role)) blocks.push(`Only an owner of ${label(set)} may decide on this: ${owners.map(label).join(' or ')}`);
+    }
+    return blocks;
+  }
+
+  /** Statements added and removed one by one, recorded as changes, for structure that holds several values. */
+  private addStatement(work: Graph, s: string, p: string, o: Term, changes: Change[]) {
+    const q = quad(namedNode(s), namedNode(p), o as oxigraph.Quad['object'], defaultGraph());
+    if (work.store.has(q)) return;
+    work.store.add(q);
+    changes.push({ subject: s, property: p, newValue: o });
+  }
+
+  private removeStatement(work: Graph, s: string, p: string, o: Term, changes: Change[]) {
+    const q = quad(namedNode(s), namedNode(p), o as oxigraph.Quad['object'], defaultGraph());
+    if (!work.store.has(q)) return;
+    work.store.delete(q);
+    changes.push({ subject: s, property: p, oldValue: o });
+  }
+
+  /**
+   * Apply structure change (spec 3.4, Structure changes): carries out a change set's operations on the working copy, with
+   * their migration, moves each ontology they touch to its next version, and records the Turtle patch on the change set.
+   */
+  private applyStructure(work: Graph, changeSet: string, changes: Change[]) {
+    const first = changes.length;
+    const q = (query: string) => this.q(query, work);
+    const local = (iri: string) => iri.slice(Math.max(iri.lastIndexOf('#'), iri.lastIndexOf('/')) + 1);
+    let level: 'patch' | 'minor' = 'patch';
+    for (const op of this.operationsOf(changeSet, work)) {
+      const kind = op.kind.slice(`${NS.p}OperationKind-`.length);
+      if (kind === 'addValue') {
+        level = 'minor';
+        const words = op.label.trim().split(/[^A-Za-z0-9]+/).filter(Boolean);
+        const camel = words.map((w: string, i: number) => (i ? w[0].toUpperCase() + w.slice(1) : w.toLowerCase())).join('') || 'value';
+        let value = `${op.set}-${camel}`;
+        for (let n = 2; ask(work.store, `ASK { <${value}> ?p ?o }`); n++) value = `${op.set}-${camel}${n}`;
+        const members = q(`SELECT ?v ?order WHERE { ?v skos:inScheme <${op.set}> OPTIONAL { ?v p:order ?order } }`);
+        const order = Math.max(0, ...members.map((m) => Number(m.order ?? 0))) + 1;
+        let identifier = local(value);
+        if (ask(work.store, `ASK { ?x ls:identifier "${identifier}" }`)) identifier = `${changeSet.split('/').pop()}:${identifier}`;
+        this.addStatement(work, value, RDF_TYPE, namedNode(`${NS.skos}Concept`), changes);
+        this.addStatement(work, value, `${NS.skos}inScheme`, namedNode(op.set), changes);
+        this.addStatement(work, value, `${NS.skos}prefLabel`, literal(op.label.trim()), changes);
+        this.addStatement(work, value, `${NS.p}order`, literal(String(order), namedNode(`${NS.xsd}integer`)), changes);
+        this.addStatement(work, value, `${NS.ls}identifier`, literal(identifier), changes);
+        this.addStatement(work, op.op, `${NS.p}createdValue`, namedNode(value), changes);
+        // Every shape that allows each value of the set now allows this one too. Shapes that allow only some, such as a
+        // precondition's, are left as they are: the impact names them.
+        const all = new Set(members.map((m) => m.v));
+        for (const { list } of q(`SELECT DISTINCT ?list WHERE { ?ps sh:path ?dim ; sh:in ?list . ?dim p:valuesFrom <${op.set}> }`)) {
+          const listed = new Set(q(`SELECT ?v WHERE { <${list}> rdf:rest*/rdf:first ?v }`).map((r) => r.v));
+          if (listed.size !== all.size || [...all].some((v) => !listed.has(v))) continue;
+          const last = q(`SELECT ?node WHERE { <${list}> rdf:rest* ?node . ?node rdf:rest rdf:nil }`)[0].node;
+          let node = `${last}-rest`;
+          for (let n = 2; ask(work.store, `ASK { <${node}> ?p ?o }`); n++) node = `${last}-rest-${n}`;
+          this.removeStatement(work, last, `${NS.rdf}rest`, namedNode(`${NS.rdf}nil`), changes);
+          this.addStatement(work, last, `${NS.rdf}rest`, namedNode(node), changes);
+          this.addStatement(work, node, `${NS.rdf}first`, namedNode(value), changes);
+          this.addStatement(work, node, `${NS.rdf}rest`, namedNode(`${NS.rdf}nil`), changes);
+        }
+      } else if (kind === 'relabel') {
+        for (const { l } of q(`SELECT ?l WHERE { <${op.value}> skos:prefLabel ?l }`)) this.removeStatement(work, op.value, `${NS.skos}prefLabel`, literal(l), changes);
+        this.addStatement(work, op.value, `${NS.skos}prefLabel`, literal(op.label.trim()), changes);
+      } else if (kind === 'deprecate') {
+        level = 'minor';
+        this.set(work, op.value, `${NS.p}valueStatus`, namedNode(`${NS.p}ValueStatus-deprecated`), changes);
+        this.set(work, op.value, `${NS.owl}deprecated`, literal('true', namedNode(`${NS.xsd}boolean`)), changes);
+        this.set(work, op.value, `${NS.p}replacedBy`, namedNode(op.replacement), changes);
+        // The migration: every object holding the value along a state dimension moves to its replacement.
+        for (const { o, dim } of q(`SELECT ?o ?dim WHERE { ?o ?dim <${op.value}> . ?dim a p:StateDimension }`)) {
+          this.removeStatement(work, o, dim, namedNode(op.value), changes);
+          this.addStatement(work, o, dim, namedNode(op.replacement), changes);
+        }
+      }
+    }
+    // Each ontology whose terms changed moves to its next version: a relabel is a patch, an added value or a deprecation a minor version.
+    const subjects = new Set(changes.slice(first).map((c) => c.subject));
+    const versions: string[] = [];
+    for (const o of q(`SELECT ?o ?v ?title WHERE { ?o a owl:Ontology ; owl:versionInfo ?v OPTIONAL { ?o dcterms:title ?title } }`)) {
+      if (![...subjects].some((s) => s.startsWith(`${o.o}#`))) continue;
+      const [major, minor, patch] = o.v.split('.').map(Number);
+      const next = level === 'minor' ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`;
+      this.set(work, o.o, `${NS.owl}versionInfo`, literal(next), changes);
+      this.set(work, o.o, `${NS.owl}versionIRI`, namedNode(`${o.o}/${next}`), changes);
+      versions.push(`${o.title ?? o.o} ${o.v} → ${next}`);
+    }
+    for (const v of versions) this.addStatement(work, changeSet, `${NS.p}versionChange`, literal(v), changes);
+    this.set(work, changeSet, `${NS.p}patch`, literal(turtlePatch(changes.slice(first).filter((c) => c.subject !== changeSet))), changes);
+  }
+
+  /** The commit that applied a change set, and its changes to the structure and the graph, in order. */
+  private appliedChanges(changeSet: string) {
+    const commit = this.q(`SELECT ?c WHERE { GRAPH ?c { ?c p:target <${changeSet}> ; p:method p:ApplyChangeSet } } ORDER BY DESC(STRLEN(STR(?c))) DESC(STR(?c)) LIMIT 1`)[0]?.c;
+    if (!commit) return [];
+    const ops = new Set(this.operationsOf(changeSet).map((o) => o.op));
+    const g = namedNode(commit);
+    // Read as terms, not text, so each value comes back with its datatype.
+    const one = (s: Term, p: string) => this.graph.store.match(s as oxigraph.Quad['subject'], namedNode(p), null, g)[0]?.object as Term | undefined;
+    return (this.graph.store.match(g, namedNode(`${NS.p}change`), null, g) as oxigraph.Quad[])
+      .map((q) => q.object)
+      .map((ch) => ({ n: Number(ch.value.split('/').pop()), subject: one(ch as Term, `${NS.p}changedSubject`)!.value, property: one(ch as Term, `${NS.p}changedProperty`)!.value, old: one(ch as Term, `${NS.p}oldValue`), new: one(ch as Term, `${NS.p}newValue`) }))
+      .sort((a, b) => a.n - b.n)
+      .filter((r) => r.subject !== changeSet && !ops.has(r.subject));
+  }
+
+  /**
+   * Roll back structure change (spec 3.7): the inverse of the commit that applied the change set, as new statements, so
+   * history is never rewritten. Refused when a value it would remove is held by an object.
+   */
+  private rollBackStructure(work: Graph, changeSet: string, changes: Change[]) {
+    const applied = this.appliedChanges(changeSet);
+    if (!applied.length) throw new GatewayError(400, ['No commit applied this change set']);
+    for (const c of [...applied].reverse()) {
+      if (c.new) this.removeStatement(work, c.subject, c.property, c.new, changes);
+      if (c.old) this.addStatement(work, c.subject, c.property, c.old, changes);
+    }
+    // A value the change set added, if objects now hold it, cannot simply go.
+    const removed = applied.filter((c) => c.property === RDF_TYPE && c.new?.value === `${NS.skos}Concept`).map((c) => c.subject);
+    const problems: string[] = [];
+    for (const value of removed) {
+      const label = this.q(`SELECT ?l WHERE { <${value}> skos:prefLabel ?l }`)[0]?.l ?? value;
+      const holders = this.q(`SELECT ?id WHERE { ?o ?dim <${value}> . ?dim a p:StateDimension . ?o ls:identifier ?id } ORDER BY ?id`, work).map((r) => r.id);
+      if (holders.length) problems.push(`${holders.join(', ')} ${holders.length === 1 ? 'holds' : 'hold'} ${label}, which rolling back would remove. Move ${holders.length === 1 ? 'it' : 'them'} first.`);
+    }
+    if (problems.length) throw new GatewayError(400, problems);
+    this.set(work, changeSet, `${NS.p}patch`, undefined, changes);
+  }
+
+  /**
+   * The impact of a change set (spec 3.7, Impact before approval): its operations tried on a working copy, every object
+   * validated against the changed structure, and everything that refers to what changes.
+   */
+  async structureImpact(changeSet: string, direction: 'apply' | 'rollBack'): Promise<StructureImpact> {
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    const refused: string[] = [];
+    try {
+      if (direction === 'apply') this.applyStructure(work, changeSet, changes);
+      else this.rollBackStructure(work, changeSet, changes);
+    } catch (error) {
+      if (error instanceof GatewayError) refused.push(...error.reasons);
+      else throw error;
+    }
+    work.dataset = defaultGraphDataset(work.store);
+    // Structure is named as people read it; objects by their identifiers.
+    const label = (iri: string, graph: Graph = work) =>
+      this.q(`SELECT ?l WHERE { { <${iri}> skos:prefLabel ?l } UNION { <${iri}> rdfs:label ?l FILTER NOT EXISTS { <${iri}> skos:prefLabel ?x } } } LIMIT 1`, graph)[0]?.l ?? iri.split(/[#/]/).pop()!;
+    const identifier = (iri: string) => this.q(`SELECT ?id WHERE { <${iri}> ls:identifier ?id }`, work)[0]?.id ?? iri;
+    const lines: string[] = [];
+    for (const op of this.operationsOf(changeSet)) {
+      const kind = op.kind.slice(`${NS.p}OperationKind-`.length);
+      const set = op.set ?? this.q(`SELECT ?s WHERE { <${op.value}> skos:inScheme ?s }`)[0]?.s;
+      const verb = direction === 'apply' ? { addValue: 'adds', relabel: 'relabels', deprecate: 'deprecates' } : { addValue: 'removes', relabel: 'relabels back', deprecate: 'restores' };
+      if (kind === 'addValue') lines.push(`${label(set, this.graph)}: ${verb.addValue} ${op.label}`);
+      if (kind === 'relabel') lines.push(`${label(set, this.graph)}: ${verb.relabel} ${label(op.value, this.graph)} as ${direction === 'apply' ? op.label : label(op.value, this.graph)}`);
+      if (kind === 'deprecate') lines.push(`${label(set, this.graph)}: ${verb.deprecate} ${label(op.value, this.graph)}${direction === 'apply' ? `, replaced by ${label(op.replacement, this.graph)}` : ''}`);
+    }
+    // Objects whose state moves: a change along a state dimension of an object with an identifier.
+    const moves = changes
+      .filter((c) => c.newValue && ask(work.store, `ASK { <${c.property}> a p:StateDimension }`) && ask(work.store, `ASK { <${c.subject}> ls:identifier ?i ; a ?t . ?t a p:ObjectType FILTER NOT EXISTS { ?t p:inDomain p:Structure } }`))
+      .map((c) => {
+        const removed = changes.find((o) => o.subject === c.subject && o.property === c.property && o.oldValue);
+        return { identifier: identifier(c.subject), from: removed?.oldValue ? label(removed.oldValue.value, this.graph) : '', to: label(c.newValue!.value) };
+      });
+    const problems = refused.length ? [] : await validateData(work);
+    const identifierOf = (problem: string) => {
+      const [focus, ...rest] = problem.split(': ');
+      return `${this.q(`SELECT ?id WHERE { <${focus}> ls:identifier ?id }`, work)[0]?.id ?? focus}: ${rest.join(': ')}`;
+    };
+    // What refers to the value sets touched, or their values: preconditions, effects, metrics and titles.
+    const sets = this.valueSetsTouched(changeSet);
+    const refersTo = new Set<string>();
+    for (const set of sets) {
+      const values = `{ ?v skos:inScheme <${set}> }`;
+      for (const { m } of this.q(`SELECT DISTINCT ?m WHERE { ?m p:precondition ?pre . ?pre (sh:property|sh:node|sh:and/rdf:rest*/rdf:first)* ?ps .
+          { ?ps sh:in/rdf:rest*/rdf:first ?v } UNION { ?ps sh:hasValue ?v } ${values} }`)) refersTo.add(`Method ${label(m, this.graph)}: its precondition allows only some of these values`);
+      for (const { m } of this.q(`SELECT DISTINCT ?m WHERE { ?m p:effect ?e . ?e p:value ?v ${values} }`)) refersTo.add(`Method ${label(m, this.graph)}: sets one of these values`);
+      for (const { m } of this.q(`SELECT DISTINCT ?m WHERE { ?m a p:Metric ; p:inState ?v ${values} }`)) refersTo.add(`Metric ${label(m, this.graph)}: counts one of these values`);
+      for (const { d, t } of this.q(`SELECT ?d ?t WHERE { ?d p:valuesFrom <${set}> ; p:dimensionOf ?t }`)) {
+        const prefixed = Object.entries(NS).find(([, ns]) => d.startsWith(ns));
+        const name = prefixed ? `{${prefixed[0]}:${d.slice(prefixed[1].length)}` : undefined;
+        if (name && this.q(`SELECT ?tt WHERE { <${t}> p:titleTemplate ?tt }`)[0]?.tt.includes(name)) refersTo.add(`Titles of ${label(t, this.graph)}`);
+        refersTo.add(`State ${label(d, this.graph)} of ${label(t, this.graph)}: wherever its values are shown or chosen`);
+      }
+    }
+    const versions = changes
+      .filter((c) => c.property === `${NS.owl}versionInfo` && c.newValue)
+      .map((c) => {
+        const old = changes.find((o) => o.subject === c.subject && o.property === c.property && o.oldValue);
+        const title = this.q(`SELECT ?t WHERE { <${c.subject}> dcterms:title ?t }`)[0]?.t ?? c.subject;
+        return `${title} ${old?.oldValue?.value ?? ''} → ${c.newValue!.value}`;
+      });
+    const impact = { structure: lines, moves, notConforming: [...refused, ...problems.map(identifierOf)], refersTo: [...refersTo].sort(), versions };
+    freeStore(work.store);
+    return impact;
   }
 
   // ---------------------------------------------------------------- skills (spec 3.3, Skills)
@@ -1940,7 +2276,7 @@ export class Gateway {
     const p = this.q(`SELECT ?along ?siblings ?latest WHERE { <${skill.skill}> p:resultsAlong ?along ; p:latestBy ?latest . OPTIONAL { <${skill.skill}> p:siblingsAlong ?siblings } }`)[0];
     if (!p) return { reason: 'This skill does not say where its earlier results are.' };
     const hidden = this.unreadable(principal.role);
-    const sources = this.q(`SELECT ?input ?from WHERE { <${skill.skill}> p:inputSource ?s . ?s p:forInput ?input ; p:readFrom ?from }`).filter((s) => !hidden.has(s.from));
+    const sources = this.q(`SELECT ?input ?from WHERE { <${skill.skill}> p:inputSource ?s . ?s p:givesInput ?input ; p:readFrom ?from }`).filter((s) => !hidden.has(s.from));
     const wanted = skill.inputs.filter((i) => sources.some((s) => s.input === i.input));
     const known = sources.map((s) => `<${s.from}>`).join(' ');
     const latest = (of: string) =>
@@ -2327,7 +2663,9 @@ export class Gateway {
     const label = (term?: Term) => {
       if (!term) return undefined;
       if (term.termType === 'Literal') return term.value;
-      return this.q(`SELECT ?l WHERE { { <${term.value}> skos:prefLabel ?l } UNION { <${term.value}> ls:identifier ?l } UNION { <${term.value}> rdfs:label ?l } } LIMIT 1`, graph)[0]?.l ?? term.value;
+      // A coded value or a term by its label, a person by name, an object by its identifier.
+      const r = this.q(`SELECT ?pref ?id ?l WHERE { OPTIONAL { <${term.value}> skos:prefLabel ?pref } OPTIONAL { <${term.value}> ls:identifier ?id } OPTIONAL { <${term.value}> rdfs:label ?l } } LIMIT 1`, graph)[0];
+      return r?.pref ?? r?.l ?? r?.id ?? term.value;
     };
     return {
       subject: c.subject,
@@ -2362,7 +2700,7 @@ export class Gateway {
       if (input.valuesFrom) {
         // The input's shape may narrow the scheme, such as causality without "unassessed".
         const narrowed = this.q(`SELECT ?value WHERE { <${input.input}> p:inputShape ?shape . ?shape sh:in/rdf:rest*/rdf:first ?value }`).map((r) => r.value);
-        const choices = this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${input.valuesFrom}> ; skos:prefLabel ?label ; p:order ?order } ORDER BY ?order`)
+        const choices = this.q(`SELECT ?value ?label WHERE { ?value skos:inScheme <${input.valuesFrom}> ; skos:prefLabel ?label ; p:order ?order FILTER NOT EXISTS { ?value p:valueStatus p:ValueStatus-deprecated } } ORDER BY ?order`)
           .filter((c) => !narrowed.length || narrowed.includes(c.value));
         return { ...base, kind: 'choice', choices: asChoices(choices), ...(input.manyValues === 'true' ? { many: true } : {}) };
       }
@@ -2639,7 +2977,7 @@ export class Gateway {
 
     const e = this.q(`SELECT ?outcomeAs ?aggregatesBy ?typeLabel ?plural ?countsPlural WHERE { <${analysis.effect}> p:recordsOutcomeAs ?outcomeAs ; p:aggregatesBy ?aggregatesBy ;
         p:createsType ?type ; p:counts ?counts . ?type rdfs:label ?typeLabel ; p:pluralLabel ?plural . ?counts p:pluralLabel ?countsPlural }`)[0];
-    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const at = this.now();
     const changes: Change[] = [];
     const created: string[] = [];
@@ -2696,7 +3034,7 @@ export class Gateway {
       throw new GatewayError(400, [error instanceof Error ? error.message : String(error)]);
     }
     this.progress.set(run, 0.8);
-    const work: Graph = { store: new oxigraph.Store(this.graph.store.match(null, null, null, defaultGraph()) as oxigraph.Quad[]), dataset: this.graph.dataset };
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const changes: Change[] = [];
     const created: string[] = [];
     const byKey = new Map<string, string>();
