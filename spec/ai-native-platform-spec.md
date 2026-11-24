@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.42. November 23, 2026. Author: Paul Chang.
+Version 0.43. November 24, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -65,6 +65,7 @@ The ontology is written in **RDF 1.2 with SHACL**, in Turtle files under `ontolo
 | Role | A resource in the platform vocabulary naming the methods it may run, the types it may create and edit, the metrics it watches, and what it may not read |
 | Metric | A resource in the platform vocabulary: a count of a type's objects in given states, with its health thresholds (section 5.1, Home) |
 | Change set | An object in the platform's Structure domain: named operations on the structure, with a lifecycle whose steps are methods, applied as a new version of the ontology (section 3.7) |
+| Measure | A standard observation defined once for every study or case that takes it, such as blood pressure: its components, each a SHACL property shape with its datatype, unit and plausible range, mapped to external terminologies. Structure, governed by change sets (section 3.2, Measures and observations) |
 | Skill | A resource in the platform vocabulary: the method it serves, what it proposes, its version, owner and approval, its instructions, and its reference procedure, if any. It is context, not ontology: written in the same notation, but declaring how an organization works, not what exists (section 3.3, Skills) |
 | Terminology | SKOS concepts mapped to external vocabularies with `skos:exactMatch` or `skos:closeMatch` |
 
@@ -91,6 +92,17 @@ Holds the instances. The ontology defines types. The knowledge graph holds every
 - Supports traversal, similarity and provenance.
 - Keeps the history of changes for every object.
 - Links objects across domains when they relate.
+
+#### Measures and observations
+
+Some data is too plentiful to hold as objects: the values of measurements taken many times over, such as every blood pressure of every patient at every visit. The graph holds what those values mean and what is expected of them; the values themselves stay in datasets, and only a value that someone must act on becomes an object.
+
+- **Measures are shapes.** A **measure** defines a standard observation once: its **components**, such as systolic and diastolic pressure, each a SHACL property shape with its datatype, unit and plausible range, and the measure and its components mapped to external terminologies. Measures are structure (section 3.7): browsable in the Structure domain and changed only by change sets.
+- **Datasets hold the values.** A **dataset** is a named collection of rows of one structure, and each **dataset version** a frozen copy of it at one time, held in a data store in an open format such as CDISC Dataset-JSON. The gateway reads a version's rows through an adapter (section 7, Integration), as the principal and with their permissions; they are never copied into the graph. A dataset names the columns that say which object a row is about, such as a patient, and on which occasion, such as a visit.
+- **Bindings say how a dataset holds a measure.** A **measure binding** ties a component to a dataset: the column and value that pick its rows, such as a test code, and the columns that hold its value and unit. One measure may be bound to many datasets in different standards, so they can be read as the same measure.
+- **Expectations come from the structure.** A domain declares when an observation is expected: on which kind of occasion, in which state, and which measures it expects, along a path through the graph, such as from a patient's visit to the planned visit it was scheduled from and the assessments performed at it. So what is expected is computed, never stored value by value.
+- **Checking a dataset version** compares what is expected with what it holds: each expected observation received, missing, or received with a value its component's shape does not allow. The counts are recorded on the dataset version. Each missing or not allowed value becomes a **data point**: an object that refers to the value, by the object, occasion, component and dataset version, and holds what was seen. Other values stay rows.
+- **Types the domain adopts.** Dataset, dataset version and data point are platform types; a domain places them in one of its work domains, links datasets to its own objects and names the roles that check them.
 
 ### 3.3 Context Layer
 Holds what the platform knows about the current situation.
@@ -508,6 +520,9 @@ To resolve in future versions of this spec.
 - How should the platform show a journey across objects, such as an adverse event to its safety case to its submission, so a person sees the larger goal their work advances, beyond one object's lifecycle?
 - How should search read dates and deadlines, such as "overdue" or "due this week", which depend on an object's state as well as its date?
 - Who in an organization may change permissions and role defaults, and how is that change approved and audited?
+- Should a measure component's shape be run by the SHACL engine itself on each observation, rather than applied by the gateway as its datatype, unit and range?
+- Which further adapters read dataset versions beyond Dataset-JSON files, such as Parquet in a lakehouse, and how is a version's checksum verified on read?
+- How is a person shown the observations of one object, such as a patient's blood pressures across visits, read through the adapter?
 - How is a match between a person's permissions and a canonical role measured, and how close is close enough to suggest the role?
 - How are permissions scoped: by study, site, product, region, or other objects in the graph?
 - When does replaying the journal become slow enough to need snapshots, and how do snapshots work across ontology versions?
@@ -564,3 +579,4 @@ To resolve in future versions of this spec.
 | 0.40 | 2026-11-23 | Structure evolution as built (section 3.7): the Structure domain's kinds named (Value Set and Value among them, Property to follow); structure objects identified by their names, their describing shapes not targeted for validation; a change set's lifecycle of five stages with an outcome once ended; the first operations act on the values of a domain's value sets and are added by methods on a draft; adding a value extends the shapes that allow each value of its set; deprecated values are no longer offered or shown as stages. |
 | 0.41 | 2026-11-23 | Restored from 0.31 on another branch, lost when the branches diverged: an object's journey (section 5.1, Within an object), where it is along its lifecycle, each stage of the main path passed, current, to come or skipped, from its own history of commits; lifecycle values may be exits off the main path, naming the stage they leave from where certain (section 3.1); Read an object answers it (section 3.4). |
 | 0.42 | 2026-11-23 | Starting points (section 3.3, Skills): a skill may serve creating a type, naming the ways a person may begin, each by a platform beginning: the create form, a template or a document. The platform offers those it can run and shows the others as not yet available, with why. |
+| 0.43 | 2026-11-24 | Measures and observations (section 3.2): measures as shapes, governed as structure; datasets and their versions hold the values, read through an adapter and never copied into the graph; measure bindings tie components to dataset columns; expectations computed from the structure; checking a dataset version records counts and makes data points only of values that are missing or not allowed. Three open questions. |

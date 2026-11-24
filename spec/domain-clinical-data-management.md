@@ -1,6 +1,6 @@
 # Domain Spec: Clinical Data Management
 
-Version 0.1. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42. Status: **proposed, not built.** No ontology, seed or conformance test reads this spec yet.
+Version 0.2. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.43. Status: **proposed, mostly not built.** Measures, datasets, dataset versions and data points are built at the platform level (platform spec 3.2, Measures and observations), with Blood Pressure in the life sciences domain (section 3.10 there); the rest is not built yet.
 
 This spec describes the objects a clinical data management system holds, as the platform would represent them: what each object is, the states it moves through, what it records and what it links to. It covers how data is collected and gathered into datasets, transformed and stored, watched for problems, monitored statistically and against key risk indicators and quality tolerance limits, managed for risk, and made traceable through audit trails and their review.
 
@@ -52,7 +52,10 @@ How a study's data is designed and collected. The design objects are versioned w
 | Item | One field on a form: its question, data type, unit, controlled terminology and whether it is required. CDASH variable | Status: draft, approved, retired | Label, data type, unit, codelist (a value set, platform spec 3.7), required; part of a Form; mapped to SDTM variables |
 | Edit Check | A rule that checks data as it is entered or after, raising a query when it fails. A range, consistency, completeness or cross-form check | Status: draft, in testing, active, retired. Kind (classifying): range, consistency, completeness, cross-form, protocol | Logic in words and as an expression, severity, query text; checks Items; part of a Data Collection Specification |
 | Form Instance | One form as captured for one patient at one visit, holding its data records | Entry: not started, in progress, complete, verified, locked. Exits: not done (with the reason) | Belongs to a Patient and a Visit; instance of a Form; signed by the investigator where required |
-| Data Record | Already defined in Clinical Development. **The data point**: one captured value, with its unit, collection date and source | As defined | Part of a Form Instance; instance of an Item; queried by Data Queries |
+| Data Record | Already defined in Clinical Development: one captured value, with its unit, collection date and source | As defined | Part of a Form Instance; instance of an Item; queried by Data Queries |
+| Measure | A standard observation defined once for every study, such as blood pressure, as shapes: its components with their datatypes, units, plausible ranges and terminology codes. CDISC Biomedical Concepts. Platform-level (platform spec 3.2) | Structure, changed by change sets | Has Measure Components; measured by Assessments; bound to Datasets by Measure Bindings |
+| Measure Binding | How one dataset holds one component of a measure: the column and value that pick its rows, and the columns of its value and unit. CDISC dataset specializations | Structure | Binds a Measure Component to a Dataset |
+| Data Point | A reference to one value a person must act on, rather than a copy of it: an observation expected and missing, or a value its measure's shape does not allow, found by checking a dataset version. Values that need no action stay rows of their dataset version | Kind (classifying): missing, not allowed. Status: open, explained, resolved | Of a Patient, at a Visit, for a Measure Component, seen in a Dataset Version; the value and unit seen |
 | Data Query | Already defined in Clinical Development. A question raised about a data record, by an edit check, a reviewer or a monitor | As defined | Raised by an Edit Check, a Data Review, an Alert or a person |
 | Data Source | A system or party that data comes from: the EDC, eCOA, IRT, a central laboratory, an imaging core lab, a device or a health record | Status: planned, connected, live, disconnected | Kind (classifying): EDC, eCOA, IRT, laboratory, imaging, device, health record, safety; vendor; contributes to a Study |
 | Data Transfer Agreement | What an external data source sends, how and how often: its file structure, variables, codelists, transfer schedule and checks | Status: draft, agreed, in effect, superseded | Version; between a Data Source and a Study; specifies a Dataset Specification |
@@ -221,7 +224,7 @@ Home metrics that would follow from these objects: open alerts by severity, site
 
 ## 15. Open questions
 
-- Should Data Record stay one object per value, as in Clinical Development, or should values be held as rows of a dataset version and only the queried or changed ones be objects of their own? Millions of values per study may not belong in the graph one by one.
+- **Settled in 0.2:** values are held as rows of dataset versions, read through an adapter; measures, bindings and expectations are in the graph; only values someone must act on become data points (platform spec 3.2). Whether Data Record itself becomes a data point is open in the life sciences domain spec.
 - Where should audit trail entries from other systems live: imported into the graph, or read through an adapter at the gateway (platform spec 7, Integration) and only their review held here?
 - Should Alert and Finding be shared with Safety and Regulatory's Signal and Quality Events' Quality Event through one annotation model, the open question in `domain-life-sciences.md` section 12?
 - Are KRI and QTL thresholds metrics in the platform's sense (platform spec 5.1, Home), so that one declaration serves both the monitoring and the Home tiles?
@@ -236,3 +239,4 @@ Home metrics that would follow from these objects: open alerts by severity, site
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-11-24 | First draft: the objects of a clinical data management system, from data design and capture to datasets, transformations, storage, surveillance and alerts, statistical monitoring, KRIs, QTLs, risk-based quality management, and audit trails and their review, extending the Clinical Development domain. Proposed, not built. |
+| 0.2 | 2026-11-24 | Values live in datasets, not the graph: measures as shapes, measure bindings and data points as references, built at the platform level (platform spec 0.43), with Blood Pressure in the life sciences domain. The first open question is settled. |

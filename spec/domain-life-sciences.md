@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.35. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42.
+Version 0.36. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.43.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -406,6 +406,20 @@ Built, and read by the conformance tests. A skill is this sponsor's know-how for
 
 So that simulation assumptions can be reused, a trial simulation records every assumption as a number: screen failure rate, dropout rate, response on control and on treatment, and serious adverse events per 100 patient-years, as well as the assumed effect in words.
 
+
+### 3.10 Measures and observations
+
+Built (platform spec 3.2, Measures and observations). Clinical Development adopts the platform's Dataset, Dataset Version and Data Point types; Clinical Data Management (`domain-clinical-data-management.md`) describes the rest.
+
+| Measure | Components | Plausible range | Terminology |
+|---|---|---|---|
+| Blood Pressure | Systolic blood pressure, mmHg, a number; diastolic blood pressure, mmHg, a number | Systolic 60 to 250; diastolic 30 to 150 | NCIt C54706 (Blood Pressure), C25298 (Systolic Blood Pressure), C25299 (Diastolic Blood Pressure). LOINC codes are to be checked at their source (section 12) |
+
+- **Bound to SDTM VS.** A vital signs dataset in SDTM holds blood pressure as rows: systolic where the test code is SYSBP and diastolic where it is DIABP, the value in the standardized numeric result and its unit beside it. Each row names its patient by identifier and its visit by name.
+- **Expected at a completed visit** of a patient, for each measure of each assessment performed at the planned visit the visit was scheduled from. A visit not yet completed, or missed, expects nothing; a missed visit is already work of its own.
+- **Data points.** A data point is either **missing**, an expected observation the dataset version does not hold, or **not allowed**, a value its component's shape does not allow, such as a systolic pressure of 310 or one in kPa. Its status is open until the site explains or corrects it, which the methods of section 3.8 and data queries will carry; for now it is recorded and counted.
+- **Who checks.** The Clinical Data Manager checks a dataset version against its measures, an on-demand method, and watches the data points it finds on Home.
+
 ---
 
 ## 4. Domain: Safety and Regulatory
@@ -545,6 +559,8 @@ The metrics each persona watches on Home (platform spec 5.1, Home), declared in 
 | | Data records awaiting verification | Data records entered | 10, 20 |
 | | Adverse events awaiting reconciliation | Adverse events reported to safety | 1, 3 |
 | | Overdue visits | Visits scheduled, past their date | 1, 3 |
+| | Missing observations | Data points missing, open | 1, 5 |
+| | Observations not allowed | Data points not allowed, open | 1, 3 |
 | Clinical Research Coordinator | Overdue visits; Adverse events awaiting verification; Open data queries | As named | 1, 3 |
 | Clinical Research Associate | Data records awaiting verification; Adverse events awaiting verification; Open data queries | As named | as above |
 | Drug Safety Physician | Serious cases awaiting assessment | Safety cases serious, received or triaged | 1, 3 |
@@ -915,6 +931,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - The Phase II study runs one study scenario of its own, using its draft amendment (J5).
 - Six more people, one for each Design and Plan persona.
 - One Structure Steward, Noor Rahman, and no change sets: the structure starts as the repository's files publish it (J7).
+- **Vital signs for the Phase II study.** Its protocol in force (PROT-2) plans three visits, at weeks 4, 8 and 12, each with a vital signs assessment that measures blood pressure; each patient's visit is scheduled from one. One vital signs dataset in SDTM VS, with one version cut on November 20, 2026, as a Dataset-JSON file: blood pressures for the twenty completed visits, one diastolic pressure not sent and one systolic pressure of 310 mmHg, so a check finds one of each.
 
 All names, compounds, products, sites, lots, studies and people are invented. Product names, such as Velcorin and Duxalate, belong to no real medicine.
 
@@ -935,6 +952,8 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 ## 12. Open Questions
 
 - Should a fourth persona represent the regulator, consuming Submissions through the gateway?
+- Which LOINC codes map Blood Pressure and its components? They could not be checked at their source when the measure was built, so none is declared yet.
+- Should Data Record become a data point, a reference to a value in a dataset version, now that values live in datasets (platform spec 3.2)?
 - Who owns the types nobody creates or edits, such as adverse events, safety cases, forecasts and design signals? Until the domain names an owner for each, the Structure Steward approves changes to them (platform spec section 3.7).
 - Should post-market cases (after approval) be in scope, or only trial cases?
 - Which models back Run simulation and Generate analogs, and how are they validated for their intended use? Until one is connected, the gateway refuses both. Generate narrative is drafted by Claude Opus 5.5 where a deployment connects it.
@@ -1005,3 +1024,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.33 | 2026-11-23 | The Structure Steward watches Deprecated values, not deprecated terms still in use, until derived states are built (platform spec section 9). J7 adds to a value set and shows the new status wherever study scenarios' statuses are shown or chosen. |
 | 0.34 | 2026-11-23 | Restored from 0.19 on another branch, lost when the branches diverged: lifecycles (section 9), each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |
 | 0.35 | 2026-11-23 | Start a protocol (section 3.9): a skill with three starting points for a new protocol, author from scratch, start from a template or import a protocol document; only from scratch runs now, with the create form. |
+| 0.36 | 2026-11-24 | Measures and observations (section 3.10): Blood Pressure as a measure bound to SDTM VS, expected at completed visits from the protocol's assessments; Clinical Development adopts Dataset, Dataset Version and Data Point; the Clinical Data Manager checks a dataset version and watches missing observations and observations not allowed. Seed: PROT-2's vital signs schedule and one VS dataset version. Two open questions. |
