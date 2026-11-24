@@ -21,7 +21,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
 
   it('gives the Clinical Data Manager only Clinical Development', () => {
     expect(nav(dataManager)).toEqual([
-      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Patients', 'Protocols', 'Sites', 'Studies', 'Visits']],
+      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Datasets', 'Patients', 'Protocols', 'Sites', 'Studies', 'Visits']],
     ]);
   });
 
@@ -29,7 +29,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
     // Every Design and Plan type but Program and Opportunity is part of another object; the Clinical Scientist also works across study concepts.
     const scientist = as('person-nadia', 'ClinicalScientist');
     expect(nav(scientist)).toEqual([
-      ['Clinical Development', ['Protocols', 'Sites', 'Studies']],
+      ['Clinical Development', ['Datasets', 'Protocols', 'Sites', 'Studies']],
       ['Design and Plan', ['Opportunities', 'Programs', 'Study Concepts']],
     ]);
     // The Portfolio Strategist starts from opportunities and programs, beside discovery's compounds.

@@ -1858,3 +1858,207 @@ p:BeginFromDocument a p:Beginning ;
   rdfs:label "a document" ;
   rdfs:comment "Reads a document into the type's structure, proposed for review." ;
   p:notYetBecause "Importing a document needs a connected model to read it into structure, and is not built yet." .
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Measures and observations (platform spec 3.2): measures are shapes, governed as structure; values stay in datasets,
+# read through an adapter; only values someone must act on become data points.
+
+p:Measure a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure" ;
+  p:pluralLabel "Measures" ;
+  rdfs:comment "A standard observation defined once, such as blood pressure: its components as shapes, mapped to external terminologies." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:MeasureComponent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure Component" ;
+  p:pluralLabel "Measure Components" ;
+  rdfs:comment "One value a measure observes, such as systolic pressure: a SHACL property shape on the observed value, with its datatype, unit and plausible range." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:MeasureBinding a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure Binding" ;
+  p:pluralLabel "Measure Bindings" ;
+  rdfs:comment "How one dataset holds one component of a measure: the column and value that pick its rows, and the columns of its value and unit." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{p:bindsComponent} in {p:inDataset}" .
+
+p:Dataset a p:ObjectType, rdfs:Class ;
+  rdfs:label "Dataset" ;
+  p:pluralLabel "Datasets" ;
+  rdfs:comment "A named collection of rows of one structure, such as a study's vital signs, whose versions are held in a data store. A domain places it in one of its work domains." ;
+  p:titleTemplate "{p:datasetName}" .
+
+p:DatasetVersion a p:ObjectType, rdfs:Class ;
+  rdfs:label "Dataset Version" ;
+  p:pluralLabel "Dataset Versions" ;
+  rdfs:comment "A dataset frozen at one data cut, held in an open format and read through an adapter, never copied into the graph." ;
+  p:titleTemplate "{p:versionOf}, cut {p:cutOn}" .
+
+p:DataPoint a p:ObjectType, rdfs:Class ;
+  rdfs:label "Data Point" ;
+  p:pluralLabel "Data Points" ;
+  rdfs:comment "A reference to one value a person must act on: an expected observation that is missing, or a value its component's shape does not allow, found by checking a dataset version." ;
+  p:titleTemplate "{p:dataPointKind}: {p:forComponent}, {p:atOccasion}" .
+
+p:Expectation a rdfs:Class ;
+  rdfs:label "expectation" ;
+  rdfs:comment "When an observation is expected: on which kind of occasion, in which state, and which measures, along a path through the graph." .
+
+p:ObservationCheck a rdfs:Class ;
+  rdfs:label "observation check" ;
+  rdfs:comment "An effect that compares a dataset version with what is expected of it, records the counts and makes data points of values missing or not allowed (platform spec 3.2)." ;
+  rdfs:subClassOf p:Effect .
+
+# Structure: measures, components and bindings.
+
+p:componentOf a p:Relationship, rdf:Property ;
+  rdfs:label "is a component of" ; p:inverseLabel "has" ; p:order 130 ; p:partOf true ;
+  rdfs:comment "A component is part of one measure." .
+p:measures a p:Relationship, rdf:Property ;
+  rdfs:label "measures" ; p:inverseLabel "is measured by" ; p:order 131 ;
+  rdfs:comment "A domain's object, such as an assessment, measures a measure." .
+p:bindsComponent a p:Relationship, rdf:Property ;
+  rdfs:label "binds" ; p:inverseLabel "is bound by" ; p:order 132 ;
+  rdfs:comment "The component a binding says how a dataset holds." .
+p:inDataset a p:Relationship, rdf:Property ;
+  rdfs:label "in" ; p:inverseLabel "is bound by" ; p:order 133 ;
+  rdfs:comment "The dataset a binding is for." .
+p:unitLabel a rdf:Property ; rdfs:label "unit" ; rdfs:comment "The unit a component's value is in, as written in data, such as mmHg." ; rdfs:domain p:MeasureComponent ; rdfs:range xsd:string .
+p:whereColumn a rdf:Property ; rdfs:label "rows where column" ; rdfs:comment "The column that picks a binding's rows, such as VSTESTCD." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:whereValue a rdf:Property ; rdfs:label "has the value" ; rdfs:comment "The value of that column on a binding's rows, such as SYSBP." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:valueColumn a rdf:Property ; rdfs:label "value column" ; rdfs:comment "The column holding the observed value." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:unitColumn a rdf:Property ; rdfs:label "unit column" ; rdfs:comment "The column holding the value's unit." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+
+# Datasets and their versions.
+
+p:datasetName a rdf:Property ; rdfs:label "name" ; rdfs:comment "The dataset's name." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:standard a rdf:Property ; rdfs:label "standard" ; rdfs:comment "The standard the dataset follows, such as SDTM VS." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:observedColumn a rdf:Property ; rdfs:label "object column" ; rdfs:comment "The column naming the object a row is about, by its identifier, such as a patient." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:observedType a rdf:Property ; rdfs:label "object type" ; rdfs:comment "The type of the object a row is about." ; rdfs:domain p:Dataset ; rdfs:range p:ObjectType .
+p:occasionColumn a rdf:Property ; rdfs:label "occasion column" ; rdfs:comment "The column naming the occasion of a row, such as a visit." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:occasionMatch a rdf:Property ; rdfs:label "occasion matched by" ; rdfs:comment "The property of the occasion that its column holds, such as a visit's name." ; rdfs:domain p:Dataset ; rdfs:range rdf:Property .
+p:datasetFor a p:Relationship, rdf:Property ;
+  rdfs:label "is for" ; p:inverseLabel "has" ; p:order 134 ;
+  rdfs:comment "The object a dataset holds the data of, such as a study. A domain names its type." .
+p:versionOf a p:Relationship, rdf:Property ;
+  rdfs:label "is a version of" ; p:inverseLabel "has the version" ; p:order 135 ; p:partOf true ;
+  rdfs:comment "A dataset version is part of its dataset." .
+p:location a rdf:Property ; rdfs:label "location" ; rdfs:comment "Where the version's file is held, read through the adapter." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:string .
+p:format a rdf:Property ; rdfs:label "format" ; rdfs:comment "The open format the version is held in, such as Dataset-JSON 1.1." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:string .
+p:cutOn a rdf:Property ; rdfs:label "cut on" ; rdfs:comment "The data cut the version was taken at." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:date .
+p:expectedObservations a rdf:Property ; rdfs:label "expected" ; rdfs:comment "How many observations were expected of the version, when it was checked." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:receivedObservations a rdf:Property ; rdfs:label "received" ; rdfs:comment "How many of them it holds." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:missingObservations a rdf:Property ; rdfs:label "missing" ; rdfs:comment "How many of them it does not hold." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:notAllowedObservations a rdf:Property ; rdfs:label "not allowed" ; rdfs:comment "How many values it holds that their component's shape does not allow." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+
+p:datasetVersionStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ; rdfs:comment "Whether a dataset version has been checked against its measures." ;
+  p:dimensionOf p:DatasetVersion ; p:valuesFrom p:DatasetVersionStatus ; p:order 1 .
+p:DatasetVersionStatus a skos:ConceptScheme ; skos:prefLabel "Dataset version status" ; skos:definition "Whether a dataset version has been checked." .
+p:DatasetVersionStatus-loaded a skos:Concept ; skos:inScheme p:DatasetVersionStatus ; skos:prefLabel "loaded" ; p:order 1 .
+p:DatasetVersionStatus-checked a skos:Concept ; skos:inScheme p:DatasetVersionStatus ; skos:prefLabel "checked" ; p:order 2 .
+
+# Data points.
+
+p:dataPointKind a p:StateDimension, rdf:Property ;
+  rdfs:label "Kind" ; rdfs:comment "Whether the value is missing or not allowed." ;
+  p:dimensionOf p:DataPoint ; p:valuesFrom p:DataPointKind ; p:chosenOnCreate true ; p:order 2 .
+p:DataPointKind a skos:ConceptScheme ; skos:prefLabel "Data point kind" ; skos:definition "Why a value became a data point." .
+p:DataPointKind-missing a skos:Concept ; skos:inScheme p:DataPointKind ; skos:prefLabel "missing" ; p:order 1 ;
+  skos:definition "An expected observation the dataset version does not hold." .
+p:DataPointKind-notAllowed a skos:Concept ; skos:inScheme p:DataPointKind ; skos:prefLabel "not allowed" ; p:order 2 ;
+  skos:definition "A value its component's shape does not allow: of the wrong datatype or unit, or outside its plausible range." .
+p:dataPointStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ; rdfs:comment "Whether the data point has been explained or resolved." ;
+  p:dimensionOf p:DataPoint ; p:valuesFrom p:DataPointStatus ; p:order 1 .
+p:DataPointStatus a skos:ConceptScheme ; skos:prefLabel "Data point status" ; skos:definition "Where a data point is." .
+p:DataPointStatus-open a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "open" ; p:order 1 .
+p:DataPointStatus-explained a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "explained" ; p:order 2 .
+p:DataPointStatus-resolved a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "resolved" ; p:order 3 .
+
+p:pointOf a p:Relationship, rdf:Property ;
+  rdfs:label "is about" ; p:inverseLabel "has" ; p:order 136 ;
+  rdfs:comment "The object a data point's value is about, such as a patient. A domain names its type." .
+p:atOccasion a p:Relationship, rdf:Property ;
+  rdfs:label "at" ; p:inverseLabel "has" ; p:order 137 ;
+  rdfs:comment "The occasion of a data point's value, such as a visit. A domain names its type." .
+p:forComponent a p:Relationship, rdf:Property ;
+  rdfs:label "for" ; p:inverseLabel "has" ; p:order 138 ;
+  rdfs:comment "The measure component a data point's value is for." .
+p:seenIn a p:Relationship, rdf:Property ;
+  rdfs:label "seen in" ; p:inverseLabel "has" ; p:order 139 ; p:partOf true ;
+  rdfs:comment "The dataset version a data point was found in." .
+p:observedValue a rdf:Property ; rdfs:label "value" ; rdfs:comment "The value seen, when there is one." ; rdfs:domain p:DataPoint .
+p:observedUnit a rdf:Property ; rdfs:label "unit" ; rdfs:comment "The unit seen with the value." ; rdfs:domain p:DataPoint ; rdfs:range xsd:string .
+p:reason a rdf:Property ; rdfs:label "why" ; rdfs:comment "Why the value is not allowed, or that it is missing." ; rdfs:domain p:DataPoint ; rdfs:range xsd:string .
+
+# Expectations, declared by a domain.
+
+p:occasionType a rdf:Property ; rdfs:label "occasion type" ; rdfs:comment "The kind of occasion an observation is expected on, such as a visit." ; rdfs:range p:ObjectType .
+p:occasionState a rdf:Property ; rdfs:label "occasion state" ; rdfs:comment "The state an occasion must be in for observations to be expected of it, such as completed." ; rdfs:domain p:Expectation .
+p:observedAlong a rdf:Property ; rdfs:label "object along" ; rdfs:comment "The relationship from an occasion to the object observed on it." ; rdfs:domain p:Expectation .
+p:measuresAlong a rdf:Property ; rdfs:label "measures along" ; rdfs:comment "A SPARQL path from an occasion to the measures expected on it." ; rdfs:domain p:Expectation ; rdfs:range xsd:string .
+p:scopeAlong a rdf:Property ; rdfs:label "scope along" ; rdfs:comment "A SPARQL path from an occasion to the object a dataset is for, so a dataset expects only its own occasions." ; rdfs:domain p:Expectation ; rdfs:range xsd:string .
+
+# Shapes: describing the structure kinds, and validating the data kinds.
+
+p:Shape-Measure a sh:NodeShape ; p:describes p:Measure ; sh:property p:Shape-Measure-label, p:Shape-Measure-comment .
+p:Shape-Measure-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Measure-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-MeasureComponent a sh:NodeShape ; p:describes p:MeasureComponent ;
+  sh:property p:Shape-MeasureComponent-label, p:Shape-MeasureComponent-unit, p:Shape-MeasureComponent-min, p:Shape-MeasureComponent-max, p:Shape-MeasureComponent-of .
+p:Shape-MeasureComponent-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-MeasureComponent-unit a sh:PropertyShape ; sh:path p:unitLabel ; sh:name "unit" .
+p:Shape-MeasureComponent-min a sh:PropertyShape ; sh:path sh:minInclusive ; sh:name "lowest plausible" .
+p:Shape-MeasureComponent-max a sh:PropertyShape ; sh:path sh:maxInclusive ; sh:name "highest plausible" .
+p:Shape-MeasureComponent-of a sh:PropertyShape ; sh:path p:componentOf ; sh:class p:Measure ; sh:maxCount 1 ; sh:name "is a component of" .
+p:Shape-MeasureBinding a sh:NodeShape ; p:describes p:MeasureBinding ;
+  sh:property p:Shape-MeasureBinding-component, p:Shape-MeasureBinding-dataset, p:Shape-MeasureBinding-where, p:Shape-MeasureBinding-value, p:Shape-MeasureBinding-valueColumn, p:Shape-MeasureBinding-unitColumn .
+p:Shape-MeasureBinding-component a sh:PropertyShape ; sh:path p:bindsComponent ; sh:class p:MeasureComponent ; sh:maxCount 1 ; sh:name "binds" .
+p:Shape-MeasureBinding-dataset a sh:PropertyShape ; sh:path p:inDataset ; sh:class p:Dataset ; sh:maxCount 1 ; sh:name "in" .
+p:Shape-MeasureBinding-where a sh:PropertyShape ; sh:path p:whereColumn ; sh:name "rows where column" .
+p:Shape-MeasureBinding-value a sh:PropertyShape ; sh:path p:whereValue ; sh:name "has the value" .
+p:Shape-MeasureBinding-valueColumn a sh:PropertyShape ; sh:path p:valueColumn ; sh:name "value column" .
+p:Shape-MeasureBinding-unitColumn a sh:PropertyShape ; sh:path p:unitColumn ; sh:name "unit column" .
+
+p:Shape-Dataset a sh:NodeShape ; sh:targetClass p:Dataset ;
+  sh:property p:Shape-Dataset-name, p:Shape-Dataset-standard .
+p:Shape-Dataset-name a sh:PropertyShape ; sh:path p:datasetName ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+p:Shape-Dataset-standard a sh:PropertyShape ; sh:path p:standard ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "standard" .
+p:Shape-DatasetVersion a sh:NodeShape ; sh:targetClass p:DatasetVersion ;
+  sh:property p:Shape-DatasetVersion-status, p:Shape-DatasetVersion-of, p:Shape-DatasetVersion-location, p:Shape-DatasetVersion-format, p:Shape-DatasetVersion-cut,
+    p:Shape-DatasetVersion-expected, p:Shape-DatasetVersion-received, p:Shape-DatasetVersion-missing, p:Shape-DatasetVersion-notAllowed .
+p:Shape-DatasetVersion-status a sh:PropertyShape ; sh:path p:datasetVersionStatus ; sh:in ( p:DatasetVersionStatus-loaded p:DatasetVersionStatus-checked ) ; sh:maxCount 1 ; sh:name "Status" .
+p:Shape-DatasetVersion-of a sh:PropertyShape ; sh:path p:versionOf ; sh:class p:Dataset ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "is a version of" .
+p:Shape-DatasetVersion-location a sh:PropertyShape ; sh:path p:location ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "location" .
+p:Shape-DatasetVersion-format a sh:PropertyShape ; sh:path p:format ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "format" .
+p:Shape-DatasetVersion-cut a sh:PropertyShape ; sh:path p:cutOn ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "cut on" .
+p:Shape-DatasetVersion-expected a sh:PropertyShape ; sh:path p:expectedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "expected" .
+p:Shape-DatasetVersion-received a sh:PropertyShape ; sh:path p:receivedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "received" .
+p:Shape-DatasetVersion-missing a sh:PropertyShape ; sh:path p:missingObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "missing" .
+p:Shape-DatasetVersion-notAllowed a sh:PropertyShape ; sh:path p:notAllowedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "not allowed" .
+p:Shape-DataPoint a sh:NodeShape ; sh:targetClass p:DataPoint ;
+  sh:property p:Shape-DataPoint-status, p:Shape-DataPoint-kind, p:Shape-DataPoint-component, p:Shape-DataPoint-seenIn, p:Shape-DataPoint-value, p:Shape-DataPoint-unit, p:Shape-DataPoint-reason .
+p:Shape-DataPoint-status a sh:PropertyShape ; sh:path p:dataPointStatus ; sh:in ( p:DataPointStatus-open p:DataPointStatus-explained p:DataPointStatus-resolved ) ; sh:maxCount 1 ; sh:name "Status" .
+p:Shape-DataPoint-kind a sh:PropertyShape ; sh:path p:dataPointKind ; sh:in ( p:DataPointKind-missing p:DataPointKind-notAllowed ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Kind" .
+p:Shape-DataPoint-component a sh:PropertyShape ; sh:path p:forComponent ; sh:class p:MeasureComponent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "for" .
+p:Shape-DataPoint-seenIn a sh:PropertyShape ; sh:path p:seenIn ; sh:class p:DatasetVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "seen in" .
+p:Shape-DataPoint-value a sh:PropertyShape ; sh:path p:observedValue ; sh:maxCount 1 ; sh:name "value" .
+p:Shape-DataPoint-unit a sh:PropertyShape ; sh:path p:observedUnit ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "unit" .
+p:Shape-DataPoint-reason a sh:PropertyShape ; sh:path p:reason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why" .
+
+# Checking a dataset version against its measures.
+
+p:Shape-DatasetVersion-isLoaded a sh:NodeShape ; rdfs:label "The dataset version is loaded, not yet checked" ; sh:property p:Shape-DatasetVersion-isLoaded-status .
+p:Shape-DatasetVersion-isLoaded-status a sh:PropertyShape ; sh:path p:datasetVersionStatus ; sh:hasValue p:DatasetVersionStatus-loaded ; sh:message "The dataset version has already been checked" .
+p:CheckObservations-effect1 a p:ObservationCheck .
+p:CheckObservations-effect2 a p:StateChange ; p:dimension p:datasetVersionStatus ; p:value p:DatasetVersionStatus-checked .
+p:CheckObservations a p:Method ;
+  rdfs:label "Check against measures" ;
+  rdfs:comment "Compares the version with what is expected of it, records how many observations were expected, received, missing and not allowed, and makes a data point of each one missing or not allowed." ;
+  p:appliesTo p:DatasetVersion ;
+  p:onDemand true ;
+  p:precondition p:Shape-DatasetVersion-isLoaded ;
+  p:effect p:CheckObservations-effect1, p:CheckObservations-effect2 .

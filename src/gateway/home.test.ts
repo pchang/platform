@@ -23,6 +23,9 @@ describe('Home', () => {
       'Data records awaiting verification': '14 of 40: watch',
       'Adverse events awaiting reconciliation': '2 of 5: watch',
       'Overdue visits': '2 of 30: watch',
+      // Nothing checked yet, so no data points (domain spec 3.10).
+      'Missing observations': '0 of 0: on track',
+      'Observations not allowed': '0 of 0: on track',
     });
   });
 

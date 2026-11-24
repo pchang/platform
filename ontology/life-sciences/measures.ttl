@@ -1,0 +1,95 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix p:       <https://w3id.org/lsh-platform/platform#> .
+@prefix ls:      <https://w3id.org/lsh-platform/life-sciences#> .
+@prefix lst:     <https://w3id.org/lsh-platform/life-sciences/term#> .
+@prefix lsh:     <https://w3id.org/lsh-platform/life-sciences/shape#> .
+@prefix ncit:    <http://purl.obolibrary.org/obo/NCIT_> .
+<https://w3id.org/lsh-platform/life-sciences/measures> a owl:Ontology ;
+  dcterms:title "LS&H life sciences measures" ;
+  rdfs:comment "The standard observations this domain measures, as shapes, and when they are expected (domain spec 3.10; platform spec 3.2, Measures and observations). NCIt mappings checked against the NCI Thesaurus service on 2026-11-24." ;
+  owl:versionInfo "0.1.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/measures/0.1.0> ;
+  dcterms:created "2026-11-24"^^xsd:date .
+
+# Blood pressure: two components, each a shape on the observed value.
+
+ls:BloodPressure a p:Measure ;
+  rdfs:label "Blood Pressure" ;
+  rdfs:comment "The pressure of the blood in the arteries, as systolic and diastolic pressure, taken together." ;
+  skos:exactMatch ncit:C54706 .
+
+ls:BloodPressure-systolic a p:MeasureComponent, sh:PropertyShape ;
+  rdfs:label "Systolic blood pressure" ;
+  rdfs:comment "The pressure while the heart contracts." ;
+  p:componentOf ls:BloodPressure ;
+  sh:path p:observedValue ;
+  sh:datatype xsd:decimal ;
+  sh:minInclusive 60 ;
+  sh:maxInclusive 250 ;
+  p:unitLabel "mmHg" ;
+  p:order 1 ;
+  skos:exactMatch ncit:C25298 .
+
+ls:BloodPressure-diastolic a p:MeasureComponent, sh:PropertyShape ;
+  rdfs:label "Diastolic blood pressure" ;
+  rdfs:comment "The pressure while the heart rests between beats." ;
+  p:componentOf ls:BloodPressure ;
+  sh:path p:observedValue ;
+  sh:datatype xsd:decimal ;
+  sh:minInclusive 30 ;
+  sh:maxInclusive 150 ;
+  p:unitLabel "mmHg" ;
+  p:order 2 ;
+  skos:exactMatch ncit:C25299 .
+
+# Expected at a patient's completed visit, for each measure of each assessment at the planned visit it was scheduled from.
+
+ls:Expectation-atVisits a p:Expectation ;
+  rdfs:label "Measures expected at a completed visit" ;
+  p:occasionType ls:Visit ;
+  p:occasionState lst:VisitStatus-completed ;
+  p:observedAlong ls:visitFor ;
+  p:measuresAlong "ls:scheduledFrom/^ls:performedAt/p:measures" ;
+  p:scopeAlong "ls:visitFor/ls:enrolledIn" .
+
+# Clinical Development adopts the platform's datasets and data points, and names what they link to.
+
+p:Dataset p:inDomain ls:ClinicalDevelopment .
+p:DatasetVersion p:inDomain ls:ClinicalDevelopment .
+p:DataPoint p:inDomain ls:ClinicalDevelopment ; p:holdsPersonalData true .
+
+lsh:Dataset-for a sh:PropertyShape ; sh:path p:datasetFor ; sh:class ls:Study ; sh:maxCount 1 ; sh:name "is for" .
+p:Shape-Dataset sh:property lsh:Dataset-for .
+lsh:DataPoint-of a sh:PropertyShape ; sh:path p:pointOf ; sh:class ls:Patient ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "is about" .
+lsh:DataPoint-at a sh:PropertyShape ; sh:path p:atOccasion ; sh:class ls:Visit ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "at" .
+p:Shape-DataPoint sh:property lsh:DataPoint-of, lsh:DataPoint-at .
+lsh:Assessment-measures a sh:PropertyShape ; sh:path p:measures ; sh:class p:Measure ; sh:name "measures" .
+lsh:Assessment sh:property lsh:Assessment-measures .
+
+# The Clinical Data Manager checks dataset versions and watches the data points they find (domain spec section 6, Home metrics).
+
+ls:ClinicalDataManager p:mayRun p:CheckObservations ;
+  p:watches ls:Metric-MissingObservations, ls:Metric-ObservationsNotAllowed .
+
+ls:Metric-MissingObservations a p:Metric ;
+  rdfs:label "Missing observations" ;
+  rdfs:comment "Observations expected of a checked dataset version and not in it, not yet explained or resolved." ;
+  p:metricOf p:DataPoint ;
+  p:inState p:DataPointKind-missing, p:DataPointStatus-open ;
+  p:watchAt 1 ;
+  p:riskAt 5 .
+
+ls:Metric-ObservationsNotAllowed a p:Metric ;
+  rdfs:label "Observations not allowed" ;
+  rdfs:comment "Values in a checked dataset version that their measure's shape does not allow, not yet explained or resolved." ;
+  p:metricOf p:DataPoint ;
+  p:inState p:DataPointKind-notAllowed, p:DataPointStatus-open ;
+  p:watchAt 1 ;
+  p:riskAt 3 .

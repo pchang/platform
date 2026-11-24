@@ -40,6 +40,7 @@ describe('the object panel (design system spec 4.4)', () => {
       ['Formulations', 1],
       ['Sites', 3],
       ['Study Concepts', 0],
+      ['Datasets', 1],
     ]);
     expect(json).toContain('This study enrolls these patients.');
     expect(json).toContain('This study runs at these sites.');
@@ -125,7 +126,7 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(study.opens).toBe(`${NS.d}ST-01`);
     expect((study.props as { label: string }).label).toMatch(/^ST-01 · /);
     // Many-valued ends are tabs, not overview links.
-    expect(tabsOf(view.root).map((t) => t.label)).toEqual(['Overview', 'Visits', 'Adverse Events', 'Batches']);
+    expect(tabsOf(view.root).map((t) => t.label)).toEqual(['Overview', 'Visits', 'Adverse Events', 'Batches', 'Data Points']);
   });
 
   it('keeps empty tabs, so every object of a type has the same structure, and says there are none', () => {

@@ -11,6 +11,8 @@ import { RefusedError, type GatewayClient } from './client';
 
 const ontology = import.meta.glob('/ontology/**/*.ttl', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const seed = import.meta.glob('/data/life-sciences/seed.ttl', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+// Dataset versions beside the seed, read through the gateway's adapter by their location (platform spec 3.2).
+const datasets = import.meta.glob('/data/life-sciences/datasets/*.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 /**
  * In the browser, Oxigraph's WebAssembly module loads before first use. A preview built as one file carries
@@ -43,7 +45,7 @@ export async function inPageClient(): Promise<GatewayClient> {
 
   const files = Object.keys(ontology).sort((a, b) => (a.endsWith('/platform.ttl') ? -1 : b.endsWith('/platform.ttl') ? 1 : a.localeCompare(b)));
   // Previews are development: signatures are by typed name, recorded as development signatures (platform spec 3.4).
-  const gateway = new Gateway(loadGraph([...files.map((f) => ontology[f]), ...Object.values(seed)]), { developmentSignatures: true });
+  const gateway = new Gateway(loadGraph([...files.map((f) => ontology[f]), ...Object.values(seed)]), { developmentSignatures: true, datasets: (location) => datasets[`/data/life-sciences/${location}`] });
   return {
     people: async () => gateway.people(),
     navigation: async (p) => gateway.navigation(p),

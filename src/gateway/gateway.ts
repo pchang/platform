@@ -443,6 +443,32 @@ export interface GatewayOptions {
   askModel?: AskModel;
   /** The model connected to run skills (spec 3.3, Skills). Without one, skills run their reference procedures. */
   skillModel?: SkillModel;
+  /**
+   * The adapter that reads a dataset version's file by its location (spec 3.2, Measures and observations): its text, or
+   * undefined when there is no such file. Without one, dataset versions cannot be read.
+   */
+  datasets?: (location: string) => string | undefined;
+}
+
+/** A dataset version's rows, read through the adapter: CDISC Dataset-JSON, columns by name. */
+interface DatasetRows {
+  column: (name: string) => number;
+  rows: unknown[][];
+}
+
+/** Reads CDISC Dataset-JSON 1.1: its columns and rows. Throws with the reason when the text is not that. */
+function readDatasetJson(text: string): DatasetRows {
+  const doc = JSON.parse(text) as { columns?: { name: string }[]; rows?: unknown[][] };
+  if (!Array.isArray(doc.columns) || !Array.isArray(doc.rows)) throw new Error('It is not Dataset-JSON: it has no columns or rows');
+  const names = doc.columns.map((c) => c.name);
+  return {
+    rows: doc.rows,
+    column: (name) => {
+      const i = names.indexOf(name);
+      if (i < 0) throw new Error(`It has no column ${name}`);
+      return i;
+    },
+  };
 }
 
 /** The read-only tools a model answering a question may call (spec 5.2, Asking a question). Domain-free: names come from the ontology. */
@@ -954,7 +980,10 @@ export class Gateway {
       });
     // Coded values show their labels, people their names; a property with several values shows them all, in order.
     const properties: Record<string, string> = {};
-    for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value . ?prop rdfs:label ?label .
+    // A property reads as its own label, or else as its type's shape names it, such as a measure component's plausible range.
+    for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value .
+          OPTIONAL { ?prop rdfs:label ?own } OPTIONAL { ?shape (sh:targetClass|p:describes) <${summary.type}> ; sh:property ?ps . ?ps sh:path ?prop ; sh:name ?named }
+          BIND(COALESCE(?own, ?named) AS ?label) FILTER(BOUND(?label))
           OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value p:order ?order }
           FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
       if (hidden.has(r.prop)) continue;
@@ -981,7 +1010,11 @@ export class Gateway {
     const limit = options.limit ?? 50;
     this.authorize(principal);
     const hidden = this.unreadable(principal.role);
-    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel } ORDER BY ?label`)
+    // The structure's own objects (spec 3.7) are searched only by those who work in it, such as the Structure Steward, so a
+    // search for "rash" finds cases, not the value that names the reaction.
+    const inStructure = ask(this.graph.store, `ASK { <${principal.role}> p:worksIn p:Structure }`);
+    const types = this.q(`SELECT ?type ?label ?pluralLabel WHERE { ?type a p:ObjectType ; rdfs:label ?label ; p:pluralLabel ?pluralLabel
+        ${inStructure ? '' : 'FILTER NOT EXISTS { ?type p:inDomain p:Structure }'} } ORDER BY ?label`)
       .filter((t) => !hidden.has(t.type)) as { type: string; label: string; pluralLabel: string }[];
     const readable = new Set(types.map((t) => t.type));
     const states = this.q(`SELECT ?dimension ?dimensionLabel ?type ?value ?label WHERE { ?dimension p:dimensionOf ?type ; rdfs:label ?dimensionLabel ; p:valuesFrom ?scheme .
@@ -1982,6 +2015,7 @@ export class Gateway {
       else if (kind === 'Link') this.applyLink(work, object, effect.e, resolvedInputs, changes);
       else if (kind === 'DescribedEffect') pending.push(effect.e);
       else if (kind === 'ApplyStructureChange') this.applyStructure(work, object, changes);
+      else if (kind === 'ObservationCheck') created.push(...this.checkObservations(work, object, changes));
       else if (kind === 'RollBackStructureChange') this.rollBackStructure(work, object, changes);
       else if (kind === 'Drafting') {
         if (draftText === undefined) throw new GatewayError(400, ['This method needs a draft. Ask for one, then accept it.']);
@@ -2102,6 +2136,124 @@ export class Gateway {
           }
         : {}),
     };
+  }
+
+  // ---------------------------------------------------------------- measures and observations (spec 3.2)
+
+  /** A dataset version's rows, through the adapter. Refused with the reason when it cannot be read. */
+  private datasetRows(version: string): DatasetRows {
+    const v = this.q(`SELECT ?location ?format WHERE { <${version}> p:location ?location OPTIONAL { <${version}> p:format ?format } }`)[0];
+    if (!v) throw new GatewayError(400, ['The dataset version names no location']);
+    if (v.format && !/^Dataset-JSON/.test(v.format)) throw new GatewayError(400, [`The platform cannot read ${v.format} yet`]);
+    const text = this.options.datasets?.(v.location);
+    if (text === undefined) throw new GatewayError(400, [`The dataset version's file ${v.location} cannot be read`]);
+    try {
+      return readDatasetJson(text);
+    } catch (error) {
+      throw new GatewayError(400, [`The dataset version's file cannot be read: ${error instanceof Error ? error.message : 'unknown'}`]);
+    }
+  }
+
+  /**
+   * Checking a dataset version (spec 3.2): what is expected of it, from the domain's expectations and the measures bound to
+   * its dataset, against the rows it holds. Records the counts on the version and makes a data point of each observation
+   * missing or not allowed by its component's shape. Returns the data points made.
+   */
+  private checkObservations(work: Graph, version: string, changes: Change[]): string[] {
+    const ds = this.q(`SELECT ?dataset ?for ?observedColumn ?observedType ?occasionColumn ?occasionType ?occasionMatch WHERE {
+        <${version}> p:versionOf ?dataset . ?dataset p:observedColumn ?observedColumn ; p:observedType ?observedType ;
+          p:occasionColumn ?occasionColumn ; p:occasionType ?occasionType ; p:occasionMatch ?occasionMatch .
+        OPTIONAL { ?dataset p:datasetFor ?for } }`)[0];
+    if (!ds) throw new GatewayError(400, ['The dataset does not say which columns name its objects and occasions']);
+    const data = this.datasetRows(version);
+    // The components bound in this dataset, with their shapes: datatype, unit and plausible range.
+    const bindings = this.q(`SELECT ?component ?label ?measure ?where ?value ?valueColumn ?unitColumn ?datatype ?unit ?min ?max WHERE {
+        ?b p:inDataset <${ds.dataset}> ; p:bindsComponent ?component ; p:whereColumn ?where ; p:whereValue ?value ; p:valueColumn ?valueColumn .
+        ?component rdfs:label ?label ; p:componentOf ?measure .
+        OPTIONAL { ?b p:unitColumn ?unitColumn } OPTIONAL { ?component sh:datatype ?datatype } OPTIONAL { ?component p:unitLabel ?unit }
+        OPTIONAL { ?component sh:minInclusive ?min } OPTIONAL { ?component sh:maxInclusive ?max } }`);
+    let observedIndex: number, occasionIndex: number;
+    const columns = new Map<string, number>();
+    try {
+      observedIndex = data.column(ds.observedColumn);
+      occasionIndex = data.column(ds.occasionColumn);
+      for (const b of bindings) for (const c of [b.where, b.valueColumn, b.unitColumn].filter(Boolean)) columns.set(c, data.column(c));
+    } catch (error) {
+      throw new GatewayError(400, [`The dataset version's file does not match its bindings: ${error instanceof Error ? error.message : 'unknown'}`]);
+    }
+    // What the version holds, by object, occasion and component.
+    const held = new Map<string, { value: unknown; unit?: unknown }>();
+    for (const row of data.rows) {
+      for (const b of bindings) {
+        if (String(row[columns.get(b.where)!]) !== b.value) continue;
+        held.set(`${row[observedIndex]}|${row[occasionIndex]}|${b.component}`, { value: row[columns.get(b.valueColumn)!], ...(b.unitColumn ? { unit: row[columns.get(b.unitColumn)!] } : {}) });
+      }
+    }
+    // What is expected of it: each occasion of the domain's expectations, within what the dataset is for, and the
+    // components of the measures expected there that this dataset binds.
+    const expected: { observed: string; observedId: string; occasion: string; occasionKey: string; component: (typeof bindings)[number] }[] = [];
+    for (const e of this.q(`SELECT ?observedAlong ?measuresAlong ?state ?scopeAlong WHERE { ?e a p:Expectation ; p:occasionType <${ds.occasionType}> ;
+        p:observedAlong ?observedAlong ; p:measuresAlong ?measuresAlong OPTIONAL { ?e p:occasionState ?state } OPTIONAL { ?e p:scopeAlong ?scopeAlong } }`)) {
+      const occasions = this.q(`SELECT ?occasion ?key ?observed ?observedId (GROUP_CONCAT(STR(?measure); separator=" ") AS ?measures) WHERE {
+          ?occasion a <${ds.occasionType}> ; <${ds.occasionMatch}> ?key ; <${e.observedAlong}> ?observed ; ${e.measuresAlong} ?measure .
+          ?observed a <${ds.observedType}> ; ls:identifier ?observedId .
+          ${e.state ? `?occasion ?stateDim <${e.state}> .` : ''}
+          ${e.scopeAlong && ds.for ? `?occasion ${e.scopeAlong} <${ds.for}> .` : ''} } GROUP BY ?occasion ?key ?observed ?observedId ORDER BY ?observedId ?key`);
+      for (const o of occasions) {
+        const measures = new Set(o.measures.split(' '));
+        for (const b of bindings) if (measures.has(b.measure)) expected.push({ observed: o.observed, observedId: o.observedId, occasion: o.occasion, occasionKey: o.key, component: b });
+      }
+    }
+    // Each expected observation: received, missing, or not allowed by its component's shape.
+    const made: string[] = [];
+    let received = 0;
+    let missing = 0;
+    let notAllowed = 0;
+    const point = (e: (typeof expected)[number], kind: 'missing' | 'notAllowed', reason: string, value?: unknown, unit?: unknown) => {
+      const p = this.mint(work, `${NS.p}DataPoint`, changes);
+      this.set(work, p, `${NS.p}dataPointStatus`, namedNode(`${NS.p}DataPointStatus-open`), changes, false);
+      this.set(work, p, `${NS.p}dataPointKind`, namedNode(`${NS.p}DataPointKind-${kind}`), changes, false);
+      this.set(work, p, `${NS.p}pointOf`, namedNode(e.observed), changes, false);
+      this.set(work, p, `${NS.p}atOccasion`, namedNode(e.occasion), changes, false);
+      this.set(work, p, `${NS.p}forComponent`, namedNode(e.component.component), changes, false);
+      this.set(work, p, `${NS.p}seenIn`, namedNode(version), changes, false);
+      this.set(work, p, `${NS.p}reason`, literal(reason), changes, false);
+      if (value !== undefined && value !== null && value !== '') {
+        const numeric = typeof value === 'number' || /^-?\d+(\.\d+)?$/.test(String(value));
+        this.set(work, p, `${NS.p}observedValue`, numeric ? literal(String(Number(value)), namedNode(`${NS.xsd}decimal`)) : literal(String(value)), changes, false);
+      }
+      if (unit !== undefined && unit !== null && unit !== '') this.set(work, p, `${NS.p}observedUnit`, literal(String(unit)), changes, false);
+      made.push(p);
+    };
+    for (const e of expected) {
+      const got = held.get(`${e.observedId}|${e.occasionKey}|${e.component.component}`);
+      if (!got || got.value === null || got.value === undefined || got.value === '') {
+        missing++;
+        point(e, 'missing', `Expected at ${e.occasionKey} and not in this version`);
+        continue;
+      }
+      received++;
+      const c = e.component;
+      const numberType = [`${NS.xsd}decimal`, `${NS.xsd}integer`, `${NS.xsd}double`].includes(c.datatype ?? '');
+      const n = Number(got.value);
+      const unitSeen = got.unit === undefined || got.unit === null ? undefined : String(got.unit);
+      const reasons = [
+        ...(numberType && !Number.isFinite(n) ? [`${String(got.value)} is not a number`] : []),
+        ...(c.unit && unitSeen !== undefined && unitSeen !== c.unit ? [`the unit is ${unitSeen}, not ${c.unit}`] : []),
+        ...(numberType && Number.isFinite(n) && c.min !== undefined && n < Number(c.min) ? [`${n} ${c.unit ?? ''} is below the plausible ${c.min}`.replace('  ', ' ')] : []),
+        ...(numberType && Number.isFinite(n) && c.max !== undefined && n > Number(c.max) ? [`${n} ${c.unit ?? ''} is above the plausible ${c.max}`.replace('  ', ' ')] : []),
+      ];
+      if (reasons.length) {
+        notAllowed++;
+        point(e, 'notAllowed', reasons.join('; ').replace(/^./, (x) => x.toUpperCase()), got.value, got.unit);
+      }
+    }
+    const count = (n: number) => literal(String(n), namedNode(`${NS.xsd}integer`));
+    this.set(work, version, `${NS.p}expectedObservations`, count(expected.length), changes);
+    this.set(work, version, `${NS.p}receivedObservations`, count(received), changes);
+    this.set(work, version, `${NS.p}missingObservations`, count(missing), changes);
+    this.set(work, version, `${NS.p}notAllowedObservations`, count(notAllowed), changes);
+    return made;
   }
 
   // ---------------------------------------------------------------- structure evolution (spec 3.7)
