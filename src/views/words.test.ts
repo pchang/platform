@@ -17,9 +17,9 @@ describe('Counting objects of one type', () => {
   it('heads a type list with its count named for the type, never "objects"', () => {
     const patient = (id: string) => ({ iri: `urn:${id}`, identifier: id, type: 'urn:Patient', typeLabel: 'Patient', title: id, pluralLabel: 'Patients', state: {} });
     const json = (objects: ReturnType<typeof patient>[]) => JSON.stringify(buildTypeView('Patients', objects));
-    expect(json([patient('PT-01'), patient('PT-02')])).toContain('"label":"2 patients."');
-    expect(json([patient('PT-01')])).toContain('"label":"1 patient."');
-    expect(json([])).toContain('"label":"0 patients."');
+    expect(json([patient('PT-01'), patient('PT-02')])).toContain('"label":"2 patients"');
+    expect(json([patient('PT-01')])).toContain('"label":"1 patient"');
+    expect(json([])).toContain('"label":"0 patients"');
     expect(json([patient('PT-01')])).not.toContain('object.');
   });
 });

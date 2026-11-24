@@ -37,6 +37,7 @@ export function httpClient(base = '/api'): GatewayClient {
     getDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}`, p),
     discardDraft: (p, draft) => request(`/drafts/${encodeURIComponent(draft.split('/').pop()!)}/discard`, p, {}),
     methods: (p, object) => request(`/objects/${encodeURIComponent(object)}/methods`, p),
+    describeType: (p, type) => request(`/types/${encodeURIComponent(type)}`, p),
     createForm: (p, type, parent) => request(`/types/${encodeURIComponent(type)}/form${parent ? `?parent=${encodeURIComponent(parent)}` : ''}`, p),
     previewCreate: (p, type, values, parent) => request(`/types/${encodeURIComponent(type)}/preview`, p, { values, ...(parent ? { parent } : {}) }),
     create: (p, type, values, parent) => request(`/types/${encodeURIComponent(type)}`, p, { values, ...(parent ? { parent } : {}) }),

@@ -66,6 +66,6 @@ describe('the search page', () => {
       search: { query: question, interpretation: { types: [], states: [], identifiers: [], words: ['serious'], mine: false }, results: [{ object: ae, matched: [] }], total: 1, understoodBy: { ontology: true } },
     }));
     expect(await screen.findByText('No model is connected to answer questions, so the question was searched.', undefined, { timeout: 5000 })).toBeInTheDocument();
-    expect(screen.getByText('1 match for “which serious events are not reported?”.')).toBeInTheDocument();
+    expect(screen.getByText('1 match for “which serious events are not reported?”')).toBeInTheDocument();
   });
 });

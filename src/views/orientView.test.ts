@@ -190,7 +190,7 @@ describe('the search page (design system spec 4.1, Search)', () => {
     const view = buildSearchView(result, { methods: new Map([['urn:AE-005', [verify]]]) });
     expect(validateView(view).errors).toEqual([]);
     const json = JSON.stringify(view);
-    expect(json).toContain('1 match for “serious adverse events PT-09 pneumonia”.');
+    expect(json).toContain('1 match for “serious adverse events PT-09 pneumonia”');
     for (const chip of ['Type: Adverse Event', 'Seriousness: serious', 'Linked to PT-09', 'Words: pneumonia']) expect(json).toContain(`"label":"${chip}","color":"blue"`);
     expect(json).toContain('Matched: Linked to PT-09 · Type: Adverse Event · Seriousness: serious · verbatim term: Fever and cough');
     expect(json).toContain('"label":"Verify adverse event"');
@@ -207,7 +207,7 @@ describe('the search page (design system spec 4.1, Search)', () => {
     const none = JSON.stringify(buildSearchView({ ...result, results: [], total: 0 }));
     expect(none).toContain('Nothing matches for');
     expect(none).toContain('Try fewer words');
-    expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown.');
+    expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown');
     expect(JSON.stringify(buildSearchView({ ...result, interpretation: { ...result.interpretation, types: [] } }))).toContain('"label":"Identifier: PT-09"');
   });
 });

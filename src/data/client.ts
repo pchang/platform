@@ -48,6 +48,8 @@ export interface GatewayClient {
   /** A metric and exactly the objects it counts (platform spec 5.1, Home). */
   metricObjects(principal: Principal, metric: string): Promise<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[] }>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
+  /** A type's names, singular and plural, for a list of its objects. */
+  describeType(principal: Principal, type: string): Promise<{ type: string; label: string; pluralLabel: string }>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
   search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;

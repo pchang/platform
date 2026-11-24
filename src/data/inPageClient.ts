@@ -64,6 +64,7 @@ export async function inPageClient(): Promise<GatewayClient> {
     getDraft: (p, draft) => refused(() => gateway.getDraft(p, draft)),
     methods: (p, object) => refused(() => gateway.methods(p, object)),
     createForm: (p, type, parent) => refused(() => gateway.createForm(p, type, parent)),
+    describeType: async (p, type) => refused(() => gateway.describeType(p, type)),
     previewCreate: (p, type, values, parent) => refused(() => gateway.previewCreate(p, type, values, parent)),
     create: (p, type, values, parent) => refused(() => gateway.create(p, type, values, parent)),
     editBlocks: (p, object) => refused(() => gateway.editBlocks(p, object)),

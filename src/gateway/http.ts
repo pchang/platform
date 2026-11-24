@@ -211,6 +211,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {}, signature, draft, proposal } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string }; proposal?: unknown };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft, checkProposal(proposal)));
       }
+      case 'GET types/:':
+        return send(res, 200, gateway.describeType(principal, expand(parts[2], NS.ls)));
       case 'GET types/:/form':
         return send(res, 200, gateway.createForm(principal, expand(parts[2], NS.ls), url.searchParams.get('parent') ?? undefined));
       case 'POST types/:/preview': {

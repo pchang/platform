@@ -527,7 +527,7 @@ export function objectEntries(objects: ObjectSummary[], options: { methods?: Map
 export function buildTypeView(
   pluralLabel: string,
   objects: ObjectSummary[],
-  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
+  options: { label?: string; methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
 ): ViewSpec {
   const entries = objectEntries(objects, options);
   return {
@@ -536,7 +536,7 @@ export function buildTypeView(
     root: sections([
       ...(options.notice ? [options.notice] : []),
       // The way back to Home stands a little above the heading, as on a metric's page (design system spec 4.3, Home).
-      group([backToHome, header(pluralLabel, `${counted(objects.length, objects[0]?.typeLabel ?? pluralLabel, pluralLabel)}.`)], 'gapMd'),
+      group([backToHome, header(pluralLabel, counted(objects.length, options.label ?? objects[0]?.typeLabel ?? pluralLabel, pluralLabel))], 'gapMd'),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };
@@ -580,7 +580,7 @@ export function buildSearchView(
       ...(options.notice ? [options.notice] : []),
       // The title and how many matched, then how the query was understood as one group beneath it.
       group([
-        header('Search', `${count} for “${result.query}”${shown}.`),
+        header('Search', `${count} for “${result.query}”${shown}`),
         // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
         group([...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])]),
       ], 'gapMd'),

@@ -3,6 +3,7 @@ import type { CommitResult, FormField, ObjectForm } from '../data/client';
 import type { ComposedInput } from '../gateway/gateway';
 import { fieldFor } from './composeView';
 import { dialogBody, group } from './layout';
+import { inText } from './words';
 import { NS } from '../ontology/ontology';
 
 /**
@@ -114,12 +115,12 @@ export function buildStartingPointView(form: ObjectForm, values: Record<string, 
   );
   return {
     pattern: 'choose-a-starting-point',
-    because: `${points[0]?.skillLabel ?? 'A skill'} names the ways to begin a new ${form.typeLabel.toLowerCase()} (platform spec 3.3, Starting points)`,
+    because: `${points[0]?.skillLabel ?? 'A skill'} names the ways to begin a new ${inText(form.typeLabel)} (platform spec 3.3, Starting points)`,
     root: {
       component: 'Modal',
       props: { variant: 'medium', 'aria-label': title },
       children: [
-        { component: 'ModalHeader', props: { title, description: form.parent ? `In ${form.parent.identifier} · ${form.parent.title}` : `A new ${form.typeLabel.toLowerCase()}` } },
+        { component: 'ModalHeader', props: { title, description: form.parent ? `In ${form.parent.identifier} · ${form.parent.title}` : `A new ${inText(form.typeLabel)}` } },
         { component: 'ModalBody', children: [dialogBody([[{ component: 'Content', props: { label: 'How do you want to start?' } }, group(cards, 'gapMd')]])] },
         {
           component: 'ModalFooter',
@@ -135,7 +136,7 @@ export function buildStartingPointView(form: ObjectForm, values: Record<string, 
 
 export function buildFormView(form: ObjectForm, state: FormPreview, submitting = false): ViewSpec {
   const title = form.mode === 'create' ? `New ${form.typeLabel}` : `Edit ${form.object!.identifier}`;
-  const description = form.mode === 'edit' ? form.object!.title : form.parent ? `In ${form.parent.identifier} · ${form.parent.title}` : `A new ${form.typeLabel.toLowerCase()}`;
+  const description = form.mode === 'edit' ? form.object!.title : form.parent ? `In ${form.parent.identifier} · ${form.parent.title}` : `A new ${inText(form.typeLabel)}`;
   const required = form.fields.filter((f) => f.required);
   const optional = form.fields.filter((f) => !f.required);
   const body: ViewNode[][] = [];
@@ -169,6 +170,6 @@ export function formNotice(form: ObjectForm, result: CommitResult): ViewNode {
   const identifier = created ? result.changes.find((c) => c.subject === created)?.subjectLabel ?? created : form.object!.identifier;
   return {
     component: 'Alert',
-    props: { variant: 'success', title: form.mode === 'create' ? `Created ${identifier}, a new ${form.typeLabel.toLowerCase()}` : `Saved ${identifier}`, isInline: true, component: 'p' },
+    props: { variant: 'success', title: form.mode === 'create' ? `Created ${identifier}, a new ${inText(form.typeLabel)}` : `Saved ${identifier}`, isInline: true, component: 'p' },
   };
 }

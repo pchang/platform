@@ -1,5 +1,6 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
 import type { HomeView } from '../data/client';
+import { counted } from './words';
 import { group, sections } from './layout';
 
 /**
@@ -39,7 +40,7 @@ function metricTile(m: HomeView['metrics'][number]): ViewNode {
                 component: 'Stack',
                 props: { hasGutter: true },
                 children: [
-                  { component: 'StackItem', props: { isFilled: true }, children: [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${m.total} ${m.pluralLabel.toLowerCase()}`, 'small')] },
+                  { component: 'StackItem', props: { isFilled: true }, children: [{ component: 'Content', props: { label: String(m.count), isEditorial: true } }, text(`of ${counted(m.total, m.typeLabel, m.pluralLabel)}`, 'small')] },
                   ...(health ? [{ component: 'StackItem', children: [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } } as ViewNode] }] : []),
                 ],
               },
@@ -156,7 +157,7 @@ export function metricPage(metric: HomeView['metrics'][number], list: ViewNode[]
                 component: 'Flex',
                 props: { gap: { default: 'gapSm' }, alignItems: { default: 'alignItemsCenter' }, flexWrap: { default: 'wrap' } },
                 children: [
-                  text(`${metric.count} of ${metric.total} ${metric.pluralLabel.toLowerCase()}.`, 'small'),
+                  text(`${metric.count} of ${counted(metric.total, metric.typeLabel, metric.pluralLabel)}`, 'small'),
                   ...(health ? [{ component: 'Label', props: { label: health.label, status: health.status, isCompact: true } }] : []),
                 ],
               },

@@ -94,3 +94,12 @@ test('on a phone the panel steps aside, so the list is not left hidden behind it
   await expect(panel).toBeHidden({ timeout: 15_000 });
   await expect(page.getByRole('heading', { level: 1, name: 'Visits' })).toBeVisible();
 });
+
+test('a type reached outside the navigation is named as the ontology names it, and its count has no full stop', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/type/DesignSignal');
+  // Design signals are not among the first person's navigation, so the names come from the ontology itself.
+  await expect(page.getByRole('heading', { level: 1, name: 'Design Signals' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('main').getByText('4 design signals', { exact: true })).toBeVisible();
+  await expect(page.getByText(/DesignSignal|designsignal/)).toHaveCount(0);
+});

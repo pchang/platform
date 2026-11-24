@@ -20,7 +20,7 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   // Choosing the card away from its title opens the page.
   await tile.getByText('of 8 data queries').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Open data queries' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText('3 of 8 data queries.')).toBeVisible();
+  await expect(page.getByText('3 of 8 data queries')).toBeVisible();
   await expect(page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card')).toHaveCount(3);
   await expect(page.getByRole('main').getByText('Status: open')).toHaveCount(3);
 
@@ -49,7 +49,7 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await expect(row).toHaveAttribute('href', '#/type/DataQuery');
   await row.click();
   await expect(page.getByRole('heading', { level: 1, name: 'Data Queries' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole('main').getByText('8 data queries.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('8 data queries')).toBeVisible();
   // The list begins with a way back to Home, above its heading; the sidebar's Home returns too.
   const back = page.getByRole('link', { name: 'Back to Home' });
   await expect(back).toHaveAttribute('href', '#/');

@@ -19,7 +19,7 @@ test('the search page shows how the query was understood, and what it found', as
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/#/search/' + encodeURIComponent('cases for P-101'));
   await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText('6 matches for “cases for P-101”.')).toBeVisible();
+  await expect(page.getByText('6 matches for “cases for P-101”')).toBeVisible();
   await expect(page.getByText('Type: Safety Case', { exact: true })).toBeVisible();
   await expect(page.getByText('Linked to P-101', { exact: true })).toBeVisible();
   await expect(results(page)).toHaveText(['SC-001', 'SC-002', 'SC-003', 'SC-004', 'SC-005', 'SC-006']);
@@ -43,7 +43,7 @@ test('“list all of my queries” finds the person’s own queries, and says th
   await page.getByRole('option', { name: /^Sam Whitfield/ }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/search/' + encodeURIComponent('list all of my queries'));
-  await expect(page.getByText('3 matches for “list all of my queries”.')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('3 matches for “list all of my queries”')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('Understood from the ontology')).toBeVisible();
   // The in-page gateway holds no credential, so the question is searched, and the page says so.
   await expect(page.getByText('No model is connected to answer questions, so the question was searched.')).toBeVisible();
@@ -54,7 +54,7 @@ test('“list all of my queries” finds the person’s own queries, and says th
 test('says so when nothing matches', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/#/search/zebra');
-  await expect(page.getByText('Nothing matches for “zebra”.')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Nothing matches for “zebra”')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Try fewer words/)).toBeVisible();
 });
 

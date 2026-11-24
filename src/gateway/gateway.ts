@@ -128,7 +128,7 @@ export interface NavigationDomain {
 /** Each person's homepage (spec 5.1, Home): their world's health, where things stand, and how they are keeping up. */
 export interface HomeView {
   /** The metrics the person's roles watch, as they stand today. */
-  metrics: { metric: string; label: string; comment: string; type: string; pluralLabel: string; count: number; total: number; health?: 'on track' | 'watch' | 'at risk' }[];
+  metrics: { metric: string; label: string; comment: string; type: string; typeLabel: string; pluralLabel: string; count: number; total: number; health?: 'on track' | 'watch' | 'at risk' }[];
   /** For each type of the person's work with a lifecycle and objects: its objects by lifecycle stage, in order. */
   lifecycles: { type: string; label: string; pluralLabel: string; dimension: string; total: number; stages: { value: string; label: string; count: number }[] }[];
   /** The person's commits in the last 7 days, the runs they started included. */
@@ -847,6 +847,15 @@ export class Gateway {
     return !this.unreadable(principal.role).has(type);
   }
 
+  /** A type's names, singular and plural, as people read them, for a list of its objects (spec 5.1). */
+  describeType(principal: Principal, type: string): { type: string; label: string; pluralLabel: string } {
+    this.authorize(principal);
+    if (!ask(this.graph.store, `ASK { <${type}> a p:ObjectType }`)) throw new GatewayError(404, ['No such type']);
+    if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this type']);
+    const { typeLabel, pluralLabel } = this.typeLabels(type);
+    return { type, label: typeLabel, pluralLabel };
+  }
+
   find(principal: Principal, type: string, state: Record<string, string> = {}): ObjectSummary[] {
     this.authorize(principal);
     if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this type']);
@@ -1468,7 +1477,7 @@ export class Gateway {
       const count = this.metricMatches(m.m, m.type, today).length;
       const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
       const health = this.healthOf(count, m.watch, m.risk, m.more);
-      metrics.push({ metric: m.m, label: m.label, comment: m.comment, type: m.type, pluralLabel: m.plural, count, total, ...(health ? { health } : {}) });
+      metrics.push({ metric: m.m, label: m.label, comment: m.comment, type: m.type, typeLabel: this.typeLabels(m.type).typeLabel, pluralLabel: m.plural, count, total, ...(health ? { health } : {}) });
     }
     // What needs attention first: at risk, then watch, then on track, then information only; by name within each.
     const severity = (h?: string) => (h === 'at risk' ? 0 : h === 'watch' ? 1 : h === 'on track' ? 2 : 3);
@@ -1526,7 +1535,7 @@ export class Gateway {
     const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
     const health = this.healthOf(objects.length, m.watch, m.risk, m.more);
     return {
-      metric: { metric, label: m.label, comment: m.comment, type: m.type, pluralLabel: m.plural, count: objects.length, total, ...(health ? { health } : {}) },
+      metric: { metric, label: m.label, comment: m.comment, type: m.type, typeLabel: this.typeLabels(m.type).typeLabel, pluralLabel: m.plural, count: objects.length, total, ...(health ? { health } : {}) },
       objects,
     };
   }

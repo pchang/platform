@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.70. November 23, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.71. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -159,7 +159,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 
 - On a type's list, each card also shows the methods the person can run on the object now, as buttons under "You can:". This is how a person reaches on-demand methods, such as running an analysis, on objects that are not on To do.
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
-- **Counts name what they count.** A count of one type's objects uses the type's own name from the ontology, in running text: "12 patients", "1 safety case", "0 CAPAs". This applies wherever a count is shown or read out, such as under a type list's title and on the sidebar's counts for screen readers. Only a count across several types says "objects", or "items" on To do.
+- **Counts name what they count.** A count of one type's objects uses the type's own name from the ontology, in running text: "12 patients", "1 safety case", "0 CAPAs". This applies wherever a count is shown or read out, such as under a type list's title and on the sidebar's counts for screen readers. Only a count across several types says "objects", or "items" on To do. A count standing alone as a line, such as under a list's title, on a metric's page or a search's, has no full stop: "8 data queries", "3 of 8 data queries". A list's title is the type's plural name from the ontology, such as Design Signals, whether or not the type is in the person's navigation; it never falls back to the type's address.
 
 **The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. A list with no objects yet shows no bar, only New or Add, so the first object can be made. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
@@ -544,3 +544,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.68 | 2026-11-23 | Restored from 0.44 on another branch, lost when the branches diverged: the object panel shows the object's journey under its header, as PatternFly's progress stepper, with passed, current, to come, skipped and exit stages, vertical below md. The catalog gains ProgressStepper and ProgressStep. |
 | 0.69 | 2026-11-23 | Starting points: when a skill names the ways to begin creating a type, New opens on a choice of cards, one per starting point; those not yet available are shown with Coming soon and why; Continue opens what the chosen one begins, such as the create form. |
 | 0.70 | 2026-11-23 | Card select mode ends with Stop selecting, a × icon button first in the list bar before the selection control and its count, as in Google Drive and Photos, in place of a Done link at the bar's far end. Select none keeps select mode. |
+| 0.71 | 2026-11-24 | A count standing alone as a line has no full stop, and metric counts name their type like any other. A list's title is the type's plural name even when the type is not in the person's navigation. |
