@@ -774,12 +774,14 @@ export class Gateway {
     return found && this.people().find((p) => p.person === found.person);
   }
 
-  people(): { person: string; name: string; roles: { role: string; label: string }[] }[] {
-    const rows = this.q(`SELECT ?person ?name ?role ?label WHERE { ?person a p:Person ; rdfs:label ?name ; p:actsAs ?role . ?role rdfs:label ?label } ORDER BY ?name ?label`);
-    const people = new Map<string, { person: string; name: string; roles: { role: string; label: string }[] }>();
+  people(): { person: string; name: string; roles: { role: string; label: string; domain?: string; domainLabel?: string }[] }[] {
+    // Each role with the work domain it is mainly in, which groups people where they are chosen among (spec 3.3).
+    const rows = this.q(`SELECT ?person ?name ?role ?label ?domain ?domainLabel WHERE { ?person a p:Person ; rdfs:label ?name ; p:actsAs ?role . ?role rdfs:label ?label
+        OPTIONAL { ?role p:mainlyIn ?domain . ?domain rdfs:label ?domainLabel } } ORDER BY ?name ?label`);
+    const people = new Map<string, { person: string; name: string; roles: { role: string; label: string; domain?: string; domainLabel?: string }[] }>();
     for (const r of rows) {
       const entry = people.get(r.person) ?? { person: r.person, name: r.name, roles: [] };
-      entry.roles.push({ role: r.role, label: r.label });
+      entry.roles.push({ role: r.role, label: r.label, ...(r.domain ? { domain: r.domain, domainLabel: r.domainLabel } : {}) });
       people.set(r.person, entry);
     }
     return [...people.values()];

@@ -2062,3 +2062,11 @@ p:CheckObservations a p:Method ;
   p:onDemand true ;
   p:precondition p:Shape-DatasetVersion-isLoaded ;
   p:effect p:CheckObservations-effect1, p:CheckObservations-effect2 .
+
+p:mainlyIn a rdf:Property ;
+  rdfs:label "mainly in" ;
+  rdfs:comment "The work domain a role works in mainly, the first of its domains; people are listed under it wherever they are chosen among (platform spec 3.3)." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Domain .
+
+p:StructureSteward p:mainlyIn p:Structure .

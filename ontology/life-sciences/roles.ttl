@@ -385,3 +385,18 @@ ls:MedicalWriter p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:ClinicalOperationsLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:PortfolioStrategist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:ProgramLeader p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+
+# The domain each role is mainly in, the first of its domains (domain spec section 6), which groups people in Profile.
+ls:ComputationalChemist p:mainlyIn ls:ScientificInnovation .
+ls:ClinicalDataManager p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalResearchAssociate p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalResearchCoordinator p:mainlyIn ls:ClinicalDevelopment .
+ls:DrugSafetyPhysician p:mainlyIn ls:SafetyAndRegulatory .
+ls:QualityLead p:mainlyIn ls:ScientificInnovation .
+ls:ExternalCROAgent p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalScientist p:mainlyIn ls:DesignAndPlan .
+ls:Biostatistician p:mainlyIn ls:DesignAndPlan .
+ls:MedicalWriter p:mainlyIn ls:DesignAndPlan .
+ls:ClinicalOperationsLead p:mainlyIn ls:DesignAndPlan .
+ls:PortfolioStrategist p:mainlyIn ls:DesignAndPlan .
+ls:ProgramLeader p:mainlyIn ls:DesignAndPlan .

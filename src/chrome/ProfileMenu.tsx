@@ -3,6 +3,8 @@ import UserIcon from '@patternfly/react-icons/dist/esm/icons/user-icon';
 import { useRef, useState } from 'react';
 import { usePrincipal } from '../principal/PrincipalProvider';
 import { routeHref } from '../routing';
+import { NS } from '../ontology/ontology';
+import type { Person } from '../data/client';
 
 /**
  * Profile (design system spec 4.1): who you are and the role you act in, the signed-in account and Sign out where people
@@ -10,6 +12,26 @@ import { routeHref } from '../routing';
  */
 /** The option that signs out. */
 const SIGN_OUT = 'sign-out';
+
+/**
+ * The people to act as, grouped by the work domain each role is mainly in (design system spec 4.1, Profile): domains in
+ * alphabetical order, the platform's own last, and people by name within each.
+ */
+export function peopleByDomain(people: Person[]): { domain: string; label: string; entries: { person: string; name: string; role: string; roleLabel: string }[] }[] {
+  const groups = new Map<string, { domain: string; label: string; entries: { person: string; name: string; role: string; roleLabel: string }[] }>();
+  for (const p of people) {
+    for (const r of p.roles) {
+      const domain = r.domain ?? '';
+      const group = groups.get(domain) ?? { domain, label: r.domainLabel ?? 'Other', entries: [] };
+      group.entries.push({ person: p.person, name: p.name, role: r.role, roleLabel: r.label });
+      groups.set(domain, group);
+    }
+  }
+  const platformOwn = (d: string) => (d.startsWith(NS.p) ? 1 : d ? 0 : 2);
+  return [...groups.values()]
+    .sort((a, b) => platformOwn(a.domain) - platformOwn(b.domain) || a.label.localeCompare(b.label))
+    .map((g) => ({ ...g, entries: g.entries.sort((a, b) => a.name.localeCompare(b.name) || a.roleLabel.localeCompare(b.roleLabel)) }));
+}
 
 export function ProfileMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,17 +75,22 @@ export function ProfileMenu() {
         ),
       }}
     >
-      <SelectGroup label={`${name}, ${roleLabel}`}>
-        <SelectList aria-label={label}>
-          {people.flatMap((p) =>
-            p.roles.map((r) => (
-              <SelectOption key={key(p.person, r.role)} value={key(p.person, r.role)} description={r.label}>
-                {p.name}
-              </SelectOption>
-            )),
-          )}
-        </SelectList>
-      </SelectGroup>
+      {/* Who the person is now, as the menu's heading; the people to act as follow, by domain. */}
+      <SelectGroup label={`${name}, ${roleLabel}`}>{null}</SelectGroup>
+      {peopleByDomain(people).map((g) => (
+        <div key={g.domain}>
+          <Divider />
+          <SelectGroup label={g.label}>
+            <SelectList aria-label={`${label}: ${g.label}`}>
+              {g.entries.map((e) => (
+                <SelectOption key={key(e.person, e.role)} value={key(e.person, e.role)} description={e.roleLabel}>
+                  {e.name}
+                </SelectOption>
+              ))}
+            </SelectList>
+          </SelectGroup>
+        </div>
+      ))}
       {account && (
         <>
           <Divider />

@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.71. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.42, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.72. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.44, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -147,7 +147,7 @@ Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
 Notifications opens the notification drawer, PatternFly's Notification drawer over the content. Its button is a plain icon button like Settings and Profile, with no frame; a badge on it shows the number of unread notifications, and its accessible name says how many are unread. The drawer lists the person's notifications, newest first, each with its status icon, title, what it is about and when it came. Choosing one marks it read, and Mark all read clears the count. On phones the drawer takes the full width. New notifications appear without a reload.
 
-Profile opens a menu showing who the person is and the role they act in, and, where people sign in, the signed-in account and Sign out. In development, in previews and in a demo deployment it also lists the graph's people, to act as any of them, labeled as a development or demo tool; elsewhere it lists only the person's own roles. Choosing another person or role opens their Home, whatever page was showing, since it may not apply to them; choosing the one already acted as changes nothing.
+Profile opens a menu showing who the person is and the role they act in, and, where people sign in, the signed-in account and Sign out. In development, in previews and in a demo deployment it also lists the graph's people, to act as any of them, labeled as a development or demo tool; elsewhere it lists only the person's own roles. The list is grouped by the work domain each role is mainly in (platform spec 3.3), a group heading per domain, in alphabetical order with the platform's own Structure last, and within a group by name, each person with their role beneath, so a long list is scanned by domain. A divider separates the groups. Choosing another person or role opens their Home, whatever page was showing, since it may not apply to them; choosing the one already acted as changes nothing.
 
 **Signing in.** Where the deployment connects sign-in (platform spec 3.4, Identity), a person who is not signed in sees PatternFly's Login page instead of the chrome: the product name, "Sign in to continue", and a primary button, "Sign in with Google", which goes to the provider. A refusal after signing in, such as an account the deployment does not allow, is an inline danger alert on the same page with the gateway's reason, and a Sign out link. When a session ends, the next request brings the person back to it.
 
@@ -545,3 +545,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.69 | 2026-11-23 | Starting points: when a skill names the ways to begin creating a type, New opens on a choice of cards, one per starting point; those not yet available are shown with Coming soon and why; Continue opens what the chosen one begins, such as the create form. |
 | 0.70 | 2026-11-23 | Card select mode ends with Stop selecting, a × icon button first in the list bar before the selection control and its count, as in Google Drive and Photos, in place of a Done link at the bar's far end. Select none keeps select mode. |
 | 0.71 | 2026-11-24 | A count standing alone as a line has no full stop, and metric counts name their type like any other. A list's title is the type's plural name even when the type is not in the person's navigation. |
+| 0.72 | 2026-11-24 | Profile's persona list is grouped by the work domain each role is mainly in, a heading per domain, Structure last. |

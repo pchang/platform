@@ -33,7 +33,8 @@ export type Me =
 export interface Person {
   person: string;
   name: string;
-  roles: { role: string; label: string }[];
+  /** Each role, with the work domain it is mainly in, which groups people in Profile (platform spec 3.3). */
+  roles: { role: string; label: string; domain?: string; domainLabel?: string }[];
 }
 
 export interface GatewayClient {

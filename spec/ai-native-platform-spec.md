@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.43. November 24, 2026. Author: Paul Chang.
+Version 0.44. November 24, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -120,6 +120,7 @@ Agents must know more than the business context and the state of objects. They m
 - **Permissions are the unit.** A permission allows one thing: running a method, or reading an object type or property. It may be scoped, for example to particular studies or sites. A person's role in their organization is ultimately expressed by the permissions they hold.
 - **Canonical roles with smart defaults.** Each domain defines a canonical set of user types, each with a default set of permissions. They are starting points, not fixed boxes.
 - **Organizations vary.** Each organization can change what a canonical role grants. The platform records each change as variance from the canonical defaults, as data, so it can be seen, explained and audited.
+- **The domain a role is mainly in.** A role works in one or more work domains, and names the one it works in mainly (`p:mainlyIn`), the first of them. People are listed under it wherever they are chosen among, so a long list reads by domain.
 - **Many hats, or one.** In a small organization one person may hold several roles; in a large, matrixed one, people are specialized. A person can hold any number of roles, plus personal grants and removals. Their effective permissions are the combination. Rules about people, such as separation of duties, apply to the person, not to a role.
 - **Both directions.** From roles to permissions: start from the canonical defaults and track the variance. From permissions to roles: given what a person may do, find the canonical roles that match it most closely, and show the difference. This explains a person to agents, and maps people when permissions come from another system.
 - **Agents receive the user context.** Every agent request carries the person's roles, effective permissions, variance and scope. Agents use it to decide what to surface and suggest. The gateway still enforces every permission, whatever an agent infers.
@@ -580,3 +581,4 @@ To resolve in future versions of this spec.
 | 0.41 | 2026-11-23 | Restored from 0.31 on another branch, lost when the branches diverged: an object's journey (section 5.1, Within an object), where it is along its lifecycle, each stage of the main path passed, current, to come or skipped, from its own history of commits; lifecycle values may be exits off the main path, naming the stage they leave from where certain (section 3.1); Read an object answers it (section 3.4). |
 | 0.42 | 2026-11-23 | Starting points (section 3.3, Skills): a skill may serve creating a type, naming the ways a person may begin, each by a platform beginning: the create form, a template or a document. The platform offers those it can run and shows the others as not yet available, with why. |
 | 0.43 | 2026-11-24 | Measures and observations (section 3.2): measures as shapes, governed as structure; datasets and their versions hold the values, read through an adapter and never copied into the graph; measure bindings tie components to dataset columns; expectations computed from the structure; checking a dataset version records counts and makes data points only of values that are missing or not allowed. Three open questions. |
+| 0.44 | 2026-11-24 | Roles and permissions (section 3.3): a role names the work domain it is mainly in, the first of its domains, so people are listed by domain wherever they are chosen among. |

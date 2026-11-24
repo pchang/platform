@@ -245,6 +245,9 @@ describe('agrees with the domain spec', () => {
       const named = q(`SELECT ?l WHERE { ?d a p:Domain ; rdfs:label ?l }`).map((r) => r.l).filter((d) => works.includes(d)).sort();
       expect(domains, persona).toEqual(named);
       expect(named.length, persona).toBeGreaterThan(0);
+      // The first named is the one it is mainly in (platform spec 3.3).
+      const first = [...named].sort((a, b) => works.indexOf(a) - works.indexOf(b))[0];
+      expect(q(`SELECT ?l WHERE { ?r rdfs:label "${persona}" ; p:mainlyIn/rdfs:label ?l }`).map((r) => r.l), persona).toEqual([first]);
     }
   });
 

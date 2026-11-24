@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.36. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.43.
+Version 0.37. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.44.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -499,7 +499,7 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 
 ## 6. Personas
 
-These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles. The Works mainly in column sets the role's work domains, which decide its navigation (platform spec section 5.1).
+These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles. The Works mainly in column sets the role's work domains, which decide its navigation (platform spec section 5.1); the first named is the one it is mainly in, which groups it in Profile's list of people. The external agent is mainly in Clinical Development.
 
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
@@ -1025,3 +1025,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.34 | 2026-11-23 | Restored from 0.19 on another branch, lost when the branches diverged: lifecycles (section 9), each type's main path and its exits, with the stage each leaves from where certain. A Study's lifecycle is its status, ahead of its phase. |
 | 0.35 | 2026-11-23 | Start a protocol (section 3.9): a skill with three starting points for a new protocol, author from scratch, start from a template or import a protocol document; only from scratch runs now, with the create form. |
 | 0.36 | 2026-11-24 | Measures and observations (section 3.10): Blood Pressure as a measure bound to SDTM VS, expected at completed visits from the protocol's assessments; Clinical Development adopts Dataset, Dataset Version and Data Point; the Clinical Data Manager checks a dataset version and watches missing observations and observations not allowed. Seed: PROT-2's vital signs schedule and one VS dataset version. Two open questions. |
+| 0.37 | 2026-11-24 | The first domain a persona works in is the one it is mainly in, which groups people in Profile's list. |
