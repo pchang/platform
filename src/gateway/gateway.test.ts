@@ -63,7 +63,7 @@ describe('reads', () => {
         ['belongs to', 'Programs', 'related', 'one', 'PRG-1'],
         ['began from', 'Study Scenarios', 'related', 'one', ''],
         // Its datasets, such as its vital signs (platform spec 3.2; domain spec 3.10).
-        ['has', 'Datasets', 'related', 'many', 'DS-1'],
+        ['has', 'Datasets', 'related', 'many', 'DSET-1'],
       ]);
     });
 

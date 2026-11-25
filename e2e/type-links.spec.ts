@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Identifiers are quiet in list views, and a type's name links to that type's list (design system spec 4.3, Type links, and 4.4).
 test.setTimeout(120_000);
 
-test('a card leads with its title and keeps its identifier quiet; the type’s name, plain text, appears only in a list of several types', async ({ page }) => {
+test('a card leads with its title under its type’s name, plain text, in any list, and keeps its identifier quiet at that line’s end', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
@@ -11,17 +11,21 @@ test('a card leads with its title and keeps its identifier quiet; the type’s n
   await page.getByRole('option', { name: /^Ben Okafor/ }).click();
   await expect(page.getByRole('main').getByRole('heading', { level: 1, name: /Ben/ })).toBeVisible({ timeout: 30_000 });
 
-  // A list of one type: no type name on any card, and the identifier is subtle, small, and after the state, not first.
+  // A list of one type: each card still names its type above the title, plain text, never a link, with the identifier
+  // subtle and small at the end of that line.
   await page.goto('/#/type/DataQuery');
   const first = page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card').first();
   await expect(first).toBeVisible({ timeout: 30_000 });
-  await expect(first.locator('.pf-v6-c-card__header small')).toHaveCount(0);
+  await expect(first.locator('.pf-v6-c-card__header small').first()).toHaveText('Data Query');
   await expect(first.getByRole('link', { name: 'Data Query', exact: true })).toHaveCount(0);
   const id = first.locator('small.app-subtle');
   await expect(id).toHaveText('Q-01');
   const title = (await first.locator('.pf-v6-c-card__title').boundingBox())!;
+  const type = (await first.locator('.pf-v6-c-card__header small').first().boundingBox())!;
   const quiet = (await id.boundingBox())!;
-  expect(quiet.y, 'the identifier comes after the title').toBeGreaterThan(title.y);
+  expect(type.y, 'the type comes before the title').toBeLessThan(title.y);
+  expect(Math.abs(quiet.y - type.y), 'the identifier is on the type’s line').toBeLessThan(8);
+  expect(quiet.x, 'at its end').toBeGreaterThan(type.x + type.width);
   expect(await id.evaluate((e) => getComputedStyle(e).fontSize), 'small').toBe('12px');
 
   // The list view has no Identifier column; the identifier follows the title on the same line.

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { withSeed } from '../gateway/node';
-import { peopleByDomain } from './ProfileMenu';
+import { peopleByDomain } from './peopleByDomain';
 
 // Profile's list of people (design system spec 4.1): grouped by the work domain each role is mainly in (platform spec 3.3).
 describe('the people to act as', () => {

@@ -2806,8 +2806,8 @@ d:AS-VS a ls:Assessment ;
   ls:specifiedIn d:PROT-2 ;
   p:measures ls:BloodPressure .
 
-d:DS-1 a p:Dataset ;
-  ls:identifier "DS-1" ;
+d:DSET-1 a p:Dataset ;
+  ls:identifier "DSET-1" ;
   p:datasetName "VELOCITY-2 vital signs" ;
   p:standard "SDTM VS" ;
   p:datasetFor d:ST-01 ;
@@ -2819,7 +2819,7 @@ d:DS-1 a p:Dataset ;
 
 d:DSV-1 a p:DatasetVersion ;
   ls:identifier "DSV-1" ;
-  p:versionOf d:DS-1 ;
+  p:versionOf d:DSET-1 ;
   p:location "datasets/vs-velocity-2-2026-11-20.json" ;
   p:format "Dataset-JSON 1.1" ;
   p:cutOn "2026-11-20"^^xsd:date ;
@@ -2827,7 +2827,7 @@ d:DSV-1 a p:DatasetVersion ;
 
 d:MB-1 a p:MeasureBinding ;
   p:bindsComponent ls:BloodPressure-systolic ;
-  p:inDataset d:DS-1 ;
+  p:inDataset d:DSET-1 ;
   p:whereColumn "VSTESTCD" ;
   p:whereValue "SYSBP" ;
   p:valueColumn "VSSTRESN" ;
@@ -2835,7 +2835,7 @@ d:MB-1 a p:MeasureBinding ;
 
 d:MB-2 a p:MeasureBinding ;
   p:bindsComponent ls:BloodPressure-diastolic ;
-  p:inDataset d:DS-1 ;
+  p:inDataset d:DSET-1 ;
   p:whereColumn "VSTESTCD" ;
   p:whereValue "DIABP" ;
   p:valueColumn "VSSTRESN" ;

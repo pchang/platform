@@ -74,6 +74,8 @@ describe('seed graph (domain spec section 11)', () => {
     ['the vital signs assessment performed at each of the 3 planned visits', `d:AS-VS ls:performedAt ?x`, 3],
     ['every patient visit scheduled from a planned visit', `?x a ls:Visit FILTER NOT EXISTS { ?x ls:scheduledFrom ?pv }`, 0],
     ['one vital signs dataset with one version, not yet checked', `?x a p:DatasetVersion ; p:datasetVersionStatus p:DatasetVersionStatus-loaded ; p:versionOf/p:standard "SDTM VS"`, 1],
+    ['no object with two identifiers, as when two share an address', `?x ls:identifier ?a , ?b FILTER(?a < ?b)`, 0],
+    ['no object of two of the platform’s types, as when two share an address', `?x a ?t1 , ?t2 . ?t1 a p:ObjectType . ?t2 a p:ObjectType FILTER(STR(?t1) < STR(?t2))`, 0],
     ['6 planned visits in each VELOCITY-3 protocol, and 3 in the Phase II study’s protocol in force', `?x a ls:PlannedVisit`, 21],
     ['hand MRI, with no recorded purpose, in two of the three protocols', `?x ls:assessmentPurpose lst:AssessmentPurpose-noneRecorded`, 2],
     ['3 budgets with a ceiling, each with the total its simulation set: two over it, one within', `?x ls:budgetCeiling ?c ; ls:budgetTotal ?t`, 3],

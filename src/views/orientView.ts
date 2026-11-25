@@ -63,7 +63,7 @@ export const typeLink = (type: string, typeLabel: string): ViewNode => ({ compon
 /**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
  * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
- * It leads with the title; the type's name, as plain text, only in a list of several types.
+ * It leads with the title, under the type's name as plain text with the identifier quiet at that line's end.
  */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2', options: { showType?: boolean } = {}): ViewNode {
   return {
@@ -445,9 +445,9 @@ export function objectList(entries: ListEntry[], controls: ListControls, name: s
   // An empty list still offers New, so the first object of a type can be made (platform spec 5.3).
   if (!entries.length) return controls.create ? [{ component: 'Flex', props: { gap: { default: 'gapSm' } }, children: [createButton(controls.create)] }] : [];
   // The type's name is shown, as a link, only when the list holds more than one type.
-  const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
   const objects: ViewNode =
-    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, mixed)));
+    // Every card names its type above its title, as an indicator of what kind of object it is (design system spec 4.3).
+    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, true)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
   return [group([listBar(entries, controls), objects], 'gapMd')];
 }

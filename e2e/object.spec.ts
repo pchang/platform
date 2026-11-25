@@ -37,7 +37,7 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(heading).toBeFocused();
   await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
-  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0']);
+  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0', 'Datasets 1']);
   // Its journey along its lifecycle, its status: named for where it is, each stage said in words.
   const journey = panel(page).getByRole('list', { name: 'Journey: Status, now enrolling, stage 2 of 5' });
   await expect(journey).toBeVisible();
@@ -50,7 +50,7 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(panel(page).getByText('This study enrolls these patients.')).toBeVisible();
   await panelCard(page, 'PT-03').locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
   await expect(panel(page).getByText('· PT-03', { exact: true })).toBeVisible();
-  await expect(panel(page).getByRole('tab')).toHaveText(['Overview', 'Visits 3', 'Adverse Events 1', 'Batches 1']);
+  await expect(panel(page).getByRole('tab')).toHaveText(['Overview', 'Visits 3', 'Adverse Events 1', 'Batches 1', 'Data Points 0']);
 
   // The overview links the one study the patient is part of; Back returns to the study, on the tab it was on.
   await panel(page).getByRole('button', { name: 'Back to ST-01' }).click();
