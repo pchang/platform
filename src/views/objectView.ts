@@ -1,5 +1,5 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { Journey, JourneyStatus, MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
+import type { AgentActivity, Journey, JourneyStatus, MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
 import { group, sections } from './layout';
 import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
 import { inText } from './words';
@@ -12,6 +12,7 @@ import { inText } from './words';
 /** The field the panel's tabs set: which section is shown. */
 export const OBJECT_TAB_FIELD = 'objectTab';
 export const OVERVIEW_TAB = 'overview';
+export const ACTIVITY_TAB = 'activity';
 
 /** A term's local name, such as runsAt for …#runsAt, made safe for an element id. */
 const localName = (iri: string) => (iri.split(/[#/]/).pop() ?? iri).replace(/[^A-Za-z0-9_-]/g, '-');
@@ -60,7 +61,10 @@ const part = (title: string, body: ViewNode): ViewNode => group([heading(title),
 function overview(view: ObjectView, today: Date): ViewNode {
   const parts: ViewNode[] = [];
   const properties = Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b));
-  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
+  // A value an outside agent wrote says so, quietly, so a person weighs it as an outside claim (design system spec 4.4).
+  const value = (k: string, v: string): ViewNode[] =>
+    view.byOutsideAgents?.[k] ? [{ component: 'Flex', props: { direction: { default: 'column' }, gap: { default: 'gapNone' } }, children: [text(v), quietId(`Written by ${view.byOutsideAgents[k]}`)] }] : [text(v)];
+  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), value(k, v)])) : text('No details recorded.')));
 
   const linked = view.links.filter((end) => !isTab(end));
   if (linked.length) {
@@ -92,6 +96,39 @@ function overview(view: ObjectView, today: Date): ViewNode {
   ]);
   parts.push(part('About', dl(about)));
   return sections(parts);
+}
+
+const when = (at: string) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const cell = (column: string, children: ViewNode[]): ViewNode => ({ component: 'Td', props: { dataLabel: column }, children });
+const opens = (object: string, identifier: string): ViewNode => ({ component: 'Button', props: { label: identifier, variant: 'link', isInline: true }, opens: object });
+
+function activityTable(name: string, columns: string[], rows: ViewNode[][]): ViewNode {
+  return {
+    component: 'Table',
+    props: { 'aria-label': name, variant: 'compact' },
+    children: [
+      { component: 'Thead', children: [{ component: 'Tr', children: columns.map((label) => ({ component: 'Th', props: { label } })) }] },
+      { component: 'Tbody', children: rows.map((cells) => ({ component: 'Tr', children: cells.map((c, i) => cell(columns[i], [c])) })) },
+    ],
+  };
+}
+
+/**
+ * An outside agent's activity (design system spec 4.4, Activity; platform spec 3.4, Outside agents, Audit): what it
+ * committed and proposed, with its reasons, then what it read, newest first.
+ */
+function activity(a: AgentActivity): ViewNode {
+  const showing = (shown: number, total: number) => (shown < total ? `, the latest ${shown}` : '');
+  const done = a.commits.length
+    ? activityTable('Commits and proposals', ['What', 'On', 'When', 'Reason'], a.commits.map((c) => [text(c.what), opens(c.object, c.objectIdentifier), text(when(c.at)), text(c.reason ?? '')]))
+    : text('Nothing committed or proposed yet.');
+  const read = a.reads.length
+    ? activityTable('Reads', ['Object', 'When'], a.reads.map((r) => [opens(r.object, r.objectIdentifier), text(when(r.at))]))
+    : text('Nothing read yet.');
+  return sections([
+    part(`Commits and proposals: ${a.commitCount}${showing(a.commits.length, a.commitCount)}`, done),
+    part(`Reads: ${a.readCount}${showing(a.reads.length, a.readCount)}`, read),
+  ]);
 }
 
 /** A tab's objects as an object list like any other (design system spec 4.4 and 4.3): the list bar, then cards or a list. */
@@ -192,6 +229,8 @@ export function buildObjectView(
       props: { eventKey: endKey(end), label: named.get(end)!, count: end.objects.length },
       children: [section(view, end, named.get(end)!, { methods: options.related, runs: options.runs, controls: options.controls })],
     })),
+    // On an outside agent's own page, its activity, last.
+    ...(view.activity ? [{ component: 'Tab', props: { eventKey: ACTIVITY_TAB, label: 'Activity', count: view.activity.commitCount }, children: [activity(view.activity)] }] : []),
   ];
 
   return {

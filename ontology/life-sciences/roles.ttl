@@ -426,7 +426,7 @@ ls:Metric-AgentProposalsToDecide a p:Metric ;
   rdfs:comment "Proposals of the agents you answer for, waiting for you to confirm or reject them." ;
   p:metricOf p:AgentProposal ;
   p:inState p:AgentProposalStatus-pending ;
-  p:principalPath ( p:proposedBy p:accountablePerson ) ;
+  p:principalPath ( p:proposingAgent p:accountablePerson ) ;
   p:watchAt 1 ;
   p:riskAt 5 .
 

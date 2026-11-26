@@ -49,37 +49,38 @@ describe('autonomy: an answer acts, a close proposes', () => {
   it('proposes closing a query; nothing closes until its accountable person confirms, and the commit is theirs', async () => {
     const g = withSeed();
     const proposed = await g.commit(because('The site confirmed the value against source'), 'Q-05', ls('CloseQuery'));
-    expect(proposed.proposedTo).toMatchObject({ identifier: 'AgentProposal-1', accountablePerson: mira.person, accountablePersonName: 'Mira Castellanos' });
+    expect(proposed.proposedTo).toMatchObject({ identifier: 'AgentProposal-2', accountablePerson: mira.person, accountablePersonName: 'Mira Castellanos' });
     expect(g.read(ben, 'Q-05').state.Status).toBe('answered');
 
     // It waits on Mira's Home and To do, and nobody else may decide it.
-    expect((await g.home(mira)).metrics.find((m) => m.label === 'Agent proposals to decide')).toMatchObject({ count: 1 });
-    const waiting = (await g.todo(mira)).find((i) => i.object.identifier === 'AgentProposal-1');
+    // With the one already waiting in the seed (domain spec section 11).
+    expect((await g.home(mira)).metrics.find((m) => m.label === 'Agent proposals to decide')).toMatchObject({ count: 2 });
+    const waiting = (await g.todo(mira)).find((i) => i.object.identifier === 'AgentProposal-2');
     expect(waiting?.tasks.map((t) => t.label)).toEqual(['Confirm']);
-    const proposal = g.read(mira, 'AgentProposal-1');
+    const proposal = g.read(mira, 'AgentProposal-2');
     expect(proposal.state.Status).toBe('pending');
     expect(proposal.properties.reason).toBe('The site confirmed the value against source');
     const otherCroPerson = { person: `${NS.d}person-lena`, role: ls('CRODataManager') };
     const g2 = withSeed([`<${otherCroPerson.person}> a <${p('Person')}> ; <${NS.rdfs}label> "Lena Brandt" ; <${p('actsAs')}> <${ls('CRODataManager')}> ; <${p('memberOf')}> <${NS.d}ORG-1> .`]);
     await g2.commit(because('The site confirmed the value against source'), 'Q-05', ls('CloseQuery'));
-    expect(await reasons(g2.commit(otherCroPerson, 'AgentProposal-1', p('ConfirmAgentProposal')))).toBe('Only Mira Castellanos may confirm this');
+    expect(await reasons(g2.commit(otherCroPerson, 'AgentProposal-2', p('ConfirmAgentProposal')))).toBe('Only Mira Castellanos may confirm this');
 
     // Confirming previews and commits the proposed method, as Mira, checked again.
-    const preview = await g.preview(mira, 'AgentProposal-1', p('ConfirmAgentProposal'));
+    const preview = await g.preview(mira, 'AgentProposal-2', p('ConfirmAgentProposal'));
     expect(preview.changes.map((c) => `${c.subjectLabel}: ${c.propertyLabel} ${c.newLabel}`)).toContain('Q-05: Status closed');
-    const confirmed = await g.commit(mira, 'AgentProposal-1', p('ConfirmAgentProposal'));
-    expect(confirmed.confirmed).toMatchObject({ identifier: 'AgentProposal-1', agent: agent.person });
+    const confirmed = await g.commit(mira, 'AgentProposal-2', p('ConfirmAgentProposal'));
+    expect(confirmed.confirmed).toMatchObject({ identifier: 'AgentProposal-2', agent: agent.person });
     expect(g.read(ben, 'Q-05').state.Status).toBe('closed');
-    expect(commitFacts(g, confirmed.commit)).toMatchObject({ wasAssociatedWith: mira.person, method: ls('CloseQuery'), proposedByAgent: `${NS.d}AgentProposal-1` });
-    expect(g.read(mira, 'AgentProposal-1').state.Status).toBe('confirmed');
-    expect(await reasons(g.commit(mira, 'AgentProposal-1', p('ConfirmAgentProposal')))).toContain('The proposal has already been decided');
+    expect(commitFacts(g, confirmed.commit)).toMatchObject({ wasAssociatedWith: mira.person, method: ls('CloseQuery'), proposedByAgent: `${NS.d}AgentProposal-2` });
+    expect(g.read(mira, 'AgentProposal-2').state.Status).toBe('confirmed');
+    expect(await reasons(g.commit(mira, 'AgentProposal-2', p('ConfirmAgentProposal')))).toContain('The proposal has already been decided');
   });
 
   it('a rejected proposal changes nothing it proposed, and says why', async () => {
     const g = withSeed();
     await g.commit(because('Answered and consistent'), 'Q-06', ls('CloseQuery'));
-    await g.commit(mira, 'AgentProposal-1', p('RejectAgentProposal'), { reason: 'The answer does not cite the source document' });
-    const proposal = g.read(mira, 'AgentProposal-1');
+    await g.commit(mira, 'AgentProposal-2', p('RejectAgentProposal'), { reason: 'The answer does not cite the source document' });
+    const proposal = g.read(mira, 'AgentProposal-2');
     expect(proposal.state.Status).toBe('rejected');
     expect(proposal.properties['why rejected']).toBe('The answer does not cite the source document');
     expect(g.read(ben, 'Q-06').state.Status).toBe('answered');
@@ -91,7 +92,7 @@ describe('autonomy: an answer acts, a close proposes', () => {
     expect(compose.inputs[0].choices?.map((c) => c.label)).toEqual(['AnswerQuery · Answer query', 'CloseQuery · Close query']);
     await g.commit(marcus, 'AG-1', p('OnlyPropose'), { method: ls('AnswerQuery') });
     const result = await g.commit(because('Confirmed with the site'), 'Q-01', ls('AnswerQuery'), { answer: 'Value confirmed' });
-    expect(result.proposedTo?.identifier).toBe('AgentProposal-1');
+    expect(result.proposedTo?.identifier).toBe('AgentProposal-2');
     expect(g.read(ben, 'Q-01').state.Status).toBe('open');
   });
 
@@ -176,7 +177,7 @@ describe('the circuit breaker', () => {
     // Time alone never lifts it; a person resumes it, and the count starts again from then.
     expect(await reasons(g.commit(because('Trying again'), 'Q-04', ls('CloseQuery')))).toBe('This agent is paused: It reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
     await g.commit(marcus, 'AG-1', p('ResumeAgent'));
-    expect((await g.commit(because('Answered from source'), 'Q-04', ls('CloseQuery'))).proposedTo?.identifier).toBe('AgentProposal-1');
+    expect((await g.commit(because('Answered from source'), 'Q-04', ls('CloseQuery'))).proposedTo?.identifier).toBe('AgentProposal-2');
   });
 
   it('counts reads too', async () => {

@@ -1,0 +1,20 @@
+[
+  {
+    "dataRecord": "DR-005",
+    "finding": "The lab report gives the value in mg/dL; the units were left off when it was entered.",
+    "source": "Central lab report, accession 26-118402",
+    "checkedOn": "2026-11-10"
+  },
+  {
+    "dataRecord": "DR-015",
+    "finding": "The measurement was taken on the visit date; the later date is a transcription error in the entry.",
+    "source": "Visit worksheet, signed by the site nurse",
+    "checkedOn": "2026-11-11"
+  },
+  {
+    "dataRecord": "DR-020",
+    "finding": "The source document is on file at the site and matches the entered value.",
+    "source": "Site source binder, tab 4",
+    "checkedOn": "2026-11-09"
+  }
+]

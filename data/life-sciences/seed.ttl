@@ -62,6 +62,16 @@ d:agent-northbridge a p:Agent ;
   p:clientId "northbridge-query-agent" ;
   p:agentStatus p:AgentStatus-active .
 
+# Its proposal to close an answered query at the second site, waiting for Mira (External agent journey, step 3).
+d:AgentProposal-1 a p:AgentProposal ;
+  ls:identifier "AgentProposal-1" ;
+  p:agentProposalStatus p:AgentProposalStatus-pending ;
+  p:proposingAgent d:agent-northbridge ;
+  p:proposedMethod ls:CloseQuery ;
+  p:proposalTarget d:Q-04 ;
+  p:agentReason "The site's answer cites the source document and the value matches it; nothing is left to resolve." ;
+  p:agentVersion "northbridge-query-agent 1.4.0" .
+
 d:ASG-1 a p:Assignment ;
   ls:identifier "ASG-1" ;
   p:assignee d:ORG-1 ;

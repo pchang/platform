@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.73. November 25, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.44, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.74. November 26, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -222,8 +222,9 @@ Every object opens in a side panel (platform spec 5.1, Within an object). It is 
 
   An exit replaces the stages after the one it left from, so a refuted signal reads detected, under evaluation, refuted. The stepper is vertical below md, where five stages side by side would not fit, and horizontal from md up. Colour is never the only signal: every step has its stage in text, and the current one says Now.
 - **Tabs** (pattern `object`) under the header: Overview, then one tab per relationship end that holds many objects, each with its count, contained objects first. On phones the tabs scroll sideways.
-  - **Overview.** The properties as a description list. Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
+  - **Overview.** The properties as a description list. A value an outside agent wrote says so after it, in small, subtle text, such as "Written by Northbridge query agent", so a person weighs it as an outside claim (platform spec 3.4, Outside agents, Exposure). Then Linked, the ends that hold at most one object, each named by the type at its other end, such as Study, or by its relationship when two reach the same type or it reaches the object's own type, such as "Duplicate of", with a link to the object or None. Then the type, its domain and the last change: the method, who ran it and when.
   - **Each other tab** says what the relationship means from here, such as "This study enrolls these patients.", then lists the objects as an object list like any other (4.3): the list bar, with selection, batch actions and the choice of cards or a list, then the objects, each with the methods the person can run on it. Or it says there are none yet.
+  - **Activity**, last, on an outside agent's own page only (platform spec 3.4, Outside agents, Audit): what it committed and proposed, newest first, each with the method, the object, when, and the reason it gave; then what it read, newest first, each with the object and when. Each is a compact table, under a heading that gives its total, and shows the latest fifty. The tab's count is the commits and proposals.
 
 ### 4.2 Light and dark mode
 
@@ -547,3 +548,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.71 | 2026-11-24 | A count standing alone as a line has no full stop, and metric counts name their type like any other. A list's title is the type's plural name even when the type is not in the person's navigation. |
 | 0.72 | 2026-11-24 | Profile's persona list is grouped by the work domain each role is mainly in, a heading per domain, Structure last. |
 | 0.73 | 2026-11-25 | Every card names its type above its title, as plain text, with the identifier at that line's end, in a list of one type as much as of several. |
+| 0.74 | 2026-11-26 | Outside agents in the object panel: an Activity tab on an agent's page, with its commits and proposals and its reads; a value an outside agent wrote says so. |

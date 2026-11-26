@@ -114,6 +114,16 @@ export interface ObjectView extends ObjectSummary {
    * Exposure): text from outside the sponsor, which the platform's own models treat as data, never as instructions.
    */
   byOutsideAgents?: Record<string, string>;
+  /** On an outside agent's own page (spec 3.4, Outside agents, Audit): what it committed and proposed, and what it read, newest first. */
+  activity?: AgentActivity;
+}
+
+/** An outside agent's activity, from the audit trail: the latest fifty of each, with the totals. */
+export interface AgentActivity {
+  commits: { what: string; object: string; objectIdentifier: string; at: string; reason?: string }[];
+  commitCount: number;
+  reads: { object: string; objectIdentifier: string; at: string }[];
+  readCount: number;
 }
 
 export interface TypeDescription {
@@ -1167,7 +1177,7 @@ export class Gateway {
     for (const r of this.q(`SELECT ?prop ?label ?value ?valueLabel WHERE { <${object}> ?prop ?value .
           OPTIONAL { ?prop rdfs:label ?own } OPTIONAL { ?shape (sh:targetClass|p:describes) <${summary.type}> ; sh:property ?ps . ?ps sh:path ?prop ; sh:name ?named }
           BIND(COALESCE(?own, ?named) AS ?label) FILTER(BOUND(?label))
-          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value p:order ?order }
+          OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value ls:identifier ?valueLabel } OPTIONAL { ?value p:order ?order }
           FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
       if (hidden.has(r.prop)) continue;
       const value = r.valueLabel ?? r.value;
@@ -1189,9 +1199,38 @@ export class Gateway {
         .filter((r) => r.label in properties)
         .map((r) => [r.label, r.agentName]),
     );
+    // Values always in an agent's own words, such as a proposal's reason.
+    for (const r of this.q(`SELECT ?label ?agentName WHERE { ?prop p:inWordsOf ?by ; rdfs:label ?label . <${object}> ?prop ?v ; ?by ?agent . ?agent a p:Agent ; rdfs:label ?agentName }`)) {
+      if (r.label in properties) byOutsideAgents[r.label] = r.agentName;
+    }
     return {
       ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(journey ? { journey } : {}), ...(lastChange ? { lastChange } : {}),
       ...(Object.keys(byOutsideAgents).length ? { byOutsideAgents } : {}),
+      ...(this.isAgent(object) ? { activity: this.activityOf(object) } : {}),
+    };
+  }
+
+  /**
+   * An outside agent's activity (spec 3.4, Outside agents, Audit): its commits and proposals, each with what it did, on what,
+   * when and why, and its reads, newest first.
+   */
+  private activityOf(agent: string): AgentActivity {
+    const idOf = (o: string) => this.q(`SELECT ?id WHERE { <${o}> ls:identifier ?id }`)[0]?.id ?? o;
+    const label = (o: string) => this.q(`SELECT ?l WHERE { <${o}> rdfs:label ?l }`)[0]?.l ?? o;
+    const commits = this.q(`SELECT ?c ?method ?target ?at ?reason WHERE { GRAPH ?c { ?c a p:Commit ; prov:wasAssociatedWith <${agent}> ; p:method ?method ; p:target ?target ;
+        prov:startedAtTime ?at OPTIONAL { ?c p:agentReason ?reason } } } ORDER BY DESC(?at) DESC(STRLEN(STR(?c))) DESC(?c)`);
+    const reads = this.q(`SELECT ?target ?at WHERE { GRAPH ?g { ?r a p:Read ; prov:wasAssociatedWith <${agent}> ; p:target ?target ; prov:startedAtTime ?at } }
+        ORDER BY DESC(?at) DESC(STRLEN(STR(?r))) DESC(?r)`);
+    return {
+      commits: commits.slice(0, 50).map((c) => {
+        // A proposal reads as what it proposed, on the object it proposed it for.
+        const proposed = this.q(`SELECT ?method ?on WHERE { <${c.target}> a p:AgentProposal ; p:proposedMethod ?method ; p:proposalTarget ?on }`)[0];
+        const object = proposed?.on ?? c.target;
+        return { what: proposed ? `Proposed: ${label(proposed.method)}` : label(c.method), object, objectIdentifier: idOf(object), at: c.at, ...(c.reason ? { reason: c.reason } : {}) };
+      }),
+      commitCount: commits.length,
+      reads: reads.slice(0, 50).map((r) => ({ object: r.target, objectIdentifier: idOf(r.target), at: r.at })),
+      readCount: reads.length,
     };
   }
 
@@ -2619,7 +2658,7 @@ export class Gateway {
     const proposal = this.resolveFor(principal, idOrIri);
     const own = await this.plan(principal, proposal, method, {});
     freeStore(own.work.store);
-    const r = this.q(`SELECT ?method ?target ?agent ?id WHERE { <${proposal}> p:proposedMethod ?method ; p:proposalTarget ?target ; p:proposedBy ?agent ; ls:identifier ?id }`)[0];
+    const r = this.q(`SELECT ?method ?target ?agent ?id WHERE { <${proposal}> p:proposedMethod ?method ; p:proposalTarget ?target ; p:proposingAgent ?agent ; ls:identifier ?id }`)[0];
     const inputs = Object.fromEntries(this.q(`SELECT ?name ?value WHERE { <${proposal}> p:inputValue ?iv . ?iv p:forInput ?i ; rdf:value ?value . ?i p:inputName ?name }`).map((x) => [x.name, x.value]));
     const confirming = (work: Graph, changes: Change[]) => {
       this.set(work, proposal, `${NS.p}agentProposalStatus`, namedNode(`${NS.p}AgentProposalStatus-confirmed`), changes);
@@ -2639,12 +2678,16 @@ export class Gateway {
   private async proposeForAgent(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
     const planned = await this.plan(principal, idOrIri, method, inputs);
     freeStore(planned.work.store);
+    // One proposal at a time for the same method on the same object: the first still waits for its decision.
+    const waiting = this.q(`SELECT ?id WHERE { ?x a p:AgentProposal ; p:proposingAgent <${principal.person}> ; p:proposedMethod <${method}> ;
+        p:proposalTarget <${planned.object}> ; p:agentProposalStatus p:AgentProposalStatus-pending ; ls:identifier ?id }`)[0];
+    if (waiting) throw new GatewayError(400, [`${waiting.id} already proposes this and waits for a decision`]);
     const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
     const changes: Change[] = [];
     const proposal = this.mint(work, `${NS.p}AgentProposal`, changes);
     const set = (property: string, value: Term) => this.set(work, proposal, `${NS.p}${property}`, value, changes, false);
     set('agentProposalStatus', namedNode(`${NS.p}AgentProposalStatus-pending`));
-    set('proposedBy', namedNode(principal.person));
+    set('proposingAgent', namedNode(principal.person));
     set('proposedMethod', namedNode(method));
     set('proposalTarget', namedNode(planned.object));
     set('agentReason', literal(principal.reason!.trim()));

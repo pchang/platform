@@ -164,3 +164,27 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(endKey(doubled.links.at(-1)!)).toMatch(/^(in|out)-other-[A-Za-z]+$/);
   });
 });
+
+describe('an outside agent’s page (design system spec 4.4, Activity)', () => {
+  it('ends with its activity: what it committed and proposed, with its reasons, then what it read; and marks what it wrote', async () => {
+    const gateway = withSeed();
+    const agent = { person: `${NS.d}agent-northbridge`, role: `${NS.ls}ExternalCROAgent`, reason: 'The site confirmed the value' };
+    const marcus = { person: `${NS.d}person-marcus`, role: `${NS.ls}ClinicalOperationsLead` };
+    await gateway.commit(agent, 'Q-01', `${NS.ls}AnswerQuery`, { answer: 'Confirmed against the lab report' });
+    await gateway.commit(agent, 'Q-04', `${NS.ls}CloseQuery`);
+    gateway.read(agent, 'Q-01');
+
+    const view = buildObjectView(gateway.read(marcus, 'AG-1'), { methods: await gateway.methods(marcus, 'AG-1') });
+    expect(validateView(view).errors).toEqual([]);
+    const tabs = tabsOf(view.root);
+    expect(tabs.at(-1)).toEqual({ eventKey: 'activity', label: 'Activity', count: 2 });
+    const json = JSON.stringify(view);
+    for (const phrase of ['Commits and proposals: 2', 'Proposed: Close query', 'Answer query', 'The site confirmed the value', 'Reads: 1']) expect(json).toContain(phrase);
+
+    // A person reading the query sees the answer came from the agent.
+    const query = buildObjectView(gateway.read(ben, 'Q-01'), {});
+    expect(JSON.stringify(query)).toContain('Written by Northbridge query agent');
+    // Nobody else's page has an Activity tab.
+    expect(tabsOf(buildObjectView(gateway.read(ben, 'ST-01'), {}).root).map((t) => t.label)).not.toContain('Activity');
+  });
+});

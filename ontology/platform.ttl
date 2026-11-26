@@ -2249,12 +2249,16 @@ p:readsPerHour a rdf:Property ; rdfs:label "reads an hour, at most" ; rdfs:comme
 p:proposesOnly a p:Relationship, rdf:Property ; rdfs:label "only proposes" ; p:inverseLabel "is only proposed by" ; p:order 135 ;
   rdfs:comment "A method the agent may only propose, lowered from what the method allows, when the sponsor approved it or later." .
 p:statusReason a rdf:Property ; rdfs:label "why" ; p:setOnlyByMethods true ; rdfs:comment "Why the agent was last paused or suspended." ; rdfs:range xsd:string .
-p:proposedBy a p:Relationship, rdf:Property ; rdfs:label "is proposed by" ; p:inverseLabel "proposed" ; p:order 136 ;
+p:proposingAgent a p:Relationship, rdf:Property ; rdfs:label "is proposed by" ; p:inverseLabel "proposed" ; p:order 136 ;
   rdfs:comment "The agent that made the proposal." .
 p:proposedMethod a p:Relationship, rdf:Property ; rdfs:label "proposes" ; p:inverseLabel "is proposed in" ; p:order 137 ;
   rdfs:comment "The method the agent proposed to run." .
 p:proposalTarget a rdf:Property ; rdfs:label "on" ; rdfs:comment "The object the proposed method runs on." .
-p:agentReason a rdf:Property ; rdfs:label "reason" ; rdfs:comment "Why the agent acted or proposed, in its own words. Every agent commit and proposal gives one." ; rdfs:range xsd:string .
+p:agentReason a rdf:Property ; rdfs:label "reason" ; rdfs:comment "Why the agent acted or proposed, in its own words. Every agent commit and proposal gives one." ; rdfs:range xsd:string ;
+  p:inWordsOf p:proposingAgent .
+p:inWordsOf a rdf:Property ; rdfs:label "in the words of" ;
+  rdfs:comment "The property's value is always in the words of the principal the object reaches along this property, such as a proposal's reason, in the words of the agent that proposed it." ;
+  rdfs:domain rdf:Property .
 p:agentVersion a rdf:Property ; rdfs:label "agent version" ; rdfs:comment "The agent's name and version, as it declared them when it connected." ; rdfs:range xsd:string .
 p:rejectionReason a rdf:Property ; rdfs:label "why rejected" ; p:setOnlyByMethods true ; rdfs:comment "Why the accountable person rejected the proposal." ; rdfs:range xsd:string .
 p:confirmedIn a rdf:Property ; rdfs:label "confirmed in" ; rdfs:comment "The commit that confirmed the proposal: the accountable person's commit of the proposed method." .
@@ -2298,7 +2302,7 @@ p:Shape-AgentProposal a sh:NodeShape ; sh:targetClass p:AgentProposal ;
   sh:property p:Shape-AgentProposal-status, p:Shape-AgentProposal-by, p:Shape-AgentProposal-method, p:Shape-AgentProposal-target, p:Shape-AgentProposal-reason, p:Shape-AgentProposal-rejection .
 p:Shape-AgentProposal-status a sh:PropertyShape ; sh:path p:agentProposalStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
   sh:in ( p:AgentProposalStatus-pending p:AgentProposalStatus-confirmed p:AgentProposalStatus-rejected ) .
-p:Shape-AgentProposal-by a sh:PropertyShape ; sh:path p:proposedBy ; sh:class p:Agent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposed by" .
+p:Shape-AgentProposal-by a sh:PropertyShape ; sh:path p:proposingAgent ; sh:class p:Agent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposed by" .
 p:Shape-AgentProposal-method a sh:PropertyShape ; sh:path p:proposedMethod ; sh:class p:Method ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposes" .
 p:Shape-AgentProposal-target a sh:PropertyShape ; sh:path p:proposalTarget ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "on" .
 p:Shape-AgentProposal-reason a sh:PropertyShape ; sh:path p:agentReason ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "reason" .
@@ -2383,7 +2387,7 @@ p:ConfirmAgentProposal a p:Method ;
   rdfs:label "Confirm" ;
   rdfs:comment "Commits the method the agent proposed, as you, with its inputs, checked again. The commit is yours, recorded as proposed by the agent." ;
   p:appliesTo p:AgentProposal ;
-  p:onlyBy ( p:proposedBy p:accountablePerson ) ;
+  p:onlyBy ( p:proposingAgent p:accountablePerson ) ;
   p:agentAutonomy p:Never ;
   p:precondition p:Shape-AgentProposal-isPending ;
   p:effect p:ConfirmAgentProposal-effect1, p:ConfirmAgentProposal-effect2 .
@@ -2394,7 +2398,7 @@ p:RejectAgentProposal a p:Method ;
   rdfs:label "Reject" ;
   rdfs:comment "Rejects the agent's proposal, with a reason. Nothing it proposed changes." ;
   p:appliesTo p:AgentProposal ;
-  p:onlyBy ( p:proposedBy p:accountablePerson ) ;
+  p:onlyBy ( p:proposingAgent p:accountablePerson ) ;
   p:agentAutonomy p:Never ;
   p:onDemand true ;
   p:input p:RejectAgentProposal-reason ;
