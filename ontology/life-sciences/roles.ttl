@@ -144,12 +144,13 @@ ls:MedicalWriter a p:Role ;
 
 ls:ClinicalOperationsLead a p:Role ;
   p:watches ls:Metric-BudgetsOverCeiling, ls:Metric-ForecastsMissingTarget, ls:Metric-DesignSignalsRaised, ls:Metric-SitesStillProposed, ls:Metric-AgentsAwaitingApproval, ls:Metric-AgentsPaused ;
-  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
-  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
+  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site, p:Organization, p:Assignment ;
+  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site, p:Organization ;
   p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment, p:Partners ;
   rdfs:label "Clinical Operations Lead" ;
   rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them. Oversees the outside agents of the sponsor's service providers (ICH E6(R3))." ;
-  p:mayRun ls:RunTrialSimulation, ls:CompareStudyScenarios, p:ApproveAgent, p:OnlyPropose, p:SuspendAgent, p:ResumeAgent, p:RetireAgent ;
+  p:mayRun ls:RunTrialSimulation, ls:CompareStudyScenarios, p:ApproveAgent, p:OnlyPropose, p:SuspendAgent, p:ResumeAgent, p:RetireAgent,
+    p:EndAssignment, ls:CoverStudy, ls:CoverSite ;
   p:mayNotRead ls:assignedArm .
 
 ls:PortfolioStrategist a p:Role ;

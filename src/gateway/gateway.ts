@@ -906,7 +906,9 @@ export class Gateway {
       return subjectIsPart ? 'contains' : objectIsPart ? 'partOf' : 'related';
     };
     const rank = { contains: 0, partOf: 1, related: 2 };
+    // Only ends that reach an object type; a person reached by a relationship reads as a detail, by name.
     const ends = rows
+      .filter((r) => ask(this.graph.store, `ASK { <${r.other}> a p:ObjectType }`))
       .map((r) => {
         const other = this.typeLabels(r.other);
         return { relationship: r.rel, label: r.label, direction: r.direction, kind: kindOf(r), one: r.direction === 'out' && r.max === '1', type: r.other, ...other, order: Number(r.order) };
@@ -1178,7 +1180,7 @@ export class Gateway {
           OPTIONAL { ?prop rdfs:label ?own } OPTIONAL { ?shape (sh:targetClass|p:describes) <${summary.type}> ; sh:property ?ps . ?ps sh:path ?prop ; sh:name ?named }
           BIND(COALESCE(?own, ?named) AS ?label) FILTER(BOUND(?label))
           OPTIONAL { ?value skos:prefLabel ?valueLabel } OPTIONAL { ?value a p:Person ; rdfs:label ?valueLabel } OPTIONAL { ?value ls:identifier ?valueLabel } OPTIONAL { ?value p:order ?order }
-          FILTER NOT EXISTS { ?prop a p:Relationship } FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
+          FILTER (NOT EXISTS { ?prop a p:Relationship } || EXISTS { ?value a p:Person }) FILTER NOT EXISTS { ?prop a p:StateDimension } FILTER(?prop != ls:identifier) } ORDER BY ?label ?order ?value`)) {
       if (hidden.has(r.prop)) continue;
       const value = r.valueLabel ?? r.value;
       properties[r.label] = properties[r.label] ? `${properties[r.label]}, ${value}` : value;
@@ -1849,9 +1851,13 @@ export class Gateway {
     // Only objects that meet the property's node shapes qualify, such as a role for agents.
     const objectChoices = (types: string[], ps: string) => {
       const nodeShapes = this.q(`SELECT ?n WHERE { <${ps}> sh:node ?n }`).map((r) => r.n);
-      return types.filter((t) => this.canRead(principal, t)).flatMap((t) => this.q(`SELECT ?o WHERE { ?o a <${t}> ; ls:identifier ?id ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o)))
+      const objects = types.filter((t) => t !== `${NS.p}Person` && this.canRead(principal, t))
+        .flatMap((t) => this.q(`SELECT ?o WHERE { ?o a <${t}> ; ls:identifier ?id ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o)))
         .filter((o) => nodeShapes.every((n) => this.conformsSync(o.iri, n)))
         .map((o) => ({ value: o.iri, label: o.title && o.title !== o.identifier ? `${o.identifier} · ${o.title}` : o.identifier }));
+      // People are known by name, not identifier, such as the person an assignment assigns.
+      const people = types.includes(`${NS.p}Person`) ? this.people().map((p) => ({ value: p.person, label: p.name })) : [];
+      return [...objects, ...people];
     };
     const fields: FormField[] = [];
     for (const sh of shapes) {

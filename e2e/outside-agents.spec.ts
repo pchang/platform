@@ -79,3 +79,23 @@ test('site staff see only their own sites', async ({ page }) => {
   await expect(page.getByRole('main').getByText('Lakeside Clinical Research Center')).toHaveCount(0);
   await expect(page.getByRole('main').getByText("St. Brendan's University Hospital")).toHaveCount(0);
 });
+
+test('the Clinical Operations Lead manages assignments: an organization’s names its contract, and widens a site at a time', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
+  await actAs(page, 'Marcus Bell');
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /^Assignments/ }).click();
+  await expect(page.getByRole('main').getByRole('button', { name: 'New Assignment' })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'ASG-1' }).locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
+  const panel = page.locator('.app-object-panel');
+  await expect(panel.getByText('NB-2026-014')).toBeVisible();
+  await panel.getByRole('button', { name: 'Cover a site', exact: true }).first().click();
+  const dialog = page.getByRole('dialog', { name: /^Cover a site/ });
+  await dialog.getByRole('combobox').first().selectOption({ label: "SITE-3 · St. Brendan's University Hospital" });
+  await dialog.getByRole('button', { name: 'Cover a site' }).last().click();
+  await expect(dialog).toBeHidden({ timeout: 30_000 });
+  await expect(panel.getByRole('tab', { name: /^Sites 3/ })).toBeVisible({ timeout: 30_000 });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'test-results/agents-6-assignment.png' });
+});

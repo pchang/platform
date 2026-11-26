@@ -63,6 +63,7 @@ describe('reads', () => {
         ['belongs to', 'Programs', 'related', 'one', 'PRG-1'],
         ['began from', 'Study Scenarios', 'related', 'one', ''],
         // Its datasets, such as its vital signs (platform spec 3.2; domain spec 3.10).
+        ['is covered by', 'Assignments', 'related', 'many', 'ASG-1 ASG-2 ASG-3'],
         ['has', 'Datasets', 'related', 'many', 'DSET-1'],
       ]);
     });
@@ -80,7 +81,7 @@ describe('reads', () => {
 
     it('keeps an end with nothing at the other end, so every object of a type has the same structure', () => {
       const site = withSeed().read(ben, 'SITE-1');
-      expect(ends(site).map(([label, plural]) => `${label} ${plural}`)).toEqual(['hosts Studies', 'enrolls Patients', 'is proposed as Proposed Sites']);
+      expect(ends(site).map(([label, plural]) => `${label} ${plural}`)).toEqual(['hosts Studies', 'enrolls Patients', 'is proposed as Proposed Sites', 'is covered by Assignments']);
       expect(withSeed().read(elena, 'QE-1').links.find((l) => l.relationship === ls('resolves'))).toMatchObject({ label: 'is resolved by', kind: 'contains', objects: [] });
     });
 
@@ -107,6 +108,7 @@ describe('reads', () => {
         'is informed by Study Concepts',
         'belongs to Programs',
         'began from Study Scenarios',
+        'is covered by Assignments',
         'has Datasets',
       ]);
     });

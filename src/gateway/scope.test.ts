@@ -105,3 +105,39 @@ describe('an agent is not a person', () => {
     }
   });
 });
+
+describe('who grants scope (platform spec 3.3, Who grants it; domain spec section 6, Assignments)', () => {
+  const marcus = { person: `${NS.d}person-marcus`, role: ls('ClinicalOperationsLead') };
+
+  it('the Clinical Operations Lead assigns an organization, from its contract, then widens the assignment a root at a time', async () => {
+    const g = withSeed();
+    const org = await g.create(marcus, `${NS.p}Organization`, { organizationName: 'Harbourline Research' });
+    const form = g.createForm(marcus, `${NS.p}Assignment`);
+    expect(form.fields.map((f) => [f.name, f.required])).toEqual([['assignee', true], ['assignedFrom', true], ['assignedUntil', false], ['contractReference', false], ['contractDate', false]]);
+    // People are offered by name beside organizations.
+    expect(form.fields[0].choices?.map((c) => c.label)).toEqual(expect.arrayContaining(['ORG-1 · Northbridge CRO', 'Sam Whitfield']));
+
+    // An organization's assignment must name its contract.
+    await expect(g.create(marcus, `${NS.p}Assignment`, { assignee: org.created[0], assignedFrom: '2026-11-01' })).rejects.toMatchObject({
+      reasons: [expect.stringContaining('An assignment to an organization names the contract it comes from, by reference and date')],
+    });
+    const assignment = (await g.create(marcus, `${NS.p}Assignment`, { assignee: org.created[0], assignedFrom: '2026-11-01', contractReference: 'HR-2026-003', contractDate: '2026-10-20' })).created[0];
+    await g.commit(marcus, assignment, ls('CoverStudy'), { study: `${NS.d}ST-01` });
+    await g.commit(marcus, assignment, ls('CoverSite'), { site: `${NS.d}SITE-3` });
+    expect(g.read(marcus, assignment).links.find((l) => l.label === 'covers' && l.type === ls('Site'))?.objects.map((o) => o.identifier)).toEqual(['SITE-3']);
+  });
+
+  it('ends an assignment with a reason, and the organization’s agent loses the access at once', async () => {
+    const g = withSeed([], { now: () => new Date('2026-11-26T09:00:00Z') });
+    expect(g.find(agent, ls('DataQuery')).length).toBe(7);
+    await g.commit(marcus, 'ASG-1', `${NS.p}EndAssignment`, { lastDay: '2026-11-25', reason: 'Contract NB-2026-014 terminated' });
+    expect(g.read(marcus, 'ASG-1').properties).toMatchObject({ until: '2026-11-25', 'why it ended': 'Contract NB-2026-014 terminated' });
+    expect(g.find(agent, ls('DataQuery'))).toEqual([]);
+  });
+
+  it('is never done by an agent, nor by roles that do not manage assignments', async () => {
+    const g = withSeed();
+    await expect(g.commit(sam, 'ASG-2', ls('CoverSite'), { site: `${NS.d}SITE-2` })).rejects.toMatchObject({ reasons: ['Your role cannot run this method'] });
+    await expect(Promise.resolve().then(() => g.createForm(mira, `${NS.p}Assignment`))).rejects.toMatchObject({ status: 403 });
+  });
+});

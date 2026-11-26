@@ -2110,8 +2110,6 @@ p:AgentProposal a p:ObjectType, rdfs:Class ;
   p:onlyThroughMethods true ;
   p:titleTemplate "{p:proposedMethod} on {p:proposalTarget}" .
 
-p:Organization p:onlyThroughMethods true .
-p:Assignment p:onlyThroughMethods true .
 
 p:agentStatus a p:StateDimension, rdf:Property ;
   rdfs:label "Status" ;
@@ -2236,6 +2234,9 @@ p:inScope a p:Relationship, rdf:Property ; rdfs:label "covers" ; p:inverseLabel 
   rdfs:comment "A scope root the assignment gives, such as a study or a site." .
 p:assignedFrom a rdf:Property ; rdfs:label "from" ; rdfs:comment "The day the assignment starts." ; rdfs:range xsd:date .
 p:assignedUntil a rdf:Property ; rdfs:label "until" ; rdfs:comment "The last day of the assignment. Without one, it has no end yet." ; rdfs:range xsd:date .
+p:contractReference a rdf:Property ; rdfs:label "contract" ; rdfs:comment "The contract an organization's assignment comes from, by its reference: the authority for the access it grants." ; rdfs:range xsd:string .
+p:contractDate a rdf:Property ; rdfs:label "contract date" ; rdfs:comment "The date of the contract an organization's assignment comes from." ; rdfs:range xsd:date .
+p:endReason a rdf:Property ; rdfs:label "why it ended" ; p:setOnlyByMethods true ; rdfs:comment "Why the assignment was ended." ; rdfs:range xsd:string .
 p:operatedBy a p:Relationship, rdf:Property ; rdfs:label "is run by" ; p:inverseLabel "runs" ; p:order 133 ; p:setOnCreateFrom p:memberOf ;
   rdfs:comment "The organization that runs the agent." .
 p:accountablePerson a rdf:Property ; rdfs:label "accountable person" ; p:setOnCreateFrom p:Principal ;
@@ -2272,11 +2273,21 @@ p:Shape-Organization a sh:NodeShape ; sh:targetClass p:Organization ; sh:propert
 p:Shape-Organization-name a sh:PropertyShape ; sh:path p:organizationName ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
 
 p:Shape-Assignment a sh:NodeShape ; sh:targetClass p:Assignment ;
-  sh:property p:Shape-Assignment-assignee, p:Shape-Assignment-root, p:Shape-Assignment-from, p:Shape-Assignment-until .
-p:Shape-Assignment-assignee a sh:PropertyShape ; sh:path p:assignee ; sh:or ( [ sh:class p:Organization ] [ sh:class p:Person ] ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "assigns" .
-p:Shape-Assignment-root a sh:PropertyShape ; sh:path p:inScope ; sh:minCount 1 ; sh:name "covers" .
-p:Shape-Assignment-from a sh:PropertyShape ; sh:path p:assignedFrom ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "from" .
-p:Shape-Assignment-until a sh:PropertyShape ; sh:path p:assignedUntil ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "until" .
+  sh:property p:Shape-Assignment-assignee, p:Shape-Assignment-root, p:Shape-Assignment-from, p:Shape-Assignment-until, p:Shape-Assignment-contract,
+    p:Shape-Assignment-contractDate, p:Shape-Assignment-endReason ;
+  sh:sparql p:Shape-Assignment-contractNeeded .
+p:Shape-Assignment-assignee a sh:PropertyShape ; sh:order 1 ; sh:path p:assignee ; sh:or ( [ sh:class p:Organization ] [ sh:class p:Person ] ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "assigns" .
+p:Shape-Assignment-root a sh:PropertyShape ; sh:path p:inScope ; sh:name "covers" .
+p:Shape-Assignment-from a sh:PropertyShape ; sh:order 2 ; sh:path p:assignedFrom ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "from" .
+p:Shape-Assignment-until a sh:PropertyShape ; sh:order 3 ; sh:path p:assignedUntil ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "until" .
+p:Shape-Assignment-contract a sh:PropertyShape ; sh:order 4 ; sh:path p:contractReference ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "contract" .
+p:Shape-Assignment-contractDate a sh:PropertyShape ; sh:order 5 ; sh:path p:contractDate ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "contract date" .
+p:Shape-Assignment-endReason a sh:PropertyShape ; sh:path p:endReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why it ended" .
+p:Shape-Assignment-contractNeeded a sh:SPARQLConstraint ;
+  sh:message "An assignment to an organization names the contract it comes from, by reference and date" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:assignee ?who . ?who a p:Organization .
+    FILTER (NOT EXISTS { $this p:contractReference ?r } || NOT EXISTS { $this p:contractDate ?d }) }""" .
 
 p:Shape-Agent a sh:NodeShape ; sh:targetClass p:Agent ;
   sh:property p:Shape-Agent-name, p:Shape-Agent-role, p:Shape-Agent-client, p:Shape-Agent-status, p:Shape-Agent-operatedBy, p:Shape-Agent-accountable,
@@ -2409,3 +2420,15 @@ p:CommitAgentProposal a rdfs:Class ;
   rdfs:label "commit an agent proposal" ;
   rdfs:comment "Commits the method an agent proposed, with its inputs, as the principal confirming it, in the same transaction." ;
   rdfs:subClassOf p:Effect .
+
+# Assignments are widened and ended by methods (platform spec 3.3, Scope, Who grants it). Domains add the methods that widen
+# them, as only they know their scope roots; ending is the platform's own.
+p:EndAssignment-lastDay a p:Input ; p:inputName "lastDay" ; rdfs:label "Last day" ; p:order 1 ; p:datatype xsd:date ; p:recordedAs p:assignedUntil .
+p:EndAssignment-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 2 ; p:datatype xsd:string ; p:recordedAs p:endReason .
+p:EndAssignment a p:Method ;
+  rdfs:label "End assignment" ;
+  rdfs:comment "Sets the assignment's last day, with why. After it, the assignment grants nothing: its people and agents lose the access it gave." ;
+  p:appliesTo p:Assignment ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:EndAssignment-lastDay, p:EndAssignment-reason .

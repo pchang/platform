@@ -1761,3 +1761,26 @@ lsh:CompareStudyScenarios-pre a sh:NodeShape ;
 # reversibility: a wrong answer can be challenged with Re-query; a closed query is final.
 ls:AnswerQuery p:agentAutonomy p:Acts .
 ls:CloseQuery p:agentAutonomy p:Proposes .
+
+# Assignments (domain spec section 6, Assignments): a study and its sites are this domain's scope roots, added one at a time.
+ls:CoverStudy-study a p:Input ; p:inputName "study" ; rdfs:label "Study" ; p:order 1 ; p:objectOf ls:Study .
+ls:CoverStudy-effect1 a p:Link ; p:linkedBy p:inScope ; p:toInput ls:CoverStudy-study .
+ls:CoverStudy a p:Method ;
+  rdfs:label "Cover a study" ;
+  rdfs:comment "Widens the assignment to a study: its people and agents may act on it and what belongs to it." ;
+  p:appliesTo p:Assignment ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input ls:CoverStudy-study ;
+  p:effect ls:CoverStudy-effect1 .
+
+ls:CoverSite-site a p:Input ; p:inputName "site" ; rdfs:label "Site" ; p:order 1 ; p:objectOf ls:Site .
+ls:CoverSite-effect1 a p:Link ; p:linkedBy p:inScope ; p:toInput ls:CoverSite-site .
+ls:CoverSite a p:Method ;
+  rdfs:label "Cover a site" ;
+  rdfs:comment "Widens the assignment to a site: its people and agents may act on the patients there and everything about them." ;
+  p:appliesTo p:Assignment ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input ls:CoverSite-site ;
+  p:effect ls:CoverSite-effect1 .

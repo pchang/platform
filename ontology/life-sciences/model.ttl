@@ -3540,3 +3540,13 @@ ls:Visit p:scopePath ( ls:visitFor ls:enrolledAt ) .
 ls:DataRecord p:scopePath ( ls:capturedAt ls:visitFor ls:enrolledAt ) .
 ls:DataQuery p:scopePath ( ls:raisedOn ls:capturedAt ls:visitFor ls:enrolledAt ) .
 ls:AdverseEvent p:scopePath ( ls:experiencedBy ls:enrolledAt ) .
+
+# What an assignment covers in this domain (section 6, Assignments): studies and sites, this domain's scope roots.
+lsh:Assignment-covers a sh:PropertyShape ;
+  sh:path p:inScope ;
+  sh:or ( [ sh:class ls:Study ] [ sh:class ls:Site ] ) ;
+  sh:name "covers" .
+
+lsh:Assignment a sh:NodeShape ;
+  sh:targetClass p:Assignment ;
+  sh:property lsh:Assignment-covers .

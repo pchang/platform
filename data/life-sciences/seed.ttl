@@ -76,7 +76,9 @@ d:ASG-1 a p:Assignment ;
   ls:identifier "ASG-1" ;
   p:assignee d:ORG-1 ;
   p:inScope d:ST-01, d:SITE-1, d:SITE-2 ;
-  p:assignedFrom "2026-01-05"^^xsd:date .
+  p:assignedFrom "2026-01-05"^^xsd:date ;
+  p:contractReference "NB-2026-014" ;
+  p:contractDate "2025-12-18"^^xsd:date .
 
 # Site staff work at their own sites: the coordinator at the first, the associate monitoring the first two.
 

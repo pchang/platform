@@ -227,9 +227,9 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(48);
+    expect(count).toBe(50);
     // The domain's methods; the platform's own, such as a change set's, are in the platform spec (section 3.7).
-    expect(q(`SELECT ?m WHERE { ?m a p:Method FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).length).toBe(48);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).length).toBe(50);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {

@@ -37,7 +37,7 @@ test('a study opens from anywhere on its card, with its patients first, and the 
   await expect(heading).toBeFocused();
   await expect(panel(page).getByText('· ST-01', { exact: true })).toBeVisible();
   const tabs = panel(page).getByRole('tab');
-  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0', 'Datasets 1']);
+  await expect(tabs).toHaveText(['Overview', 'Patients 12', 'Study Scenarios 1', 'Outcome Targets 0', 'Decisions 0', 'Formulations 1', 'Sites 3', 'Study Concepts 0', 'Assignments 3', 'Datasets 1']);
   // Its journey along its lifecycle, its status: named for where it is, each stage said in words.
   const journey = panel(page).getByRole('list', { name: 'Journey: Status, now enrolling, stage 2 of 5' });
   await expect(journey).toBeVisible();
