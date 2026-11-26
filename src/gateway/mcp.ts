@@ -23,8 +23,14 @@ function result(run: () => unknown | Promise<unknown>) {
     );
 }
 
-export function createMcpServer(gateway: Gateway, principal: Principal): McpServer {
+export function createMcpServer(gateway: Gateway, connected: Principal): McpServer {
   const server = new McpServer({ name: 'lsh-gateway', version: '0.1.0' });
+  // The principal of each request, with the name and version the client declared when it connected: an outside agent's
+  // commits record them (spec 3.4, Outside agents, Audit).
+  const as = (reason?: string): Principal => {
+    const client = server.server.getClientVersion();
+    return { ...connected, ...(client ? { client: { name: client.name, version: client.version } } : {}), ...(reason ? { reason } : {}) };
+  };
 
   server.registerTool(
     'describe_ontology',
@@ -33,7 +39,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description: 'Object types you may read, with their state dimensions and values, the methods on each with their inputs, and their relationships read both ways: what each contains, is part of or is related to, and which hold at most one object.',
       annotations: { readOnlyHint: true },
     },
-    () => result(() => gateway.describe(principal)),
+    () => result(() => gateway.describe(as())),
   );
 
   server.registerTool(
@@ -43,7 +49,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description: 'Objects with work waiting for you: tasks you can run now, and urgent objects. Nearest deadline first.',
       annotations: { readOnlyHint: true },
     },
-    () => result(() => gateway.todo(principal)),
+    () => result(() => gateway.todo(as())),
   );
 
   server.registerTool(
@@ -56,7 +62,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
     },
     ({ type, state = {} }) =>
       result(() =>
-        gateway.find(principal, expand(type, NS.ls), Object.fromEntries(Object.entries(state).map(([k, v]) => [expand(k, NS.ls), expand(v, NS.lst)]))),
+        gateway.find(as(), expand(type, NS.ls), Object.fromEntries(Object.entries(state).map(([k, v]) => [expand(k, NS.ls), expand(v, NS.lst)]))),
       ),
   );
 
@@ -72,7 +78,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { query: z.string() },
       annotations: { readOnlyHint: true },
     },
-    ({ query }) => result(() => gateway.search(principal, query)),
+    ({ query }) => result(() => gateway.search(as(), query)),
   );
 
   server.registerTool(
@@ -86,7 +92,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { question: z.string(), earlier: z.array(z.object({ question: z.string(), answer: z.string() })).optional(), about: z.array(z.string()).max(10).optional() },
       annotations: { readOnlyHint: true },
     },
-    ({ question, earlier, about }) => result(() => gateway.ask(principal, question, earlier ?? [], about ?? [])),
+    ({ question, earlier, about }) => result(() => gateway.ask(as(), question, earlier ?? [], about ?? [])),
   );
 
   server.registerTool(
@@ -97,7 +103,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string() },
       annotations: { readOnlyHint: true },
     },
-    ({ id }) => result(() => gateway.read(principal, id)),
+    ({ id }) => result(() => gateway.read(as(), id)),
   );
 
   server.registerTool(
@@ -108,7 +114,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string() },
       annotations: { readOnlyHint: true },
     },
-    ({ id }) => result(() => gateway.methods(principal, id)),
+    ({ id }) => result(() => gateway.methods(as(), id)),
   );
 
   server.registerTool(
@@ -119,7 +125,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string(), method: z.string() },
       annotations: { readOnlyHint: true },
     },
-    ({ id, method }) => result(() => gateway.compose(principal, id, expand(method, NS.ls))),
+    ({ id, method }) => result(() => gateway.compose(as(), id, expand(method, NS.ls))),
   );
 
   server.registerTool(
@@ -130,7 +136,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string(), method: z.string(), inputs: z.record(z.string(), z.string()).optional() },
       annotations: { readOnlyHint: true },
     },
-    ({ id, method, inputs = {} }) => result(() => gateway.preview(principal, id, expand(method, NS.ls), inputs)),
+    ({ id, method, inputs = {} }) => result(() => gateway.preview(as(), id, expand(method, NS.ls), inputs)),
   );
 
   server.registerTool(
@@ -140,11 +146,19 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description:
         'Runs one method on one object, such as method "AnswerQuery" on "Q-01" with inputs { "answer": "..." }. ' +
         'Checks your role, the inputs and the preconditions, applies the effects, validates the result and records the commit. ' +
-        'Nothing changes if any step fails; the reasons are returned. Give proposal when the inputs started from a propose_inputs proposal.',
-      inputSchema: { id: z.string(), method: z.string(), inputs: z.record(z.string(), z.string()).optional(), proposal: z.string().optional() },
+        'Nothing changes if any step fails; the reasons are returned. Give proposal when the inputs started from a propose_inputs proposal. ' +
+        'An outside agent gives reason, why it acts, in its own words, every time; where the method only lets it propose, its commit becomes a proposal ' +
+        'for the person who answers for it, and the result says so (proposedTo).',
+      inputSchema: {
+        id: z.string(),
+        method: z.string(),
+        inputs: z.record(z.string(), z.string()).optional(),
+        proposal: z.string().optional(),
+        reason: z.string().optional().describe('Why you run this method, in your own words. Required of outside agents, and recorded with the commit.'),
+      },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    ({ id, method, inputs = {}, proposal }) => result(() => gateway.commit(principal, id, expand(method, NS.ls), inputs, undefined, undefined, proposal)),
+    ({ id, method, inputs = {}, proposal, reason }) => result(() => gateway.commit(as(reason), id, expand(method, NS.ls), inputs, undefined, undefined, proposal)),
   );
 
   server.registerTool(
@@ -157,7 +171,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string(), method: z.string() },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    ({ id, method }) => result(() => gateway.draft(principal, id, expand(method, NS.ls))),
+    ({ id, method }) => result(() => gateway.draft(as(), id, expand(method, NS.ls))),
   );
 
   server.registerTool(
@@ -171,7 +185,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { ids: z.array(z.string()).min(1).max(50), method: z.string() },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    ({ ids, method }) => result(() => gateway.propose(principal, ids, expand(method, NS.ls))),
+    ({ ids, method }) => result(() => gateway.propose(as(), ids, expand(method, NS.ls))),
   );
 
   server.registerTool(
@@ -184,7 +198,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { id: z.string().optional(), active: z.boolean().optional() },
       annotations: { readOnlyHint: true },
     },
-    ({ id, active }) => result(() => gateway.runs(principal, { object: id, active })),
+    ({ id, active }) => result(() => gateway.runs(as(), { object: id, active })),
   );
 
   server.registerTool(
@@ -194,7 +208,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       description: 'Your notifications, newest first, such as a background run you started ending, with which are unread.',
       annotations: { readOnlyHint: true },
     },
-    () => result(() => gateway.notifications(principal)),
+    () => result(() => gateway.notifications(as())),
   );
 
   server.registerTool(
@@ -205,7 +219,7 @@ export function createMcpServer(gateway: Gateway, principal: Principal): McpServ
       inputSchema: { notifications: z.array(z.string()).optional() },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
-    ({ notifications }) => result(() => ({ marked: gateway.markRead(principal, notifications) })),
+    ({ notifications }) => result(() => ({ marked: gateway.markRead(as(), notifications) })),
   );
 
   return server;

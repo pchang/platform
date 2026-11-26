@@ -9,7 +9,8 @@
 @prefix lst:  <https://w3id.org/lsh-platform/life-sciences/term#> .
 @prefix d:    <https://example.org/lsh-data/> .
 
-# People: one per persona, a second Drug Safety Physician for separation of duties (rule 5), and an external CRO agent.
+# People: one per persona, a second Drug Safety Physician for separation of duties (rule 5), and a contract research
+# organization's data manager with its agent.
 
 d:person-ada a p:Person ;
   rdfs:label "Ada Moreno" ;
@@ -39,10 +40,47 @@ d:person-sam a p:Person ;
   rdfs:label "Sam Whitfield" ;
   p:actsAs ls:ClinicalResearchCoordinator .
 
-d:agent-northbridge a p:Person ;
-  rdfs:label "Northbridge CRO agent" ;
+# Outside agent (domain spec sections 6 and 11): Northbridge CRO runs data management at the first two sites. Its CRO Data
+# Manager registered its query agent, and the Clinical Operations Lead approved it.
+
+d:ORG-1 a p:Organization ;
+  ls:identifier "ORG-1" ;
+  p:organizationName "Northbridge CRO" .
+
+d:person-mira a p:Person ;
+  rdfs:label "Mira Castellanos" ;
+  p:actsAs ls:CRODataManager ;
+  p:memberOf d:ORG-1 .
+
+d:agent-northbridge a p:Agent ;
+  ls:identifier "AG-1" ;
+  rdfs:label "Northbridge query agent" ;
   p:actsAs ls:ExternalCROAgent ;
-  p:isAgent true .
+  p:operatedBy d:ORG-1 ;
+  p:accountablePerson d:person-mira ;
+  p:registeredBy d:person-mira ;
+  p:clientId "northbridge-query-agent" ;
+  p:agentStatus p:AgentStatus-active .
+
+d:ASG-1 a p:Assignment ;
+  ls:identifier "ASG-1" ;
+  p:assignee d:ORG-1 ;
+  p:inScope d:ST-01, d:SITE-1, d:SITE-2 ;
+  p:assignedFrom "2026-01-05"^^xsd:date .
+
+# Site staff work at their own sites: the coordinator at the first, the associate monitoring the first two.
+
+d:ASG-2 a p:Assignment ;
+  ls:identifier "ASG-2" ;
+  p:assignee d:person-sam ;
+  p:inScope d:ST-01, d:SITE-1 ;
+  p:assignedFrom "2026-01-05"^^xsd:date .
+
+d:ASG-3 a p:Assignment ;
+  ls:identifier "ASG-3" ;
+  p:assignee d:person-priya ;
+  p:inScope d:ST-01, d:SITE-1, d:SITE-2 ;
+  p:assignedFrom "2026-01-05"^^xsd:date .
 
 # Scientific Innovation: 5 compounds, including 1 candidate and 2 analogs
 

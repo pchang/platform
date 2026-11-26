@@ -563,8 +563,8 @@ p:holdsPersonalData a rdf:Property ;
 
 p:actsAs a rdf:Property ;
   rdfs:label "acts as" ;
-  rdfs:comment "A role the person may act in." ;
-  rdfs:domain p:Person ;
+  rdfs:comment "A role the principal may act in. An agent acts in exactly one." ;
+  rdfs:domain p:Principal ;
   rdfs:range p:Role .
 
 p:method a rdf:Property ;
@@ -764,12 +764,6 @@ p:isDevelopmentSignature a rdf:Property ;
   rdfs:label "is development signature" ;
   rdfs:comment "True for a signature given by typing a name in development mode. Not a valid electronic signature." ;
   rdfs:domain p:Signature ;
-  rdfs:range xsd:boolean .
-
-p:isAgent a rdf:Property ;
-  rdfs:label "is agent" ;
-  rdfs:comment "True when the principal is a software agent, not a person. Agents never sign." ;
-  rdfs:domain p:Person ;
   rdfs:range xsd:boolean .
 
 p:mayRun a rdf:Property ;
@@ -2070,3 +2064,344 @@ p:mainlyIn a rdf:Property ;
   rdfs:range p:Domain .
 
 p:StructureSteward p:mainlyIn p:Structure .
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Outside agents (platform spec 3.4, Outside agents) and scope (platform spec 3.3, Scope). Domain-free: each domain
+# declares how its types belong to a scope root, which roles are scoped, and which methods agents may act on alone.
+
+p:Partners a p:Domain ;
+  rdfs:label "Partners" ;
+  rdfs:comment "The platform's own domain for the organizations that work with the sponsor and the outside agents they run (platform spec 3.4, Outside agents)." .
+
+p:Principal a rdfs:Class ;
+  rdfs:label "principal" ;
+  rdfs:comment "Anything that can act through the gateway: a person or an agent." .
+p:Person rdfs:subClassOf p:Principal .
+
+p:Organization a p:ObjectType, rdfs:Class ;
+  rdfs:label "Organization" ;
+  p:pluralLabel "Organizations" ;
+  rdfs:comment "A company that works with the sponsor, such as a contract research organization. Its people and agents act within its assignments." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{p:organizationName}" .
+
+p:Assignment a p:ObjectType, rdfs:Class ;
+  rdfs:label "Assignment" ;
+  p:pluralLabel "Assignments" ;
+  rdfs:comment "Gives an organization or a person a scope: the objects it may act on, such as a study and some of its sites, from one date and, optionally, until another (platform spec 3.3, Scope)." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{p:assignee}, from {p:assignedFrom}" .
+
+p:Agent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Agent" ;
+  p:pluralLabel "Agents" ;
+  rdfs:subClassOf p:Principal, prov:SoftwareAgent ;
+  rdfs:comment "Software another organization runs, acting through the gateway in one role, with an accountable person at its organization who answers for it. Never a person: it never signs, approves or decides a proposal (platform spec 3.4, Outside agents)." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{rdfs:label}" ;
+  p:defaultCommitsPerHour 60 ;
+  p:defaultReadsPerHour 1000 .
+
+p:AgentProposal a p:ObjectType, rdfs:Class ;
+  rdfs:label "Agent Proposal" ;
+  p:pluralLabel "Agent Proposals" ;
+  rdfs:comment "A method an agent ran where it may only propose: the method, the object, the inputs and the agent's reason, waiting for its accountable person to confirm or reject it." ;
+  p:inDomain p:Partners ;
+  p:onlyThroughMethods true ;
+  p:titleTemplate "{p:proposedMethod} on {p:proposalTarget}" .
+
+p:Organization p:onlyThroughMethods true .
+p:Assignment p:onlyThroughMethods true .
+
+p:agentStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Where an agent is in its life: registered, then active; paused by its ceilings or suspended by a person; retired at the end." ;
+  p:dimensionOf p:Agent ;
+  p:valuesFrom p:AgentStatus ;
+  p:order 1 .
+
+p:AgentStatus a skos:ConceptScheme ;
+  skos:prefLabel "Agent status" ;
+  skos:definition "Where an outside agent is in its life (platform spec 3.4, Outside agents). Only an active agent may act." .
+p:AgentStatus-registered a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "registered" ; p:order 1 ;
+  skos:definition "Registered by its organization, waiting for the sponsor's approval. It cannot act yet." .
+p:AgentStatus-active a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "active" ; p:order 2 .
+p:AgentStatus-paused a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "paused" ; p:order 3 ; p:exit true ; p:exitFrom p:AgentStatus-active ;
+  skos:definition "Stopped by its ceilings, automatically, until a person resumes it." .
+p:AgentStatus-suspended a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "suspended" ; p:order 4 ; p:exit true ; p:exitFrom p:AgentStatus-active ;
+  skos:definition "Stopped by a person, with a reason, until a person resumes it." .
+p:AgentStatus-retired a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "retired" ; p:order 5 ;
+  skos:definition "Its work has ended. It never acts again; its history is kept." .
+
+p:agentProposalStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Whether an agent's proposal is waiting, or how its accountable person decided it." ;
+  p:dimensionOf p:AgentProposal ;
+  p:valuesFrom p:AgentProposalStatus ;
+  p:order 1 .
+
+p:AgentProposalStatus a skos:ConceptScheme ;
+  skos:prefLabel "Agent proposal status" ;
+  skos:definition "Where an agent's proposal is: pending until its accountable person confirms or rejects it, once." .
+p:AgentProposalStatus-pending a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "pending" ; p:order 1 .
+p:AgentProposalStatus-confirmed a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "confirmed" ; p:order 2 .
+p:AgentProposalStatus-rejected a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "rejected" ; p:order 3 ; p:exit true ; p:exitFrom p:AgentProposalStatus-pending .
+
+# How much a method lets an agent do alone (platform spec 3.4, Outside agents, Autonomy).
+
+p:AgentAutonomy a skos:ConceptScheme ;
+  skos:prefLabel "Agent autonomy" ;
+  skos:definition "What an agent may do alone with a method: commit it, only propose it, or never run it. Set by reversibility." .
+p:Acts a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "acts" ; p:order 1 ;
+  skos:definition "The agent commits, and the commit is the agent's. For methods whose effect another method can undo." .
+p:Proposes a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "proposes" ; p:order 2 ;
+  skos:definition "The agent's commit becomes a proposal its accountable person confirms or rejects. The default." .
+p:Never a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "never" ; p:order 3 ;
+  skos:definition "Agents cannot run the method." .
+
+p:agentAutonomy a rdf:Property ;
+  rdfs:label "agent autonomy" ;
+  rdfs:comment "What an agent may do alone with this method. A method that declares none proposes." ;
+  rdfs:domain p:Method ;
+  rdfs:range skos:Concept .
+
+# Scope (platform spec 3.3).
+
+p:scoped a rdf:Property ;
+  rdfs:label "scoped" ;
+  rdfs:comment "True when the role's permissions apply only within the principal's assignments, and objects outside them do not exist for it." ;
+  rdfs:domain p:Role ;
+  rdfs:range xsd:boolean .
+
+p:scopeRoot a rdf:Property ;
+  rdfs:label "scope root" ;
+  rdfs:comment "True when objects of the type are themselves roots of scope, which an assignment names, such as a site or a study." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:boolean .
+
+p:scopePath a rdf:Property ;
+  rdfs:label "scope path" ;
+  rdfs:comment "How an object of the type belongs to a scope root: a SHACL property path from the object to the root, such as from a data query to the site of the record it is raised on. A type with neither a scope path nor scope root is not limited by scope." ;
+  rdfs:domain p:ObjectType .
+
+p:principalPath a rdf:Property ;
+  rdfs:label "principal path" ;
+  rdfs:comment "A metric counts only the objects that reach the principal along this SHACL property path, such as the proposals of agents they answer for." ;
+  rdfs:domain p:Metric .
+
+p:forAgents a rdf:Property ;
+  rdfs:label "for agents" ;
+  rdfs:comment "True when the role is for agents. Such a role reads only the types it lists (p:mayRead), and is always scoped." ;
+  rdfs:domain p:Role ;
+  rdfs:range xsd:boolean .
+
+p:mayRead a rdf:Property ;
+  rdfs:label "may read" ;
+  rdfs:comment "A type a role for agents may read. Nothing else exists for it." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
+p:onlyBy a rdf:Property ;
+  rdfs:label "only by" ;
+  rdfs:comment "Only the principal reached from the method's object along this SHACL property path may run the method, such as an agent's accountable person deciding its proposals." ;
+  rdfs:domain p:Method .
+
+p:notBy a rdf:Property ;
+  rdfs:label "not by" ;
+  rdfs:comment "The principal reached from the method's object along this property may not run the method, such as the person who registered an agent approving it." ;
+  rdfs:domain p:Method .
+
+p:setOnCreateFrom a rdf:Property ;
+  rdfs:label "set on create from" ;
+  rdfs:comment "The property is set when an object is created, from the principal: p:Principal for the principal itself, or a property whose value on the principal it takes, such as the organization they are a member of. It is not in the create form." ;
+  rdfs:domain rdf:Property .
+
+p:setOnlyByMethods a rdf:Property ;
+  rdfs:label "set only by methods" ;
+  rdfs:comment "True when the property is recorded by methods, such as why an agent was suspended, so it is in no form." ;
+  rdfs:domain rdf:Property ;
+  rdfs:range xsd:boolean .
+
+p:defaultCommitsPerHour a rdf:Property ; rdfs:label "default commits per hour" ; rdfs:comment "The platform's ceiling of commits and proposals an hour for an agent registered without one." ; rdfs:domain p:ObjectType ; rdfs:range xsd:integer .
+p:defaultReadsPerHour a rdf:Property ; rdfs:label "default reads per hour" ; rdfs:comment "The platform's ceiling of reads an hour for an agent registered without one." ; rdfs:domain p:ObjectType ; rdfs:range xsd:integer .
+
+# The properties of organizations, assignments, agents and their proposals.
+
+p:organizationName a rdf:Property ; rdfs:label "name" ; rdfs:comment "The organization's name." ; rdfs:range xsd:string .
+p:memberOf a p:Relationship, rdf:Property ; rdfs:label "is a member of" ; p:inverseLabel "has the member" ; p:order 130 ;
+  rdfs:comment "The organization a person works for. They act within its assignments." .
+p:assignee a p:Relationship, rdf:Property ; rdfs:label "assigns" ; p:inverseLabel "is assigned by" ; p:order 131 ;
+  rdfs:comment "The organization or person an assignment gives its scope to." .
+p:inScope a p:Relationship, rdf:Property ; rdfs:label "covers" ; p:inverseLabel "is covered by" ; p:order 132 ;
+  rdfs:comment "A scope root the assignment gives, such as a study or a site." .
+p:assignedFrom a rdf:Property ; rdfs:label "from" ; rdfs:comment "The day the assignment starts." ; rdfs:range xsd:date .
+p:assignedUntil a rdf:Property ; rdfs:label "until" ; rdfs:comment "The last day of the assignment. Without one, it has no end yet." ; rdfs:range xsd:date .
+p:operatedBy a p:Relationship, rdf:Property ; rdfs:label "is run by" ; p:inverseLabel "runs" ; p:order 133 ; p:setOnCreateFrom p:memberOf ;
+  rdfs:comment "The organization that runs the agent." .
+p:accountablePerson a rdf:Property ; rdfs:label "accountable person" ; p:setOnCreateFrom p:Principal ;
+  rdfs:comment "The person at the agent's organization who answers for what it does, and decides its proposals." .
+p:registeredBy a rdf:Property ; rdfs:label "registered by" ; p:setOnCreateFrom p:Principal ;
+  rdfs:comment "The person who registered the agent. They may not approve it." .
+p:actsAs a p:Relationship ; p:inverseLabel "is the role of" ; p:order 134 .
+p:clientId a rdf:Property ; rdfs:label "client" ; rdfs:comment "The agent's client identifier at the deployment's identity provider, which its tokens name." ; rdfs:range xsd:string .
+p:commitsPerHour a rdf:Property ; rdfs:label "commits an hour, at most" ; rdfs:comment "The agent's ceiling of commits and proposals an hour. Crossing it pauses the agent." ; rdfs:range xsd:integer .
+p:readsPerHour a rdf:Property ; rdfs:label "reads an hour, at most" ; rdfs:comment "The agent's ceiling of reads an hour. Crossing it pauses the agent." ; rdfs:range xsd:integer .
+p:proposesOnly a p:Relationship, rdf:Property ; rdfs:label "only proposes" ; p:inverseLabel "is only proposed by" ; p:order 135 ;
+  rdfs:comment "A method the agent may only propose, lowered from what the method allows, when the sponsor approved it or later." .
+p:statusReason a rdf:Property ; rdfs:label "why" ; p:setOnlyByMethods true ; rdfs:comment "Why the agent was last paused or suspended." ; rdfs:range xsd:string .
+p:proposedBy a p:Relationship, rdf:Property ; rdfs:label "is proposed by" ; p:inverseLabel "proposed" ; p:order 136 ;
+  rdfs:comment "The agent that made the proposal." .
+p:proposedMethod a p:Relationship, rdf:Property ; rdfs:label "proposes" ; p:inverseLabel "is proposed in" ; p:order 137 ;
+  rdfs:comment "The method the agent proposed to run." .
+p:proposalTarget a rdf:Property ; rdfs:label "on" ; rdfs:comment "The object the proposed method runs on." .
+p:agentReason a rdf:Property ; rdfs:label "reason" ; rdfs:comment "Why the agent acted or proposed, in its own words. Every agent commit and proposal gives one." ; rdfs:range xsd:string .
+p:agentVersion a rdf:Property ; rdfs:label "agent version" ; rdfs:comment "The agent's name and version, as it declared them when it connected." ; rdfs:range xsd:string .
+p:rejectionReason a rdf:Property ; rdfs:label "why rejected" ; p:setOnlyByMethods true ; rdfs:comment "Why the accountable person rejected the proposal." ; rdfs:range xsd:string .
+p:confirmedIn a rdf:Property ; rdfs:label "confirmed in" ; rdfs:comment "The commit that confirmed the proposal: the accountable person's commit of the proposed method." .
+p:answeredForBy a rdf:Property ; rdfs:label "answered for by" ; rdfs:comment "On a commit or proposal by an agent: its accountable person at that moment." .
+p:agentOrganization a rdf:Property ; rdfs:label "for the organization" ; rdfs:comment "On a commit or proposal by an agent: its operating organization at that moment." .
+p:proposedByAgent a rdf:Property ; rdfs:label "proposed by agent" ; rdfs:comment "On a person's commit: the agent proposal it confirmed. The commit is the person's." .
+p:CircuitBreaker a prov:SoftwareAgent ; rdfs:label "circuit breaker" ;
+  rdfs:comment "The gateway pausing an agent that crossed a ceiling (platform spec 3.4, Outside agents, Exposure)." .
+
+p:Shape-Organization a sh:NodeShape ; sh:targetClass p:Organization ; sh:property p:Shape-Organization-name .
+p:Shape-Organization-name a sh:PropertyShape ; sh:path p:organizationName ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+
+p:Shape-Assignment a sh:NodeShape ; sh:targetClass p:Assignment ;
+  sh:property p:Shape-Assignment-assignee, p:Shape-Assignment-root, p:Shape-Assignment-from, p:Shape-Assignment-until .
+p:Shape-Assignment-assignee a sh:PropertyShape ; sh:path p:assignee ; sh:or ( [ sh:class p:Organization ] [ sh:class p:Person ] ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "assigns" .
+p:Shape-Assignment-root a sh:PropertyShape ; sh:path p:inScope ; sh:minCount 1 ; sh:name "covers" .
+p:Shape-Assignment-from a sh:PropertyShape ; sh:path p:assignedFrom ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "from" .
+p:Shape-Assignment-until a sh:PropertyShape ; sh:path p:assignedUntil ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "until" .
+
+p:Shape-Agent a sh:NodeShape ; sh:targetClass p:Agent ;
+  sh:property p:Shape-Agent-name, p:Shape-Agent-role, p:Shape-Agent-client, p:Shape-Agent-status, p:Shape-Agent-operatedBy, p:Shape-Agent-accountable,
+    p:Shape-Agent-registeredBy, p:Shape-Agent-commits, p:Shape-Agent-reads, p:Shape-Agent-proposesOnly, p:Shape-Agent-reason .
+p:Shape-Agent-name a sh:PropertyShape ; sh:order 1 ; sh:path rdfs:label ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+p:Shape-Agent-role a sh:PropertyShape ; sh:order 2 ; sh:path p:actsAs ; sh:class p:Role ; sh:node p:Shape-RoleForAgents ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "role" .
+p:Shape-Agent-client a sh:PropertyShape ; sh:order 3 ; sh:path p:clientId ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "client" .
+p:Shape-Agent-status a sh:PropertyShape ; sh:path p:agentStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
+  sh:in ( p:AgentStatus-registered p:AgentStatus-active p:AgentStatus-paused p:AgentStatus-suspended p:AgentStatus-retired ) .
+p:Shape-Agent-operatedBy a sh:PropertyShape ; sh:path p:operatedBy ; sh:class p:Organization ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "run by" ;
+  sh:message "Only a person who is a member of an organization may register its agents" .
+p:Shape-Agent-accountable a sh:PropertyShape ; sh:path p:accountablePerson ; sh:class p:Person ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "accountable person" .
+p:Shape-Agent-registeredBy a sh:PropertyShape ; sh:path p:registeredBy ; sh:class p:Person ; sh:maxCount 1 ; sh:name "registered by" .
+p:Shape-Agent-commits a sh:PropertyShape ; sh:order 4 ; sh:path p:commitsPerHour ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxCount 1 ; sh:name "commits an hour, at most" .
+p:Shape-Agent-reads a sh:PropertyShape ; sh:order 5 ; sh:path p:readsPerHour ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxCount 1 ; sh:name "reads an hour, at most" .
+p:Shape-Agent-proposesOnly a sh:PropertyShape ; sh:path p:proposesOnly ; sh:class p:Method ; sh:name "only proposes" .
+p:Shape-Agent-reason a sh:PropertyShape ; sh:path p:statusReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why" .
+
+p:Shape-RoleForAgents a sh:NodeShape ; rdfs:label "A role for agents" ;
+  sh:property [ sh:path p:forAgents ; sh:hasValue true ; sh:message "Choose a role for agents" ] .
+
+p:Shape-AgentProposal a sh:NodeShape ; sh:targetClass p:AgentProposal ;
+  sh:property p:Shape-AgentProposal-status, p:Shape-AgentProposal-by, p:Shape-AgentProposal-method, p:Shape-AgentProposal-target, p:Shape-AgentProposal-reason, p:Shape-AgentProposal-rejection .
+p:Shape-AgentProposal-status a sh:PropertyShape ; sh:path p:agentProposalStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
+  sh:in ( p:AgentProposalStatus-pending p:AgentProposalStatus-confirmed p:AgentProposalStatus-rejected ) .
+p:Shape-AgentProposal-by a sh:PropertyShape ; sh:path p:proposedBy ; sh:class p:Agent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposed by" .
+p:Shape-AgentProposal-method a sh:PropertyShape ; sh:path p:proposedMethod ; sh:class p:Method ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposes" .
+p:Shape-AgentProposal-target a sh:PropertyShape ; sh:path p:proposalTarget ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "on" .
+p:Shape-AgentProposal-reason a sh:PropertyShape ; sh:path p:agentReason ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "reason" .
+p:Shape-AgentProposal-rejection a sh:PropertyShape ; sh:path p:rejectionReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why rejected" .
+
+# The agent's lifecycle, run by the sponsor's overseer, never by an agent.
+
+p:Shape-Agent-isRegistered a sh:NodeShape ; rdfs:label "The agent is registered" ; sh:property [ sh:path p:agentStatus ; sh:hasValue p:AgentStatus-registered ; sh:message "The agent is not waiting for approval" ] .
+p:Shape-Agent-isRunning a sh:NodeShape ; rdfs:label "The agent is active or paused" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-active p:AgentStatus-paused ) ; sh:message "The agent is not active or paused" ] .
+p:Shape-Agent-isStopped a sh:NodeShape ; rdfs:label "The agent is paused or suspended" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-paused p:AgentStatus-suspended ) ; sh:message "The agent is not paused or suspended" ] .
+p:Shape-Agent-notRetired a sh:NodeShape ; rdfs:label "The agent is not retired" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-registered p:AgentStatus-active p:AgentStatus-paused p:AgentStatus-suspended ) ; sh:message "The agent is retired" ] .
+p:Shape-AgentProposal-isPending a sh:NodeShape ; rdfs:label "The proposal is waiting for a decision" ;
+  sh:property [ sh:path p:agentProposalStatus ; sh:hasValue p:AgentProposalStatus-pending ; sh:message "The proposal has already been decided" ] .
+
+p:ApproveAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-active .
+p:ApproveAgent a p:Method ;
+  rdfs:label "Approve" ;
+  rdfs:comment "Approves a registered agent, so it may act. Nobody approves an agent they registered." ;
+  p:appliesTo p:Agent ;
+  p:notBy p:registeredBy ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-isRegistered ;
+  p:effect p:ApproveAgent-effect1 .
+
+p:OnlyPropose-method a p:Input ; p:inputName "method" ; rdfs:label "Method" ; p:order 1 ; p:objectOf p:Method ; p:choicesAlong ( p:actsAs p:mayRun ) .
+p:OnlyPropose-effect1 a p:Link ; p:linkedBy p:proposesOnly ; p:toInput p:OnlyPropose-method .
+p:OnlyPropose a p:Method ;
+  rdfs:label "Only propose" ;
+  rdfs:comment "Lowers the agent's autonomy for one method: from now on it only proposes it, for its accountable person to decide." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:OnlyPropose-method ;
+  p:precondition p:Shape-Agent-notRetired ;
+  p:effect p:OnlyPropose-effect1 .
+
+p:SuspendAgent-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 1 ; p:datatype xsd:string ; p:recordedAs p:statusReason .
+p:SuspendAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-suspended .
+p:SuspendAgent a p:Method ;
+  rdfs:label "Suspend" ;
+  rdfs:comment "Stops an agent at its next request, with a reason, until a person resumes it." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:SuspendAgent-reason ;
+  p:precondition p:Shape-Agent-isRunning ;
+  p:effect p:SuspendAgent-effect1 .
+
+p:ResumeAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-active .
+p:ResumeAgent a p:Method ;
+  rdfs:label "Resume" ;
+  rdfs:comment "Lets a paused or suspended agent act again, once the cause is understood." ;
+  p:appliesTo p:Agent ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-isStopped ;
+  p:effect p:ResumeAgent-effect1 .
+
+p:RetireAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-retired .
+p:RetireAgent a p:Method ;
+  rdfs:label "Retire" ;
+  rdfs:comment "Ends the agent's work. It can never act again; its history is kept." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-notRetired ;
+  p:effect p:RetireAgent-effect1 .
+
+p:PauseAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-paused .
+p:PauseAgent a p:Method ;
+  rdfs:label "Pause" ;
+  rdfs:comment "Run by the gateway's circuit breaker, never by a person or an agent: pauses an agent that crossed a ceiling." ;
+  p:appliesTo p:Agent ;
+  p:agentAutonomy p:Never ;
+  p:effect p:PauseAgent-effect1 .
+
+p:ConfirmAgentProposal-effect1 a p:CommitAgentProposal .
+p:ConfirmAgentProposal-effect2 a p:StateChange ; p:dimension p:agentProposalStatus ; p:value p:AgentProposalStatus-confirmed .
+p:ConfirmAgentProposal a p:Method ;
+  rdfs:label "Confirm" ;
+  rdfs:comment "Commits the method the agent proposed, as you, with its inputs, checked again. The commit is yours, recorded as proposed by the agent." ;
+  p:appliesTo p:AgentProposal ;
+  p:onlyBy ( p:proposedBy p:accountablePerson ) ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-AgentProposal-isPending ;
+  p:effect p:ConfirmAgentProposal-effect1, p:ConfirmAgentProposal-effect2 .
+
+p:RejectAgentProposal-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 1 ; p:datatype xsd:string ; p:recordedAs p:rejectionReason .
+p:RejectAgentProposal-effect1 a p:StateChange ; p:dimension p:agentProposalStatus ; p:value p:AgentProposalStatus-rejected .
+p:RejectAgentProposal a p:Method ;
+  rdfs:label "Reject" ;
+  rdfs:comment "Rejects the agent's proposal, with a reason. Nothing it proposed changes." ;
+  p:appliesTo p:AgentProposal ;
+  p:onlyBy ( p:proposedBy p:accountablePerson ) ;
+  p:agentAutonomy p:Never ;
+  p:onDemand true ;
+  p:input p:RejectAgentProposal-reason ;
+  p:precondition p:Shape-AgentProposal-isPending ;
+  p:effect p:RejectAgentProposal-effect1 .
+
+p:CommitAgentProposal a rdfs:Class ;
+  rdfs:label "commit an agent proposal" ;
+  rdfs:comment "Commits the method an agent proposed, with its inputs, as the principal confirming it, in the same transaction." ;
+  rdfs:subClassOf p:Effect .

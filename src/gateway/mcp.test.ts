@@ -11,7 +11,7 @@ import { createGatewayServer } from './http';
 import { createMcpServer } from './mcp';
 
 // Journeys run many commits, and each validates the whole graph (see the PR note on validation cost).
-vi.setConfig({ testTimeout: 20_000 });
+vi.setConfig({ testTimeout: 60_000 });
 
 const agent = { person: `${NS.d}agent-northbridge`, role: `${NS.ls}ExternalCROAgent` };
 type ToolResult = { isError?: boolean; content: { type: string; text: string }[] };
@@ -37,38 +37,53 @@ describe('MCP transport', () => {
   });
 
   it('asks a question: without a connected model, the question is searched and the result says so', async () => {
-    const client = await connect(withSeed());
+    const client = await connect(withSeed(), { person: `${NS.d}person-chloe`, role: `${NS.ls}DrugSafetyPhysician` });
     const asked = parse(await client.callTool({ name: 'ask', arguments: { question: 'serious adverse events' } }));
     expect(asked.searched).toBe('No model is connected to answer questions, so the question was searched.');
     expect(asked.search.results.map((r: { object: { identifier: string } }) => r.object.identifier)).toEqual(['AE-003', 'AE-005']);
   });
 
-  it('runs the External agent journey: answers and closes open queries, under the same policy and log', async () => {
+  it('runs the External agent journey: answers open queries at its sites and proposes closing them, under the same policy and log', async () => {
     const gateway = withSeed();
     const client = await connect(gateway);
 
+    // Only the open queries at Northbridge's two sites exist for it (domain spec section 6, Scope).
     const open = parse(await client.callTool({ name: 'find_objects', arguments: { type: 'DataQuery', state: { dataQueryStatus: 'DataQueryStatus-open' } } }));
-    expect(open.map((q: { identifier: string }) => q.identifier)).toEqual(['Q-01', 'Q-02', 'Q-03']);
+    expect(open.map((q: { identifier: string }) => q.identifier)).toEqual(['Q-01', 'Q-03']);
 
+    const proposals: string[] = [];
     for (const { identifier } of open as { identifier: string }[]) {
-      await client.callTool({ name: 'commit_method', arguments: { id: identifier, method: 'AnswerQuery', inputs: { answer: 'Confirmed against the site source record' } } });
-      await client.callTool({ name: 'commit_method', arguments: { id: identifier, method: 'CloseQuery' } });
+      const answered = parse(await client.callTool({ name: 'commit_method', arguments: { id: identifier, method: 'AnswerQuery', inputs: { answer: 'Confirmed against the site source record' }, reason: 'The site source record matches' } }));
+      expect(answered.changes[0]).toMatchObject({ subjectLabel: identifier, newLabel: 'answered' });
+      // Closing is final, so it becomes a proposal for the person who answers for the agent.
+      const closing = parse(await client.callTool({ name: 'commit_method', arguments: { id: identifier, method: 'CloseQuery', reason: 'Answered from source; nothing left to resolve' } }));
+      expect(closing.proposedTo).toMatchObject({ accountablePersonName: 'Mira Castellanos' });
+      proposals.push(closing.proposedTo.identifier);
     }
     const stillOpen = parse(await client.callTool({ name: 'find_objects', arguments: { type: 'DataQuery', state: { dataQueryStatus: 'DataQueryStatus-open' } } }));
     expect(stillOpen).toEqual([]);
 
-    // The agent's actions are in the same history as people's.
+    // Mira confirms; the closes are hers, recorded as proposed by the agent.
+    const mira = { person: `${NS.d}person-mira`, role: `${NS.ls}CRODataManager` };
+    for (const proposal of proposals) await gateway.commit(mira, proposal, `${NS.p}ConfirmAgentProposal`);
+
+    // The agent's actions are in the same history as people's, with the version it declared.
     const history = gateway.commits();
-    expect(history).toHaveLength(6);
-    expect(new Set(history.map((c) => c.person))).toEqual(new Set([agent.person]));
+    expect(history.map((c) => [c.person.split('/').pop(), c.method.split('#').pop()])).toEqual([
+      ['agent-northbridge', 'AnswerQuery'], ['agent-northbridge', 'Create'], ['agent-northbridge', 'AnswerQuery'], ['agent-northbridge', 'Create'],
+      ['person-mira', 'CloseQuery'], ['person-mira', 'CloseQuery'],
+    ]);
   });
 
   it('returns the reasons when the agent is refused', async () => {
     const client = await connect(withSeed());
-    const refused = await client.callTool({ name: 'commit_method', arguments: { id: 'B-002', method: 'ReleaseBatch', inputs: { reviewer: 'person-elena' } } });
+    // A batch is nothing the agent reads, so for it the batch does not exist.
+    const refused = await client.callTool({ name: 'commit_method', arguments: { id: 'B-002', method: 'ReleaseBatch', inputs: { reviewer: 'person-elena' }, reason: 'Release' } });
     expect((refused as ToolResult).isError).toBe(true);
-    expect(parse(refused)).toEqual({ reasons: ['Your role cannot run this method'] });
-    const blinded = await client.callTool({ name: 'read_object', arguments: { id: 'PT-03' } });
+    expect(parse(refused)).toEqual({ reasons: ['No object B-002'] });
+    const unexplained = await client.callTool({ name: 'commit_method', arguments: { id: 'Q-01', method: 'AnswerQuery', inputs: { answer: 'Confirmed' } } });
+    expect(parse(unexplained)).toEqual({ reasons: ['Give your reason: every commit and proposal by an agent says why'] });
+    const blinded = await client.callTool({ name: 'read_object', arguments: { id: 'PT-01' } });
     expect(parse(blinded).properties).not.toHaveProperty('assigned arm');
   });
 

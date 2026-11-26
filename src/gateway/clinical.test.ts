@@ -34,15 +34,15 @@ describe('the Clinical Research Coordinator', () => {
 
   it('records a missed visit with its reason', async () => {
     const g = withSeed();
-    await g.commit(crc, 'V-02-3', ls('RecordMissedVisit'), { reason: 'The patient was travelling' });
-    const visit = g.read(crc, 'V-02-3');
+    await g.commit(crc, 'V-04-3', ls('RecordMissedVisit'), { reason: 'The patient was travelling' });
+    const visit = g.read(crc, 'V-04-3');
     expect(visit.state.Status).toBe('missed');
     expect(visit.properties['reason missed']).toBe('The patient was travelling');
   });
 
   it('records data at a completed visit, entered and awaiting verification', async () => {
     const g = withSeed();
-    expect(await reasons(g.commit(crc, 'V-03-3', ls('RecordData'), { value: 'Heart rate 80 bpm', source: `${NS.lst}DataRecordSource-site` }))).toEqual(['The visit has not taken place']);
+    expect(await reasons(g.commit(crc, 'V-04-3', ls('RecordData'), { value: 'Heart rate 80 bpm', source: `${NS.lst}DataRecordSource-site` }))).toEqual(['The visit has not taken place']);
     const result = await g.commit(crc, 'V-01-2', ls('RecordData'), { value: 'Heart rate 80 bpm', source: `${NS.lst}DataRecordSource-device` });
     const record = g.read(cra, result.created[0]);
     expect(record.state).toEqual({ Entry: 'entered', Source: 'device' });
@@ -53,8 +53,9 @@ describe('the Clinical Research Coordinator', () => {
   });
 
   it('records an adverse event in the site’s words; a serious one is urgent for the people who act on it', async () => {
-    const g = withSeed();
-    const result = await g.commit(crc, 'PT-06', ls('RecordAdverseEvent'), { verbatimTerm: 'Fainted at home', seriousness: `${NS.lst}AdverseEventSeriousness-serious` });
+    // The coordinator works at the first site; for this test they also cover the third, where PT-12 is only screened.
+    const g = withSeed([`<${NS.d}ASG-2> <${NS.p}inScope> <${NS.d}SITE-3> .`]);
+    const result = await g.commit(crc, 'PT-07', ls('RecordAdverseEvent'), { verbatimTerm: 'Fainted at home', seriousness: `${NS.lst}AdverseEventSeriousness-serious` });
     const event = g.read(cdm, result.created[0]);
     expect(event.state).toEqual({ Entry: 'entered', Seriousness: 'serious', Outcome: 'ongoing', Reporting: 'not reported' });
     expect(event.properties['verbatim term']).toBe('Fainted at home');
@@ -86,9 +87,9 @@ describe('the Clinical Research Associate', () => {
 describe('the Clinical Data Manager', () => {
   it('re-queries an answered query, which goes back to the site', async () => {
     const g = withSeed();
-    await g.commit(cdm, 'Q-04', ls('Requery'), { reason: 'The answer does not give the units' });
-    expect(g.read(cdm, 'Q-04').state.Status).toBe('open');
-    expect((await g.todo(crc)).find((i) => i.object.identifier === 'Q-04')?.tasks.map((t) => t.label)).toEqual(['Answer query']);
+    await g.commit(cdm, 'Q-05', ls('Requery'), { reason: 'The answer does not give the units' });
+    expect(g.read(cdm, 'Q-05').state.Status).toBe('open');
+    expect((await g.todo(crc)).find((i) => i.object.identifier === 'Q-05')?.tasks.map((t) => t.label)).toEqual(['Answer query']);
   });
 
   it('reconciles a reported event with its safety case, and not one without a case', async () => {
@@ -103,6 +104,6 @@ describe('the Clinical Data Manager', () => {
 
   it('cannot see the arm of a blinded study, like every clinical role', () => {
     const g = withSeed();
-    for (const person of [crc, cra, cdm]) expect(g.read(person, 'PT-03').properties).not.toHaveProperty('assigned arm');
+    for (const person of [crc, cra, cdm]) expect(g.read(person, 'PT-01').properties).not.toHaveProperty('assigned arm');
   });
 });

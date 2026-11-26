@@ -24,6 +24,10 @@ export interface Principal {
   role: string;
   /** The signed-in account that made the request, when the deployment has sign-in (spec 3.4, Identity). Recorded, never trusted for access. */
   account?: string;
+  /** For an outside agent: the name and version it declared when it connected, recorded with what it does (spec 3.4, Outside agents). */
+  client?: { name: string; version: string };
+  /** For an outside agent: why it acts, in its own words. Every agent commit and proposal gives one. */
+  reason?: string;
 }
 
 export class GatewayError extends Error {
@@ -105,6 +109,11 @@ export interface ObjectView extends ObjectSummary {
   journey?: Journey;
   /** The latest commit on the object: which method, who ran it and when. Absent when nothing has changed it. */
   lastChange?: { commit: string; method: string; methodLabel: string; person: string; personName: string; at: string };
+  /**
+   * The properties whose current value an outside agent wrote, each with the agent's name (spec 3.4, Outside agents,
+   * Exposure): text from outside the sponsor, which the platform's own models treat as data, never as instructions.
+   */
+  byOutsideAgents?: Record<string, string>;
 }
 
 export interface TypeDescription {
@@ -264,6 +273,10 @@ export interface CommitResult {
   fromDraft?: { draft: string; model: string; edited: boolean };
   /** For a change set (spec 3.7): what applying it, or rolling it back, would do to the structure and the graph. */
   impact?: StructureImpact;
+  /** For an agent where the method only proposes (spec 3.4, Outside agents): the proposal made, for its accountable person. */
+  proposedTo?: { proposal: string; identifier: string; accountablePerson: string; accountablePersonName: string };
+  /** For a person confirming an agent's proposal: the proposal the commit confirmed. */
+  confirmed?: { proposal: string; identifier: string; agent: string };
   /** The skill's proposal the inputs started from, with the inputs kept as proposed and those changed (spec 3.3, Skills). */
   fromProposal?: { proposal: string; kept: string[]; changed: string[]; followedRecommendation?: boolean };
 }
@@ -632,18 +645,96 @@ export class Gateway {
 
   // ---------------------------------------------------------------- principals
 
-  /** The person must exist and be allowed to act in the role. */
+  /** The person or agent must exist and be allowed to act in the role; an agent must be active (spec 3.4, Outside agents). */
   private authorize(principal: Principal): void {
     if (!ask(this.graph.store, `ASK { <${principal.person}> p:actsAs <${principal.role}> . <${principal.role}> a p:Role }`)) {
       throw new GatewayError(403, ['This person cannot act in this role']);
     }
+    if (this.isAgent(principal)) {
+      const r = this.q(`SELECT ?status ?why WHERE { <${principal.person}> p:agentStatus ?status OPTIONAL { <${principal.person}> p:statusReason ?why } }`)[0];
+      const why = r?.why ? `: ${r.why}` : '';
+      if (r?.status === `${NS.p}AgentStatus-registered`) throw new GatewayError(403, ['This agent is registered and not yet approved by the sponsor']);
+      if (r?.status === `${NS.p}AgentStatus-paused`) throw new GatewayError(403, [`This agent is paused${why}. A person must resume it.`]);
+      if (r?.status === `${NS.p}AgentStatus-suspended`) throw new GatewayError(403, [`This agent is suspended${why}`]);
+      if (r?.status !== `${NS.p}AgentStatus-active`) throw new GatewayError(403, ['This agent is retired']);
+    }
+  }
+
+  /** True when the principal is an outside agent, not a person (spec 3.4, Outside agents). */
+  private isAgent(principal: Principal | string): boolean {
+    return ask(this.graph.store, `ASK { <${typeof principal === 'string' ? principal : principal.person}> a p:Agent }`);
   }
 
   private unreadable(role: string): Set<string> {
     const hidden = this.q(`SELECT ?x WHERE { <${role}> p:mayNotRead ?x }`).map((r) => r.x);
     // A role that reads no personal data, such as the Structure Steward, reads no type that holds it (spec 3.7).
     if (ask(this.graph.store, `ASK { <${role}> p:readsNoPersonalData true }`)) hidden.push(...this.q(`SELECT ?t WHERE { ?t p:holdsPersonalData true }`).map((r) => r.t));
+    // A role for agents reads only the types it lists; nothing else exists for it (spec 3.3, What a role reads).
+    if (ask(this.graph.store, `ASK { <${role}> p:forAgents true }`)) {
+      hidden.push(...this.q(`SELECT ?t WHERE { ?t a p:ObjectType FILTER NOT EXISTS { <${role}> p:mayRead ?t } }`).map((r) => r.t));
+    }
     return new Set(hidden);
+  }
+
+  /** A SHACL property path in the ontology, such as a scope path, as a SPARQL property path. */
+  private pathSparql(node: string): string {
+    const items: string[] = [];
+    for (let list = node; list !== `${NS.rdf}nil` && ask(this.graph.store, `ASK { <${list}> rdf:first ?f }`); ) {
+      const r = this.q(`SELECT ?first ?rest WHERE { <${list}> rdf:first ?first ; rdf:rest ?rest }`)[0];
+      items.push(this.pathSparql(r.first));
+      list = r.rest;
+    }
+    if (items.length) return `(${items.join('/')})`;
+    const inverse = this.q(`SELECT ?x WHERE { <${node}> sh:inversePath ?x }`)[0]?.x;
+    if (inverse) return `^(${this.pathSparql(inverse)})`;
+    return `<${node}>`;
+  }
+
+  private scopeCache = new Map<string, { key: string; roots: Set<string>; hidden: Set<string> }>();
+
+  /**
+   * Scope (spec 3.3): for a scoped principal, the roots of its assignments in force today, its own or its organization's,
+   * and the objects outside them, which do not exist for it. Undefined when the role is not scoped.
+   */
+  private scope(principal: Principal): { roots: Set<string>; hidden: Set<string> } | undefined {
+    if (!ask(this.graph.store, `ASK { { <${principal.role}> p:scoped true } UNION { <${principal.role}> p:forAgents true } }`)) return undefined;
+    const today = this.now().toISOString().slice(0, 10);
+    const key = `${this.commitCount} ${today}`;
+    const cached = this.scopeCache.get(`${principal.person} ${principal.role}`);
+    if (cached?.key === key) return cached;
+    const roots = new Set(this.q(`SELECT DISTINCT ?root WHERE { ?a a p:Assignment ; p:assignee ?who ; p:inScope ?root ; p:assignedFrom ?from .
+        FILTER(?who = <${principal.person}> || EXISTS { <${principal.person}> (p:memberOf|p:operatedBy) ?who })
+        FILTER(?from <= "${today}"^^xsd:date) OPTIONAL { ?a p:assignedUntil ?until } FILTER(!BOUND(?until) || ?until >= "${today}"^^xsd:date) }`).map((r) => r.root));
+    const within = roots.size ? `FILTER(?root IN (${[...roots].map((r) => `<${r}>`).join(', ')}))` : 'FILTER(false)';
+    const hidden = new Set<string>();
+    for (const { type } of this.q(`SELECT ?type WHERE { ?type a p:ObjectType ; p:scopeRoot true }`)) {
+      for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> }`)) if (!roots.has(o)) hidden.add(o);
+    }
+    for (const { type, path } of this.q(`SELECT ?type ?path WHERE { ?type a p:ObjectType ; p:scopePath ?path }`)) {
+      for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> FILTER NOT EXISTS { ?o ${this.pathSparql(path)} ?root ${within} } }`)) hidden.add(o);
+    }
+    const value = { key, roots, hidden };
+    this.scopeCache.set(`${principal.person} ${principal.role}`, value);
+    return value;
+  }
+
+  /** Whether the object exists for the principal: inside its scope, when it is scoped (spec 3.3, Out of scope is invisible). */
+  private visible(principal: Principal, object: string): boolean {
+    return !this.scope(principal)?.hidden.has(object);
+  }
+
+  /** A SPARQL filter that leaves out the objects outside the principal's scope, bound to the variable given. */
+  private scopeFilter(principal: Principal, variable: string): string {
+    const hidden = this.scope(principal)?.hidden;
+    return hidden?.size ? `FILTER(${variable} NOT IN (${[...hidden].map((o) => `<${o}>`).join(', ')}))` : '';
+  }
+
+  /** An object the principal may know exists: in its scope, and, for an agent, of a type it reads. Otherwise not found. */
+  private resolveFor(principal: Principal, idOrIri: string): string {
+    const object = this.resolve(idOrIri);
+    if (!this.visible(principal, object)) throw new GatewayError(404, [`No object ${idOrIri}`]);
+    if (this.isAgent(principal) && !this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(404, [`No object ${idOrIri}`]);
+    return object;
   }
 
   // ---------------------------------------------------------------- describe
@@ -807,7 +898,7 @@ export class Gateway {
       label,
       types: this.q(`SELECT ?type ?label ?pluralLabel (COUNT(?o) AS ?count) WHERE {
           ?type a p:ObjectType ; p:inDomain <${domain}> ; rdfs:label ?label ; p:pluralLabel ?pluralLabel .
-          OPTIONAL { ?o a ?type } } GROUP BY ?type ?label ?pluralLabel ORDER BY ?label`)
+          OPTIONAL { ?o a ?type ${this.scopeFilter(principal, '?o')} } } GROUP BY ?type ?label ?pluralLabel ORDER BY ?label`)
         .filter((t) => !hidden.has(t.type) && !contained.has(t.type))
         .map((t) => ({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, count: Number(t.count), ...(this.mayCreate(principal, t.type) ? { creatable: true } : {}) })),
     })).filter((d) => d.types.length > 0);
@@ -830,7 +921,7 @@ export class Gateway {
 
     const items: ToDoItem[] = [];
     for (const type of new Set(methods.map((m) => m.type))) {
-      for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> }`)) {
+      for (const { o } of this.q(`SELECT ?o WHERE { ?o a <${type}> ${this.scopeFilter(principal, '?o')} }`)) {
         const urgency = this.urgencyOf(o);
         const tasks: ToDoItem['tasks'] = [];
         const actions: ToDoItem['actions'] = [];
@@ -847,12 +938,14 @@ export class Gateway {
         items.push({ object: this.summary(o), tasks, actions, urgency, ...(deadline ? { deadline } : {}) });
       }
     }
-    return items.sort(
+    items.sort(
       (a, b) =>
         (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999') ||
         b.urgency - a.urgency ||
         a.object.identifier.localeCompare(b.object.identifier, undefined, { numeric: true }),
     );
+    this.recordAgentReads(principal, items.map((i) => i.object.iri));
+    return items;
   }
 
   // ---------------------------------------------------------------- reads
@@ -879,16 +972,23 @@ export class Gateway {
   describeType(principal: Principal, type: string): { type: string; label: string; pluralLabel: string } {
     this.authorize(principal);
     if (!ask(this.graph.store, `ASK { <${type}> a p:ObjectType }`)) throw new GatewayError(404, ['No such type']);
-    if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this type']);
+    if (!this.canRead(principal, type)) throw this.isAgent(principal) ? new GatewayError(404, ['No such type']) : new GatewayError(403, ['Your role cannot read this type']);
     const { typeLabel, pluralLabel } = this.typeLabels(type);
     return { type, label: typeLabel, pluralLabel };
   }
 
   find(principal: Principal, type: string, state: Record<string, string> = {}): ObjectSummary[] {
     this.authorize(principal);
-    if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this type']);
+    if (!this.canRead(principal, type)) throw this.isAgent(principal) ? new GatewayError(404, ['No such type']) : new GatewayError(403, ['Your role cannot read this type']);
     const filters = Object.entries(state).map(([dim, value]) => `?o <${dim}> <${value}> .`).join(' ');
-    return this.q(`SELECT ?o WHERE { ?o a <${type}> ; ls:identifier ?id . ${filters} } ORDER BY ?id`).map((r) => this.summary(r.o));
+    const found = this.q(`SELECT ?o WHERE { ?o a <${type}> ; ls:identifier ?id . ${filters} ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o));
+    this.recordAgentReads(principal, found.map((o) => o.iri));
+    return found;
+  }
+
+  /** Every object an outside agent is given is a read, recorded as one (spec 3.4, Outside agents, Audit). */
+  private recordAgentReads(principal: Principal, objects: string[]) {
+    if (this.isAgent(principal)) for (const o of objects) this.recordRead(principal, o);
   }
 
   private summary(object: string): ObjectSummary {
@@ -958,15 +1058,17 @@ export class Gateway {
 
   read(principal: Principal, idOrIri: string): ObjectView {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     const view = this.view(principal, object);
-    if (ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
+    // Personal data is audited for everyone; every read by an outside agent is data leaving the platform (spec 3.4).
+    if (this.isAgent(principal) || ask(this.graph.store, `ASK { <${view.type}> p:holdsPersonalData true }`)) this.recordRead(principal, object);
     return view;
   }
 
   /** An object as the principal may see it, with nothing recorded: reads and searches decide what to audit. */
   private view(principal: Principal, object: string): ObjectView {
     const summary = this.summary(object);
+    if (!this.visible(principal, object) || (!this.canRead(principal, summary.type) && this.isAgent(principal))) throw new GatewayError(404, [`No object ${summary.identifier}`]);
     if (!this.canRead(principal, summary.type)) throw new GatewayError(403, ['Your role cannot read this object']);
     const hidden = this.unreadable(principal.role);
     for (const { prop, shape } of this.q(`SELECT ?prop ?shape WHERE { ?rule p:hides ?prop ; p:hiddenWhen ?shape }`)) {
@@ -977,7 +1079,7 @@ export class Gateway {
       .filter((end) => !unreadableTypes.has(end.type))
       .map((end) => {
         const pattern = end.direction === 'out' ? `<${object}> <${end.relationship}> ?o` : `?o <${end.relationship}> <${object}>`;
-        const objects = this.q(`SELECT ?o WHERE { ${pattern} . ?o a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+        const objects = this.q(`SELECT ?o WHERE { ${pattern} . ?o a <${end.type}> ; ls:identifier ?id ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o));
         return { ...end, objects, ...(end.kind === 'contains' && !end.one && this.mayCreate(principal, end.type) ? { canAdd: true } : {}) };
       });
     // Coded values show their labels, people their names; a property with several values shows them all, in order.
@@ -999,7 +1101,19 @@ export class Gateway {
     const domainLabel = this.q(`SELECT ?label WHERE { <${summary.type}> p:inDomain/rdfs:label ?label }`)[0]?.label ?? '';
     const deadline = this.deadlineOf(object);
     const journey = this.journeyOf(object, summary.type);
-    return { ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(journey ? { journey } : {}), ...(lastChange ? { lastChange } : {}) };
+    // Values an outside agent wrote, by the latest commit that changed each property (spec 3.4, Outside agents, Exposure).
+    const byOutsideAgents = Object.fromEntries(
+      this.q(`SELECT DISTINCT ?label ?agentName WHERE {
+          GRAPH ?c { ?c a p:Commit ; prov:wasAssociatedWith ?agent ; prov:startedAtTime ?at ; p:change ?ch . ?ch p:changedSubject <${object}> ; p:changedProperty ?prop ; p:newValue ?v }
+          ?agent a p:Agent ; rdfs:label ?agentName . <${object}> ?prop ?v . ?prop rdfs:label ?label
+          FILTER NOT EXISTS { GRAPH ?later { ?later a p:Commit ; prov:startedAtTime ?at2 ; p:change ?ch2 . ?ch2 p:changedSubject <${object}> ; p:changedProperty ?prop } FILTER(?at2 > ?at) } }`)
+        .filter((r) => r.label in properties)
+        .map((r) => [r.label, r.agentName]),
+    );
+    return {
+      ...summary, domainLabel, urgency: this.urgencyOf(object), ...(deadline ? { deadline } : {}), links, properties, ...(journey ? { journey } : {}), ...(lastChange ? { lastChange } : {}),
+      ...(Object.keys(byOutsideAgents).length ? { byOutsideAgents } : {}),
+    };
   }
 
   // ---------------------------------------------------------------- search (spec 5.2)
@@ -1023,7 +1137,7 @@ export class Gateway {
         ?value skos:inScheme ?scheme ; skos:prefLabel ?label }`).filter((v) => readable.has(v.type)) as never;
     const identifiers = new Map(
       this.q(`SELECT ?o ?id ?type WHERE { ?o ls:identifier ?id ; a ?type . ?type a p:ObjectType }`)
-        .filter((r) => readable.has(r.type))
+        .filter((r) => readable.has(r.type) && this.visible(principal, r.o))
         .map((r) => [normalize(r.id), { iri: r.o, identifier: r.id }]),
     );
     const vocabulary = { types, states, identifier: (w: string) => identifiers.get(w) };
@@ -1090,7 +1204,7 @@ export class Gateway {
       candidates = wanted.flatMap((type) => this.q(`SELECT ?o WHERE { ?o a <${type}> }`).map((r) => ({ iri: r.o, score: interpretation.words.length ? 20 : 50, matched: [] })));
     }
     const seen = new Set<string>();
-    candidates = candidates.filter((c) => !seen.has(c.iri) && seen.add(c.iri));
+    candidates = candidates.filter((c) => !seen.has(c.iri) && seen.add(c.iri) && this.visible(principal, c.iri));
 
     // Mine: work waiting for the principal on To do, or objects that name them in a person property (spec 5.2).
     if (interpretation.mine) {
@@ -1142,7 +1256,7 @@ export class Gateway {
     matches.sort((a, b) => b.score - a.score || a.view.identifier.localeCompare(b.view.identifier, undefined, { numeric: true }));
     const shown = matches.slice(0, limit);
     // Matching personal data is reading it (spec 5.2): audited as the principal's read.
-    for (const m of shown) if (m.personal) this.recordRead(principal, m.iri);
+    for (const m of shown) if (m.personal || this.isAgent(principal)) this.recordRead(principal, m.iri);
     return {
       query,
       interpretation,
@@ -1169,7 +1283,7 @@ export class Gateway {
     this.authorize(principal);
     // The objects the question is asked from (spec 5.2, About an object): each must be one the principal may read.
     const objects = [...new Set(about)].slice(0, MAX_ABOUT).map((id) => {
-      const object = this.resolve(id);
+      const object = this.resolveFor(principal, id);
       if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, [`You may not read ${id}`]);
       return this.summary(object);
     });
@@ -1281,13 +1395,15 @@ export class Gateway {
             // Where it is along its lifecycle, so a question about progress is answered from the same journey a person sees.
             ...(view.journey ? { journey: { lifecycle: view.journey.dimension, stages: view.journey.steps.map((j) => ({ stage: j.stage, status: j.status, ...(j.exit ? { exit: true } : {}) })) } } : {}),
             ...(view.lastChange ? { lastChange: { method: view.lastChange.methodLabel, by: view.lastChange.personName, at: view.lastChange.at } } : {}),
+            // Text an outside agent wrote is marked, so the model weighs it as an outside claim and never follows it (spec 3.4).
+            ...(view.byOutsideAgents ? { writtenByOutsideAgent: view.byOutsideAgents } : {}),
           });
         }
         case 'count_objects': {
           const type = vocabulary.type(text('type'));
           if (!type) return { content: `There is no type you may read called "${text('type')}". Use a name from the list you were given.`, isError: true };
           const states = strings('states').flatMap((n) => vocabulary.states(n, [type.type]));
-          let objects = this.q(`SELECT ?o WHERE { ?o a <${type.type}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o));
+          let objects = this.q(`SELECT ?o WHERE { ?o a <${type.type}> ; ls:identifier ?id ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o));
           const byDimension = new Map<string, Set<string>>();
           for (const s of states) byDimension.set(s.dimensionLabel, (byDimension.get(s.dimensionLabel) ?? new Set()).add(s.label));
           objects = objects.filter((o) => [...byDimension].every(([d, values]) => values.has(o.state[d])));
@@ -1302,7 +1418,7 @@ export class Gateway {
             if (!end) return { content: `"${text('group_by')}" is neither a state nor a link of ${type.label}. Use one from the list you were given.`, isError: true };
             for (const o of objects) {
               const pattern = end.direction === 'out' ? `<${o.iri}> <${end.relationship}> ?x` : `?x <${end.relationship}> <${o.iri}>`;
-              const others = this.q(`SELECT ?x ?id WHERE { ${pattern} . ?x a <${end.type}> ; ls:identifier ?id } ORDER BY ?id`);
+              const others = this.q(`SELECT ?x ?id WHERE { ${pattern} . ?x a <${end.type}> ; ls:identifier ?id ${this.scopeFilter(principal, '?x')} } ORDER BY ?id`);
               if (!others.length) groups.set('none', (groups.get('none') ?? 0) + 1);
               for (const x of others) {
                 meet({ iri: x.x, identifier: x.id });
@@ -1422,7 +1538,7 @@ export class Gateway {
         OPTIONAL { <${shape}> sh:property ?ps . ?ps sh:path ?path ; sh:hasValue ?value } }`);
     return constraints.every((c) =>
       (!c.class || ask(this.graph.store, `ASK { <${object}> a <${c.class}> }`)) &&
-      (!c.path || ask(this.graph.store, `ASK { <${object}> <${c.path}> <${c.value}> }`)),
+      (!c.path || ask(this.graph.store, c.value.includes('://') ? `ASK { <${object}> <${c.path}> <${c.value}> }` : `ASK { <${object}> <${c.path}> ?v FILTER(STR(?v) = ${JSON.stringify(c.value)}) }`)),
     );
   }
 
@@ -1455,7 +1571,7 @@ export class Gateway {
 
   async methods(principal: Principal, idOrIri: string): Promise<MethodOption[]> {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     if (!this.canRead(principal, this.typeOf(object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
     // Methods the platform cannot run yet, for want of a worker or a connected model, are blocked with that reason.
     return (await methodsFor(this.graph, object, principal.role)).map((m) => {
@@ -1509,8 +1625,8 @@ export class Gateway {
         ?m rdfs:label ?label ; rdfs:comment ?comment ; p:metricOf ?type . ?type p:pluralLabel ?plural .
         OPTIONAL { ?m p:pastDue ?past } OPTIONAL { ?m p:watchAt ?watch } OPTIONAL { ?m p:riskAt ?risk } OPTIONAL { ?m p:moreIsBetter ?more } }`)) {
       if (!this.canRead(principal, m.type)) continue;
-      const count = this.metricMatches(m.m, m.type, today).length;
-      const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
+      const count = this.metricMatches(principal, m.m, m.type, today).length;
+      const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> ${this.scopeFilter(principal, '?o')} }`)[0].n);
       const health = this.healthOf(count, m.watch, m.risk, m.more);
       metrics.push({ metric: m.m, label: m.label, comment: m.comment, type: m.type, typeLabel: this.typeLabels(m.type).typeLabel, pluralLabel: m.plural, count, total, ...(health ? { health } : {}) });
     }
@@ -1530,7 +1646,7 @@ export class Gateway {
       const dim = this.q(`SELECT ?d ?label WHERE { ?d p:dimensionOf <${t.type}> ; p:order ?order ; rdfs:label ?label FILTER NOT EXISTS { ?d p:chosenOnCreate true } } ORDER BY ?order LIMIT 1`)[0];
       if (!dim || !t.count) continue;
       const stages = this.q(`SELECT ?v ?label (COUNT(?o) AS ?n) WHERE { <${dim.d}> p:valuesFrom ?s . ?v skos:inScheme ?s ; skos:prefLabel ?label ; p:order ?order . FILTER NOT EXISTS { ?v p:valueStatus p:ValueStatus-deprecated }
-          OPTIONAL { ?o a <${t.type}> ; <${dim.d}> ?v } } GROUP BY ?v ?label ?order ORDER BY ?order`).map((r) => ({ value: r.v, label: r.label, count: Number(r.n) }));
+          OPTIONAL { ?o a <${t.type}> ; <${dim.d}> ?v ${this.scopeFilter(principal, '?o')} } } GROUP BY ?v ?label ?order ORDER BY ?order`).map((r) => ({ value: r.v, label: r.label, count: Number(r.n) }));
       const total = stages.reduce((a, b) => a + b.count, 0);
       if (total) lifecycles.push({ type: t.type, label: t.label, pluralLabel: t.pluralLabel, dimension: dim.label, total, stages });
     }
@@ -1540,8 +1656,11 @@ export class Gateway {
     return { metrics, lifecycles, doneLast7Days };
   }
 
-  /** The objects a metric counts: its type, in its states (values of one dimension are alternatives), past due if it says so. */
-  private metricMatches(metric: string, type: string, today: string): string[] {
+  /**
+   * The objects a metric counts: its type, in its states (values of one dimension are alternatives), past due if it says so,
+   * within the principal's scope, and reaching the principal along its principal path if it has one.
+   */
+  private metricMatches(principal: Principal, metric: string, type: string, today: string): string[] {
     const byDimension = new Map<string, string[]>();
     for (const { v, d } of this.q(`SELECT ?v ?d WHERE { <${metric}> p:inState ?v . ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?v skos:inScheme ?s }`)) {
       byDimension.set(d, [...(byDimension.get(d) ?? []), v]);
@@ -1549,7 +1668,9 @@ export class Gateway {
     const where = [...byDimension].map(([d, vs], i) => `?o <${d}> ?v${i} FILTER(?v${i} IN (${vs.map((v) => `<${v}>`).join(', ')}))`);
     const past = this.q(`SELECT ?p WHERE { <${metric}> p:pastDue ?p }`)[0]?.p;
     if (past) where.push(`?o <${past}> ?date FILTER(?date < "${today}"^^xsd:date)`);
-    return this.q(`SELECT DISTINCT ?o WHERE { ?o a <${type}> . ${where.join(' . ')} } ORDER BY ?o`).map((r) => r.o);
+    const toPrincipal = this.q(`SELECT ?path WHERE { <${metric}> p:principalPath ?path }`)[0]?.path;
+    if (toPrincipal) where.push(`?o ${this.pathSparql(toPrincipal)} <${principal.person}>`);
+    return this.q(`SELECT DISTINCT ?o WHERE { ?o a <${type}> . ${where.join(' . ')} ${this.scopeFilter(principal, '?o')} } ORDER BY ?o`).map((r) => r.o);
   }
 
   private healthOf(count: number, watch?: string, risk?: string, more?: string): HomeView['metrics'][number]['health'] {
@@ -1566,8 +1687,9 @@ export class Gateway {
         ?type p:pluralLabel ?plural OPTIONAL { <${metric}> p:watchAt ?watch } OPTIONAL { <${metric}> p:riskAt ?risk } OPTIONAL { <${metric}> p:moreIsBetter ?more } }`)[0];
     if (!m) throw new GatewayError(404, ['No such metric']);
     if (!this.canRead(principal, m.type)) throw new GatewayError(403, ['Your role cannot read these objects']);
-    const objects = this.metricMatches(metric, m.type, this.now().toISOString().slice(0, 10)).map((o) => this.summary(o));
-    const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> }`)[0].n);
+    const objects = this.metricMatches(principal, metric, m.type, this.now().toISOString().slice(0, 10)).map((o) => this.summary(o));
+    this.recordAgentReads(principal, objects.map((o) => o.iri));
+    const total = Number(this.q(`SELECT (COUNT(?o) AS ?n) WHERE { ?o a <${m.type}> ${this.scopeFilter(principal, '?o')} }`)[0].n);
     const health = this.healthOf(objects.length, m.watch, m.risk, m.more);
     return {
       metric: { metric, label: m.label, comment: m.comment, type: m.type, typeLabel: this.typeLabels(m.type).typeLabel, pluralLabel: m.plural, count: objects.length, total, ...(health ? { health } : {}) },
@@ -1600,13 +1722,19 @@ export class Gateway {
     const template = this.q(`SELECT ?t WHERE { <${type}> p:titleTemplate ?t }`)[0]?.t ?? '';
     const titled = new Set(templateProperties(template.split(' | ')[0]));
     const parent = this.parentLinkOf(type);
-    const shapes = this.q(`SELECT ?ps ?path ?dt ?max ?name ?label ?order WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?path .
-        OPTIONAL { ?ps sh:datatype ?dt } OPTIONAL { ?ps sh:maxCount ?max } OPTIONAL { ?ps sh:name ?name } OPTIONAL { ?path rdfs:label ?label } OPTIONAL { ?path p:order ?order }
-        FILTER(?path != ls:identifier) }`);
+    // Properties set from the principal or only by methods, such as who answers for an agent or why it was suspended, are in no form.
+    const shapes = this.q(`SELECT ?ps ?path ?dt ?max ?min ?name ?label ?order WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?path .
+        OPTIONAL { ?ps sh:datatype ?dt } OPTIONAL { ?ps sh:maxCount ?max } OPTIONAL { ?ps sh:minCount ?min } OPTIONAL { ?ps sh:name ?name } OPTIONAL { ?path rdfs:label ?label } OPTIONAL { ?path p:order ?order }
+        OPTIONAL { ?ps sh:order ?shapeOrder }
+        FILTER(?path != ls:identifier) FILTER NOT EXISTS { ?path p:setOnCreateFrom ?from } FILTER NOT EXISTS { ?path p:setOnlyByMethods true } } ORDER BY ?shapeOrder`);
     const current = (property: string) => (object ? this.q(`SELECT ?v WHERE { <${object}> <${property}> ?v }`)[0]?.v : undefined);
-    const objectChoices = (types: string[]) =>
-      types.filter((t) => this.canRead(principal, t)).flatMap((t) => this.q(`SELECT ?o WHERE { ?o a <${t}> ; ls:identifier ?id } ORDER BY ?id`).map((r) => this.summary(r.o)))
-        .map((o) => ({ value: o.iri, label: `${o.identifier} · ${o.title}` }));
+    // Only objects that meet the property's node shapes qualify, such as a role for agents.
+    const objectChoices = (types: string[], ps: string) => {
+      const nodeShapes = this.q(`SELECT ?n WHERE { <${ps}> sh:node ?n }`).map((r) => r.n);
+      return types.filter((t) => this.canRead(principal, t)).flatMap((t) => this.q(`SELECT ?o WHERE { ?o a <${t}> ; ls:identifier ?id ${this.scopeFilter(principal, '?o')} } ORDER BY ?id`).map((r) => this.summary(r.o)))
+        .filter((o) => nodeShapes.every((n) => this.conformsSync(o.iri, n)))
+        .map((o) => ({ value: o.iri, label: o.title && o.title !== o.identifier ? `${o.identifier} · ${o.title}` : o.identifier }));
+    };
     const fields: FormField[] = [];
     for (const sh of shapes) {
       if (hidden.has(sh.path)) continue;
@@ -1628,11 +1756,11 @@ export class Gateway {
         // A link is named by the type it reaches, such as Protocol, unless it reaches several, such as a program or an opportunity.
         const targets = this.targetsOf(sh.ps);
         const targetLabel = targets.length === 1 ? this.q(`SELECT ?l WHERE { <${targets[0]}> rdfs:label ?l }`)[0]?.l : undefined;
-        fields.push({ ...base, ...(targetLabel ? { label: targetLabel } : {}), kind: 'object', required: isParent || titled.has(sh.path), choices: objectChoices(targets), ...(value ? { value } : {}) });
+        fields.push({ ...base, ...(targetLabel ? { label: targetLabel } : {}), kind: 'object', required: isParent || titled.has(sh.path) || Number(sh.min ?? 0) > 0, choices: objectChoices(targets, sh.ps), ...(value ? { value } : {}) });
       } else if (sh.dt && sh.max === '1') {
         // A name the title shows is one line; other text may run longer.
         const kind = sh.dt === `${NS.xsd}decimal` || sh.dt === `${NS.xsd}integer` ? 'number' : sh.dt === `${NS.xsd}date` ? 'date' : sh.dt === `${NS.xsd}anyURI` ? 'url' : titled.has(sh.path) ? 'line' : 'text';
-        fields.push({ ...base, kind, required: titled.has(sh.path), ...(value ? { value } : {}) });
+        fields.push({ ...base, kind, required: titled.has(sh.path) || Number(sh.min ?? 0) > 0, ...(value ? { value } : {}) });
       }
     }
     // Required first: the parent, then the title's properties and the classifying states, then the rest, each in shape order.
@@ -1677,7 +1805,7 @@ export class Gateway {
     if (!ask(this.graph.store, `ASK { <${type}> a p:ObjectType }`)) throw new GatewayError(404, ['No such type']);
     if (ask(this.graph.store, `ASK { <${type}> p:onlyThroughMethods true }`)) throw new GatewayError(400, ['Objects of this type come only through the methods that create them']);
     if (!this.mayCreate(principal, type)) throw new GatewayError(403, ['Your role cannot create objects of this type']);
-    const parent = parentId ? this.resolve(parentId) : undefined;
+    const parent = parentId ? this.resolveFor(principal, parentId) : undefined;
     let fields = this.formFields(principal, type, 'create');
     if (parent) {
       const link = this.parentLinkFor(type, parent);
@@ -1741,6 +1869,11 @@ export class Gateway {
     for (const { d, first } of this.q(`SELECT ?d ?first WHERE { ?d p:dimensionOf <${type}> ; p:valuesFrom ?s . ?first skos:inScheme ?s ; p:order 1
         FILTER NOT EXISTS { ?d p:chosenOnCreate true } FILTER NOT EXISTS { ?d p:startsEmpty true } }`)) this.set(work, created, d, namedNode(first), changes, false);
     for (const [f, v] of resolved) if (v) this.set(work, created, f.property, v, changes, false);
+    // Set from the principal: the principal itself, or its value of a property, such as the organization it is a member of.
+    for (const { path, from } of this.q(`SELECT ?path ?from WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path ?path . ?path p:setOnCreateFrom ?from }`)) {
+      const value = from === `${NS.p}Principal` ? principal.person : this.q(`SELECT ?v WHERE { <${principal.person}> <${from}> ?v }`)[0]?.v;
+      if (value) this.set(work, created, path, namedNode(value), changes, false);
+    }
     if (form.parent) {
       const link = this.parentLinkFor(type, form.parent.iri);
       if (link.fromParent) this.set(work, form.parent.iri, link.property, namedNode(created), changes, false);
@@ -1755,7 +1888,7 @@ export class Gateway {
   /** Why an object cannot be edited now: no permission, a type that comes only through methods, or a rule that freezes it. */
   async editBlocks(principal: Principal, idOrIri: string): Promise<string[]> {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     const { type } = this.typeOf(object);
     if (!this.canRead(principal, type)) return ['Your role cannot read this object'];
     if (ask(this.graph.store, `ASK { <${type}> p:onlyThroughMethods true }`)) return ['Objects of this type change only through their methods'];
@@ -1772,7 +1905,7 @@ export class Gateway {
   async editForm(principal: Principal, idOrIri: string): Promise<ObjectForm> {
     const blocks = await this.editBlocks(principal, idOrIri);
     if (blocks.length) throw new GatewayError(403, blocks);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     const summary = this.summary(object);
     return { mode: 'edit', type: summary.type, typeLabel: summary.typeLabel, object: summary, fields: this.formFields(principal, summary.type, 'edit', object) };
   }
@@ -1868,7 +2001,7 @@ export class Gateway {
   /** The set methods a selection qualifies for (spec 5.4, Acting on a set). */
   async setMethods(principal: Principal, ids: string[]): Promise<SetMethodOption[]> {
     this.authorize(principal);
-    const objects = ids.map((id) => this.resolve(id));
+    const objects = ids.map((id) => this.resolveFor(principal, id));
     if (objects.length < 2) return [];
     const types = new Set(objects.map((o) => this.typeOf(o).type));
     if (types.size !== 1) return [];
@@ -1882,7 +2015,7 @@ export class Gateway {
   /** Compose a set method: its inputs, the input that chooses among the set offering the set, and its comparison. */
   async composeSet(principal: Principal, ids: string[], method: string): Promise<MethodComposition> {
     this.authorize(principal);
-    const objects = ids.map((id) => this.resolve(id));
+    const objects = ids.map((id) => this.resolveFor(principal, id));
     const blocks = await this.setBlocks(principal, objects, method);
     if (blocks.length) throw new GatewayError(400, blocks);
     const label = this.q(`SELECT ?l WHERE { <${method}> rdfs:label ?l }`)[0].l;
@@ -1940,7 +2073,7 @@ export class Gateway {
 
   /** The chosen object and the others of a set, from the input that chooses among the set. */
   private async setPlan(principal: Principal, ids: string[], method: string, inputs: Record<string, string>) {
-    const objects = ids.map((id) => this.resolve(id));
+    const objects = ids.map((id) => this.resolveFor(principal, id));
     const blocks = await this.setBlocks(principal, objects, method);
     if (blocks.length) throw new GatewayError(400, blocks);
     const among = this.q(`SELECT ?name ?label WHERE { <${method}> p:input ?i . ?i p:amongSet true ; p:inputName ?name ; rdfs:label ?label }`)[0];
@@ -1973,9 +2106,9 @@ export class Gateway {
    * Commit steps 1 to 5 (spec 3.4) on a working copy: role, inputs, preconditions, effects and validation.
    * Throws with the reasons at the first failure. Nothing reaches the live graph.
    */
-  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, draftText?: string, others: string[] = []) {
+  private async plan(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, draftText?: string, others: string[] = [], also?: (work: Graph, changes: Change[]) => void) {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     const { type } = this.typeOf(object);
     if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
     // A set method runs only on a set, through the set requests (spec 5.4, Acting on a set).
@@ -1990,6 +2123,8 @@ export class Gateway {
 
     // 1. The role may run the method.
     if (!ask(this.graph.store, `ASK { <${principal.role}> p:mayRun <${method}> }`)) throw new GatewayError(403, ['Your role cannot run this method']);
+    if (this.isAgent(principal) && this.autonomyFor(principal, method) === 'never') throw new GatewayError(403, ['Agents never run this method']);
+    if (this.isAgent(principal) && this.signatureRequest(principal, method)) throw new GatewayError(403, ['Only a person can sign. Agents never sign.']);
     const notOwner = this.ownerBlocks(principal, object, method);
     if (notOwner.length) throw new GatewayError(403, notOwner);
 
@@ -2032,6 +2167,9 @@ export class Gateway {
       for (const target of created.length ? created : [object]) this.set(work, target, property, value, changes);
     }
 
+    // What else the commit changes in the same transaction, such as the agent proposal it confirms.
+    also?.(work, changes);
+
     // 5. Validate the changed copy against every shape. Any violation discards it. A change to the structure brings its
     // own shapes, so it is validated against them; any other commit, against the shapes compiled once.
     work.dataset = defaultGraphDataset(work.store);
@@ -2046,6 +2184,20 @@ export class Gateway {
 
   /** Preview a method (spec 3.4): what a commit would change, without saving anything. */
   async preview(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string> = {}): Promise<Omit<CommitResult, 'commit'>> {
+    // Confirming an agent's proposal previews the method it proposed, run as the principal (spec 3.4, Outside agents).
+    if (this.confirms(method)) {
+      const c = await this.proposalToConfirm(principal, idOrIri, method);
+      const planned = await this.plan(principal, c.target, c.method, c.inputs, undefined, [], c.confirming);
+      const result = {
+        changes: this.shownChanges(c.method, planned.changes, planned.work).map((x) => this.changeView(x, planned.work)),
+        created: planned.created,
+        pending: planned.pending,
+        pendingDescriptions: this.describe_(planned.pending),
+        background: analysisDescriptions(this.graph.store, c.method),
+      };
+      freeStore(planned.work.store);
+      return result;
+    }
     const { object, changes, created, pending, work } = await this.plan(principal, idOrIri, method, inputs);
     // Deciding on a change set shows its impact (spec 3.7): of applying it, or for Roll back, of undoing it.
     const decidesChangeSet = ask(this.graph.store, `ASK { <${object}> a p:ChangeSet FILTER NOT EXISTS { <${method}> p:effect/a p:Creation } }`);
@@ -2063,8 +2215,38 @@ export class Gateway {
   }
 
   private async runCommit(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>, given?: SignatureGiven, draftGiven?: DraftGiven, others: string[] = [], proposalGiven?: string): Promise<CommitResult> {
-    const accepted = draftGiven ? this.checkDraft(principal, this.resolve(idOrIri), method, draftGiven) : undefined;
-    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text, others);
+    // An outside agent says why, and where the method only proposes, its commit becomes a proposal (spec 3.4, Outside agents).
+    if (this.isAgent(principal)) {
+      if (draftGiven) throw new GatewayError(403, ['Only a person accepts or discards a draft. Agents may only ask for one.']);
+      if (!principal.reason?.trim()) throw new GatewayError(400, ['Give your reason: every commit and proposal by an agent says why']);
+      if (this.autonomyFor(principal, method) === 'proposes') {
+        if (others.length) throw new GatewayError(403, ['An agent cannot yet propose a method on a set of objects']);
+        return this.proposeForAgent(principal, idOrIri, method, inputs);
+      }
+    }
+    // Confirming an agent's proposal commits the method it proposed, as the principal, and decides the proposal with it.
+    if (this.confirms(method)) {
+      const c = await this.proposalToConfirm(principal, idOrIri, method);
+      const result = await this.runCommitPlanned(principal, c.target, c.method, c.inputs, undefined, undefined, [], undefined, c.confirming, c.proposal);
+      return { ...result, confirmed: { proposal: c.proposal, identifier: c.identifier, agent: c.agent } };
+    }
+    return this.runCommitPlanned(principal, idOrIri, method, inputs, given, draftGiven, others, proposalGiven);
+  }
+
+  private async runCommitPlanned(
+    principal: Principal,
+    idOrIri: string,
+    method: string,
+    inputs: Record<string, string>,
+    given?: SignatureGiven,
+    draftGiven?: DraftGiven,
+    others: string[] = [],
+    proposalGiven?: string,
+    also?: (work: Graph, changes: Change[]) => void,
+    agentProposal?: string,
+  ): Promise<CommitResult> {
+    const accepted = draftGiven ? this.checkDraft(principal, this.resolveFor(principal, idOrIri), method, draftGiven) : undefined;
+    const { object, resolvedInputs, work, at, changes, created, pending } = await this.plan(principal, idOrIri, method, inputs, accepted?.text, others, also);
     const signature = this.checkSignature(principal, method, given);
     const fromProposal = proposalGiven ? this.proposalOutcome(proposalGiven, method, [object, ...others], resolvedInputs) : undefined;
 
@@ -2073,6 +2255,8 @@ export class Gateway {
     const record = this.record(commit, principal, object, method, resolvedInputs, changes, created, pending, at, signature);
     // A set method's commit names the set's other objects (spec 5.4, Acting on a set).
     for (const other of others) record.push(quad(namedNode(commit), namedNode(`${NS.p}alongWith`), namedNode(other), namedNode(commit)));
+    // A confirmed agent proposal: the commit is the person's, recorded as proposed by the agent.
+    if (agentProposal) record.push(quad(namedNode(commit), namedNode(`${NS.p}proposedByAgent`), namedNode(agentProposal), namedNode(commit)));
     const removed = changes.filter((c) => c.oldValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.oldValue!, defaultGraph()));
     const added = [...changes.filter((c) => c.newValue).map((c) => quad(namedNode(c.subject), namedNode(c.property), c.newValue!, defaultGraph())), ...record];
     // A background method's commit also starts its run, in the same entry (spec 3.4, Background runs).
@@ -2309,8 +2493,10 @@ export class Gateway {
 
   /** Why the principal may not approve or reject this change set (spec 3.7): only an owner of every part, never its drafter alone, never an agent. */
   private ownerBlocks(principal: Principal, object: string, method: string): string[] {
+    const who = this.whoBlocks(principal, object, method);
+    if (who.length) return who;
     if (!ask(this.graph.store, `ASK { <${method}> p:approvedByOwners true }`)) return [];
-    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) return ['Agents never approve or reject a change to the structure'];
+    if (this.isAgent(principal)) return ['Agents never approve or reject a change to the structure'];
     if (this.drafterOf(object) === principal.person) return ['You drafted this change set, so someone else must decide on it'];
     const label = (iri: string) => this.q(`SELECT ?l WHERE { { <${iri}> skos:prefLabel ?l } UNION { <${iri}> rdfs:label ?l } } LIMIT 1`)[0]?.l ?? iri;
     const blocks: string[] = [];
@@ -2319,6 +2505,89 @@ export class Gateway {
       if (!owners.includes(principal.role)) blocks.push(`Only an owner of ${label(set)} may decide on this: ${owners.map(label).join(' or ')}`);
     }
     return blocks;
+  }
+
+  /**
+   * Who may run a method on this object, when the method says (spec 3.4, Outside agents): only the principal reached along
+   * its path, such as an agent's accountable person deciding its proposal, and never the one it names, such as the person
+   * who registered an agent approving it.
+   */
+  private whoBlocks(principal: Principal, object: string, method: string): string[] {
+    const label = (iri: string) => this.q(`SELECT ?l WHERE { <${iri}> rdfs:label ?l }`)[0]?.l ?? iri;
+    const doing = label(method).toLowerCase();
+    const blocks: string[] = [];
+    const only = this.q(`SELECT ?path WHERE { <${method}> p:onlyBy ?path }`)[0]?.path;
+    if (only) {
+      const allowed = this.q(`SELECT DISTINCT ?who WHERE { <${object}> ${this.pathSparql(only)} ?who }`).map((r) => r.who);
+      if (!allowed.includes(principal.person)) blocks.push(`Only ${allowed.map(label).join(' or ') || 'its accountable person'} may ${doing} this`);
+    }
+    for (const { property, propertyLabel } of this.q(`SELECT ?property ?propertyLabel WHERE { <${method}> p:notBy ?property . ?property rdfs:label ?propertyLabel }`)) {
+      if (ask(this.graph.store, `ASK { <${object}> <${property}> <${principal.person}> }`)) blocks.push(`${propertyLabel[0].toUpperCase()}${propertyLabel.slice(1)} you, so someone else must ${doing} it`);
+    }
+    return blocks;
+  }
+
+  /** What an agent may do alone with a method (spec 3.4, Outside agents, Autonomy): as the method allows, or lower for this agent. */
+  private autonomyFor(principal: Principal, method: string): 'acts' | 'proposes' | 'never' {
+    const declared = this.q(`SELECT ?a WHERE { <${method}> p:agentAutonomy ?a }`)[0]?.a;
+    if (declared === `${NS.p}Never`) return 'never';
+    if (declared !== `${NS.p}Acts`) return 'proposes';
+    return ask(this.graph.store, `ASK { <${principal.person}> p:proposesOnly <${method}> }`) ? 'proposes' : 'acts';
+  }
+
+  /** The method, object and inputs an agent proposed, once the principal may confirm the proposal now. */
+  private async proposalToConfirm(principal: Principal, idOrIri: string, method: string) {
+    const proposal = this.resolveFor(principal, idOrIri);
+    const own = await this.plan(principal, proposal, method, {});
+    freeStore(own.work.store);
+    const r = this.q(`SELECT ?method ?target ?agent ?id WHERE { <${proposal}> p:proposedMethod ?method ; p:proposalTarget ?target ; p:proposedBy ?agent ; ls:identifier ?id }`)[0];
+    const inputs = Object.fromEntries(this.q(`SELECT ?name ?value WHERE { <${proposal}> p:inputValue ?iv . ?iv p:forInput ?i ; rdf:value ?value . ?i p:inputName ?name }`).map((x) => [x.name, x.value]));
+    const confirming = (work: Graph, changes: Change[]) => {
+      this.set(work, proposal, `${NS.p}agentProposalStatus`, namedNode(`${NS.p}AgentProposalStatus-confirmed`), changes);
+      this.set(work, proposal, `${NS.p}confirmedIn`, namedNode(`${this.dataNamespace}commit/${this.commitCount + 1}`), changes);
+    };
+    return { proposal, identifier: r.id, agent: r.agent, target: r.target, method: r.method, inputs, confirming };
+  }
+
+  private confirms(method: string): boolean {
+    return ask(this.graph.store, `ASK { <${method}> p:effect/a p:CommitAgentProposal }`);
+  }
+
+  /**
+   * An agent's commit where the method only proposes (spec 3.4, Outside agents, Autonomy): checked as a preview is, then
+   * recorded as a proposal for its accountable person, with the inputs and the agent's reason. Nothing it proposes changes.
+   */
+  private async proposeForAgent(principal: Principal, idOrIri: string, method: string, inputs: Record<string, string>): Promise<CommitResult> {
+    const planned = await this.plan(principal, idOrIri, method, inputs);
+    freeStore(planned.work.store);
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    const proposal = this.mint(work, `${NS.p}AgentProposal`, changes);
+    const set = (property: string, value: Term) => this.set(work, proposal, `${NS.p}${property}`, value, changes, false);
+    set('agentProposalStatus', namedNode(`${NS.p}AgentProposalStatus-pending`));
+    set('proposedBy', namedNode(principal.person));
+    set('proposedMethod', namedNode(method));
+    set('proposalTarget', namedNode(planned.object));
+    set('agentReason', literal(principal.reason!.trim()));
+    if (principal.client) set('agentVersion', literal(`${principal.client.name} ${principal.client.version}`));
+    let i = 0;
+    for (const [input, value] of planned.resolvedInputs) {
+      const iv = `${proposal}/input/${++i}`;
+      set('inputValue', namedNode(iv));
+      this.set(work, iv, RDF_TYPE, namedNode(`${NS.p}InputValue`), changes, false);
+      this.set(work, iv, `${NS.p}forInput`, namedNode(input), changes, false);
+      this.set(work, iv, `${NS.rdf}value`, value, changes, false);
+    }
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work, this.shapesValidator());
+    if (problems.length) {
+      freeStore(work.store);
+      throw new GatewayError(400, problems);
+    }
+    const result = this.commitPlanned(principal, proposal, `${NS.p}Create`, work, changes, [proposal]);
+    const accountable = this.q(`SELECT ?person ?name WHERE { <${principal.person}> p:accountablePerson ?person . ?person rdfs:label ?name }`)[0];
+    const identifier = this.q(`SELECT ?id WHERE { <${proposal}> ls:identifier ?id }`)[0].id;
+    return { ...result, proposedTo: { proposal, identifier, accountablePerson: accountable.person, accountablePersonName: accountable.name } };
   }
 
   /** Statements added and removed one by one, recorded as changes, for structure that holds several values. */
@@ -2527,7 +2796,7 @@ export class Gateway {
   async propose(principal: Principal, ids: string[], method: string): Promise<SkillProposals> {
     this.authorize(principal);
     if (!ids.length) throw new GatewayError(400, ['Give the object or the set']);
-    const objects = ids.map((id) => this.resolve(id));
+    const objects = ids.map((id) => this.resolveFor(principal, id));
     const onSet = ask(this.graph.store, `ASK { <${method}> p:onSet true }`);
     if (onSet) {
       const blocks = await this.setBlocks(principal, objects, method);
@@ -2827,7 +3096,7 @@ export class Gateway {
    */
   async draft(principal: Principal, idOrIri: string, method: string): Promise<DraftView> {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    const object = this.resolveFor(principal, idOrIri);
     const { type } = this.typeOf(object);
     if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this object']);
     if (!ask(this.graph.store, `ASK { <${method}> a p:Method ; p:appliesTo <${type}> }`)) throw new GatewayError(400, ['This method does not apply to this object']);
@@ -2895,6 +3164,7 @@ export class Gateway {
       type: view.typeLabel,
       state: view.state,
       properties: view.properties,
+      ...(view.byOutsideAgents ? { writtenByOutsideAgent: view.byOutsideAgents } : {}),
       links: view.links.map((l) => ({ relationship: l.label, direction: l.direction === 'out' ? 'to' : 'from', objects: l.objects.map((o) => o.identifier) })),
     };
   }
@@ -2926,7 +3196,7 @@ export class Gateway {
   /** Only a person decides on a draft, once, for the object and method it was written for (spec 3.4). */
   private checkDraft(principal: Principal, object: string, method: string, given: DraftGiven) {
     this.authorize(principal);
-    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) throw new GatewayError(403, ['Only a person accepts or discards a draft. Agents may only ask for one.']);
+    if (this.isAgent(principal)) throw new GatewayError(403, ['Only a person accepts or discards a draft. Agents may only ask for one.']);
     const view = this.draftView(given.draft);
     if (view.object !== object || view.method !== method) throw new GatewayError(400, ['This draft was written for another object or method']);
     if (view.status !== 'undecided') throw new GatewayError(400, [`This draft was already ${view.status}`]);
@@ -2985,7 +3255,7 @@ export class Gateway {
   private checkSignature(principal: Principal, method: string, given?: SignatureGiven): SignatureRequest | undefined {
     const request = this.signatureRequest(principal, method);
     if (!request) return undefined;
-    if (ask(this.graph.store, `ASK { <${principal.person}> p:isAgent true }`)) throw new GatewayError(403, ['Only a person can sign. Agents never sign.']);
+    if (this.isAgent(principal)) throw new GatewayError(403, ['Only a person can sign. Agents never sign.']);
     if (!this.options.developmentSignatures) throw new GatewayError(403, ['Signing needs an identity provider, and none is connected yet.']);
     if (!given) throw new GatewayError(400, ['This method needs your signature.']);
     const normal = (n: string) => n.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -3021,7 +3291,8 @@ export class Gateway {
   /** Compose a method (spec 3.4): its inputs with their kinds, choices and defaults, and its archetype. */
   async compose(principal: Principal, idOrIri: string, method: string): Promise<MethodComposition> {
     this.authorize(principal);
-    const object = this.resolve(idOrIri);
+    if (this.isAgent(principal) && this.signatureRequest(principal, method)) throw new GatewayError(403, ['Only a person can sign. Agents never sign.']);
+    const object = this.resolveFor(principal, idOrIri);
     const { type } = this.typeOf(object);
     if (!this.canRead(principal, type)) throw new GatewayError(403, ['Your role cannot read this object']);
     const m = this.q(`SELECT ?label WHERE { <${method}> a p:Method ; p:appliesTo <${type}> ; rdfs:label ?label }`)[0];
@@ -3055,8 +3326,8 @@ export class Gateway {
         return { ...base, kind: 'person', choices: asChoices(people), ...(self ? { default: self } : {}) };
       }
       const candidates = (input.choicesAlong
-        ? this.q(`SELECT ?value ?label WHERE { <${object}> <${input.choicesAlong}> ?value . ?value ls:identifier ?label } ORDER BY ?label`)
-        : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) } ORDER BY ?label`)
+        ? this.q(`SELECT ?value ?label WHERE { <${object}> ${this.pathSparql(input.choicesAlong)} ?value . ?value ls:identifier ?label ${this.scopeFilter(principal, '?value')} } ORDER BY ?label`)
+        : this.q(`SELECT ?value ?label WHERE { ?value a <${input.objectOf}> ; ls:identifier ?label FILTER(?value != <${object}>) ${this.scopeFilter(principal, '?value')} } ORDER BY ?label`)
       ).map((c) => {
         // An object reads as its identifier, with its title where it says more, such as a value's label.
         const title = titleOf(this.graph.store, c.value);
@@ -3108,7 +3379,8 @@ export class Gateway {
         if (input.objectOf && !ask(this.graph.store, `ASK { <${iri}> a <${input.objectOf}> }`)) problems.push(`${input.label} is not the right kind of object`);
         if (input.isActor && !ask(this.graph.store, `ASK { <${iri}> a p:Person }`)) problems.push(`${input.label} is not a known person`);
         else if (input.isActor && signed && iri !== principal.person) problems.push(`${input.label} must be you: nobody signs for someone else`);
-        if (input.choicesAlong && !ask(this.graph.store, `ASK { <${object}> <${input.choicesAlong}> <${iri}> }`)) problems.push(`${input.label} is not one of the allowed choices`);
+        if (input.choicesAlong && !ask(this.graph.store, `ASK { <${object}> ${this.pathSparql(input.choicesAlong)} <${iri}> }`)) problems.push(`${input.label} is not one of the allowed choices`);
+        if (input.objectOf && !this.visible(principal, iri)) problems.push(`${input.label}: no object ${raw}`);
       }
       for (const { shape } of this.q(`SELECT ?shape WHERE { <${input.input}> p:inputShape ?shape }`)) {
         problems.push(...(await conformanceProblems(this.graph, value.value, [shape])));
@@ -3222,6 +3494,16 @@ export class Gateway {
     if (principal.account) add(id, `${NS.p}signedInAs`, literal(principal.account));
     if (onBehalfOf) add(id, `${NS.p}onBehalfOf`, namedNode(onBehalfOf));
     add(id, `${NS.prov}startedAtTime`, literal(at.toISOString(), namedNode(`${NS.xsd}dateTime`)));
+    // An outside agent's commit records who answered for it, its organization, its version and its reason, as they are now.
+    if (this.isAgent(principal)) {
+      const a = this.q(`SELECT ?org ?person WHERE { <${principal.person}> p:operatedBy ?org ; p:accountablePerson ?person }`)[0];
+      if (a) {
+        add(id, `${NS.p}answeredForBy`, namedNode(a.person));
+        add(id, `${NS.p}agentOrganization`, namedNode(a.org));
+      }
+      if (principal.reason) add(id, `${NS.p}agentReason`, literal(principal.reason.trim()));
+      if (principal.client) add(id, `${NS.p}agentVersion`, literal(`${principal.client.name} ${principal.client.version}`));
+    }
     let i = 0;
     for (const [input, value] of inputs) {
       const iv = `${id}/input/${++i}`;
@@ -3475,17 +3757,18 @@ export class Gateway {
   /** Track runs (spec 3.4): the runs on objects the principal may read, newest first. Optionally one object's, or only those not ended. */
   runs(principal: Principal, filter: { object?: string; active?: boolean } = {}): RunView[] {
     this.authorize(principal);
-    const object = filter.object ? this.resolve(filter.object) : undefined;
+    const object = filter.object ? this.resolveFor(principal, filter.object) : undefined;
     const rows = this.q(`SELECT ?run ?target WHERE { GRAPH ?run { ?run a p:Run ; p:target ?target ; prov:startedAtTime ?at ; p:runStatus ?s } ${object ? `FILTER(?target = <${object}>)` : ''}
         ${filter.active ? 'FILTER(?s IN (p:RunStatus-queued, p:RunStatus-running))' : ''} } ORDER BY DESC(?at) DESC(STRLEN(STR(?run))) DESC(?run)`);
     const hidden = this.unreadable(principal.role);
-    return rows.filter((r) => !hidden.has(this.typeOf(r.target).type)).map((r) => this.runView(r.run));
+    return rows.filter((r) => !hidden.has(this.typeOf(r.target).type) && this.visible(principal, r.target)).map((r) => this.runView(r.run));
   }
 
   /** One run, when the principal may read its object. */
   run(principal: Principal, run: string): RunView {
     this.authorize(principal);
     const view = this.runView(run.includes('://') ? run : `${this.dataNamespace}run/${run}`);
+    if (!this.visible(principal, view.object)) throw new GatewayError(404, ['No such run']);
     if (!this.canRead(principal, this.typeOf(view.object).type)) throw new GatewayError(403, ['Your role cannot read this object']);
     return view;
   }

@@ -68,8 +68,8 @@ describe('model', () => {
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
     // The domain's 69 and the platform's own: a change set's status and outcome, an operation's kind, a value's status,
-    // a dataset version's status, and a data point's kind and status.
-    expect(dims.length).toBe(76);
+    // a dataset version's status, a data point's kind and status, an agent's status and an agent proposal's status.
+    expect(dims.length).toBe(78);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
       const allowed = q(`SELECT ?c WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
