@@ -32,7 +32,7 @@ export interface Principal {
 
 export class GatewayError extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 415 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 415 | 429 | 502,
     readonly reasons: string[],
   ) {
     super(reasons.join('; '));
@@ -392,9 +392,10 @@ export interface NotificationView {
   notification: string;
   title: string;
   message: string;
-  /** How the run it is about ended. */
-  status: 'succeeded' | 'failed';
-  run: string;
+  /** How the run it is about ended, or a warning, such as an agent paused by its ceilings. */
+  status: 'succeeded' | 'failed' | 'warning';
+  /** The run it is about, when it is about one. */
+  run?: string;
   object: string;
   objectIdentifier: string;
   at: string;
@@ -657,7 +658,85 @@ export class Gateway {
       if (r?.status === `${NS.p}AgentStatus-paused`) throw new GatewayError(403, [`This agent is paused${why}. A person must resume it.`]);
       if (r?.status === `${NS.p}AgentStatus-suspended`) throw new GatewayError(403, [`This agent is suspended${why}`]);
       if (r?.status !== `${NS.p}AgentStatus-active`) throw new GatewayError(403, ['This agent is retired']);
+      // The circuit breaker (spec 3.4, Outside agents, Exposure): crossing a ceiling pauses the agent until a person resumes it.
+      const crossed = this.ceilingCrossed(principal.person);
+      if (crossed) {
+        void this.enqueue(() => this.pauseAgent(principal.person, crossed));
+        throw new GatewayError(429, [`This agent is paused: ${crossed}. A person must resume it.`]);
+      }
     }
+  }
+
+  /**
+   * Which of an agent's ceilings it has reached, if any: its commits and proposals, and its reads, in the last hour, or
+   * since a person last made it active, whichever is later.
+   */
+  private ceilingCrossed(agent: string): string | undefined {
+    const ceilings = this.q(`SELECT ?commits ?reads WHERE {
+        OPTIONAL { <${agent}> p:commitsPerHour ?own } OPTIONAL { <${agent}> p:readsPerHour ?ownReads }
+        p:Agent p:defaultCommitsPerHour ?defaultCommits ; p:defaultReadsPerHour ?defaultReads .
+        BIND(COALESCE(?own, ?defaultCommits) AS ?commits) BIND(COALESCE(?ownReads, ?defaultReads) AS ?reads) }`)[0];
+    const hourAgo = new Date(this.now().getTime() - 3_600_000).toISOString();
+    const activated = this.q(`SELECT ?at WHERE { GRAPH ?c { ?c a p:Commit ; prov:startedAtTime ?at ; p:change ?ch . ?ch p:changedSubject <${agent}> ;
+        p:changedProperty p:agentStatus ; p:newValue p:AgentStatus-active } } ORDER BY DESC(?at) LIMIT 1`)[0]?.at;
+    const since = activated && activated > hourAgo ? activated : hourAgo;
+    const commits = Number(this.q(`SELECT (COUNT(DISTINCT ?c) AS ?n) WHERE { GRAPH ?c { ?c a p:Commit ; prov:wasAssociatedWith <${agent}> ; prov:startedAtTime ?at } FILTER(?at >= "${since}"^^xsd:dateTime) }`)[0].n);
+    if (commits >= Number(ceilings.commits)) return `it reached its ceiling of ${ceilings.commits} commits and proposals an hour`;
+    const reads = Number(this.q(`SELECT (COUNT(?r) AS ?n) WHERE { GRAPH ?g { ?r a p:Read ; prov:wasAssociatedWith <${agent}> ; prov:startedAtTime ?at } FILTER(?at >= "${since}"^^xsd:dateTime) }`)[0].n);
+    if (reads >= Number(ceilings.reads)) return `it reached its ceiling of ${ceilings.reads} reads an hour`;
+    return undefined;
+  }
+
+  /**
+   * Pauses an agent that crossed a ceiling, as a commit by the circuit breaker, and tells its accountable person and the
+   * people who may resume it. Never lifted by time: a person resumes it once the cause is understood.
+   */
+  private async pauseAgent(agent: string, why: string) {
+    if (!ask(this.graph.store, `ASK { <${agent}> p:agentStatus p:AgentStatus-active }`)) return;
+    const work: Graph = { store: this.workingCopy(), dataset: this.graph.dataset };
+    const changes: Change[] = [];
+    const reason = `${why[0].toUpperCase()}${why.slice(1)}`;
+    this.set(work, agent, `${NS.p}agentStatus`, namedNode(`${NS.p}AgentStatus-paused`), changes);
+    this.set(work, agent, `${NS.p}statusReason`, literal(reason), changes);
+    work.dataset = defaultGraphDataset(work.store);
+    const problems = await validateData(work, this.shapesValidator());
+    if (problems.length) {
+      freeStore(work.store);
+      console.error('The circuit breaker could not pause the agent:', problems);
+      return;
+    }
+    const breaker: Principal = { person: `${NS.p}CircuitBreaker`, role: `${NS.p}CircuitBreaker` };
+    this.commitPlanned(breaker, agent, `${NS.p}PauseAgent`, work, changes, []);
+    freeStore(work.store);
+    const name = this.q(`SELECT ?n WHERE { <${agent}> rdfs:label ?n }`)[0]?.n ?? agent;
+    const recipients = this.q(`SELECT DISTINCT ?person WHERE { { <${agent}> p:accountablePerson ?person } UNION { ?person a p:Person ; p:actsAs/p:mayRun p:ResumeAgent } }`).map((r) => r.person);
+    const at = this.now();
+    const added: oxigraph.Quad[] = [];
+    for (const person of recipients) {
+      const n = namedNode(`${this.dataNamespace}notification/${++this.notificationCount}`);
+      const add = (p: string, o: Term) => added.push(quad(n, namedNode(p), o, n));
+      add(RDF_TYPE, namedNode(`${NS.p}Notification`));
+      add(`${NS.p}recipient`, namedNode(person));
+      add(`${NS.p}target`, namedNode(agent));
+      add(`${NS.p}isWarning`, literal('true', namedNode(`${NS.xsd}boolean`)));
+      add(`${NS.p}title`, literal(`${name} paused`));
+      add(`${NS.p}message`, literal(`${reason}. It acts again only when a person resumes it.`));
+      add(`${NS.prov}generatedAtTime`, xsdDateTime(at));
+    }
+    this.options.journal?.append('notification', at, [], added);
+    for (const q of added) this.graph.store.add(q);
+  }
+
+  /** The agent registered with a client at the identity provider, in its one role (spec 3.4, Outside agents, Authentication). */
+  agentWithClient(client: string): Principal | undefined {
+    const r = this.q(`SELECT ?agent ?role WHERE { ?agent a p:Agent ; p:clientId ${JSON.stringify(client)} ; p:actsAs ?role }`)[0];
+    return r && { person: r.agent, role: r.role };
+  }
+
+  /** Refuses a principal who may not act now, such as an agent that is not active, with the reasons (spec 3.4). */
+  admit(principal: Principal): Principal {
+    this.authorize(principal);
+    return principal;
   }
 
   /** True when the principal is an outside agent, not a person (spec 3.4, Outside agents). */
@@ -3776,14 +3855,14 @@ export class Gateway {
   /** Notifications (spec 3.4): the principal's own, newest first. */
   notifications(principal: Principal): NotificationView[] {
     this.authorize(principal);
-    return this.q(`SELECT ?n ?title ?message ?run ?status ?target ?id ?at ?readAt WHERE { GRAPH ?n { ?n a p:Notification ; p:recipient <${principal.person}> ; p:title ?title ;
-        p:message ?message ; p:about ?run ; p:target ?target ; prov:generatedAtTime ?at OPTIONAL { ?n p:readAt ?readAt } }
-        GRAPH ?run { ?run p:runStatus ?status } OPTIONAL { ?target ls:identifier ?id } } ORDER BY DESC(?at) DESC(STRLEN(STR(?n))) DESC(?n)`).map((r) => ({
+    return this.q(`SELECT ?n ?title ?message ?run ?status ?warning ?target ?id ?at ?readAt WHERE { GRAPH ?n { ?n a p:Notification ; p:recipient <${principal.person}> ; p:title ?title ;
+        p:message ?message ; p:target ?target ; prov:generatedAtTime ?at OPTIONAL { ?n p:about ?run } OPTIONAL { ?n p:readAt ?readAt } OPTIONAL { ?n p:isWarning ?warning } }
+        OPTIONAL { GRAPH ?run { ?run p:runStatus ?status } } OPTIONAL { ?target ls:identifier ?id } } ORDER BY DESC(?at) DESC(STRLEN(STR(?n))) DESC(?n)`).map((r) => ({
       notification: r.n,
       title: r.title,
       message: r.message,
-      status: r.status === `${NS.p}RunStatus-failed` ? 'failed' : 'succeeded',
-      run: r.run,
+      status: r.warning === 'true' ? 'warning' : r.status === `${NS.p}RunStatus-failed` ? 'failed' : 'succeeded',
+      ...(r.status ? { run: r.run } : {}),
       object: r.target,
       objectIdentifier: r.id ?? r.target,
       at: r.at,

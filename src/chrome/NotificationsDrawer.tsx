@@ -60,7 +60,7 @@ export function NotificationsDrawer({ onClose }: { onClose: () => void }) {
             </Flex>
             <NotificationDrawerList aria-label="Notifications, newest first">
               {notifications.map((n) => {
-                const variant = n.status === 'succeeded' ? 'success' : 'danger';
+                const variant = n.status === 'succeeded' ? 'success' : n.status === 'warning' ? 'warning' : 'danger';
                 return (
                   <NotificationDrawerListItem
                     key={n.notification}
@@ -71,7 +71,7 @@ export function NotificationsDrawer({ onClose }: { onClose: () => void }) {
                     <NotificationDrawerListItemHeader
                       variant={variant}
                       title={n.title}
-                      srTitle={`${n.status === 'succeeded' ? 'Success' : 'Failure'} notification${n.read ? '' : ', unread'}:`}
+                      srTitle={`${n.status === 'succeeded' ? 'Success' : n.status === 'warning' ? 'Warning' : 'Failure'} notification${n.read ? '' : ', unread'}:`}
                       headingLevel="h2"
                     />
                     <NotificationDrawerListItemBody

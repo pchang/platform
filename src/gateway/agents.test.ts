@@ -156,6 +156,36 @@ describe('text an agent wrote is marked for the platform’s own models', () => 
   });
 });
 
+describe('the circuit breaker', () => {
+  it('pauses an agent that reaches a ceiling, tells the people who answer for it and may resume it, and waits for a person', async () => {
+    const g = withSeed([`<${agent.person}> <${p('commitsPerHour')}> 2 .`]);
+    await g.commit(because('The site confirmed it'), 'Q-01', ls('AnswerQuery'), { answer: 'Confirmed' });
+    await g.commit(because('The site confirmed it'), 'Q-03', ls('AnswerQuery'), { answer: 'Confirmed' });
+    // The third in the hour is refused, and the agent is paused by the circuit breaker, not by any person.
+    expect(await reasons(g.commit(because('Closing'), 'Q-04', ls('CloseQuery')))).toBe('This agent is paused: it reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
+    await g.idle();
+    const paused = g.read(marcus, 'AG-1');
+    expect(paused.state.Status).toBe('paused');
+    expect(paused.properties.why).toBe('It reached its ceiling of 2 commits and proposals an hour');
+    expect(g.commits().at(-1)).toMatchObject({ person: p('CircuitBreaker'), method: p('PauseAgent') });
+    expect((await g.home(marcus)).metrics.find((m) => m.label === 'Agents paused')).toMatchObject({ count: 1 });
+    for (const person of [mira, marcus]) {
+      expect(g.notifications(person)[0]).toMatchObject({ title: 'Northbridge query agent paused', status: 'warning', objectIdentifier: 'AG-1' });
+    }
+    expect(g.notifications(ben)).toEqual([]);
+    // Time alone never lifts it; a person resumes it, and the count starts again from then.
+    expect(await reasons(g.commit(because('Trying again'), 'Q-04', ls('CloseQuery')))).toBe('This agent is paused: It reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
+    await g.commit(marcus, 'AG-1', p('ResumeAgent'));
+    expect((await g.commit(because('Answered from source'), 'Q-04', ls('CloseQuery'))).proposedTo?.identifier).toBe('AgentProposal-1');
+  });
+
+  it('counts reads too', async () => {
+    const g = withSeed([`<${agent.person}> <${p('readsPerHour')}> 5 .`]);
+    g.find(agent, ls('DataQuery'));
+    expect(await reasons(Promise.resolve().then(() => g.read(agent, 'Q-01')))).toBe('This agent is paused: it reached its ceiling of 5 reads an hour. A person must resume it.');
+  });
+});
+
 describe('every read by an agent is recorded', () => {
   it('records what it listed and what it read, not only personal data', () => {
     const g = withSeed();
