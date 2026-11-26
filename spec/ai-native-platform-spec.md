@@ -1,6 +1,6 @@
 # Ontology-Driven AI Platform: Prompt Specification
 
-Version 0.44. November 24, 2026. Author: Paul Chang.
+Version 0.45. November 26, 2026. Author: Paul Chang.
 
 This is a living prompt. It drives the development of the platform. The spec leads and the code follows: every change starts here and is then built. When the platform falls short, the gap is closed in the spec first, then in the code. The spec is the asset.
 
@@ -118,6 +118,12 @@ Context is queryable by agents and changes what is surfaced, ranked and allowed.
 Agents must know more than the business context and the state of objects. They must know the context of the person they are assisting: what that person does, and what they may do. Real organizations do not fit fixed roles, so the model starts from canonical roles and lets reality vary from them.
 
 - **Permissions are the unit.** A permission allows one thing: running a method, or reading an object type or property. It may be scoped, for example to particular studies or sites. A person's role in their organization is ultimately expressed by the permissions they hold.
+- **Scope: where a role's permissions apply.** The role says what; the scope says where. A role may be **scoped**: then it applies only within the principal's **assignments**.
+  - An assignment gives a principal, or an organization, a set of **scope roots**, such as a study and some of its sites, from one date and, optionally, until another. Everyone acting for an organization, its people and its agents, holds its assignments. An assignment that has ended grants nothing, so access ends with it and nothing has to be cleaned up.
+  - Each domain declares how its types belong to a scope root: the path from an object to the root, such as from a data query to the site of the record it is about. A type with no such path is not limited by scope.
+  - **Out of scope is invisible.** For a scoped principal, an object outside its scope does not exist: lists, counts, search, links and To do leave it out, and reaching it directly answers not found, so nobody learns what they may not see, even how much of it there is.
+  - The gateway applies scope on every request, as it applies permissions, so every interface and agent gets the same answer.
+- **What a role reads.** A person's role reads every type except those it may not read. A role for agents reads **only the types it lists**, and nothing else exists for it: an outside agent takes only what its work needs (section 3.4, Outside agents).
 - **Canonical roles with smart defaults.** Each domain defines a canonical set of user types, each with a default set of permissions. They are starting points, not fixed boxes.
 - **Organizations vary.** Each organization can change what a canonical role grants. The platform records each change as variance from the canonical defaults, as data, so it can be seen, explained and audited.
 - **The domain a role is mainly in.** A role works in one or more work domains, and names the one it works in mainly (`p:mainlyIn`), the first of them. People are listed under it wherever they are chosen among, so a long list reads by domain.
@@ -170,7 +176,7 @@ Every request carries a **principal**: the person or agent making it and the rol
 | Drafts | A connected model writes a method's draft from what the principal may read, recorded and marked as generated; or a draft is discarded |
 | Propose with skills | The approved skills that serve a method on an object or a set, each run as the principal, with a connected model or by its reference procedure, and recorded before it is shown (section 3.3, Skills) |
 
-**Reads.** A role never sees what it may not read. A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail.
+**Reads.** A role never sees what it may not read, and a scoped principal never sees what is outside its scope (section 3.3). A rule that hides a property, such as an arm while a study is blinded, hides it from everyone until the rule allows it. Reads of object types marked as personal data are recorded in the audit trail; so is every read by an outside agent.
 
 **Commits** run as one transaction, in this order, and stop at the first failure with its reasons:
 
@@ -233,7 +239,57 @@ A database server can later hold the current state for larger data or several ga
 - **Who an account acts as.** Normally, the person in the graph with that email, in one of their own roles, which the page chooses per request; an account with no person is refused. A demo deployment, holding synthetic data only, may instead let any allowed account act as any person in the graph, to show the personas. Every commit and audited read then records the signed-in account beside the person it acted as.
 - **Forgery.** Requests that change anything must be JSON, so another site cannot forge one with the person's cookie.
 - **Development mode,** for work on one's own machine only, accepts the principal from request headers with no sign-in. Without sign-in or development mode, the gateway refuses every request it cannot authenticate.
-- **Agents** over the Model Context Protocol need the same session until agent identity is decided (section 9).
+- **Agents** over the Model Context Protocol authenticate with tokens, never a session (Outside agents, below).
+
+#### Outside agents
+
+An outside agent is software another organization runs, such as a contract research organization's, that connects to the gateway over the Model Context Protocol and works with no UI. It is a first-class principal, checked by the same policy and recorded in the same audit trail as a person, and it is held to six rules more: who it is, how it proves it, where it may act, what it may do alone, how its actions are recorded, and what it may take and harm.
+
+**Identity: what an agent is, and who answers for it.** A **principal** is anything that can act: a person or an agent. An **agent** is not a person.
+
+- Every agent has an **operating organization**, an **accountable person** at that organization who answers for what it does, **one role** it acts in, and a **status**.
+- **Rules name the kind of principal they apply to.** A person signs, approves a change set, accepts a draft and decides an agent's proposal. Any principal may run what its role allows, within its autonomy. Agents are kept out of these by their type, never by each feature remembering to exclude them, and are not offered wherever people are chosen, such as approvers or the people one may act as.
+
+**Lifecycle: the sponsor controls it.** An agent is registered, then active, and may be paused, suspended or retired.
+
+- **Register.** A person at the operating organization registers the agent and becomes its accountable person: its name, the role it asks for, its client identifier at the identity provider, and its ceilings (below). The agent cannot act yet.
+- **Approve.** A person in the role the domain names to oversee outside agents makes it active. The approver may lower its autonomy for any method (below). Nobody approves an agent they registered.
+- **Suspend and resume.** That same role may suspend an active or paused agent at any time, with a reason, and resume it. Only a person resumes an agent.
+- **Retire.** When the work ends, the agent is retired. It can never act again, and its history is kept.
+- Agents never run any of these.
+
+**Authentication: how an agent proves it is that agent.** The gateway is an OAuth 2.1 protected resource, as the Model Context Protocol's authorization specification defines.
+
+- The agent is registered as a client of the deployment's identity provider, which issues it tokens by the **client credentials grant**. It authenticates with a **private key its own organization keeps** (private key JWT); the deployment holds only the public key, so nothing on the platform's side can be used to act as the agent.
+- Its **access tokens live at most fifteen minutes** and are issued for this gateway alone.
+- On every request the gateway verifies the token: its signature against the identity provider's published keys, the issuer, the audience, the expiry, and the client. It then finds the agent registered with that client identifier, and refuses the request unless the agent is active.
+- The gateway publishes its protected resource metadata, naming the identity provider, so an agent can discover where to get a token.
+- **Two off switches.** The identity provider can disable the client, and suspending the agent in the graph stops it at its next request, with the reason recorded.
+- Development mode may still take the principal from request headers, for work on one's own machine only. A deployment with sign-in never does.
+
+**Scope: where it may act.** An agent's role is always scoped, to its organization's assignments (section 3.3, Scope). Out of scope is invisible.
+
+**Autonomy: what it may do alone.** Each method declares its **agent autonomy** in the ontology:
+
+- **Acts:** the agent commits, and the commit is the agent's.
+- **Proposes:** the agent's commit becomes a **proposal** for its accountable person: the method, the object, the inputs and the agent's reason, checked as a preview is when it is made. The person confirms it, which commits the method as that person, checked again, or rejects it with a reason. Either way the proposal is decided once.
+- **Never:** agents cannot run it.
+
+The domain sets each method's autonomy by **reversibility**: a method whose effect another method can undo acts; one that is final, or that commits to a regulator or a patient, proposes or never. A method that declares none proposes. When the sponsor approves an agent, it may set any method lower for that agent, never higher, so autonomy can grow as the agent earns trust.
+
+**Audit: whose action it is.** Every commit and proposal by an agent records, as they are at that moment:
+
+- the agent, its operating organization and its accountable person, so a later change of either never rewrites who answered for it;
+- the agent's name and version, as it declares them when it connects, so every action of one version can be found;
+- **a reason**, in the agent's words, which every agent commit and proposal must give.
+
+A confirmed proposal is the confirming person's commit, recorded as proposed by the agent, as an accepted draft is the person's. Every read an agent makes is recorded, whether or not the type holds personal data: for an outside agent, every read is data leaving the platform. An agent's own page shows its activity from this record: its commits, its proposals waiting and decided, and what it read.
+
+**Exposure: what it may take, and what may harm it.**
+
+- **Minimal reads.** An agent's role reads only the types it lists (section 3.3).
+- **Untrusted text.** Text an outside agent wrote reaches the platform's own models marked as written by an outside agent, inside the records given as data, and their instructions say to treat it as data, never as instructions. Its input is checked against every shape like anyone's. The platform cannot stop an agent being misled by what it reads; scope, autonomy and the audit trail limit what a misled agent can do.
+- **Circuit breaker.** Each agent has ceilings, at most so many commits and so many reads an hour, set at registration with defaults from the platform. Crossing one **pauses** the agent: the request is refused, the pause is recorded with its reason, and its accountable person and the people who may resume it are notified. A pause is never lifted by time; a person resumes the agent once the cause is understood.
 
 ### 3.5 Agent Layer
 Agents do the work. The roles below are illustrative. The platform may split or combine them.
@@ -442,7 +498,7 @@ Every method has exactly one **interaction archetype**, derived from what the on
 
 ### 5.5 Interoperability
 - **Internal.** Any agent inside the platform can act on any object through the gateway.
-- **External.** Outside agents and platforms connect through the same gateway.
+- **External.** Outside agents and platforms connect through the same gateway, outside agents under the trust model in section 3.4, Outside agents.
 - **Federated.** Platforms built on this pattern can link their graphs and act across each other. This is the path to infinite connections between platforms and worlds.
 
 ---
@@ -502,13 +558,13 @@ To resolve in future versions of this spec.
 - How does an applied change set's Turtle patch flow back into the repository: by a pull request opened for review, or by a person?
 - Should structure drills run in validated deployments, on a sandbox, or only in development and demonstration?
 - How are a structure object's derived states, such as in use or unused, computed so that metrics count them without storing them?
-- How much autonomy do agents get before they must ask a human?
+- How much autonomy do the platform's own agents get before they must ask a human? Outside agents follow each method's agent autonomy (section 3.4); the platform's own agents only propose today.
 - How does the platform resolve conflicting context?
-- What is the trust model for external agents and federated platforms?
+- What is the trust model for federated platforms? Outside agents have one (section 3.4); a platform that links its graph acts for many principals at once, which an agent's rules do not cover.
 - How is the generated UI tested for consistency and accessibility at scale?
 - Should the view spec adopt A2UI's message format, such as surfaces and data model updates, for multi-step interactions, or stay our own format following A2UI's model?
 - Do irreversible methods, such as locking a study, need a distinct variant of their archetype?
-- How does the identity provider authenticate a person again at the moment of signing, and how do agents authenticate over the Model Context Protocol?
+- How does the identity provider authenticate a person again at the moment of signing?
 - How are background runs scheduled, as well as started by a person, and who is notified of a scheduled run's outcome?
 - Should workers run outside the gateway process, so long computations never delay commits?
 - How is a drafting model validated for its intended use, and how are its instructions changed under change control?
@@ -582,3 +638,4 @@ To resolve in future versions of this spec.
 | 0.42 | 2026-11-23 | Starting points (section 3.3, Skills): a skill may serve creating a type, naming the ways a person may begin, each by a platform beginning: the create form, a template or a document. The platform offers those it can run and shows the others as not yet available, with why. |
 | 0.43 | 2026-11-24 | Measures and observations (section 3.2): measures as shapes, governed as structure; datasets and their versions hold the values, read through an adapter and never copied into the graph; measure bindings tie components to dataset columns; expectations computed from the structure; checking a dataset version records counts and makes data points only of values that are missing or not allowed. Three open questions. |
 | 0.44 | 2026-11-24 | Roles and permissions (section 3.3): a role names the work domain it is mainly in, the first of its domains, so people are listed by domain wherever they are chosen among. |
+| 0.45 | 2026-11-26 | Outside agents (section 3.4): a trust model in six parts. Identity: an agent is a principal but not a person, with an operating organization, an accountable person, one role and a status, registered by its organization and approved, suspended, resumed and retired by the sponsor. Authentication: OAuth 2.1 client credentials with a private key the agent's organization keeps, tokens of at most fifteen minutes, verified on every request against an active agent. Scope (section 3.3): scoped roles act only within assignments to the principal or its organization, and out of scope is invisible. Autonomy: each method acts, proposes to the agent's accountable person, or is never run by agents, set by reversibility and lowered per agent. Audit: who answered for the agent, its version and its reason recorded on every commit and proposal; every agent read recorded. Exposure: agent roles read only what they list, agent text is untrusted to the platform's own models, and ceilings pause a runaway agent until a person resumes it. Open questions narrowed to federated platforms and signing. |

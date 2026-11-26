@@ -1,6 +1,6 @@
 # Domain Spec: Life Sciences Thread
 
-Version 0.37. November 24, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.44.
+Version 0.38. November 26, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45.
 
 This spec applies the abstract platform pattern to three related life sciences domains. It defines the domains, their object types, the links between them, the personas, the journeys the platform must support and the regulatory obligations it must meet. It is the first domain applied under section 6 of the platform spec.
 
@@ -499,7 +499,7 @@ Confirming a Signal on a Product lets agents traverse back to the Formulation, i
 
 ## 6. Personas
 
-These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles. The Works mainly in column sets the role's work domains, which decide its navigation (platform spec section 5.1); the first named is the one it is mainly in, which groups it in Profile's list of people. The external agent is mainly in Clinical Development.
+These are the domain's canonical roles (platform spec section 3.3). Each Can and Cannot column is the role's default permissions: a starting point each organization may vary. A person may hold several of these roles. The Works mainly in column sets the role's work domains, which decide its navigation (platform spec section 5.1); the first named is the one it is mainly in, which groups it in Profile's list of people. The external agent and the CRO Data Manager are mainly in Clinical Development.
 
 | Persona | Works mainly in | Goal | Can | Cannot |
 |---|---|---|---|---|
@@ -513,7 +513,8 @@ These are the domain's canonical roles (platform spec section 3.3). Each Can and
 | Clinical Scientist | Design and Plan and Clinical Development | A design that answers the right question for the program | Explore study concepts and study scenarios, shape objectives, criteria and assessments, amend protocol versions | See unblinded arms |
 | Biostatistician | Design and Plan and Clinical Development | A design that answers its question reliably and efficiently | Define estimands and the assumptions of trial simulations | See unblinded arms |
 | Medical Writer | Design and Plan and Clinical Development | One coherent, approvable protocol | Confirm contributions, write the narrative, send protocol versions for review | See unblinded arms |
-| Clinical Operations Lead | Design and Plan and Clinical Development | A plan that delivers on time and on budget | Build study budgets and site selections, run and compare trial simulations | See unblinded arms |
+| Clinical Operations Lead | Design and Plan and Clinical Development | A plan that delivers on time and on budget, with service providers overseen | Build study budgets and site selections, run and compare trial simulations; approve, suspend, resume and retire outside agents | See unblinded arms. Approve an agent they registered |
+| CRO Data Manager | Clinical Development | Clean data at the contract research organization's sites, and an agent it can answer for | Answer and close data queries at its organization's sites; register its organization's agents and decide their proposals | See unblinded arms. See anything outside its organization's sites. Approve its own agents |
 | Quality Lead | Scientific Innovation and Safety and Regulatory | Keep every batch compliant | Release and quarantine batches, open, investigate and close quality events, assign CAPAs and record their outcomes | Assess safety cases |
 | Structure Steward | Structure (the platform's own domain) | A structure that keeps up with the work and stays healthy | Draft, propose, withdraw, apply and roll back change sets; approve those for parts nobody else owns, when someone else drafted them | See any type that holds personal health data. Approve a change set alone that they drafted |
 
@@ -521,7 +522,13 @@ Each role's navigation lists the entry types of its work domains (platform spec 
 
 The six Design and Plan personas run Run trial simulation (Clinical Scientist, Biostatistician and Clinical Operations Lead) and the protocol methods named for them until the methods of section 3.8 are built; they read and navigate the design and plan graph now.
 
-An external agent, such as a contract research organization's, may answer and close Data Queries at its own sites (see External agent in section 10).
+**Outside agents** (platform spec 3.4, Outside agents). The External CRO agent is the role of a contract research organization's agent. It answers data queries and closes them at its organization's sites (see the External agent journey in section 10).
+
+- **What it reads, and nothing else:** data queries, the data records they are raised on, their visits, patients by their study codes, sites and studies. Never a patient's assigned arm.
+- **Autonomy, by reversibility:** Answer query acts, because a wrong answer can be challenged with Re-query. Close query proposes, because a closed query is final: the agent's accountable person confirms or rejects it.
+- **Oversight.** The sponsor's Clinical Operations Lead oversees outside agents, as ICH E6(R3) asks a sponsor to oversee its service providers: approving, suspending, resuming and retiring them. A CRO Data Manager registers their organization's agents and answers for them.
+
+**Scope** (platform spec 3.3). Four roles are scoped. The CRO Data Manager and the External CRO agent act within their organization's assignment to a study and its sites. The Clinical Research Coordinator acts at the sites they are assigned to, and the Clinical Research Associate at the sites they monitor. Patients, visits, data records, data queries and adverse events belong to the site the patient is at; a site belongs to itself, and a study to itself. Other types are not limited by scope.
 
 The Structure Steward is the platform's own canonical role (platform spec section 3.7), not one of this domain's: every domain has one. This domain gives it its metrics, below, and a person in the seed. **Who owns what** follows the platform's rule: the roles that create and edit a type own it and its parts, as the Creating and editing table below says, so a change to study scenarios is approved by a Clinical Scientist or a Clinical Operations Lead; a skill's owner is named in section 3.9; the types nobody creates or edits, from adverse events to forecasts, are owned by the Structure Steward until the domain names their owners (section 12).
 
@@ -546,8 +553,9 @@ Platform spec 5.3. Each persona may create and edit the types of its own work; o
 | Biostatistician | Objectives, estimands, endpoints |
 | Medical Writer | Protocols, contributions, and the design objects of protocols except estimands |
 | Clinical Operations Lead | Study scenarios, study budgets, site selections, proposed sites, sites |
+| CRO Data Manager | Agents of their organization, by registering them |
 
-The Clinical Research Associate and the external agent create and edit nothing; their work is verifying and answering. These types come only through methods and models, so nobody creates or edits them directly: adverse events, data records, data queries, safety cases, signals, submissions, quality events, CAPAs, simulations, trial simulations, forecasts, design signals and decisions. Classifying states, chosen at creation and corrected by editing: an arm's role, an assessment's purpose and burden, an eligibility criterion's kind and testability, an endpoint's type, an objective's level, an opportunity's kind, an outcome target's measure, a study's phase and blinding, a site's payment, a batch's deviation risk and a proposed site's status. Every other state starts at its first value and changes only through methods.
+The Clinical Research Associate and the external agent create and edit nothing, and outside agents are edited only by their lifecycle's methods; their work is verifying and answering. These types come only through methods and models, so nobody creates or edits them directly: adverse events, data records, data queries, safety cases, signals, submissions, quality events, CAPAs, simulations, trial simulations, forecasts, design signals and decisions. Classifying states, chosen at creation and corrected by editing: an arm's role, an assessment's purpose and burden, an eligibility criterion's kind and testability, an endpoint's type, an objective's level, an opportunity's kind, an outcome target's measure, a study's phase and blinding, a site's payment, a batch's deviation risk and a proposed site's status. Every other state starts at its first value and changes only through methods.
 
 ### Home metrics
 
@@ -583,7 +591,11 @@ The metrics each persona watches on Home (platform spec 5.1, Home), declared in 
 | Clinical Operations Lead | Budgets over their ceiling | Study budgets over ceiling | 1, 2 |
 | | Forecasts missing their target; Design signals raised | As above | 1, 3 |
 | | Sites still proposed | Proposed sites proposed | Information |
-| External CRO agent | Open data queries | As above | 3, 6 |
+| | Agents awaiting approval | Agents registered | 1, 3 |
+| | Agents paused | Agents paused by their ceilings | 1, 2 |
+| External CRO agent | Open data queries | As above, within its scope | 3, 6 |
+| CRO Data Manager | Agent proposals to decide | Agent proposals pending, for agents they answer for | 1, 5 |
+| | Open data queries | As above, within its scope | 3, 6 |
 | Structure Steward | Change sets awaiting approval | Change sets proposed | 1, 3 |
 | | Deprecated values | Values deprecated | 1, 3 |
 | | Change sets applied | Change sets applied | Information |
@@ -693,6 +705,7 @@ The platform is a regulated system in these domains. These obligations apply on 
 | Data integrity (ALCOA+) | Records are attributable, legible, contemporaneous, original, accurate, complete, consistent, enduring and available |
 | Computerized system validation (GxP) | The configuration (ontology, methods, policies, catalog) is validated for its intended use, and changes to it go through change control |
 | Good clinical practice (ICH E6) | Blinding and trial integrity are protected. Every clinical data point traces to its source |
+| Oversight of service providers (ICH E6(R3)) | The sponsor approves each outside agent before it acts, can suspend it at any time, and sees everything it did, read and proposed, under whose accountability |
 | Safety reporting (ICH E2B(R3)) | Expedited reports are produced as E2B(R3) individual case safety reports |
 | Patient privacy (HIPAA, GDPR) | Patients are pseudonymized outside the clinical domain. Direct identifiers are visible only to roles that need them |
 
@@ -903,7 +916,15 @@ In any journey, any persona can ask "why am I seeing this?" on any view or eleme
 Structure Steward, then Clinical Operations Lead. Study scenarios sometimes wait on a budget decision, and teams have been writing "on hold" in the scenario's change. The Steward asks the chat to add an on hold status to study scenarios. The model drafts a change set with one operation, add a value to the Study Scenario status value set, and its impact shows: no object moves, nothing stops conforming, and Compare study scenarios' precondition names the statuses it allows, so a scenario on hold cannot be compared. The Steward proposes it. It waits on To do for the owners of study scenarios; the Clinical Operations Lead reads the impact and approves. The Steward applies it, and the new status appears at once wherever study scenarios' statuses are shown or chosen, such as each scenario's lifecycle stages. The Steward then rolls it back, which is allowed because no scenario holds it yet. Without a connected model, the Steward makes the same change set through forms.
 
 ### External agent
-A contract research organization's agent connects through the gateway with no UI. It lists open Data Queries at its sites, answers them from its own records and closes the ones it can. Everything it does is checked by the same policy and appears in the same log as a human's actions.
+CRO Data Manager, Clinical Operations Lead, then the agent. Northbridge CRO runs data management for the Phase II study at two of its three sites.
+
+1. **Registration.** The CRO Data Manager registers Northbridge's query agent: its role, its client at the identity provider and its ceilings. It cannot act yet. It waits on the Clinical Operations Lead's Home, who approves it.
+2. **Work.** The agent gets a token with its own key and connects over the Model Context Protocol with no UI. It lists the open data queries it can see: only those at Northbridge's two sites. The third site's query does not exist for it, not even in a count. It reads each query and its record, and answers them from its organization's records, giving a reason each time.
+3. **A proposal.** It closes an answered query. Closing is final, so this becomes a proposal on the CRO Data Manager's To do. They read the agent's reason and confirm it, and the commit is theirs, recorded as proposed by the agent.
+4. **The record.** Everything the agent did, read and proposed is on its page, each commit with its version, its reason and who answered for it at the time.
+5. **The off switch.** The Clinical Operations Lead suspends the agent with a reason. Its next request is refused. A runaway loop would have paused it on its own.
+
+Everything the agent does is checked by the same policy and appears in the same log as a person's actions.
 
 ---
 
@@ -923,7 +944,7 @@ Small and fictional. Used for development and automated testing, and enough to r
 - 1 detected signal aggregating 3 cases.
 - 1 open quality event and 1 submission in draft.
 - Eight people, one for each persona of the three domains, plus a second Drug Safety Physician so a submission can be approved by someone other than its preparer (rule 5).
-- One external agent, a contract research organization's, for the External agent journey.
+- **Outside agent.** Northbridge CRO, a contract research organization, assigned to the Phase II study at its first two sites from the study's start. Its CRO Data Manager, Mira Castellanos, registered its query agent, which the Clinical Operations Lead approved; it is active, with the platform's default ceilings. The Clinical Research Coordinator is assigned to the first site, and the Clinical Research Associate monitors the first two.
 - **Design and Plan.** One active program for the candidate, with an endorsed target product profile; the Phase II study belongs to it. Three opportunities: a new asset, evaluating discovery's two analogs of the candidate, with a draft target product profile, an agreed target for the chance of success and two development options, one simulated; a parked new indication, psoriatic arthritis, with its decision; and a scientific question outside any program, on liver monitoring across the class.
 - Two study concepts: first-in-human for the new asset's lead analog, planned by its first option, and VELOCITY-3, the Phase III study concept for the program. VELOCITY-3 has three outcome targets (last patient in, probability of success, total cost) and three study scenarios: a baseline and two copies, each changing one lever. Each uses a draft protocol, a study budget with a 45 million US dollar ceiling, and a site selection. Ten proposed sites stand for 250 sites in five countries, each with its equipment, start-up and monthly cost; the Irish, Polish and Brazilian sites have no MRI.
 - All three protocols are structured; the two variants are copies of the baseline with their one change, prior biologic use allowed or hand MRI dropped. The baseline protocol: a population with 7 eligibility criteria (one not yet testable), 3 objectives with a complete estimand for the primary, 4 endpoints, 2 arms with their interventions, 6 planned visits and 6 assessments, one with no recorded purpose. Two contributions, one awaiting confirmation.
@@ -962,9 +983,9 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 - On what schedule does signal detection run, and who is notified of a scheduled run's outcome?
 - Which systems of record does each domain integrate first?
 - Who runs Sign experiment, Invalidate result and Start CAPA? No persona in section 6 does yet.
-- How are a Clinical Research Coordinator and a Clinical Research Associate limited to their own sites? Like the external agent, this needs scoped permissions (platform spec section 3.3).
 - Should a visit's window, rather than a single date, set its deadline, as protocols define visit windows?
-- How is an external agent limited to its own sites? The role may answer and close queries, but nothing yet ties an agent to particular sites. This is a case of scoped permissions (platform spec section 3.3).
+- Should an outside agent's registration name the contract and data processing agreement that allow it, so the record of its reads can be checked against them?
+- What ceilings suit a query agent? The platform's defaults are a start; a sponsor may know its CROs' volumes.
 - Comments and design signals should share one annotation model, attached to any object (section 3.4.6). The platform spec has none yet. Should it be added there, domain-free, before Design and Plan builds on it?
 - Copy study scenario, Approve study concept and Pursue opportunity copy an object together with its parts. The platform spec's effects create and change objects but do not copy them. How is a deep copy declared?
 - A protocol has two faces, a readable document and a connected model. The platform spec composes views of objects, not a document that people write in. What does the experience layer need to offer a document view of an object and its parts?
@@ -1026,3 +1047,4 @@ Patients, visits, data records, adverse events, safety cases and medical inquiri
 | 0.35 | 2026-11-23 | Start a protocol (section 3.9): a skill with three starting points for a new protocol, author from scratch, start from a template or import a protocol document; only from scratch runs now, with the create form. |
 | 0.36 | 2026-11-24 | Measures and observations (section 3.10): Blood Pressure as a measure bound to SDTM VS, expected at completed visits from the protocol's assessments; Clinical Development adopts Dataset, Dataset Version and Data Point; the Clinical Data Manager checks a dataset version and watches missing observations and observations not allowed. Seed: PROT-2's vital signs schedule and one VS dataset version. Two open questions. |
 | 0.37 | 2026-11-24 | The first domain a persona works in is the one it is mainly in, which groups people in Profile's list. |
+| 0.38 | 2026-11-26 | Outside agents (platform spec 0.45): the CRO Data Manager registers its organization's agents and decides their proposals; the Clinical Operations Lead oversees them. The External CRO agent reads only queries, records, visits, patients by code, sites and studies; Answer query acts and Close query proposes. Scope: the CRO's roles by their organization's assignment, the Clinical Research Coordinator and Associate by their own sites. Oversight of service providers added to the regulatory obligations. The External agent journey in five steps. Seed: Northbridge CRO at two sites, its CRO Data Manager and active agent, site assignments. Two open questions closed, two opened. |
