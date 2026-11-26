@@ -43,12 +43,13 @@ test('“list all of my queries” finds the person’s own queries, and says th
   await page.getByRole('option', { name: /^Sam Whitfield/ }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Your work' })).toBeVisible({ timeout: 30_000 });
   await page.goto('/#/search/' + encodeURIComponent('list all of my queries'));
-  await expect(page.getByText('3 matches for “list all of my queries”')).toBeVisible({ timeout: 30_000 });
+  // The coordinator works at the first site, where Q-03 is their open query (domain spec section 6, Scope).
+  await expect(page.getByText('1 match for “list all of my queries”')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('Understood from the ontology')).toBeVisible();
   // The in-page gateway holds no credential, so the question is searched, and the page says so.
   await expect(page.getByText('No model is connected to answer questions, so the question was searched.')).toBeVisible();
   await expect(page.getByText('Yours', { exact: true })).toBeVisible();
-  await expect(results(page)).toHaveText(['Q-01', 'Q-02', 'Q-03']);
+  await expect(results(page)).toHaveText(['Q-03']);
 });
 
 test('says so when nothing matches', async ({ page }) => {

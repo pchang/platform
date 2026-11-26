@@ -24,11 +24,12 @@ test('a protocol type added to the ontology appears in navigation, To do, its li
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /^Protocols 6/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Protocols' })).toBeVisible();
 
-  // The panel: its overview, the version it amends, its design objects (none yet for VELOCITY-2; domain spec 3.5),
+  // The panel: its overview, the version it amends, its design objects (for VELOCITY-2, the vital signs visits and their
+  // assessment, domain spec 3.10),
   // and tabs for the studies it governs, its amendments and the study scenarios that use it.
   await page.getByRole('main').locator('.pf-v6-c-card').filter({ has: eyebrow(page, 'PROT-2') }).getByRole('button', { name: /version 2\.0/ }).click();
   await expect(panel(page).getByRole('heading', { level: 2, name: 'VELOCITY-2 protocol, version 2.0' })).toBeVisible();
-  await expect(panel(page).getByRole('tab')).toHaveText(['Overview', 'Arms 0', 'Assessments 0', 'Interventions 0', 'Objectives 0', 'Planned Visits 0', 'Populations 0', 'Contributions 0', 'Studies 1', 'Is amended by 1', 'Study Scenarios 0']);
+  await expect(panel(page).getByRole('tab')).toHaveText(['Overview', 'Arms 0', 'Assessments 1', 'Interventions 0', 'Objectives 0', 'Planned Visits 3', 'Populations 0', 'Contributions 0', 'Studies 1', 'Is amended by 1', 'Study Scenarios 0']);
   await expect(panel(page).getByText('Raises planned enrollment to 240 and adds a Week 8 visit')).toBeVisible();
   // Its amendment, PROT-3, is in progress, so the ontology's precondition withholds Amend protocol.
   await expect(panel(page).getByRole('button', { name: 'Amend protocol' })).toHaveCount(0);
