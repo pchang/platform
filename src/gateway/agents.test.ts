@@ -163,7 +163,7 @@ describe('the circuit breaker', () => {
     await g.commit(because('The site confirmed it'), 'Q-01', ls('AnswerQuery'), { answer: 'Confirmed' });
     await g.commit(because('The site confirmed it'), 'Q-03', ls('AnswerQuery'), { answer: 'Confirmed' });
     // The third in the hour is refused, and the agent is paused by the circuit breaker, not by any person.
-    expect(await reasons(g.commit(because('Closing'), 'Q-04', ls('CloseQuery')))).toBe('This agent is paused: it reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
+    expect(await reasons(g.commit(because('Closing'), 'Q-05', ls('CloseQuery')))).toBe('This agent is paused: it reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
     await g.idle();
     const paused = g.read(marcus, 'AG-1');
     expect(paused.state.Status).toBe('paused');
@@ -175,9 +175,9 @@ describe('the circuit breaker', () => {
     }
     expect(g.notifications(ben)).toEqual([]);
     // Time alone never lifts it; a person resumes it, and the count starts again from then.
-    expect(await reasons(g.commit(because('Trying again'), 'Q-04', ls('CloseQuery')))).toBe('This agent is paused: It reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
+    expect(await reasons(g.commit(because('Trying again'), 'Q-05', ls('CloseQuery')))).toBe('This agent is paused: It reached its ceiling of 2 commits and proposals an hour. A person must resume it.');
     await g.commit(marcus, 'AG-1', p('ResumeAgent'));
-    expect((await g.commit(because('Answered from source'), 'Q-04', ls('CloseQuery'))).proposedTo?.identifier).toBe('AgentProposal-2');
+    expect((await g.commit(because('Answered from source'), 'Q-05', ls('CloseQuery'))).proposedTo?.identifier).toBe('AgentProposal-2');
   });
 
   it('counts reads too', async () => {

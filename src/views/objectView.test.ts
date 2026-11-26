@@ -171,7 +171,7 @@ describe('an outside agent’s page (design system spec 4.4, Activity)', () => {
     const agent = { person: `${NS.d}agent-northbridge`, role: `${NS.ls}ExternalCROAgent`, reason: 'The site confirmed the value' };
     const marcus = { person: `${NS.d}person-marcus`, role: `${NS.ls}ClinicalOperationsLead` };
     await gateway.commit(agent, 'Q-01', `${NS.ls}AnswerQuery`, { answer: 'Confirmed against the lab report' });
-    await gateway.commit(agent, 'Q-04', `${NS.ls}CloseQuery`);
+    await gateway.commit(agent, 'Q-05', `${NS.ls}CloseQuery`);
     gateway.read(agent, 'Q-01');
 
     const view = buildObjectView(gateway.read(marcus, 'AG-1'), { methods: await gateway.methods(marcus, 'AG-1') });
