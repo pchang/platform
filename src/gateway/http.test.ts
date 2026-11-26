@@ -1,8 +1,11 @@
 // @vitest-environment node
 import type { AddressInfo } from 'node:net';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { withSeed } from './node';
 import { createGatewayServer } from './http';
+
+// Each request runs the gateway on the whole seed graph; under a parallel run, the default five seconds is too tight.
+vi.setConfig({ testTimeout: 60_000 });
 
 let close: (() => void) | undefined;
 afterEach(() => close?.());
