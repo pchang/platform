@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.75. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.76. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -161,7 +161,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - An object with a background run that has not ended shows a status label naming the method and saying it is running.
 - **Counts name what they count.** A count of one type's objects uses the type's own name from the ontology, in running text: "12 patients", "1 safety case", "0 CAPAs". This applies wherever a count is shown or read out, such as under a type list's title and on the sidebar's counts for screen readers. Only a count across several types says "objects", or "items" on To do. A count standing alone as a line, such as under a list's title, on a metric's page or a search's, has no full stop: "8 data queries", "3 of 8 data queries". A list's title is the type's plural name from the ontology, such as Design Signals, whether or not the type is in the person's navigation; it never falls back to the type's address.
 
-**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. A list with no objects yet shows no bar, only New or Add, so the first object can be made. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
+**The list bar** is a low, quiet Toolbar above the objects, after Gmail's: a selection control at its start, the actions for what is chosen beside it only while something is, and the view controls at its end. It stays in view while the list scrolls, on the surface it sits on: the content area's on a page, the object panel's in the panel, so in dark mode it is never a darker strip across a lighter panel. Its shadow shows only once the list has scrolled under it; at the top of the list, unscrolled, the bar has no shadow. When the person may create objects of the listed type (platform spec 5.3, Creating and editing objects), the bar's end offers it before the view toggle, while nothing is chosen: New and the type, such as New Study Scenario, as a secondary button; in a tab of objects the object contains, Add and the type, creating the new object inside it. A list with no objects yet shows no bar, only New or Add, so the first object can be made. Its controls are quiet: plain icon and text buttons, and the Select and Done links.
 
 - **Selection control.** PatternFly's bulk select: a checkbox split with a small menu.
   - The checkbox shows none, some or all of the listed objects chosen. Choosing it chooses every object when none is chosen, and none otherwise.
@@ -551,3 +551,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.73 | 2026-11-25 | Every card names its type above its title, as plain text, with the identifier at that line's end, in a list of one type as much as of several. |
 | 0.74 | 2026-11-26 | Outside agents in the object panel: an Activity tab on an agent's page, with its commits and proposals and its reads; a value an outside agent wrote says so. |
 | 0.75 | 2026-11-27 | Spacing: the navigation stays together at the top of the sidebar however tall it is, as Safari on iPhone had spread its items apart. |
+| 0.76 | 2026-11-27 | The list bar takes the surface it sits on, the object panel's in the panel, so it is not a dark strip there in dark mode. |

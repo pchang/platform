@@ -50,6 +50,11 @@ html:root {
   --pf-v6-c-toolbar--m-sticky--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
 }
 
+/* In the object panel, the bar takes the panel's own surface, which is lighter than the content area in dark mode. */
+.app-page .pf-v6-c-drawer__panel .pf-v6-c-toolbar.pf-m-sticky {
+  --pf-v6-c-toolbar--m-sticky--BackgroundColor: var(--pf-v6-c-drawer__panel--BackgroundColor);
+}
+
 /* Its shadow shows only once the list has scrolled under it (design system spec 4.3); the renderer marks it stuck. */
 .pf-v6-c-toolbar.pf-m-sticky:not(.app-is-stuck) {
   box-shadow: none;
