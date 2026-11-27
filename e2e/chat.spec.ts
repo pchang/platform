@@ -174,3 +174,52 @@ for (const mode of ['light', 'dark'] as const) {
     });
   }
 }
+
+test('a conversation is set aside in the dock like a process, and comes back with the process left where it is (design system spec 4.1)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTodo(page, 'Ben Okafor');
+  const card = page.getByRole('main').locator('.pf-v6-c-card').filter({ has: eyebrow(page, 'AE-003') });
+  await card.getByRole('button', { name: 'Ask about AE-003' }).click();
+  await chat(page).getByRole('button', { name: /Summarize AE-003/ }).click();
+  await expect(chat(page).getByText(/No model is connected/)).toBeVisible();
+
+  // Minimize sits between New conversation and Close, and sends the conversation to the dock.
+  const actions = chat(page).locator('.pf-chatbot__actions').getByRole('button');
+  await expect(actions).toHaveText(['', '', '']);
+  expect(await actions.evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label')))).toEqual(['New conversation', 'Minimize', 'Close']);
+  await chat(page).getByRole('button', { name: 'Minimize' }).click();
+  await expect(chat(page).getByRole('heading', { name: 'Ask', exact: true })).toHaveCount(0);
+  const dock = page.getByRole('region', { name: 'Processes set aside' });
+  await expect(dock.getByRole('heading', { name: 'Set aside (1)' })).toBeVisible();
+  const entry = dock.getByRole('button', { name: /^Ask: AE-003 · / });
+  await expect(entry).toBeVisible();
+  await expect(dock.getByText('1 question')).toBeVisible();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'test-results/chat-aside-dock.png' });
+
+  // Opening the chat again starts a new conversation.
+  await page.getByRole('banner').getByRole('button', { name: 'Ask', exact: true }).click();
+  await expect(chat(page).getByText('Search or ask anything')).toBeVisible();
+  await chat(page).getByRole('button', { name: 'Close' }).click();
+
+  // A process set aside stays in the dock when the conversation comes back: the two are independent.
+  await card.getByRole('button', { name: 'Report to safety' }).click();
+  const dialog = page.getByRole('dialog', { name: /^Report to safety/ });
+  await dialog.getByRole('button', { name: 'Minimize' }).click();
+  await expect(dock.getByRole('heading', { name: 'Set aside (2)' })).toBeVisible();
+  await entry.click();
+  await expect(chat(page).locator('.app-chat__about').getByText('AE-003 · Adverse Event')).toBeVisible();
+  await expect(chat(page).getByText(/No model is connected/)).toBeVisible();
+  await expect(dock.getByRole('heading', { name: 'Set aside (1)' })).toBeVisible();
+  await expect(dock.getByRole('button', { name: /^Report to safety/ })).toBeVisible();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'test-results/chat-aside-restored.png' });
+
+  // Set aside again, then closed from the dock: it leaves the dock and stays in the history.
+  await chat(page).getByRole('button', { name: 'Minimize' }).click();
+  await dock.getByRole('button', { name: /^Close Ask: AE-003/ }).click();
+  await expect(dock.getByRole('button', { name: /^Ask: / })).toHaveCount(0);
+  await page.getByRole('banner').getByRole('button', { name: 'Ask', exact: true }).click();
+  await chat(page).getByRole('button', { name: 'Conversations' }).click();
+  await expect(page.getByRole('menuitem', { name: /^AE-003 · / })).toBeVisible();
+});

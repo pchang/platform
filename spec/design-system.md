@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.77. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.78. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -115,7 +115,8 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 **Ask.** A chat button, a pair of speech bubbles (PatternFly's comments icon) named "Ask", sits in the masthead immediately left of the icon buttons, at every width. It opens the chat panel: a conversation with the platform, for a search or a question (platform spec 5.2, Asking a question). It replaces a search field in the masthead, and in time it is where agentic sessions start.
 
 - **The panel** is PatternFly's chatbot (`@patternfly/chatbot`). From lg up it is docked at the right, the full height of the window, and the page moves left to make room, so the person works beside it: an object opened from the chat opens in the object panel next to it. Below lg it is docked over the page, and below md it fills the screen; there, opening an object closes the chat, keeping the conversation, so the object can be read.
-- **Header:** the title "Ask", a New conversation button and Close. Escape closes it too, and focus returns to the Ask button.
+- **Header:** the title "Ask", a New conversation button, Minimize and Close. Escape closes it too, and focus returns to the Ask button.
+- **Setting a conversation aside.** Ask about this is a smart button that starts a piece of work, so a conversation is set aside like a process: Minimize, a minus icon named "Minimize", immediately left of Close as on every process (5.1), sends the conversation in front to the process dock and closes the chat. Opening the chat again starts a new conversation. A conversation not yet begun has nothing to keep, so Minimize then simply closes the chat. Several conversations may wait at once. Restoring one opens the chat on it; a begun conversation in front goes to the dock in its place. A process in front is not touched: the chat is a panel beside the work, not a process, so the two are in front together. Choosing a set-aside conversation from the history restores it too. A set-aside conversation is the person's own and kept for the session only, like the history: it is not kept on the device, so after a reload it is in neither (platform spec 9).
 - **Before the first message,** a welcome of its own, not To do's greeting: the title "Search or ask anything" and the line "Find objects, or ask about the work you may see.", with three prompts that work in any domain: "What needs me first today?", "What is overdue or due this week?" and "Summarize the work waiting for me." Choosing one sends it.
 - **Ask about this.** Every object can start a conversation about itself, so the person never has to describe it (platform spec 5.2, About an object). The entry point is the same speech bubbles, named "Ask about" and the identifier. **Anticipation first:** the method buttons are what the platform anticipates the person wants to do, so they come first; Ask follows them, as the free-text way forward when the anticipation misses.
   - on an object's card, last in the row of its method buttons; a card with no method buttons has it alone at the foot of its body;
@@ -140,8 +141,9 @@ The sidebar is open beside the content from xl up. Below xl it is a drawer over 
 - The dock's heading, "Set aside", has the large spacer above it, more than the space below it, so it never crowds the dock's top edge.
 - Each process is one entry: the method and the object, a small progress bar, and its progress in words, such as "2 of 3 fields", "Ready to sign", "Running, 40%" or "Draft ready". Choosing an entry brings the process back in front; the process in front, if any, goes into the dock. A process in a modal covers the page, dock included, so the person minimizes it before choosing another; a page process leaves the dock in reach.
 - Each entry has a close button, named for the process. Closing ends it without committing anything; a background run keeps running, and an undecided draft stays undecided.
+- **A set-aside conversation** (4.1, Ask) is an entry like a process's: "Ask:" and the conversation's name as in the history, such as "Ask: SC-003 · Liver injury on Velcorin", the Ask icon where a process has its progress bar, since a conversation has no fraction done, and in words: "Waiting for an answer" while a question is out, "Answer ready" when one arrived while it was set aside, or how many questions it holds. Its close button takes it out of the dock; the conversation stays in the history.
 - The entries sit in one row that scrolls sideways inside the dock when they do not fit, so the page itself never scrolls sideways.
-- The dock is kept on the device for each person, like the appearance setting, until each process is finished or closed, and moves to their user context when identity exists. A typed signature is never kept: signing always starts fresh.
+- The dock is kept on the device for each person, like the appearance setting, until each process is finished or closed, and moves to their user context when identity exists. A typed signature is never kept: signing always starts fresh. Set-aside conversations are the exception: kept for the session only.
 
 Settings opens a menu. For now it holds one setting, Appearance (section 4.2).
 
@@ -553,3 +555,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.75 | 2026-11-27 | Spacing: the navigation stays together at the top of the sidebar however tall it is, as Safari on iPhone had spread its items apart. |
 | 0.76 | 2026-11-27 | The list bar takes the surface it sits on, the object panel's in the panel, so it is not a dark strip there in dark mode. |
 | 0.77 | 2026-11-27 | The greeting's count of items is a link to Your work, further down Home: it scrolls there and moves focus to the heading. |
+| 0.78 | 2026-11-27 | A chat conversation can be set aside like a process: Minimize in the chat's header, left of Close, sends it to the dock, where it waits beside processes with what it is waiting for in words. Several may wait; restoring one leaves any process in front where it is; they are kept for the session only. |
