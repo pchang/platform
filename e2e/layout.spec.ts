@@ -133,3 +133,16 @@ test('beside an open chat the count tiles go two across, each select circle stay
   });
   expect(gap, 'bar to first card').toBeGreaterThanOrEqual(14);
 });
+
+test('the navigation stays together at the top of the sidebar, however tall the sidebar is (design system spec 4.5)', async ({ page }) => {
+  await start(page, 'Marcus Bell', 390);
+  await page.getByRole('button', { name: /navigation/i }).first().click();
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(nav.getByRole('link', { name: /^Agents/ })).toBeVisible();
+  // Safari on iPhone lets the nav fill the sidebar; give it that height here, and the items must not spread apart.
+  await nav.evaluate((n) => { n.style.minHeight = '1800px'; });
+  const items = await nav.locator('.pf-v6-c-nav__item').evaluateAll((lis) => lis.map((li) => li.getBoundingClientRect()).map((r) => ({ top: r.top, height: r.height })));
+  for (const item of items) expect(item.height).toBeLessThan(48);
+  const within = items.slice(1, 5);
+  for (let i = 1; i < within.length; i++) expect(Math.round(within[i].top - within[i - 1].top - within[i - 1].height)).toBe(8);
+});

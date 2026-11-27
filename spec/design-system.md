@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.74. November 26, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.75. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -253,6 +253,7 @@ Space is how a page shows what belongs together. Three distances do the work, an
 | **Section** | 32px | One section from the next: the greeting from Your world, Your world from Where things stand, an overview's Details from its Linked, a dialog's fields from What will change |
 
 - **Nearer what it heads.** A heading is always closer to the content it introduces than to whatever came before it, by at least two to one. Section spacing is larger than group spacing so the heading reads as the start of something, never as a label for the section above.
+- **The navigation stays together.** Its items sit 8px apart as one list under each domain heading, at the top of the sidebar however tall the sidebar is; extra height is empty space below the last item, never spread between items.
 - **A legend belongs to its bar.** In Where things stand, a row's name, bar and legend are one group, close together, and the rows are peers set 32px apart, so a legend is never nearer the next row's name than its own bar.
 - **Aligned along a row.** Where tiles sit in a row, the same things sit at the same height. A metric tile's count and total are at the top and its health label is pinned to the tile's foot, so the labels of a row line up however many lines each name takes.
 - **Tiles follow the room they have.** Metric tiles and To do's count tiles go four across only when the area they are in is wide enough to give each about 9.5rem (150px), and two across below that. The area is measured, not the screen: with the chat open beside the page, or an object's panel, there is far less room than the screen suggests. A tile's own control, such as the round select circle, sits at its top right inside the card, never past its edge.
@@ -549,3 +550,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.72 | 2026-11-24 | Profile's persona list is grouped by the work domain each role is mainly in, a heading per domain, Structure last. |
 | 0.73 | 2026-11-25 | Every card names its type above its title, as plain text, with the identifier at that line's end, in a list of one type as much as of several. |
 | 0.74 | 2026-11-26 | Outside agents in the object panel: an Activity tab on an agent's page, with its commits and proposals and its reads; a value an outside agent wrote says so. |
+| 0.75 | 2026-11-27 | Spacing: the navigation stays together at the top of the sidebar however tall it is, as Safari on iPhone had spread its items apart. |

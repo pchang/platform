@@ -93,6 +93,18 @@ html body .pf-v6-c-card:not(.pf-m-plain) {
  * They start html body, as the rules above do, so a component's own styles, which can load later, never outrank them.
  */
 
+/*
+ * The navigation keeps its items together at the top of the sidebar, however tall the sidebar is. PatternFly lays the nav
+ * out as grids, which stretch their rows to fill any extra height: where a browser lets the nav fill the sidebar, as
+ * Safari on iPhone does, the items drifted apart with uneven gaps between them.
+ */
+html body .pf-v6-c-nav,
+html body .pf-v6-c-nav__section,
+html body .pf-v6-c-nav__list,
+html body .pf-v6-c-nav__item {
+  align-content: start;
+}
+
 /* An Ask button alone at the start of its row lines up with the text above it, and adds no height beyond its glyph. */
 html body .pf-v6-c-card__body .pf-v6-l-flex > .pf-v6-c-button.pf-m-plain:only-child {
   margin-inline-start: calc(var(--pf-t--global--spacer--md) * -0.7);
