@@ -34,7 +34,7 @@ const graphOf = (g: Gateway) => (g as unknown as { graph: { store: Parameters<ty
 describe('the Design and Plan skills, as declared (domain spec 3.9)', () => {
   it('match the table: what each serves, owns and proposes, its version, approval and reference procedure', () => {
     const spec = readFileSync(join(import.meta.dirname, '../../spec/domain-life-sciences.md'), 'utf8');
-    const section = spec.slice(spec.indexOf('### 3.9'), spec.indexOf('\n---', spec.indexOf('### 3.9')));
+    const section = spec.slice(spec.indexOf('### 3.9'), spec.indexOf('\n### ', spec.indexOf('### 3.9') + 1));
     const rows = section
       .split('\n')
       .filter((l) => l.startsWith('| ') && !l.startsWith('| Skill') && !l.startsWith('|---'))

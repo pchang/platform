@@ -53,7 +53,7 @@ test('J7: add an on hold status to study scenarios, approve, apply and roll back
   await expect(propose.getByRole('heading', { name: 'Impact' })).toBeVisible({ timeout: 15_000 });
   await expect(propose.getByText('Study Scenario status: adds on hold')).toBeVisible();
   await expect(propose.getByText('Method Compare study scenarios: its precondition allows only some of these values')).toBeVisible();
-  await expect(propose.getByText(/LS&H life sciences terms 0\.2\.0 → 0\.3\.0/)).toBeVisible();
+  await expect(propose.getByText(/LS&H life sciences terms 0\.3\.0 → 0\.4\.0/)).toBeVisible();
   await page.waitForTimeout(600);
   await page.screenshot({ path: 'test-results/j7-2-propose-impact.png' });
   await propose.getByRole('button', { name: 'Propose' }).click();

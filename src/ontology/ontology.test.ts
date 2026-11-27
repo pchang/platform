@@ -16,7 +16,7 @@ describe('ontology files', () => {
   it('parse as Turtle, platform vocabulary first', () => {
     const files = ontologyFiles();
     expect(files[0]).toMatch(/platform\.ttl$/);
-    expect(files.length).toBe(7);
+    expect(files.length).toBe(8);
     expect(graph.store.size).toBeGreaterThan(1000);
   });
 
@@ -67,8 +67,9 @@ describe('model', () => {
 
   it('constrains every state dimension to exactly the concepts of its scheme', () => {
     const dims = q(`SELECT ?dim ?type ?scheme WHERE { ?dim a p:StateDimension ; p:dimensionOf ?type ; p:valuesFrom ?scheme }`);
-    // The domain's 69 and the platform's own: a change set's status and outcome, an operation's kind, a value's status.
-    expect(dims.length).toBe(73);
+    // The domain's 69 and the platform's own: a change set's status and outcome, an operation's kind, a value's status,
+    // a dataset version's status, a data point's kind and status, an agent's status and an agent proposal's status.
+    expect(dims.length).toBe(78);
     for (const { dim, type, scheme } of dims) {
       const inScheme = q(`SELECT ?c WHERE { ?c skos:inScheme <${scheme}> }`).map((r) => r.c).sort();
       const allowed = q(`SELECT ?c WHERE { ?shape (sh:targetClass|p:describes) <${type}> ; sh:property ?ps . ?ps sh:path <${dim}> ; sh:in/rdf:rest*/rdf:first ?c }`).map((r) => r.c).sort();
@@ -169,9 +170,9 @@ describe('rules and roles', () => {
   });
 
   it('use only NCIt codes checked against the NCI Thesaurus service', () => {
-    // Verified on 2026-11-08, the reactions on 2026-11-11, Study Protocol (C70817) on 2026-11-14, and the Design and Plan codes on 2026-11-20. Add a code here only after checking its name and definition at the source.
+    // Verified on 2026-11-08, the reactions on 2026-11-11, Study Protocol (C70817) on 2026-11-14, the Design and Plan codes on 2026-11-20, and Blood Pressure and its components (C54706, C25298, C25299) on 2026-11-24. Add a code here only after checking its name and definition at the source.
     const verified = ['C2987', 'C3036', 'C3258', 'C34661', 'C37943', 'C39594', 'C84427', 'C15206', 'C15600', 'C15601', 'C15602', 'C16735', 'C16960', 'C25196', 'C41331', 'C41333', 'C41334', 'C41335', 'C41336', 'C41396', 'C42790', 'C49068', 'C49494', 'C49498', 'C53256', 'C53258', 'C53259', 'C70817', 'C70885', 'C85838', 'C191214', 'C221818',
-      'C16112', 'C16197', 'C25212', 'C25370', 'C25532', 'C70833', 'C85826', 'C85827', 'C95401', 'C163559', 'C174266', 'C174267', 'C174268', 'C174447', 'C188813'];
+      'C16112', 'C16197', 'C25212', 'C25370', 'C25532', 'C70833', 'C85826', 'C85827', 'C95401', 'C163559', 'C174266', 'C174267', 'C174268', 'C174447', 'C188813', 'C54706', 'C25298', 'C25299'];
     const used = q(`SELECT DISTINCT ?code WHERE { ?s ?match ?code FILTER(STRSTARTS(STR(?code), "http://purl.obolibrary.org/obo/NCIT_")) }`)
       .map((r) => r.code.replace('http://purl.obolibrary.org/obo/NCIT_', ''));
     expect(used.length).toBeGreaterThan(10);
@@ -226,9 +227,9 @@ describe('agrees with the domain spec', () => {
         expect(ask(graph.store, `ASK { ?m a p:Method ; rdfs:label "${method}" ; p:appliesTo ?t . ?t rdfs:label "${on}" }`), `${method} on ${on}`).toBe(true);
       }
     }
-    expect(count).toBe(48);
+    expect(count).toBe(50);
     // The domain's methods; the platform's own, such as a change set's, are in the platform spec (section 3.7).
-    expect(q(`SELECT ?m WHERE { ?m a p:Method FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).length).toBe(48);
+    expect(q(`SELECT ?m WHERE { ?m a p:Method FILTER(STRSTARTS(STR(?m), STR(ls:))) }`).length).toBe(50);
   });
 
   it('marks exactly the on-demand methods the To do section lists', () => {
@@ -244,6 +245,9 @@ describe('agrees with the domain spec', () => {
       const named = q(`SELECT ?l WHERE { ?d a p:Domain ; rdfs:label ?l }`).map((r) => r.l).filter((d) => works.includes(d)).sort();
       expect(domains, persona).toEqual(named);
       expect(named.length, persona).toBeGreaterThan(0);
+      // The first named is the one it is mainly in (platform spec 3.3).
+      const first = [...named].sort((a, b) => works.indexOf(a) - works.indexOf(b))[0];
+      expect(q(`SELECT ?l WHERE { ?r rdfs:label "${persona}" ; p:mainlyIn/rdfs:label ?l }`).map((r) => r.l), persona).toEqual([first]);
     }
   });
 

@@ -7,6 +7,12 @@ test.setTimeout(60_000);
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
+// The seed's deadlines are written for November 12, 2026 (domain spec section 11): pin the page's clock there, so what is
+// due soon or overdue does not drift with the real date.
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-12T09:00:00'));
+});
+
 async function actAs(page: Page, name: string) {
   await page.getByRole('button', { name: /^Profile/ }).click();
   await page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
@@ -51,10 +57,10 @@ test('gives the Clinical Research Coordinator visits by date and the Clinical Re
   await page.goto('/');
   await todoCards(page);
 
+  // The coordinator works at the first site, and sees only its visits and queries (domain spec section 6, Scope).
   await actAs(page, 'Sam Whitfield');
   const visits = await todoCards(page);
-  expect(visits.slice(0, 3)).toEqual(['V-01-3', 'V-02-3', 'V-03-3']);
-  expect(visits.slice(-5)).toEqual(['PT-11', 'PT-12', 'Q-01', 'Q-02', 'Q-03']);
+  expect(visits).toEqual(['V-01-3', 'V-04-3', 'V-07-3', 'V-10-3', 'Q-03']);
   await expect(page.getByText('Overdue since Nov 3, 2026')).toBeVisible();
 
   // Completing a visit takes it off the list.
@@ -66,10 +72,11 @@ test('gives the Clinical Research Coordinator visits by date and the Clinical Re
   await expect(page.getByText('Complete visit done on V-01-3')).toBeVisible();
   expect(await todoCards(page)).not.toContain('V-01-3');
 
+  // The associate monitors the first two sites.
   await actAs(page, 'Priya Natarajan');
   const records = await todoCards(page);
-  expect(records.slice(0, 2)).toEqual(['AE-005', 'AE-004']);
-  expect(records.filter((id) => id.startsWith('DR-'))).toHaveLength(8);
+  expect(records.slice(0, 1)).toEqual(['AE-004']);
+  expect(records.filter((id) => id.startsWith('DR-'))).toHaveLength(6);
 });
 
 test('opens a list of objects from the navigation', async ({ page }) => {

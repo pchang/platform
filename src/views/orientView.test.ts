@@ -125,7 +125,7 @@ describe('the To do summary (design system spec 4.3)', () => {
     expect(json).toContain('{"component":"Label","props":{"label":"Due Nov 17, 2026","status":"warning"}}');
   });
 
-  it('leads each card with its title; the type’s name, as plain text, only above it in a list of several types; the identifier quiet', () => {
+  it('leads each card with its title under the type’s name, as plain text, in any list; the identifier quiet at that line’s end', () => {
     const json = JSON.stringify(buildTodoView(items, chloe, undefined, [], { today }));
     // To do holds several types: the type's name is plain text above the title, never a link: choosing the card anywhere opens it.
     expect(json).toContain('"children":[{"component":"Content","props":{"label":"Safety Case","component":"small"}},{"component":"Content","props":{"label":"SC-2","component":"small","isSubtle":true}}]');
@@ -133,9 +133,9 @@ describe('the To do summary (design system spec 4.3)', () => {
     // The identifier is quiet, at the end of that line, and no longer the card's first and only eyebrow.
     expect(json).toContain('"label":"SC-2","component":"small","isSubtle":true');
     expect(json).not.toContain('SC-2 · Safety Case');
-    // A list of one type repeats the type on no card.
+    // A list of one type names the type on every card too, as an indicator of what kind of object it is.
     const oneType = JSON.stringify(buildTypeView('Safety Cases', items.filter((i) => i.object.type === 'urn:SafetyCase').map((i) => i.object)));
-    expect(oneType).toContain('{"component":"CardHeader","children":[{"component":"CardTitle","props":{"label":"A Safety Case title","component":"h2"}}]}');
+    expect(oneType).toContain('"children":[{"component":"Content","props":{"label":"Safety Case","component":"small"}},{"component":"Content","props":{"label":"SC-2","component":"small","isSubtle":true}}]');
     expect(oneType).not.toContain('"lists"');
     expect(oneType).toContain('"label":"SC-2","component":"small","isSubtle":true');
   });
@@ -190,7 +190,7 @@ describe('the search page (design system spec 4.1, Search)', () => {
     const view = buildSearchView(result, { methods: new Map([['urn:AE-005', [verify]]]) });
     expect(validateView(view).errors).toEqual([]);
     const json = JSON.stringify(view);
-    expect(json).toContain('1 match for “serious adverse events PT-09 pneumonia”.');
+    expect(json).toContain('1 match for “serious adverse events PT-09 pneumonia”');
     for (const chip of ['Type: Adverse Event', 'Seriousness: serious', 'Linked to PT-09', 'Words: pneumonia']) expect(json).toContain(`"label":"${chip}","color":"blue"`);
     expect(json).toContain('Matched: Linked to PT-09 · Type: Adverse Event · Seriousness: serious · verbatim term: Fever and cough');
     expect(json).toContain('"label":"Verify adverse event"');
@@ -207,7 +207,7 @@ describe('the search page (design system spec 4.1, Search)', () => {
     const none = JSON.stringify(buildSearchView({ ...result, results: [], total: 0 }));
     expect(none).toContain('Nothing matches for');
     expect(none).toContain('Try fewer words');
-    expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown.');
+    expect(JSON.stringify(buildSearchView({ ...result, total: 80 }))).toContain('80 matches for “serious adverse events PT-09 pneumonia”, the best 1 shown');
     expect(JSON.stringify(buildSearchView({ ...result, interpretation: { ...result.interpretation, types: [] } }))).toContain('"label":"Identifier: PT-09"');
   });
 });

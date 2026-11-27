@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/platform> a owl:Ontology ;
   dcterms:title "LS&H platform vocabulary" ;
   rdfs:comment "Domain-free vocabulary for what SHACL does not describe: object types, state dimensions, methods, inputs, effects, business rules and roles (platform spec section 3.1)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/platform/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 p:Domain a rdfs:Class ;
@@ -563,8 +563,8 @@ p:holdsPersonalData a rdf:Property ;
 
 p:actsAs a rdf:Property ;
   rdfs:label "acts as" ;
-  rdfs:comment "A role the person may act in." ;
-  rdfs:domain p:Person ;
+  rdfs:comment "A role the principal may act in. An agent acts in exactly one." ;
+  rdfs:domain p:Principal ;
   rdfs:range p:Role .
 
 p:method a rdf:Property ;
@@ -665,6 +665,18 @@ p:urgency a rdf:Property ;
   rdfs:domain skos:Concept ;
   rdfs:range xsd:integer .
 
+p:exit a rdf:Property ;
+  rdfs:label "exit" ;
+  rdfs:comment "True when a lifecycle value ends the object's journey off its main path, such as a refuted signal or a missed visit. The lifecycle's other values, in order, are the main path (platform spec sections 3.1 and 5.1)." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range xsd:boolean .
+
+p:exitFrom a rdf:Property ;
+  rdfs:label "exit from" ;
+  rdfs:comment "The stage of the main path an exit leaves from, where the domain is certain. Without it, an object's own history says where it left." ;
+  rdfs:domain skos:Concept ;
+  rdfs:range skos:Concept .
+
 p:isDeadline a rdf:Property ;
   rdfs:label "is deadline" ;
   rdfs:comment "True when a date property is a deadline. Orders To do." ;
@@ -752,12 +764,6 @@ p:isDevelopmentSignature a rdf:Property ;
   rdfs:label "is development signature" ;
   rdfs:comment "True for a signature given by typing a name in development mode. Not a valid electronic signature." ;
   rdfs:domain p:Signature ;
-  rdfs:range xsd:boolean .
-
-p:isAgent a rdf:Property ;
-  rdfs:label "is agent" ;
-  rdfs:comment "True when the principal is a software agent, not a person. Agents never sign." ;
-  rdfs:domain p:Person ;
   rdfs:range xsd:boolean .
 
 p:mayRun a rdf:Property ;
@@ -1798,3 +1804,631 @@ p:Shape-IsCurrentValue-query a sh:SPARQLConstraint ;
     UNION { $this skos:inScheme ?s FILTER(STRSTARTS(STR(?s), "https://w3id.org/lsh-platform/platform#")) } }""" .
 
 p:StructureSteward p:mayRun p:AddValue, p:RelabelValue, p:DeprecateValue .
+
+# Starting points (platform spec 3.3, Skills): a skill may serve creating a type, naming the ways a person may begin.
+
+p:StartingPoint a rdfs:Class ;
+  rdfs:label "starting point" ;
+  rdfs:comment "One way a person may begin creating an object of a type, named by a skill, with the beginning the platform uses for it." .
+
+p:Beginning a rdfs:Class ;
+  rdfs:label "beginning" ;
+  rdfs:comment "How the platform begins a new object, implemented once for every domain: the create form, a template or a document." .
+
+p:forType a rdf:Property ;
+  rdfs:label "for type" ;
+  rdfs:comment "The type a skill that serves Create is for." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:ObjectType .
+
+p:startingPoint a rdf:Property ;
+  rdfs:label "starting point" ;
+  rdfs:comment "A way to begin that the skill names, in the order given by p:order." ;
+  rdfs:domain p:Skill ;
+  rdfs:range p:StartingPoint .
+
+p:begins a rdf:Property ;
+  rdfs:label "begins with" ;
+  rdfs:comment "The beginning a starting point uses." ;
+  rdfs:domain p:StartingPoint ;
+  rdfs:range p:Beginning .
+
+p:notYetBecause a rdf:Property ;
+  rdfs:label "not yet because" ;
+  rdfs:comment "Why the platform cannot run a beginning yet, said to the person who sees it as not yet available." ;
+  rdfs:domain p:Beginning ;
+  rdfs:range xsd:string .
+
+p:BeginWithForm a p:Beginning ;
+  rdfs:label "the create form" ;
+  rdfs:comment "Opens the type's create form (platform spec 5.3)." .
+
+p:BeginFromTemplate a p:Beginning ;
+  rdfs:label "a template" ;
+  rdfs:comment "Copies an approved template of the type with its parts, for the person to complete." ;
+  p:notYetBecause "Templates need a deep copy of an object with its parts, which the platform cannot make yet." .
+
+p:BeginFromDocument a p:Beginning ;
+  rdfs:label "a document" ;
+  rdfs:comment "Reads a document into the type's structure, proposed for review." ;
+  p:notYetBecause "Importing a document needs a connected model to read it into structure, and is not built yet." .
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Measures and observations (platform spec 3.2): measures are shapes, governed as structure; values stay in datasets,
+# read through an adapter; only values someone must act on become data points.
+
+p:Measure a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure" ;
+  p:pluralLabel "Measures" ;
+  rdfs:comment "A standard observation defined once, such as blood pressure: its components as shapes, mapped to external terminologies." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:MeasureComponent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure Component" ;
+  p:pluralLabel "Measure Components" ;
+  rdfs:comment "One value a measure observes, such as systolic pressure: a SHACL property shape on the observed value, with its datatype, unit and plausible range." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{rdfs:label}" .
+
+p:MeasureBinding a p:ObjectType, rdfs:Class ;
+  rdfs:label "Measure Binding" ;
+  p:pluralLabel "Measure Bindings" ;
+  rdfs:comment "How one dataset holds one component of a measure: the column and value that pick its rows, and the columns of its value and unit." ;
+  p:inDomain p:Structure ;
+  p:titleTemplate "{p:bindsComponent} in {p:inDataset}" .
+
+p:Dataset a p:ObjectType, rdfs:Class ;
+  rdfs:label "Dataset" ;
+  p:pluralLabel "Datasets" ;
+  rdfs:comment "A named collection of rows of one structure, such as a study's vital signs, whose versions are held in a data store. A domain places it in one of its work domains." ;
+  p:titleTemplate "{p:datasetName}" .
+
+p:DatasetVersion a p:ObjectType, rdfs:Class ;
+  rdfs:label "Dataset Version" ;
+  p:pluralLabel "Dataset Versions" ;
+  rdfs:comment "A dataset frozen at one data cut, held in an open format and read through an adapter, never copied into the graph." ;
+  p:titleTemplate "{p:versionOf}, cut {p:cutOn}" .
+
+p:DataPoint a p:ObjectType, rdfs:Class ;
+  rdfs:label "Data Point" ;
+  p:pluralLabel "Data Points" ;
+  rdfs:comment "A reference to one value a person must act on: an expected observation that is missing, or a value its component's shape does not allow, found by checking a dataset version." ;
+  p:titleTemplate "{p:dataPointKind}: {p:forComponent}, {p:atOccasion}" .
+
+p:Expectation a rdfs:Class ;
+  rdfs:label "expectation" ;
+  rdfs:comment "When an observation is expected: on which kind of occasion, in which state, and which measures, along a path through the graph." .
+
+p:ObservationCheck a rdfs:Class ;
+  rdfs:label "observation check" ;
+  rdfs:comment "An effect that compares a dataset version with what is expected of it, records the counts and makes data points of values missing or not allowed (platform spec 3.2)." ;
+  rdfs:subClassOf p:Effect .
+
+# Structure: measures, components and bindings.
+
+p:componentOf a p:Relationship, rdf:Property ;
+  rdfs:label "is a component of" ; p:inverseLabel "has" ; p:order 130 ; p:partOf true ;
+  rdfs:comment "A component is part of one measure." .
+p:measures a p:Relationship, rdf:Property ;
+  rdfs:label "measures" ; p:inverseLabel "is measured by" ; p:order 131 ;
+  rdfs:comment "A domain's object, such as an assessment, measures a measure." .
+p:bindsComponent a p:Relationship, rdf:Property ;
+  rdfs:label "binds" ; p:inverseLabel "is bound by" ; p:order 132 ;
+  rdfs:comment "The component a binding says how a dataset holds." .
+p:inDataset a p:Relationship, rdf:Property ;
+  rdfs:label "in" ; p:inverseLabel "is bound by" ; p:order 133 ;
+  rdfs:comment "The dataset a binding is for." .
+p:unitLabel a rdf:Property ; rdfs:label "unit" ; rdfs:comment "The unit a component's value is in, as written in data, such as mmHg." ; rdfs:domain p:MeasureComponent ; rdfs:range xsd:string .
+p:whereColumn a rdf:Property ; rdfs:label "rows where column" ; rdfs:comment "The column that picks a binding's rows, such as VSTESTCD." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:whereValue a rdf:Property ; rdfs:label "has the value" ; rdfs:comment "The value of that column on a binding's rows, such as SYSBP." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:valueColumn a rdf:Property ; rdfs:label "value column" ; rdfs:comment "The column holding the observed value." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+p:unitColumn a rdf:Property ; rdfs:label "unit column" ; rdfs:comment "The column holding the value's unit." ; rdfs:domain p:MeasureBinding ; rdfs:range xsd:string .
+
+# Datasets and their versions.
+
+p:datasetName a rdf:Property ; rdfs:label "name" ; rdfs:comment "The dataset's name." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:standard a rdf:Property ; rdfs:label "standard" ; rdfs:comment "The standard the dataset follows, such as SDTM VS." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:observedColumn a rdf:Property ; rdfs:label "object column" ; rdfs:comment "The column naming the object a row is about, by its identifier, such as a patient." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:observedType a rdf:Property ; rdfs:label "object type" ; rdfs:comment "The type of the object a row is about." ; rdfs:domain p:Dataset ; rdfs:range p:ObjectType .
+p:occasionColumn a rdf:Property ; rdfs:label "occasion column" ; rdfs:comment "The column naming the occasion of a row, such as a visit." ; rdfs:domain p:Dataset ; rdfs:range xsd:string .
+p:occasionMatch a rdf:Property ; rdfs:label "occasion matched by" ; rdfs:comment "The property of the occasion that its column holds, such as a visit's name." ; rdfs:domain p:Dataset ; rdfs:range rdf:Property .
+p:datasetFor a p:Relationship, rdf:Property ;
+  rdfs:label "is for" ; p:inverseLabel "has" ; p:order 134 ;
+  rdfs:comment "The object a dataset holds the data of, such as a study. A domain names its type." .
+p:versionOf a p:Relationship, rdf:Property ;
+  rdfs:label "is a version of" ; p:inverseLabel "has the version" ; p:order 135 ; p:partOf true ;
+  rdfs:comment "A dataset version is part of its dataset." .
+p:location a rdf:Property ; rdfs:label "location" ; rdfs:comment "Where the version's file is held, read through the adapter." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:string .
+p:format a rdf:Property ; rdfs:label "format" ; rdfs:comment "The open format the version is held in, such as Dataset-JSON 1.1." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:string .
+p:cutOn a rdf:Property ; rdfs:label "cut on" ; rdfs:comment "The data cut the version was taken at." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:date .
+p:expectedObservations a rdf:Property ; rdfs:label "expected" ; rdfs:comment "How many observations were expected of the version, when it was checked." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:receivedObservations a rdf:Property ; rdfs:label "received" ; rdfs:comment "How many of them it holds." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:missingObservations a rdf:Property ; rdfs:label "missing" ; rdfs:comment "How many of them it does not hold." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+p:notAllowedObservations a rdf:Property ; rdfs:label "not allowed" ; rdfs:comment "How many values it holds that their component's shape does not allow." ; rdfs:domain p:DatasetVersion ; rdfs:range xsd:integer .
+
+p:datasetVersionStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ; rdfs:comment "Whether a dataset version has been checked against its measures." ;
+  p:dimensionOf p:DatasetVersion ; p:valuesFrom p:DatasetVersionStatus ; p:order 1 .
+p:DatasetVersionStatus a skos:ConceptScheme ; skos:prefLabel "Dataset version status" ; skos:definition "Whether a dataset version has been checked." .
+p:DatasetVersionStatus-loaded a skos:Concept ; skos:inScheme p:DatasetVersionStatus ; skos:prefLabel "loaded" ; p:order 1 .
+p:DatasetVersionStatus-checked a skos:Concept ; skos:inScheme p:DatasetVersionStatus ; skos:prefLabel "checked" ; p:order 2 .
+
+# Data points.
+
+p:dataPointKind a p:StateDimension, rdf:Property ;
+  rdfs:label "Kind" ; rdfs:comment "Whether the value is missing or not allowed." ;
+  p:dimensionOf p:DataPoint ; p:valuesFrom p:DataPointKind ; p:chosenOnCreate true ; p:order 2 .
+p:DataPointKind a skos:ConceptScheme ; skos:prefLabel "Data point kind" ; skos:definition "Why a value became a data point." .
+p:DataPointKind-missing a skos:Concept ; skos:inScheme p:DataPointKind ; skos:prefLabel "missing" ; p:order 1 ;
+  skos:definition "An expected observation the dataset version does not hold." .
+p:DataPointKind-notAllowed a skos:Concept ; skos:inScheme p:DataPointKind ; skos:prefLabel "not allowed" ; p:order 2 ;
+  skos:definition "A value its component's shape does not allow: of the wrong datatype or unit, or outside its plausible range." .
+p:dataPointStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ; rdfs:comment "Whether the data point has been explained or resolved." ;
+  p:dimensionOf p:DataPoint ; p:valuesFrom p:DataPointStatus ; p:order 1 .
+p:DataPointStatus a skos:ConceptScheme ; skos:prefLabel "Data point status" ; skos:definition "Where a data point is." .
+p:DataPointStatus-open a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "open" ; p:order 1 .
+p:DataPointStatus-explained a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "explained" ; p:order 2 .
+p:DataPointStatus-resolved a skos:Concept ; skos:inScheme p:DataPointStatus ; skos:prefLabel "resolved" ; p:order 3 .
+
+p:pointOf a p:Relationship, rdf:Property ;
+  rdfs:label "is about" ; p:inverseLabel "has" ; p:order 136 ;
+  rdfs:comment "The object a data point's value is about, such as a patient. A domain names its type." .
+p:atOccasion a p:Relationship, rdf:Property ;
+  rdfs:label "at" ; p:inverseLabel "has" ; p:order 137 ;
+  rdfs:comment "The occasion of a data point's value, such as a visit. A domain names its type." .
+p:forComponent a p:Relationship, rdf:Property ;
+  rdfs:label "for" ; p:inverseLabel "has" ; p:order 138 ;
+  rdfs:comment "The measure component a data point's value is for." .
+p:seenIn a p:Relationship, rdf:Property ;
+  rdfs:label "seen in" ; p:inverseLabel "has" ; p:order 139 ; p:partOf true ;
+  rdfs:comment "The dataset version a data point was found in." .
+p:observedValue a rdf:Property ; rdfs:label "value" ; rdfs:comment "The value seen, when there is one." ; rdfs:domain p:DataPoint .
+p:observedUnit a rdf:Property ; rdfs:label "unit" ; rdfs:comment "The unit seen with the value." ; rdfs:domain p:DataPoint ; rdfs:range xsd:string .
+p:reason a rdf:Property ; rdfs:label "why" ; rdfs:comment "Why the value is not allowed, or that it is missing." ; rdfs:domain p:DataPoint ; rdfs:range xsd:string .
+
+# Expectations, declared by a domain.
+
+p:occasionType a rdf:Property ; rdfs:label "occasion type" ; rdfs:comment "The kind of occasion an observation is expected on, such as a visit." ; rdfs:range p:ObjectType .
+p:occasionState a rdf:Property ; rdfs:label "occasion state" ; rdfs:comment "The state an occasion must be in for observations to be expected of it, such as completed." ; rdfs:domain p:Expectation .
+p:observedAlong a rdf:Property ; rdfs:label "object along" ; rdfs:comment "The relationship from an occasion to the object observed on it." ; rdfs:domain p:Expectation .
+p:measuresAlong a rdf:Property ; rdfs:label "measures along" ; rdfs:comment "A SPARQL path from an occasion to the measures expected on it." ; rdfs:domain p:Expectation ; rdfs:range xsd:string .
+p:scopeAlong a rdf:Property ; rdfs:label "scope along" ; rdfs:comment "A SPARQL path from an occasion to the object a dataset is for, so a dataset expects only its own occasions." ; rdfs:domain p:Expectation ; rdfs:range xsd:string .
+
+# Shapes: describing the structure kinds, and validating the data kinds.
+
+p:Shape-Measure a sh:NodeShape ; p:describes p:Measure ; sh:property p:Shape-Measure-label, p:Shape-Measure-comment .
+p:Shape-Measure-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-Measure-comment a sh:PropertyShape ; sh:path rdfs:comment ; sh:name "description" .
+p:Shape-MeasureComponent a sh:NodeShape ; p:describes p:MeasureComponent ;
+  sh:property p:Shape-MeasureComponent-label, p:Shape-MeasureComponent-unit, p:Shape-MeasureComponent-min, p:Shape-MeasureComponent-max, p:Shape-MeasureComponent-of .
+p:Shape-MeasureComponent-label a sh:PropertyShape ; sh:path rdfs:label ; sh:name "name" .
+p:Shape-MeasureComponent-unit a sh:PropertyShape ; sh:path p:unitLabel ; sh:name "unit" .
+p:Shape-MeasureComponent-min a sh:PropertyShape ; sh:path sh:minInclusive ; sh:name "lowest plausible" .
+p:Shape-MeasureComponent-max a sh:PropertyShape ; sh:path sh:maxInclusive ; sh:name "highest plausible" .
+p:Shape-MeasureComponent-of a sh:PropertyShape ; sh:path p:componentOf ; sh:class p:Measure ; sh:maxCount 1 ; sh:name "is a component of" .
+p:Shape-MeasureBinding a sh:NodeShape ; p:describes p:MeasureBinding ;
+  sh:property p:Shape-MeasureBinding-component, p:Shape-MeasureBinding-dataset, p:Shape-MeasureBinding-where, p:Shape-MeasureBinding-value, p:Shape-MeasureBinding-valueColumn, p:Shape-MeasureBinding-unitColumn .
+p:Shape-MeasureBinding-component a sh:PropertyShape ; sh:path p:bindsComponent ; sh:class p:MeasureComponent ; sh:maxCount 1 ; sh:name "binds" .
+p:Shape-MeasureBinding-dataset a sh:PropertyShape ; sh:path p:inDataset ; sh:class p:Dataset ; sh:maxCount 1 ; sh:name "in" .
+p:Shape-MeasureBinding-where a sh:PropertyShape ; sh:path p:whereColumn ; sh:name "rows where column" .
+p:Shape-MeasureBinding-value a sh:PropertyShape ; sh:path p:whereValue ; sh:name "has the value" .
+p:Shape-MeasureBinding-valueColumn a sh:PropertyShape ; sh:path p:valueColumn ; sh:name "value column" .
+p:Shape-MeasureBinding-unitColumn a sh:PropertyShape ; sh:path p:unitColumn ; sh:name "unit column" .
+
+p:Shape-Dataset a sh:NodeShape ; sh:targetClass p:Dataset ;
+  sh:property p:Shape-Dataset-name, p:Shape-Dataset-standard .
+p:Shape-Dataset-name a sh:PropertyShape ; sh:path p:datasetName ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+p:Shape-Dataset-standard a sh:PropertyShape ; sh:path p:standard ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "standard" .
+p:Shape-DatasetVersion a sh:NodeShape ; sh:targetClass p:DatasetVersion ;
+  sh:property p:Shape-DatasetVersion-status, p:Shape-DatasetVersion-of, p:Shape-DatasetVersion-location, p:Shape-DatasetVersion-format, p:Shape-DatasetVersion-cut,
+    p:Shape-DatasetVersion-expected, p:Shape-DatasetVersion-received, p:Shape-DatasetVersion-missing, p:Shape-DatasetVersion-notAllowed .
+p:Shape-DatasetVersion-status a sh:PropertyShape ; sh:path p:datasetVersionStatus ; sh:in ( p:DatasetVersionStatus-loaded p:DatasetVersionStatus-checked ) ; sh:maxCount 1 ; sh:name "Status" .
+p:Shape-DatasetVersion-of a sh:PropertyShape ; sh:path p:versionOf ; sh:class p:Dataset ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "is a version of" .
+p:Shape-DatasetVersion-location a sh:PropertyShape ; sh:path p:location ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "location" .
+p:Shape-DatasetVersion-format a sh:PropertyShape ; sh:path p:format ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "format" .
+p:Shape-DatasetVersion-cut a sh:PropertyShape ; sh:path p:cutOn ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "cut on" .
+p:Shape-DatasetVersion-expected a sh:PropertyShape ; sh:path p:expectedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "expected" .
+p:Shape-DatasetVersion-received a sh:PropertyShape ; sh:path p:receivedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "received" .
+p:Shape-DatasetVersion-missing a sh:PropertyShape ; sh:path p:missingObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "missing" .
+p:Shape-DatasetVersion-notAllowed a sh:PropertyShape ; sh:path p:notAllowedObservations ; sh:datatype xsd:integer ; sh:maxCount 1 ; sh:name "not allowed" .
+p:Shape-DataPoint a sh:NodeShape ; sh:targetClass p:DataPoint ;
+  sh:property p:Shape-DataPoint-status, p:Shape-DataPoint-kind, p:Shape-DataPoint-component, p:Shape-DataPoint-seenIn, p:Shape-DataPoint-value, p:Shape-DataPoint-unit, p:Shape-DataPoint-reason .
+p:Shape-DataPoint-status a sh:PropertyShape ; sh:path p:dataPointStatus ; sh:in ( p:DataPointStatus-open p:DataPointStatus-explained p:DataPointStatus-resolved ) ; sh:maxCount 1 ; sh:name "Status" .
+p:Shape-DataPoint-kind a sh:PropertyShape ; sh:path p:dataPointKind ; sh:in ( p:DataPointKind-missing p:DataPointKind-notAllowed ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Kind" .
+p:Shape-DataPoint-component a sh:PropertyShape ; sh:path p:forComponent ; sh:class p:MeasureComponent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "for" .
+p:Shape-DataPoint-seenIn a sh:PropertyShape ; sh:path p:seenIn ; sh:class p:DatasetVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "seen in" .
+p:Shape-DataPoint-value a sh:PropertyShape ; sh:path p:observedValue ; sh:maxCount 1 ; sh:name "value" .
+p:Shape-DataPoint-unit a sh:PropertyShape ; sh:path p:observedUnit ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "unit" .
+p:Shape-DataPoint-reason a sh:PropertyShape ; sh:path p:reason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why" .
+
+# Checking a dataset version against its measures.
+
+p:Shape-DatasetVersion-isLoaded a sh:NodeShape ; rdfs:label "The dataset version is loaded, not yet checked" ; sh:property p:Shape-DatasetVersion-isLoaded-status .
+p:Shape-DatasetVersion-isLoaded-status a sh:PropertyShape ; sh:path p:datasetVersionStatus ; sh:hasValue p:DatasetVersionStatus-loaded ; sh:message "The dataset version has already been checked" .
+p:CheckObservations-effect1 a p:ObservationCheck .
+p:CheckObservations-effect2 a p:StateChange ; p:dimension p:datasetVersionStatus ; p:value p:DatasetVersionStatus-checked .
+p:CheckObservations a p:Method ;
+  rdfs:label "Check against measures" ;
+  rdfs:comment "Compares the version with what is expected of it, records how many observations were expected, received, missing and not allowed, and makes a data point of each one missing or not allowed." ;
+  p:appliesTo p:DatasetVersion ;
+  p:onDemand true ;
+  p:precondition p:Shape-DatasetVersion-isLoaded ;
+  p:effect p:CheckObservations-effect1, p:CheckObservations-effect2 .
+
+p:mainlyIn a rdf:Property ;
+  rdfs:label "mainly in" ;
+  rdfs:comment "The work domain a role works in mainly, the first of its domains; people are listed under it wherever they are chosen among (platform spec 3.3)." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:Domain .
+
+p:StructureSteward p:mainlyIn p:Structure .
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Outside agents (platform spec 3.4, Outside agents) and scope (platform spec 3.3, Scope). Domain-free: each domain
+# declares how its types belong to a scope root, which roles are scoped, and which methods agents may act on alone.
+
+p:Partners a p:Domain ;
+  rdfs:label "Partners" ;
+  rdfs:comment "The platform's own domain for the organizations that work with the sponsor and the outside agents they run (platform spec 3.4, Outside agents)." .
+
+p:Principal a rdfs:Class ;
+  rdfs:label "principal" ;
+  rdfs:comment "Anything that can act through the gateway: a person or an agent." .
+p:Person rdfs:subClassOf p:Principal .
+
+p:Organization a p:ObjectType, rdfs:Class ;
+  rdfs:label "Organization" ;
+  p:pluralLabel "Organizations" ;
+  rdfs:comment "A company that works with the sponsor, such as a contract research organization. Its people and agents act within its assignments." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{p:organizationName}" .
+
+p:Assignment a p:ObjectType, rdfs:Class ;
+  rdfs:label "Assignment" ;
+  p:pluralLabel "Assignments" ;
+  rdfs:comment "Gives an organization or a person a scope: the objects it may act on, such as a study and some of its sites, from one date and, optionally, until another (platform spec 3.3, Scope)." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{p:assignee}, from {p:assignedFrom}" .
+
+p:Agent a p:ObjectType, rdfs:Class ;
+  rdfs:label "Agent" ;
+  p:pluralLabel "Agents" ;
+  rdfs:subClassOf p:Principal, prov:SoftwareAgent ;
+  rdfs:comment "Software another organization runs, acting through the gateway in one role, with an accountable person at its organization who answers for it. Never a person: it never signs, approves or decides a proposal (platform spec 3.4, Outside agents)." ;
+  p:inDomain p:Partners ;
+  p:titleTemplate "{rdfs:label}" ;
+  p:defaultCommitsPerHour 60 ;
+  p:defaultReadsPerHour 1000 .
+
+p:AgentProposal a p:ObjectType, rdfs:Class ;
+  rdfs:label "Agent Proposal" ;
+  p:pluralLabel "Agent Proposals" ;
+  rdfs:comment "A method an agent ran where it may only propose: the method, the object, the inputs and the agent's reason, waiting for its accountable person to confirm or reject it." ;
+  p:inDomain p:Partners ;
+  p:onlyThroughMethods true ;
+  p:titleTemplate "{p:proposedMethod} on {p:proposalTarget}" .
+
+
+p:agentStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Where an agent is in its life: registered, then active; paused by its ceilings or suspended by a person; retired at the end." ;
+  p:dimensionOf p:Agent ;
+  p:valuesFrom p:AgentStatus ;
+  p:order 1 .
+
+p:AgentStatus a skos:ConceptScheme ;
+  skos:prefLabel "Agent status" ;
+  skos:definition "Where an outside agent is in its life (platform spec 3.4, Outside agents). Only an active agent may act." .
+p:AgentStatus-registered a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "registered" ; p:order 1 ;
+  skos:definition "Registered by its organization, waiting for the sponsor's approval. It cannot act yet." .
+p:AgentStatus-active a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "active" ; p:order 2 .
+p:AgentStatus-paused a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "paused" ; p:order 3 ; p:exit true ; p:exitFrom p:AgentStatus-active ;
+  skos:definition "Stopped by its ceilings, automatically, until a person resumes it." .
+p:AgentStatus-suspended a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "suspended" ; p:order 4 ; p:exit true ; p:exitFrom p:AgentStatus-active ;
+  skos:definition "Stopped by a person, with a reason, until a person resumes it." .
+p:AgentStatus-retired a skos:Concept ; skos:inScheme p:AgentStatus ; skos:prefLabel "retired" ; p:order 5 ;
+  skos:definition "Its work has ended. It never acts again; its history is kept." .
+
+p:agentProposalStatus a p:StateDimension, rdf:Property ;
+  rdfs:label "Status" ;
+  rdfs:comment "Whether an agent's proposal is waiting, or how its accountable person decided it." ;
+  p:dimensionOf p:AgentProposal ;
+  p:valuesFrom p:AgentProposalStatus ;
+  p:order 1 .
+
+p:AgentProposalStatus a skos:ConceptScheme ;
+  skos:prefLabel "Agent proposal status" ;
+  skos:definition "Where an agent's proposal is: pending until its accountable person confirms or rejects it, once." .
+p:AgentProposalStatus-pending a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "pending" ; p:order 1 .
+p:AgentProposalStatus-confirmed a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "confirmed" ; p:order 2 .
+p:AgentProposalStatus-rejected a skos:Concept ; skos:inScheme p:AgentProposalStatus ; skos:prefLabel "rejected" ; p:order 3 ; p:exit true ; p:exitFrom p:AgentProposalStatus-pending .
+
+# How much a method lets an agent do alone (platform spec 3.4, Outside agents, Autonomy).
+
+p:AgentAutonomy a skos:ConceptScheme ;
+  skos:prefLabel "Agent autonomy" ;
+  skos:definition "What an agent may do alone with a method: commit it, only propose it, or never run it. Set by reversibility." .
+p:Acts a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "acts" ; p:order 1 ;
+  skos:definition "The agent commits, and the commit is the agent's. For methods whose effect another method can undo." .
+p:Proposes a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "proposes" ; p:order 2 ;
+  skos:definition "The agent's commit becomes a proposal its accountable person confirms or rejects. The default." .
+p:Never a skos:Concept ; skos:inScheme p:AgentAutonomy ; skos:prefLabel "never" ; p:order 3 ;
+  skos:definition "Agents cannot run the method." .
+
+p:agentAutonomy a rdf:Property ;
+  rdfs:label "agent autonomy" ;
+  rdfs:comment "What an agent may do alone with this method. A method that declares none proposes." ;
+  rdfs:domain p:Method ;
+  rdfs:range skos:Concept .
+
+# Scope (platform spec 3.3).
+
+p:scoped a rdf:Property ;
+  rdfs:label "scoped" ;
+  rdfs:comment "True when the role's permissions apply only within the principal's assignments, and objects outside them do not exist for it." ;
+  rdfs:domain p:Role ;
+  rdfs:range xsd:boolean .
+
+p:scopeRoot a rdf:Property ;
+  rdfs:label "scope root" ;
+  rdfs:comment "True when objects of the type are themselves roots of scope, which an assignment names, such as a site or a study." ;
+  rdfs:domain p:ObjectType ;
+  rdfs:range xsd:boolean .
+
+p:scopePath a rdf:Property ;
+  rdfs:label "scope path" ;
+  rdfs:comment "How an object of the type belongs to a scope root: a SHACL property path from the object to the root, such as from a data query to the site of the record it is raised on. A type with neither a scope path nor scope root is not limited by scope." ;
+  rdfs:domain p:ObjectType .
+
+p:principalPath a rdf:Property ;
+  rdfs:label "principal path" ;
+  rdfs:comment "A metric counts only the objects that reach the principal along this SHACL property path, such as the proposals of agents they answer for." ;
+  rdfs:domain p:Metric .
+
+p:forAgents a rdf:Property ;
+  rdfs:label "for agents" ;
+  rdfs:comment "True when the role is for agents. Such a role reads only the types it lists (p:mayRead), and is always scoped." ;
+  rdfs:domain p:Role ;
+  rdfs:range xsd:boolean .
+
+p:mayRead a rdf:Property ;
+  rdfs:label "may read" ;
+  rdfs:comment "A type a role for agents may read. Nothing else exists for it." ;
+  rdfs:domain p:Role ;
+  rdfs:range p:ObjectType .
+
+p:onlyBy a rdf:Property ;
+  rdfs:label "only by" ;
+  rdfs:comment "Only the principal reached from the method's object along this SHACL property path may run the method, such as an agent's accountable person deciding its proposals." ;
+  rdfs:domain p:Method .
+
+p:notBy a rdf:Property ;
+  rdfs:label "not by" ;
+  rdfs:comment "The principal reached from the method's object along this property may not run the method, such as the person who registered an agent approving it." ;
+  rdfs:domain p:Method .
+
+p:setOnCreateFrom a rdf:Property ;
+  rdfs:label "set on create from" ;
+  rdfs:comment "The property is set when an object is created, from the principal: p:Principal for the principal itself, or a property whose value on the principal it takes, such as the organization they are a member of. It is not in the create form." ;
+  rdfs:domain rdf:Property .
+
+p:setOnlyByMethods a rdf:Property ;
+  rdfs:label "set only by methods" ;
+  rdfs:comment "True when the property is recorded by methods, such as why an agent was suspended, so it is in no form." ;
+  rdfs:domain rdf:Property ;
+  rdfs:range xsd:boolean .
+
+p:defaultCommitsPerHour a rdf:Property ; rdfs:label "default commits per hour" ; rdfs:comment "The platform's ceiling of commits and proposals an hour for an agent registered without one." ; rdfs:domain p:ObjectType ; rdfs:range xsd:integer .
+p:defaultReadsPerHour a rdf:Property ; rdfs:label "default reads per hour" ; rdfs:comment "The platform's ceiling of reads an hour for an agent registered without one." ; rdfs:domain p:ObjectType ; rdfs:range xsd:integer .
+
+# The properties of organizations, assignments, agents and their proposals.
+
+p:organizationName a rdf:Property ; rdfs:label "name" ; rdfs:comment "The organization's name." ; rdfs:range xsd:string .
+p:memberOf a p:Relationship, rdf:Property ; rdfs:label "is a member of" ; p:inverseLabel "has the member" ; p:order 130 ;
+  rdfs:comment "The organization a person works for. They act within its assignments." .
+p:assignee a p:Relationship, rdf:Property ; rdfs:label "assigns" ; p:inverseLabel "is assigned by" ; p:order 131 ;
+  rdfs:comment "The organization or person an assignment gives its scope to." .
+p:inScope a p:Relationship, rdf:Property ; rdfs:label "covers" ; p:inverseLabel "is covered by" ; p:order 132 ;
+  rdfs:comment "A scope root the assignment gives, such as a study or a site." .
+p:assignedFrom a rdf:Property ; rdfs:label "from" ; rdfs:comment "The day the assignment starts." ; rdfs:range xsd:date .
+p:assignedUntil a rdf:Property ; rdfs:label "until" ; rdfs:comment "The last day of the assignment. Without one, it has no end yet." ; rdfs:range xsd:date .
+p:contractReference a rdf:Property ; rdfs:label "contract" ; rdfs:comment "The contract an organization's assignment comes from, by its reference: the authority for the access it grants." ; rdfs:range xsd:string .
+p:contractDate a rdf:Property ; rdfs:label "contract date" ; rdfs:comment "The date of the contract an organization's assignment comes from." ; rdfs:range xsd:date .
+p:endReason a rdf:Property ; rdfs:label "why it ended" ; p:setOnlyByMethods true ; rdfs:comment "Why the assignment was ended." ; rdfs:range xsd:string .
+p:operatedBy a p:Relationship, rdf:Property ; rdfs:label "is run by" ; p:inverseLabel "runs" ; p:order 133 ; p:setOnCreateFrom p:memberOf ;
+  rdfs:comment "The organization that runs the agent." .
+p:accountablePerson a rdf:Property ; rdfs:label "accountable person" ; p:setOnCreateFrom p:Principal ;
+  rdfs:comment "The person at the agent's organization who answers for what it does, and decides its proposals." .
+p:registeredBy a rdf:Property ; rdfs:label "registered by" ; p:setOnCreateFrom p:Principal ;
+  rdfs:comment "The person who registered the agent. They may not approve it." .
+p:actsAs a p:Relationship ; p:inverseLabel "is the role of" ; p:order 134 .
+p:clientId a rdf:Property ; rdfs:label "client" ; rdfs:comment "The agent's client identifier at the deployment's identity provider, which its tokens name." ; rdfs:range xsd:string .
+p:commitsPerHour a rdf:Property ; rdfs:label "commits an hour, at most" ; rdfs:comment "The agent's ceiling of commits and proposals an hour. Crossing it pauses the agent." ; rdfs:range xsd:integer .
+p:readsPerHour a rdf:Property ; rdfs:label "reads an hour, at most" ; rdfs:comment "The agent's ceiling of reads an hour. Crossing it pauses the agent." ; rdfs:range xsd:integer .
+p:proposesOnly a p:Relationship, rdf:Property ; rdfs:label "only proposes" ; p:inverseLabel "is only proposed by" ; p:order 135 ;
+  rdfs:comment "A method the agent may only propose, lowered from what the method allows, when the sponsor approved it or later." .
+p:statusReason a rdf:Property ; rdfs:label "why" ; p:setOnlyByMethods true ; rdfs:comment "Why the agent was last paused or suspended." ; rdfs:range xsd:string .
+p:proposingAgent a p:Relationship, rdf:Property ; rdfs:label "is proposed by" ; p:inverseLabel "proposed" ; p:order 136 ;
+  rdfs:comment "The agent that made the proposal." .
+p:proposedMethod a p:Relationship, rdf:Property ; rdfs:label "proposes" ; p:inverseLabel "is proposed in" ; p:order 137 ;
+  rdfs:comment "The method the agent proposed to run." .
+p:proposalTarget a rdf:Property ; rdfs:label "on" ; rdfs:comment "The object the proposed method runs on." .
+p:agentReason a rdf:Property ; rdfs:label "reason" ; rdfs:comment "Why the agent acted or proposed, in its own words. Every agent commit and proposal gives one." ; rdfs:range xsd:string ;
+  p:inWordsOf p:proposingAgent .
+p:inWordsOf a rdf:Property ; rdfs:label "in the words of" ;
+  rdfs:comment "The property's value is always in the words of the principal the object reaches along this property, such as a proposal's reason, in the words of the agent that proposed it." ;
+  rdfs:domain rdf:Property .
+p:agentVersion a rdf:Property ; rdfs:label "agent version" ; rdfs:comment "The agent's name and version, as it declared them when it connected." ; rdfs:range xsd:string .
+p:rejectionReason a rdf:Property ; rdfs:label "why rejected" ; p:setOnlyByMethods true ; rdfs:comment "Why the accountable person rejected the proposal." ; rdfs:range xsd:string .
+p:confirmedIn a rdf:Property ; rdfs:label "confirmed in" ; rdfs:comment "The commit that confirmed the proposal: the accountable person's commit of the proposed method." .
+p:answeredForBy a rdf:Property ; rdfs:label "answered for by" ; rdfs:comment "On a commit or proposal by an agent: its accountable person at that moment." .
+p:agentOrganization a rdf:Property ; rdfs:label "for the organization" ; rdfs:comment "On a commit or proposal by an agent: its operating organization at that moment." .
+p:proposedByAgent a rdf:Property ; rdfs:label "proposed by agent" ; rdfs:comment "On a person's commit: the agent proposal it confirmed. The commit is the person's." .
+p:CircuitBreaker a prov:SoftwareAgent ; rdfs:label "circuit breaker" ;
+  rdfs:comment "The gateway pausing an agent that crossed a ceiling (platform spec 3.4, Outside agents, Exposure)." .
+
+p:Shape-Organization a sh:NodeShape ; sh:targetClass p:Organization ; sh:property p:Shape-Organization-name .
+p:Shape-Organization-name a sh:PropertyShape ; sh:path p:organizationName ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+
+p:Shape-Assignment a sh:NodeShape ; sh:targetClass p:Assignment ;
+  sh:property p:Shape-Assignment-assignee, p:Shape-Assignment-root, p:Shape-Assignment-from, p:Shape-Assignment-until, p:Shape-Assignment-contract,
+    p:Shape-Assignment-contractDate, p:Shape-Assignment-endReason ;
+  sh:sparql p:Shape-Assignment-contractNeeded .
+p:Shape-Assignment-assignee a sh:PropertyShape ; sh:order 1 ; sh:path p:assignee ; sh:or ( [ sh:class p:Organization ] [ sh:class p:Person ] ) ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "assigns" .
+p:Shape-Assignment-root a sh:PropertyShape ; sh:path p:inScope ; sh:name "covers" .
+p:Shape-Assignment-from a sh:PropertyShape ; sh:order 2 ; sh:path p:assignedFrom ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "from" .
+p:Shape-Assignment-until a sh:PropertyShape ; sh:order 3 ; sh:path p:assignedUntil ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "until" .
+p:Shape-Assignment-contract a sh:PropertyShape ; sh:order 4 ; sh:path p:contractReference ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "contract" .
+p:Shape-Assignment-contractDate a sh:PropertyShape ; sh:order 5 ; sh:path p:contractDate ; sh:datatype xsd:date ; sh:maxCount 1 ; sh:name "contract date" .
+p:Shape-Assignment-endReason a sh:PropertyShape ; sh:path p:endReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why it ended" .
+p:Shape-Assignment-contractNeeded a sh:SPARQLConstraint ;
+  sh:message "An assignment to an organization names the contract it comes from, by reference and date" ;
+  sh:prefixes p:prefixes ;
+  sh:select """SELECT $this WHERE { $this p:assignee ?who . ?who a p:Organization .
+    FILTER (NOT EXISTS { $this p:contractReference ?r } || NOT EXISTS { $this p:contractDate ?d }) }""" .
+
+p:Shape-Agent a sh:NodeShape ; sh:targetClass p:Agent ;
+  sh:property p:Shape-Agent-name, p:Shape-Agent-role, p:Shape-Agent-client, p:Shape-Agent-status, p:Shape-Agent-operatedBy, p:Shape-Agent-accountable,
+    p:Shape-Agent-registeredBy, p:Shape-Agent-commits, p:Shape-Agent-reads, p:Shape-Agent-proposesOnly, p:Shape-Agent-reason .
+p:Shape-Agent-name a sh:PropertyShape ; sh:order 1 ; sh:path rdfs:label ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "name" .
+p:Shape-Agent-role a sh:PropertyShape ; sh:order 2 ; sh:path p:actsAs ; sh:class p:Role ; sh:node p:Shape-RoleForAgents ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "role" .
+p:Shape-Agent-client a sh:PropertyShape ; sh:order 3 ; sh:path p:clientId ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "client" .
+p:Shape-Agent-status a sh:PropertyShape ; sh:path p:agentStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
+  sh:in ( p:AgentStatus-registered p:AgentStatus-active p:AgentStatus-paused p:AgentStatus-suspended p:AgentStatus-retired ) .
+p:Shape-Agent-operatedBy a sh:PropertyShape ; sh:path p:operatedBy ; sh:class p:Organization ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "run by" ;
+  sh:message "Only a person who is a member of an organization may register its agents" .
+p:Shape-Agent-accountable a sh:PropertyShape ; sh:path p:accountablePerson ; sh:class p:Person ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "accountable person" .
+p:Shape-Agent-registeredBy a sh:PropertyShape ; sh:path p:registeredBy ; sh:class p:Person ; sh:maxCount 1 ; sh:name "registered by" .
+p:Shape-Agent-commits a sh:PropertyShape ; sh:order 4 ; sh:path p:commitsPerHour ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxCount 1 ; sh:name "commits an hour, at most" .
+p:Shape-Agent-reads a sh:PropertyShape ; sh:order 5 ; sh:path p:readsPerHour ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxCount 1 ; sh:name "reads an hour, at most" .
+p:Shape-Agent-proposesOnly a sh:PropertyShape ; sh:path p:proposesOnly ; sh:class p:Method ; sh:name "only proposes" .
+p:Shape-Agent-reason a sh:PropertyShape ; sh:path p:statusReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why" .
+
+p:Shape-RoleForAgents a sh:NodeShape ; rdfs:label "A role for agents" ;
+  sh:property [ sh:path p:forAgents ; sh:hasValue true ; sh:message "Choose a role for agents" ] .
+
+p:Shape-AgentProposal a sh:NodeShape ; sh:targetClass p:AgentProposal ;
+  sh:property p:Shape-AgentProposal-status, p:Shape-AgentProposal-by, p:Shape-AgentProposal-method, p:Shape-AgentProposal-target, p:Shape-AgentProposal-reason, p:Shape-AgentProposal-rejection .
+p:Shape-AgentProposal-status a sh:PropertyShape ; sh:path p:agentProposalStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "Status" ;
+  sh:in ( p:AgentProposalStatus-pending p:AgentProposalStatus-confirmed p:AgentProposalStatus-rejected ) .
+p:Shape-AgentProposal-by a sh:PropertyShape ; sh:path p:proposingAgent ; sh:class p:Agent ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposed by" .
+p:Shape-AgentProposal-method a sh:PropertyShape ; sh:path p:proposedMethod ; sh:class p:Method ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "proposes" .
+p:Shape-AgentProposal-target a sh:PropertyShape ; sh:path p:proposalTarget ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "on" .
+p:Shape-AgentProposal-reason a sh:PropertyShape ; sh:path p:agentReason ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:name "reason" .
+p:Shape-AgentProposal-rejection a sh:PropertyShape ; sh:path p:rejectionReason ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:name "why rejected" .
+
+# The agent's lifecycle, run by the sponsor's overseer, never by an agent.
+
+p:Shape-Agent-isRegistered a sh:NodeShape ; rdfs:label "The agent is registered" ; sh:property [ sh:path p:agentStatus ; sh:hasValue p:AgentStatus-registered ; sh:message "The agent is not waiting for approval" ] .
+p:Shape-Agent-isRunning a sh:NodeShape ; rdfs:label "The agent is active or paused" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-active p:AgentStatus-paused ) ; sh:message "The agent is not active or paused" ] .
+p:Shape-Agent-isStopped a sh:NodeShape ; rdfs:label "The agent is paused or suspended" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-paused p:AgentStatus-suspended ) ; sh:message "The agent is not paused or suspended" ] .
+p:Shape-Agent-notRetired a sh:NodeShape ; rdfs:label "The agent is not retired" ;
+  sh:property [ sh:path p:agentStatus ; sh:in ( p:AgentStatus-registered p:AgentStatus-active p:AgentStatus-paused p:AgentStatus-suspended ) ; sh:message "The agent is retired" ] .
+p:Shape-AgentProposal-isPending a sh:NodeShape ; rdfs:label "The proposal is waiting for a decision" ;
+  sh:property [ sh:path p:agentProposalStatus ; sh:hasValue p:AgentProposalStatus-pending ; sh:message "The proposal has already been decided" ] .
+
+p:ApproveAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-active .
+p:ApproveAgent a p:Method ;
+  rdfs:label "Approve" ;
+  rdfs:comment "Approves a registered agent, so it may act. Nobody approves an agent they registered." ;
+  p:appliesTo p:Agent ;
+  p:notBy p:registeredBy ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-isRegistered ;
+  p:effect p:ApproveAgent-effect1 .
+
+p:OnlyPropose-method a p:Input ; p:inputName "method" ; rdfs:label "Method" ; p:order 1 ; p:objectOf p:Method ; p:choicesAlong ( p:actsAs p:mayRun ) .
+p:OnlyPropose-effect1 a p:Link ; p:linkedBy p:proposesOnly ; p:toInput p:OnlyPropose-method .
+p:OnlyPropose a p:Method ;
+  rdfs:label "Only propose" ;
+  rdfs:comment "Lowers the agent's autonomy for one method: from now on it only proposes it, for its accountable person to decide." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:OnlyPropose-method ;
+  p:precondition p:Shape-Agent-notRetired ;
+  p:effect p:OnlyPropose-effect1 .
+
+p:SuspendAgent-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 1 ; p:datatype xsd:string ; p:recordedAs p:statusReason .
+p:SuspendAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-suspended .
+p:SuspendAgent a p:Method ;
+  rdfs:label "Suspend" ;
+  rdfs:comment "Stops an agent at its next request, with a reason, until a person resumes it." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:SuspendAgent-reason ;
+  p:precondition p:Shape-Agent-isRunning ;
+  p:effect p:SuspendAgent-effect1 .
+
+p:ResumeAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-active .
+p:ResumeAgent a p:Method ;
+  rdfs:label "Resume" ;
+  rdfs:comment "Lets a paused or suspended agent act again, once the cause is understood." ;
+  p:appliesTo p:Agent ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-isStopped ;
+  p:effect p:ResumeAgent-effect1 .
+
+p:RetireAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-retired .
+p:RetireAgent a p:Method ;
+  rdfs:label "Retire" ;
+  rdfs:comment "Ends the agent's work. It can never act again; its history is kept." ;
+  p:appliesTo p:Agent ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-Agent-notRetired ;
+  p:effect p:RetireAgent-effect1 .
+
+p:PauseAgent-effect1 a p:StateChange ; p:dimension p:agentStatus ; p:value p:AgentStatus-paused .
+p:PauseAgent a p:Method ;
+  rdfs:label "Pause" ;
+  rdfs:comment "Run by the gateway's circuit breaker, never by a person or an agent: pauses an agent that crossed a ceiling." ;
+  p:appliesTo p:Agent ;
+  p:agentAutonomy p:Never ;
+  p:effect p:PauseAgent-effect1 .
+
+p:ConfirmAgentProposal-effect1 a p:CommitAgentProposal .
+p:ConfirmAgentProposal-effect2 a p:StateChange ; p:dimension p:agentProposalStatus ; p:value p:AgentProposalStatus-confirmed .
+p:ConfirmAgentProposal a p:Method ;
+  rdfs:label "Confirm" ;
+  rdfs:comment "Commits the method the agent proposed, as you, with its inputs, checked again. The commit is yours, recorded as proposed by the agent." ;
+  p:appliesTo p:AgentProposal ;
+  p:onlyBy ( p:proposingAgent p:accountablePerson ) ;
+  p:agentAutonomy p:Never ;
+  p:precondition p:Shape-AgentProposal-isPending ;
+  p:effect p:ConfirmAgentProposal-effect1, p:ConfirmAgentProposal-effect2 .
+
+p:RejectAgentProposal-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 1 ; p:datatype xsd:string ; p:recordedAs p:rejectionReason .
+p:RejectAgentProposal-effect1 a p:StateChange ; p:dimension p:agentProposalStatus ; p:value p:AgentProposalStatus-rejected .
+p:RejectAgentProposal a p:Method ;
+  rdfs:label "Reject" ;
+  rdfs:comment "Rejects the agent's proposal, with a reason. Nothing it proposed changes." ;
+  p:appliesTo p:AgentProposal ;
+  p:onlyBy ( p:proposingAgent p:accountablePerson ) ;
+  p:agentAutonomy p:Never ;
+  p:onDemand true ;
+  p:input p:RejectAgentProposal-reason ;
+  p:precondition p:Shape-AgentProposal-isPending ;
+  p:effect p:RejectAgentProposal-effect1 .
+
+p:CommitAgentProposal a rdfs:Class ;
+  rdfs:label "commit an agent proposal" ;
+  rdfs:comment "Commits the method an agent proposed, with its inputs, as the principal confirming it, in the same transaction." ;
+  rdfs:subClassOf p:Effect .
+
+# Assignments are widened and ended by methods (platform spec 3.3, Scope, Who grants it). Domains add the methods that widen
+# them, as only they know their scope roots; ending is the platform's own.
+p:EndAssignment-lastDay a p:Input ; p:inputName "lastDay" ; rdfs:label "Last day" ; p:order 1 ; p:datatype xsd:date ; p:recordedAs p:assignedUntil .
+p:EndAssignment-reason a p:Input ; p:inputName "reason" ; rdfs:label "Why" ; p:order 2 ; p:datatype xsd:string ; p:recordedAs p:endReason .
+p:EndAssignment a p:Method ;
+  rdfs:label "End assignment" ;
+  rdfs:comment "Sets the assignment's last day, with why. After it, the assignment grants nothing: its people and agents lose the access it gave." ;
+  p:appliesTo p:Assignment ;
+  p:onDemand true ;
+  p:agentAutonomy p:Never ;
+  p:input p:EndAssignment-lastDay, p:EndAssignment-reason .

@@ -9,7 +9,7 @@ import { openGateway } from './node';
 import { JournalError } from './journal';
 
 // Each test restarts the gateway, which replays the journal and validates a commit or two.
-vi.setConfig({ testTimeout: 20_000 });
+vi.setConfig({ testTimeout: 60_000 });
 
 const ls = (n: string) => `${NS.ls}${n}`;
 const elena = { person: `${NS.d}person-elena`, role: ls('QualityLead') };

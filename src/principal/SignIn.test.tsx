@@ -50,7 +50,7 @@ describe('signing in', () => {
   it('a signed-in person acts as themselves, choosing among their own roles, and can sign out', async () => {
     page(async () => ({ mode: 'signed-in', account: { email: 'ben@example.com', name: 'Ben Okafor' }, person: ben }));
     await userEvent.click(await screen.findByRole('button', { name: 'Profile: Ben Okafor, Clinical Data Manager' }));
-    expect(screen.getByRole('listbox', { name: 'Act in role' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listbox', { name: /^Act in role: / })[0]).toBeInTheDocument();
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
       expect.stringContaining('Ben Okafor'),
       expect.stringContaining('Ben Okafor'),
@@ -62,7 +62,7 @@ describe('signing in', () => {
   it('in a demo deployment, the account may act as anyone, and the menu says it is a demo', async () => {
     page(async () => ({ mode: 'demo', account: { email: 'paul@example.com', name: 'Paul' } }));
     await userEvent.click(await screen.findByRole('button', { name: /^Profile: Chloé Martin/ }));
-    expect(screen.getByRole('listbox', { name: 'Act as (demo deployment)' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listbox', { name: /^Act as \(demo deployment\): / })[0]).toBeInTheDocument();
     expect(screen.getByText('Demo deployment: synthetic data, not kept')).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 import type { MethodOption } from '../ontology/methods';
 import type { AskTurn } from '../gateway/ask';
-import type { AskResult, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
+import type { AgentActivity, AskResult, CommitResult, StartingPointView, Journey, JourneyStatus, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, MethodComposition, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, SearchResult, SetMethodOption, ToDoItem } from '../gateway/gateway';
 
 /**
  * How the experience layer talks to the gateway. Two implementations share this interface:
@@ -8,7 +8,7 @@ import type { AskResult, CommitResult, ProposalView, SkillProposals, ComparisonV
  * spec section 3.4). Every request is made as a principal; the gateway enforces the rules.
  */
 
-export type { AskResult, AskTurn, CommitResult, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
+export type { AgentActivity, AskResult, AskTurn, CommitResult, StartingPointView, Journey, JourneyStatus, ProposalView, SkillProposals, ComparisonView, DraftView, FormField, HomeView, ObjectForm, SetMethodOption, SearchResult, MethodComposition, MethodOption, NavigationDomain, NotificationView, ObjectSummary, ObjectView, Principal, RelationshipEnd, RunView, ToDoItem };
 
 /** A refusal from the gateway, with its reasons for the person. */
 export class RefusedError extends Error {
@@ -33,7 +33,8 @@ export type Me =
 export interface Person {
   person: string;
   name: string;
-  roles: { role: string; label: string }[];
+  /** Each role, with the work domain it is mainly in, which groups people in Profile (platform spec 3.3). */
+  roles: { role: string; label: string; domain?: string; domainLabel?: string }[];
 }
 
 export interface GatewayClient {
@@ -48,6 +49,8 @@ export interface GatewayClient {
   /** A metric and exactly the objects it counts (platform spec 5.1, Home). */
   metricObjects(principal: Principal, metric: string): Promise<{ metric: HomeView['metrics'][number]; objects: ObjectSummary[] }>;
   find(principal: Principal, type: string): Promise<ObjectSummary[]>;
+  /** A type's names, singular and plural, for a list of its objects. */
+  describeType(principal: Principal, type: string): Promise<{ type: string; label: string; pluralLabel: string }>;
   /** Search (platform spec 5.2): how the query was understood, and the objects it found, best first. */
   /** With understand 'ontology', the model is not asked, as for the suggestions under the search field. */
   search(principal: Principal, query: string, options?: { understand?: 'model' | 'ontology' }): Promise<SearchResult>;

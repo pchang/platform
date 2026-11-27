@@ -44,6 +44,14 @@ interface ChatContext {
   select: (id: string) => void;
   /** The Ask button, so closing the panel returns focus to it. */
   trigger: RefObject<HTMLButtonElement | null>;
+  /** Conversations set aside in the process dock, in the order they were set aside (design system spec 4.1, Setting a conversation aside). */
+  aside: Conversation[];
+  /** Sends the conversation in front to the dock and closes the chat; one not yet begun is simply closed. */
+  minimize: () => void;
+  /** Opens the chat on a set-aside conversation; a begun conversation in front goes to the dock in its place. */
+  restore: (id: string) => void;
+  /** Takes a conversation out of the dock; it stays in the history. */
+  dismiss: (id: string) => void;
 }
 
 const Context = createContext<ChatContext | null>(null);
@@ -64,6 +72,8 @@ export interface Conversation {
   aboutIris?: string[];
   /** The object's identifier and title, or the objects' identifiers, once read, to name the conversation in the history. */
   aboutName?: string;
+  /** True when an answer arrived while the conversation was set aside, until it is restored. */
+  answeredWhileAside?: boolean;
 }
 
 /** The same objects, in the same order: a conversation about them not yet begun is reused. */
@@ -72,11 +82,14 @@ const sameObjects = (a: string[] = [], b: string[] = []) => a.length === b.lengt
 /** A conversation's name in the history: its object, else its first question, else "New conversation". */
 export const nameOf = (c: Conversation) => c.aboutName ?? c.turns[0]?.question ?? 'New conversation';
 
-/** A person's conversations, newest first, and the one in front. */
+/** A person's conversations, newest first, the one in front, and those set aside in the dock. */
 interface History {
   conversations: Conversation[];
   current: string;
+  aside?: string[];
 }
+
+const begun = (c?: Conversation) => Boolean(c && (c.turns.length || c.aboutIris));
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { client, principal } = usePrincipal();
@@ -148,7 +161,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (now && !now.turns.length && sameObjects(now.aboutIris, objectIris)) return h;
         const kept = now && !now.turns.length ? rest.filter((c) => c.id !== now.id) : rest;
         const started = fresh(objectIris);
-        return { conversations: [started, ...kept], current: started.id };
+        return { ...h, conversations: [started, ...kept], current: started.id };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [owner, update],
@@ -165,8 +178,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .map((t) => ({ question: t.question, answer: saidIn(t.result!) }));
       const asker = owner;
       updateConversation(asker, conversation.id, (c) => ({ ...c, turns: [...c.turns, { id: turnId, question: q, status: 'waiting' }] }));
+      // An answer that arrives while the conversation is set aside is marked, so the dock can say it is ready.
       const settle = (change: Partial<ChatTurn>) =>
-        updateConversation(asker, conversation.id, (c) => ({ ...c, turns: c.turns.map((t) => (t.id === turnId ? { ...t, ...change } : t)) }));
+        update(asker, (h) => ({
+          ...h,
+          conversations: h.conversations.map((c) =>
+            c.id === conversation.id
+              ? { ...c, turns: c.turns.map((t) => (t.id === turnId ? { ...t, ...change } : t)), ...(h.aside?.includes(c.id) && change.status === 'answered' ? { answeredWhileAside: true } : {}) }
+              : c,
+          ),
+        }));
       // Every question in a conversation about objects is about all of them (platform spec 5.2, About an object).
       client.ask(principal, q, earlier, conversation.aboutIris ?? []).then(
         (result) => settle({ status: 'answered', result }),
@@ -197,8 +218,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Begun conversations, newest first, with the one in front even before it begins.
       conversations: history.conversations.filter((c) => c.turns.length || c.aboutIris || c.id === current.id),
       currentId: current.id,
-      select: (id: string) => update(owner, (h) => (h.conversations.some((c) => c.id === id) ? { ...h, current: id } : h)),
+      // Choosing a set-aside conversation from the history restores it: it leaves the dock.
+      select: (id: string) =>
+        update(owner, (h) => (h.conversations.some((c) => c.id === id) ? { ...h, current: id, aside: (h.aside ?? []).filter((x) => x !== id) } : h)),
       trigger,
+      aside: (history.aside ?? []).map((id) => history.conversations.find((c) => c.id === id)).filter((c): c is Conversation => Boolean(c)),
+      minimize: () => {
+        update(owner, (h) => {
+          const now = h.conversations.find((c) => c.id === h.current);
+          if (!begun(now)) return h;
+          // The chat opens again on a new conversation; the one set aside waits in the dock.
+          const started = fresh();
+          return { conversations: [started, ...h.conversations], current: started.id, aside: [...(h.aside ?? []).filter((x) => x !== now!.id), now!.id] };
+        });
+        close();
+      },
+      restore: (id: string) => {
+        update(owner, (h) => {
+          if (!h.conversations.some((c) => c.id === id)) return h;
+          const now = h.conversations.find((c) => c.id === h.current);
+          const rest = (h.aside ?? []).filter((x) => x !== id);
+          // A begun conversation in front goes to the dock in its place; a process in front is not touched.
+          const aside = isOpen && begun(now) && now!.id !== id ? [...rest, now!.id] : rest;
+          return { conversations: h.conversations.map((c) => (c.id === id ? { ...c, answeredWhileAside: false } : c)), current: id, aside };
+        });
+        setOpen(true);
+      },
+      dismiss: (id: string) => update(owner, (h) => ({ ...h, aside: (h.aside ?? []).filter((x) => x !== id) })),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [isOpen, close, current, send, start, shownAbout, aboutIris, history, owner, update],

@@ -7,6 +7,12 @@ test.setTimeout(60_000);
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
+// The seed's deadlines are written for November 12, 2026 (domain spec section 11): pin the page's clock there, so what is
+// due soon or overdue does not drift with the real date.
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-12T09:00:00'));
+});
+
 const cards = (page: Page) => page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card');
 
 /** Chooses a count tile the way a person does: the whole card is its radio button's label. */

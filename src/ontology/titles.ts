@@ -35,7 +35,7 @@ export function titleOf(store: oxigraph.Store, object: string, depth = 1): strin
       const values = select(
         store,
         `SELECT ?v ?label ?order ?identifier WHERE { <${object}> <${namespace}${local}> ?v .
-          OPTIONAL { ?v skos:prefLabel ?label } OPTIONAL { ?v p:order ?order } OPTIONAL { ?v ls:identifier ?identifier } }
+          OPTIONAL { ?v skos:prefLabel ?label } OPTIONAL { ?v a p:Person ; rdfs:label ?label } OPTIONAL { ?v p:order ?order } OPTIONAL { ?v ls:identifier ?identifier } }
          ORDER BY ?order ?label ?identifier ?v`,
       ).map((r) => {
         // A coded value reads as its label, though as part of the structure it has an identifier too (platform spec 3.7).

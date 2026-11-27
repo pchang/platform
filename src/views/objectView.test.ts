@@ -3,7 +3,7 @@ import type { ViewNode } from '../design-system/catalog';
 import { validateView } from '../design-system/validateView';
 import { withSeed } from '../gateway/node';
 import { NS } from '../ontology/ontology';
-import { buildObjectView, endKey, OVERVIEW_TAB } from './objectView';
+import { buildObjectView, endKey, journeyStepper, OVERVIEW_TAB } from './objectView';
 
 // Some tests here run a commit on a gateway of their own, which takes longer than the default under a full parallel run.
 vi.setConfig({ testTimeout: 30_000 });
@@ -40,6 +40,8 @@ describe('the object panel (design system spec 4.4)', () => {
       ['Formulations', 1],
       ['Sites', 3],
       ['Study Concepts', 0],
+      ['Assignments', 3],
+      ['Datasets', 1],
     ]);
     expect(json).toContain('This study enrolls these patients.');
     expect(json).toContain('This study runs at these sites.');
@@ -72,6 +74,50 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(validateView(buildObjectView(patient, { controls: { mode: 'list', selecting: false, selected: new Set() } })).errors).toEqual([]);
   });
 
+  // Ask about this follows the header's methods, as on a card (design system spec 4.1 and 4.4).
+  it('follows the methods in the header with Ask about this', async () => {
+    const gateway = withSeed();
+    const ae = gateway.read(ben, 'AE-003');
+    const view = buildObjectView(ae, { methods: await gateway.methods(ben, ae.iri) });
+    const header = view.root.children![0];
+    const buttons = find(header, (n) => n.component === 'Button' && !n.lists).map((n) => (n.asks ? 'Ask' : (n.props as { label: string }).label));
+    expect(buttons.at(-1)).toBe('Ask');
+    expect(buttons.length).toBeGreaterThan(1);
+    expect(find(header, (n) => n.asks === ae.iri)).toHaveLength(1);
+  });
+
+  // The journey under the header (platform spec 5.1, Journey; design system spec 4.4).
+  it('shows the journey under the header, each stage said in words as well as drawn', () => {
+    const view = buildObjectView(withSeed().read(chloe, 'SC-003'));
+    const stepper = find(view.root, (n) => n.component === 'ProgressStepper')[0];
+    expect(stepper.props).toMatchObject({ 'aria-label': 'Journey: Workflow, now assessed, stage 3 of 5', horizontalFrom: 'md' });
+    expect(stepper.children!.map((c) => c.props)).toEqual([
+      { label: 'received', variant: 'success', 'aria-label': 'received, passed' },
+      { label: 'triaged', variant: 'success', 'aria-label': 'triaged, passed' },
+      { label: 'assessed', variant: 'info', isCurrent: true, description: 'Now', 'aria-label': 'assessed, now' },
+      { label: 'reported', variant: 'pending', 'aria-label': 'reported, to come' },
+      { label: 'closed', variant: 'pending', 'aria-label': 'closed, to come' },
+    ]);
+    expect(validateView(view).errors).toEqual([]);
+  });
+
+  it('ends a journey at an exit, drawn as a danger and said to be one', () => {
+    const stepper = journeyStepper({
+      dimension: 'Status',
+      steps: [
+        { stage: 'detected', status: 'passed' },
+        { stage: 'under evaluation', status: 'passed' },
+        { stage: 'refuted', status: 'current', exit: true },
+      ],
+    });
+    expect(stepper.props).toMatchObject({ 'aria-label': 'Journey: Status, now refuted, an exit' });
+    expect(stepper.children!.at(-1)!.props).toEqual({ label: 'refuted', variant: 'danger', isCurrent: true, description: 'Now', 'aria-label': 'refuted, now, an exit' });
+  });
+
+  it('shows no journey for an object whose lifecycle has one stage on its main path', () => {
+    expect(find(buildObjectView(withSeed().read(ben, 'AR-1')).root, (n) => n.component === 'ProgressStepper')).toHaveLength(0);
+  });
+
   it('puts the ends that hold one object in the overview as links, named by the type at the other end', () => {
     const view = buildObjectView(withSeed().read(ben, 'PT-03'));
     const overview = find(view.root, (n) => n.component === 'Tab' && (n.props as { eventKey: string }).eventKey === OVERVIEW_TAB)[0];
@@ -81,7 +127,7 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(study.opens).toBe(`${NS.d}ST-01`);
     expect((study.props as { label: string }).label).toMatch(/^ST-01 · /);
     // Many-valued ends are tabs, not overview links.
-    expect(tabsOf(view.root).map((t) => t.label)).toEqual(['Overview', 'Visits', 'Adverse Events', 'Batches']);
+    expect(tabsOf(view.root).map((t) => t.label)).toEqual(['Overview', 'Visits', 'Adverse Events', 'Batches', 'Data Points']);
   });
 
   it('keeps empty tabs, so every object of a type has the same structure, and says there are none', () => {
@@ -117,5 +163,29 @@ describe('the object panel (design system spec 4.4)', () => {
     expect(labels.filter((l) => l.includes('('))).toHaveLength(2);
     expect(new Set(tabsOf(buildObjectView(doubled).root).map((t) => t.eventKey)).size).toBe(labels.length);
     expect(endKey(doubled.links.at(-1)!)).toMatch(/^(in|out)-other-[A-Za-z]+$/);
+  });
+});
+
+describe('an outside agent’s page (design system spec 4.4, Activity)', () => {
+  it('ends with its activity: what it committed and proposed, with its reasons, then what it read; and marks what it wrote', async () => {
+    const gateway = withSeed();
+    const agent = { person: `${NS.d}agent-northbridge`, role: `${NS.ls}ExternalCROAgent`, reason: 'The site confirmed the value' };
+    const marcus = { person: `${NS.d}person-marcus`, role: `${NS.ls}ClinicalOperationsLead` };
+    await gateway.commit(agent, 'Q-01', `${NS.ls}AnswerQuery`, { answer: 'Confirmed against the lab report' });
+    await gateway.commit(agent, 'Q-05', `${NS.ls}CloseQuery`);
+    gateway.read(agent, 'Q-01');
+
+    const view = buildObjectView(gateway.read(marcus, 'AG-1'), { methods: await gateway.methods(marcus, 'AG-1') });
+    expect(validateView(view).errors).toEqual([]);
+    const tabs = tabsOf(view.root);
+    expect(tabs.at(-1)).toEqual({ eventKey: 'activity', label: 'Activity', count: 2 });
+    const json = JSON.stringify(view);
+    for (const phrase of ['Commits and proposals: 2', 'Proposed: Close query', 'Answer query', 'The site confirmed the value', 'Reads: 1']) expect(json).toContain(phrase);
+
+    // A person reading the query sees the answer came from the agent.
+    const query = buildObjectView(gateway.read(ben, 'Q-01'), {});
+    expect(JSON.stringify(query)).toContain('Written by Northbridge query agent');
+    // Nobody else's page has an Activity tab.
+    expect(tabsOf(buildObjectView(gateway.read(ben, 'ST-01'), {}).root).map((t) => t.label)).not.toContain('Activity');
   });
 });

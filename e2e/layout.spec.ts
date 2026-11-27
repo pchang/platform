@@ -133,3 +133,30 @@ test('beside an open chat the count tiles go two across, each select circle stay
   });
   expect(gap, 'bar to first card').toBeGreaterThanOrEqual(14);
 });
+
+test('the navigation stays together at the top of the sidebar, however tall the sidebar is (design system spec 4.5)', async ({ page }) => {
+  await start(page, 'Marcus Bell', 390);
+  await page.getByRole('button', { name: /navigation/i }).first().click();
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(nav.getByRole('link', { name: /^Agents/ })).toBeVisible();
+  // Safari on iPhone lets the nav fill the sidebar; give it that height here, and the items must not spread apart.
+  await nav.evaluate((n) => { n.style.minHeight = '1800px'; });
+  const items = await nav.locator('.pf-v6-c-nav__item').evaluateAll((lis) => lis.map((li) => li.getBoundingClientRect()).map((r) => ({ top: r.top, height: r.height })));
+  for (const item of items) expect(item.height).toBeLessThan(48);
+  const within = items.slice(1, 5);
+  for (let i = 1; i < within.length; i++) expect(Math.round(within[i].top - within[i - 1].top - within[i - 1].height)).toBe(8);
+});
+
+test('in dark mode, a list bar in the object panel has the panel’s own surface (design system spec 4.3)', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await start(page, 'Marcus Bell', 390);
+  await page.getByRole('button', { name: /navigation/i }).first().click();
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /^Assignments/ }).click();
+  await page.getByRole('main').locator('.pf-v6-c-card').filter({ hasText: 'ASG-1' }).locator('.pf-v6-c-card__body').click({ position: { x: 4, y: 4 } });
+  const panel = page.locator('.app-object-panel');
+  await panel.getByRole('tab', { name: /^Studies/ }).click();
+  const bar = panel.locator('.pf-v6-c-toolbar.pf-m-sticky').first();
+  await expect(bar).toBeVisible();
+  const [barColor, panelColor] = await bar.evaluate((b) => [getComputedStyle(b).backgroundColor, getComputedStyle(b.closest('.pf-v6-c-drawer__panel')!).backgroundColor]);
+  expect(barColor).toBe(panelColor);
+});

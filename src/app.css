@@ -50,6 +50,11 @@ html:root {
   --pf-v6-c-toolbar--m-sticky--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
 }
 
+/* In the object panel, the bar takes the panel's own surface, which is lighter than the content area in dark mode. */
+.app-page .pf-v6-c-drawer__panel .pf-v6-c-toolbar.pf-m-sticky {
+  --pf-v6-c-toolbar--m-sticky--BackgroundColor: var(--pf-v6-c-drawer__panel--BackgroundColor);
+}
+
 /* Its shadow shows only once the list has scrolled under it (design system spec 4.3); the renderer marks it stuck. */
 .pf-v6-c-toolbar.pf-m-sticky:not(.app-is-stuck) {
   box-shadow: none;
@@ -92,6 +97,18 @@ html body .pf-v6-c-card:not(.pf-m-plain) {
  * component's defaults get wrong: optical alignment, targets of a fair size, and text that wraps rather than clips.
  * They start html body, as the rules above do, so a component's own styles, which can load later, never outrank them.
  */
+
+/*
+ * The navigation keeps its items together at the top of the sidebar, however tall the sidebar is. PatternFly lays the nav
+ * out as grids, which stretch their rows to fill any extra height: where a browser lets the nav fill the sidebar, as
+ * Safari on iPhone does, the items drifted apart with uneven gaps between them.
+ */
+html body .pf-v6-c-nav,
+html body .pf-v6-c-nav__section,
+html body .pf-v6-c-nav__list,
+html body .pf-v6-c-nav__item {
+  align-content: start;
+}
 
 /* An Ask button alone at the start of its row lines up with the text above it, and adds no height beyond its glyph. */
 html body .pf-v6-c-card__body .pf-v6-l-flex > .pf-v6-c-button.pf-m-plain:only-child {
@@ -230,4 +247,12 @@ html body .pf-v6-c-card__header .pf-v6-l-flex:has(> .pf-v6-c-content--small):not
 html body .pf-v6-c-description-list__description {
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+/* A heading a link jumps to lands clear of the masthead, and takes focus without a box around it (design system spec 4.3). */
+html body .app-anchor {
+  scroll-margin-block-start: var(--pf-t--global--spacer--lg);
+}
+html body .app-anchor:focus {
+  outline: none;
 }

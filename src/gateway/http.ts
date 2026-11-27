@@ -6,6 +6,7 @@ import { NS } from '../ontology/ontology';
 import { Gateway, GatewayError, type Principal } from './gateway';
 import { checkAbout, checkTurns } from './ask';
 import type { SignIn } from './auth';
+import { AgentTokens } from './agentTokens';
 import { createMcpServer } from './mcp';
 
 /**
@@ -45,6 +46,10 @@ import { createMcpServer } from './mcp';
  *   GET  /api/commits                        the history of commits
  *   GET  /api/dev/people                     the seed graph's people and roles (development mode only)
  *   POST /mcp                                the same requests over the Model Context Protocol, for agents
+ *   GET  /.well-known/oauth-protected-resource   where an outside agent gets a token for this gateway (RFC 9728)
+ *
+ * Outside agents (platform spec 3.4, Outside agents) send a bearer access token from the deployment's identity provider.
+ * It is verified on every request, and the agent registered with its client acts, in its one role, while it is active.
  *
  *   GET  /api/me                             who the request is signed in as, and whether it is a demo deployment
  *   GET  /auth/login, /auth/callback, /auth/logout   sign-in with the deployment's OpenID Connect provider
@@ -64,12 +69,24 @@ export interface HttpOptions {
   demoPersonas?: boolean;
   /** The built page, served from the same origin (deployment.md, Shape). */
   staticDir?: string;
+  /** Outside agents' access tokens, when the deployment accepts outside agents (platform spec 3.4, Outside agents). */
+  agentTokens?: AgentTokens;
 }
 
 /** Accepts full IRIs, or short names in the default namespace: person-chloe, DrugSafetyPhysician. */
 const expand = (value: string, namespace: string) => (value.includes('://') ? value : `${namespace}${value}`);
 
 async function principalFrom(gateway: Gateway, req: IncomingMessage, options: HttpOptions): Promise<Principal> {
+  // An outside agent proves itself with a short-lived token, never a session or headers (platform spec 3.4, Outside agents).
+  const token = AgentTokens.bearer(req);
+  if (token) {
+    if (!options.agentTokens) throw new GatewayError(401, ['This deployment accepts no outside agents']);
+    const client = await options.agentTokens.clientOf(token);
+    const agent = gateway.agentWithClient(client);
+    if (!agent) throw new GatewayError(403, [`No agent is registered with the client ${client}`]);
+    // Checked on every request, before anything else: a suspended agent is stopped at its next request.
+    return gateway.admit(agent);
+  }
   const person = req.headers['x-lsh-person'];
   const role = req.headers['x-lsh-role'];
   if (options.signIn) {
@@ -149,6 +166,9 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
     const url = new URL(req.url ?? '/', 'http://gateway');
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     if (url.pathname === '/healthz') return send(res, 200, { ok: true });
+    if (options.agentTokens && ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'].includes(url.pathname)) {
+      return send(res, 200, options.agentTokens.metadata());
+    }
     if (parts[0] === 'auth' && parts.length === 2 && options.signIn) return await auth(options.signIn, parts[1], req, res);
     // Anything that changes state must be JSON: a form on another site cannot send that with the session cookie.
     const reading = req.method === 'GET' || req.method === 'HEAD';
@@ -211,6 +231,8 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         const { inputs = {}, signature, draft, proposal } = (await body(req)) as { inputs?: Record<string, string>; signature?: { typedName: string }; draft?: { draft: string; text: string }; proposal?: unknown };
         return send(res, 201, await gateway.commit(principal, parts[2], expand(parts[4], NS.ls), inputs, signature, draft, checkProposal(proposal)));
       }
+      case 'GET types/:':
+        return send(res, 200, gateway.describeType(principal, expand(parts[2], NS.ls)));
       case 'GET types/:/form':
         return send(res, 200, gateway.createForm(principal, expand(parts[2], NS.ls), url.searchParams.get('parent') ?? undefined));
       case 'POST types/:/preview': {
@@ -267,6 +289,11 @@ export async function handle(gateway: Gateway, options: HttpOptions, req: Incomi
         throw new GatewayError(404, ['Not found']);
     }
   } catch (error) {
+    // An agent refused for want of a valid token is told where to get one (RFC 9728).
+    if (error instanceof GatewayError && error.status === 401 && options.agentTokens) {
+      const metadata = new URL('/.well-known/oauth-protected-resource', options.agentTokens.metadata().resource).toString();
+      res.setHeader('www-authenticate', `Bearer resource_metadata="${metadata}"`);
+    }
     if (error instanceof GatewayError) return send(res, error.status, { reasons: error.reasons });
     console.error(error);
     return send(res, 500, { reasons: ['The gateway failed. Nothing was changed.'] });

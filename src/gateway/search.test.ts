@@ -110,7 +110,8 @@ describe('search through the gateway', () => {
 
   it('reads "my" as the principal’s own objects: work waiting for them, or objects that name them', async () => {
     const crc = { person: `${NS.d}person-sam`, role: `${NS.ls}ClinicalResearchCoordinator` };
-    expect(await ids('list all of my queries', crc)).toEqual(['Q-01', 'Q-02', 'Q-03']);
+    // The coordinator works at the first site, where Q-03 is the open query (domain spec section 6, Scope).
+    expect(await ids('list all of my queries', crc)).toEqual(['Q-03']);
     expect(await ids('list all of my queries')).toEqual(['Q-04', 'Q-05', 'Q-06']);
     const mine = await g.search(dsp, 'my submissions');
     expect(mine.interpretation.mine).toBe(true);

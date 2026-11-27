@@ -21,7 +21,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
 
   it('gives the Clinical Data Manager only Clinical Development', () => {
     expect(nav(dataManager)).toEqual([
-      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Patients', 'Protocols', 'Sites', 'Studies', 'Visits']],
+      ['Clinical Development', ['Adverse Events', 'Data Queries', 'Data Records', 'Datasets', 'Patients', 'Protocols', 'Sites', 'Studies', 'Visits']],
     ]);
   });
 
@@ -29,7 +29,7 @@ describe('navigation shows each person the object world of their work (spec 5.1)
     // Every Design and Plan type but Program and Opportunity is part of another object; the Clinical Scientist also works across study concepts.
     const scientist = as('person-nadia', 'ClinicalScientist');
     expect(nav(scientist)).toEqual([
-      ['Clinical Development', ['Protocols', 'Sites', 'Studies']],
+      ['Clinical Development', ['Datasets', 'Protocols', 'Sites', 'Studies']],
       ['Design and Plan', ['Opportunities', 'Programs', 'Study Concepts']],
     ]);
     // The Portfolio Strategist starts from opportunities and programs, beside discovery's compounds.
@@ -102,27 +102,38 @@ describe('To do (spec 5.1)', () => {
     ]);
   });
 
-  it('shows the Clinical Research Associate what awaits source data verification, the serious event first', async () => {
-    const items = await list(monitor);
-    expect(items.slice(0, 2)).toEqual([['AE-005', 'Verify adverse event'], ['AE-004', 'Verify adverse event']]);
+  it('shows the Clinical Research Associate what awaits source data verification at the sites they monitor, the serious event first', async () => {
+    // With every site, the serious event at the third site comes first.
+    const everywhere = withSeed([`<${NS.d}ASG-3> <${NS.p}inScope> <${NS.d}SITE-3> .`]);
+    const all = (await everywhere.todo(monitor)).map((i) => [i.object.identifier, i.tasks.map((t) => t.label).join(', ')]);
+    expect(all.slice(0, 2)).toEqual([['AE-005', 'Verify adverse event'], ['AE-004', 'Verify adverse event']]);
     // Records with a query still open or answered wait until it is closed.
-    expect(items.slice(2).map(([id]) => id)).toEqual(['DR-028', 'DR-030', 'DR-031', 'DR-032', 'DR-035', 'DR-036', 'DR-039', 'DR-040']);
-    expect(new Set(items.slice(2).map(([, task]) => task))).toEqual(new Set(['Verify data record']));
+    expect(all.slice(2).map(([id]) => id)).toEqual(['DR-028', 'DR-030', 'DR-031', 'DR-032', 'DR-035', 'DR-036', 'DR-039', 'DR-040']);
+    expect(new Set(all.slice(2).map(([, task]) => task))).toEqual(new Set(['Verify data record']));
+    // At the first two sites only, as the seed assigns them (domain spec section 6, Scope).
+    expect((await list(monitor)).map(([id]) => id)).toEqual(['AE-004', 'DR-028', 'DR-030', 'DR-031', 'DR-032', 'DR-039', 'DR-040']);
   });
 
   it('shows the Clinical Research Coordinator visits by date, then patients to consent and randomize, then queries to answer', async () => {
-    const todo = await gateway.todo(coordinator);
+    // At every site: the order of the whole list.
+    const everywhere = withSeed([`<${NS.d}ASG-2> <${NS.p}inScope> <${NS.d}SITE-2>, <${NS.d}SITE-3> .`]);
+    const todo = await everywhere.todo(coordinator);
     expect(todo.slice(0, 10).map((i) => [i.object.identifier, i.deadline])).toEqual([
       ['V-01-3', '2026-11-03'], ['V-02-3', '2026-11-09'], ['V-03-3', '2026-11-12'], ['V-04-3', '2026-11-13'], ['V-05-3', '2026-11-14'],
       ['V-06-3', '2026-11-16'], ['V-07-3', '2026-11-18'], ['V-08-3', '2026-11-21'], ['V-09-3', '2026-11-25'], ['V-10-3', '2026-12-02'],
     ]);
     expect(todo[0].tasks.map((t) => [t.label, t.archetype.label])).toEqual([['Complete visit', 'Confirm'], ['Record missed visit', 'Fill in']]);
-    expect((await list(coordinator)).slice(10)).toEqual([
+    expect(todo.slice(10).map((i) => [i.object.identifier, i.tasks.map((t) => t.label).join(', ')])).toEqual([
       ['PT-11', 'Randomize'],
       ['PT-12', 'Consent'],
       ['Q-01', 'Answer query'],
       ['Q-02', 'Answer query'],
       ['Q-03', 'Answer query'],
+    ]);
+    // At their own site, the first, as the seed assigns them.
+    expect(await list(coordinator)).toEqual([
+      ['V-01-3', 'Complete visit, Record missed visit'], ['V-04-3', 'Complete visit, Record missed visit'],
+      ['V-07-3', 'Complete visit, Record missed visit'], ['V-10-3', 'Complete visit, Record missed visit'], ['Q-03', 'Answer query'],
     ]);
   });
 
@@ -133,9 +144,9 @@ describe('To do (spec 5.1)', () => {
     ]);
   });
 
-  it('shows the CRO agent its queries to answer and close', async () => {
+  it('shows the CRO agent its queries to answer and close, at its organization’s two sites', async () => {
     expect(await list(agent)).toEqual([
-      ['Q-01', 'Answer query'], ['Q-02', 'Answer query'], ['Q-03', 'Answer query'],
+      ['Q-01', 'Answer query'], ['Q-03', 'Answer query'],
       ['Q-04', 'Close query'], ['Q-05', 'Close query'], ['Q-06', 'Close query'],
     ]);
   });

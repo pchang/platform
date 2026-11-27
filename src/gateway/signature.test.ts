@@ -86,11 +86,12 @@ describe('electronic signatures', () => {
 
 it('never lets an agent sign', async () => {
   // No role lets the CRO agent run a signed method, so give it one for this test only.
-  const extra = `@prefix p: <${NS.p}> . @prefix ls: <${NS.ls}> . ls:ExternalCROAgent p:mayRun ls:Submit .`;
+  const extra = `@prefix p: <${NS.p}> . @prefix ls: <${NS.ls}> . ls:ExternalCROAgent p:mayRun ls:Submit ; p:mayRead ls:Submission .`;
   const gateway = withSeed([extra], { developmentSignatures: true });
   await gateway.commit(chloe, 'SUB-1', ls('SendForReview'), { reviewer: dev.person });
   const agent = { person: `${NS.d}agent-northbridge`, role: ls('ExternalCROAgent') };
-  await expect(gateway.commit(agent, 'SUB-1', ls('Submit'), { approver: agent.person }, { typedName: 'Northbridge CRO agent' })).rejects.toMatchObject({
+  await expect(gateway.commit({ ...agent, reason: 'Submitting' }, 'SUB-1', ls('Submit'), { approver: agent.person }, { typedName: 'Northbridge query agent' })).rejects.toMatchObject({
     reasons: ['Only a person can sign. Agents never sign.'],
   });
+  await expect(gateway.compose(agent, 'SUB-1', ls('Submit'))).rejects.toMatchObject({ reasons: ['Only a person can sign. Agents never sign.'] });
 });

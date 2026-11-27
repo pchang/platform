@@ -1,6 +1,7 @@
 import { Button, Card, CardBody, CardHeader, CardTitle, Content, Flex, FlexItem, Label, Spinner, Stack } from '@patternfly/react-core';
 import PenToSquareIcon from '@patternfly/react-icons/dist/esm/icons/pen-to-square-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
+import MinusIcon from '@patternfly/react-icons/dist/esm/icons/minus-icon';
 import HistoryIcon from '@patternfly/react-icons/dist/esm/icons/history-icon';
 import ChatbotConversationHistoryNav from '@patternfly/chatbot/dist/dynamic/ChatbotConversationHistoryNav';
 import Chatbot, { ChatbotDisplayMode } from '@patternfly/chatbot/dist/dynamic/Chatbot';
@@ -281,6 +282,8 @@ export function ChatPanel() {
                   <ChatbotHeaderActions>
                     {/* Plain icon buttons, like the masthead's (design system spec 1, Visual style). */}
                     <Button variant="plain" icon={<PenToSquareIcon />} aria-label="New conversation" onClick={chat.newConversation} />
+                    {/* Sets the conversation aside in the dock, immediately left of Close as on every process (design system spec 4.1). */}
+                    <Button variant="plain" icon={<MinusIcon />} aria-label="Minimize" onClick={chat.minimize} />
                     <Button variant="plain" icon={<TimesIcon />} aria-label="Close" onClick={chat.close} />
                   </ChatbotHeaderActions>
                 </ChatbotHeader>

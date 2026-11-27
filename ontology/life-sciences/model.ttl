@@ -14,8 +14,8 @@
 <https://w3id.org/lsh-platform/life-sciences> a owl:Ontology ;
   dcterms:title "LS&H life sciences model" ;
   rdfs:comment "Object types, state dimensions, relationships and their SHACL shapes for the life sciences thread (domain spec sections 2 to 5, and Design and Plan in section 3.4)." ;
-  owl:versionInfo "0.2.0" ;
-  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.2.0> ;
+  owl:versionInfo "0.3.0" ;
+  owl:versionIRI <https://w3id.org/lsh-platform/life-sciences/0.3.0> ;
   dcterms:created "2026-11-08"^^xsd:date .
 
 ls:ScientificInnovation a p:Domain ;
@@ -179,14 +179,14 @@ ls:studyPhase a p:StateDimension, owl:ObjectProperty ;
   rdfs:comment "The phase of a study." ;
   p:dimensionOf ls:Study ;
   p:valuesFrom lst:StudyPhase ;
-  p:order 1 .
+  p:order 2 .
 
 ls:studyStatus a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Status" ;
   rdfs:comment "The status of a study." ;
   p:dimensionOf ls:Study ;
   p:valuesFrom lst:StudyStatus ;
-  p:order 2 .
+  p:order 1 .
 
 ls:studyBlinding a p:StateDimension, owl:ObjectProperty ;
   rdfs:label "Blinding" ;
@@ -717,6 +717,10 @@ ls:visitName a owl:DatatypeProperty ;
 ls:queryText a owl:DatatypeProperty ;
   rdfs:label "question" ;
   rdfs:comment "What the query asks the site." .
+
+ls:queryAnswer a owl:DatatypeProperty ;
+  rdfs:label "answer" ;
+  rdfs:comment "The latest answer to the query, from the site or a contract research organization's people or agent." .
 
 ls:productName a owl:DatatypeProperty ;
   rdfs:label "name" ;
@@ -1256,6 +1260,12 @@ lsh:DataQuery-raisedOn a sh:PropertyShape ;
   sh:maxCount 1 ;
   sh:name "raised on" .
 
+lsh:DataQuery-answer a sh:PropertyShape ;
+  sh:path ls:queryAnswer ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:name "answer" .
+
 lsh:DataQuery-queryText a sh:PropertyShape ;
   sh:path ls:queryText ;
   sh:datatype xsd:string ;
@@ -1264,7 +1274,7 @@ lsh:DataQuery-queryText a sh:PropertyShape ;
 
 lsh:DataQuery a sh:NodeShape ;
   sh:targetClass ls:DataQuery ;
-  sh:property lsh:DataQuery-identifier, lsh:DataQuery-status, lsh:DataQuery-raisedOn, lsh:DataQuery-queryText .
+  sh:property lsh:DataQuery-identifier, lsh:DataQuery-status, lsh:DataQuery-raisedOn, lsh:DataQuery-queryText, lsh:DataQuery-answer .
 
 lsh:AdverseEvent-identifier a sh:PropertyShape ;
   sh:path ls:identifier ;
@@ -3520,3 +3530,23 @@ lsh:IsStudyConcept a sh:NodeShape ;
 
 lsh:IsStudyScenario a sh:NodeShape ;
   sh:class ls:StudyScenario .
+
+# Scope (domain spec section 6; platform spec 3.3): studies and sites are scope roots; a patient, and everything about
+# them, belongs to the site the patient is at. Other types are not limited by scope.
+ls:Study p:scopeRoot true .
+ls:Site p:scopeRoot true .
+ls:Patient p:scopePath ls:enrolledAt .
+ls:Visit p:scopePath ( ls:visitFor ls:enrolledAt ) .
+ls:DataRecord p:scopePath ( ls:capturedAt ls:visitFor ls:enrolledAt ) .
+ls:DataQuery p:scopePath ( ls:raisedOn ls:capturedAt ls:visitFor ls:enrolledAt ) .
+ls:AdverseEvent p:scopePath ( ls:experiencedBy ls:enrolledAt ) .
+
+# What an assignment covers in this domain (section 6, Assignments): studies and sites, this domain's scope roots.
+lsh:Assignment-covers a sh:PropertyShape ;
+  sh:path p:inScope ;
+  sh:or ( [ sh:class ls:Study ] [ sh:class ls:Site ] ) ;
+  sh:name "covers" .
+
+lsh:Assignment a sh:NodeShape ;
+  sh:targetClass p:Assignment ;
+  sh:property lsh:Assignment-covers .

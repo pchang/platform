@@ -20,7 +20,7 @@ test('goes from a metric on Home to exactly the objects it counts', async ({ pag
   // Choosing the card away from its title opens the page.
   await tile.getByText('of 8 data queries').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Open data queries' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText('3 of 8 data queries.')).toBeVisible();
+  await expect(page.getByText('3 of 8 data queries')).toBeVisible();
   await expect(page.getByRole('main').locator('.pf-v6-l-gallery .pf-v6-c-card')).toHaveCount(3);
   await expect(page.getByRole('main').getByText('Status: open')).toHaveCount(3);
 
@@ -49,7 +49,7 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await expect(row).toHaveAttribute('href', '#/type/DataQuery');
   await row.click();
   await expect(page.getByRole('heading', { level: 1, name: 'Data Queries' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole('main').getByText('8 objects.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('8 data queries')).toBeVisible();
   // The list begins with a way back to Home, above its heading; the sidebar's Home returns too.
   const back = page.getByRole('link', { name: 'Back to Home' });
   await expect(back).toHaveAttribute('href', '#/');
@@ -60,4 +60,17 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await expect(page.getByRole('link', { name: 'Back to Home' })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Where things stand' })).toBeVisible({ timeout: 30_000 });
+});
+
+test('the greeting’s count of items jumps to Your work, and moves focus there (design system spec 4.3, The greeting)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const main = page.getByRole('main');
+  const count = main.getByRole('button', { name: /^\d+ items?$/ });
+  await expect(count).toBeVisible({ timeout: 30_000 });
+  const yourWork = main.getByRole('heading', { level: 2, name: 'Your work' });
+  await expect(yourWork).not.toBeInViewport();
+  await count.click();
+  await expect(yourWork).toBeInViewport();
+  await expect(yourWork).toBeFocused();
 });

@@ -6,6 +6,7 @@ import { backToHome } from './homeView';
 import { MAX_ABOUT } from '../gateway/ask';
 import { homeSections, keepingUp } from './homeView';
 import { greeting } from './greeting';
+import { counted } from './words';
 import { BUILT_ARCHETYPES } from './composeView';
 
 /**
@@ -62,7 +63,7 @@ export const typeLink = (type: string, typeLabel: string): ViewNode => ({ compon
 /**
  * An object's card. Choosing it anywhere but its buttons opens the object in the object panel (design system spec 4.4).
  * Its Ask button is in its body, after its method buttons (design system spec 4.1, Ask about this): see `runnable`.
- * It leads with the title; the type's name, as plain text, only in a list of several types.
+ * It leads with the title, under the type's name as plain text with the identifier quiet at that line's end.
  */
 export function card(object: ObjectSummary, body: ViewNode[][], heading: 'h2' | 'h3' = 'h2', options: { showType?: boolean } = {}): ViewNode {
   return {
@@ -135,9 +136,12 @@ export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
     .map((r) => ({ component: 'Label', props: { label: `${r.methodLabel}: ${r.status === 'queued' ? 'waiting to start' : 'running'}`, status: 'info' } }));
 }
 
-function header(title: string, summary: string): ViewNode {
-  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)], 'gapXs');
+function header(title: string, summary: string | ViewNode): ViewNode {
+  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, typeof summary === 'string' ? text(summary) : summary], 'gapXs');
 }
+
+/** The place on Home the greeting's count of items jumps to. */
+const YOUR_WORK = 'your-work';
 
 // ---------------------------------------------------------------- the To do summary (design system spec 4.3)
 
@@ -262,6 +266,17 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
     // Cards start select mode from a Select link; once selecting, the bar is the same as List's (design system spec 4.3).
     start.push(barItem(barLink('Select', 'select')));
   } else {
+    // Card select mode ends with Stop selecting, first in the bar beside the count, as in Google Drive's selection bar:
+    // an icon before the selection control, so it is never read as one of the actions after it (design system spec 4.3).
+    if (controls.mode === 'cards') {
+      start.push(
+        barItem({
+          component: 'Tooltip',
+          props: { content: 'Stop selecting' },
+          children: [{ component: 'Button', props: { variant: 'plain', icon: 'times', 'aria-label': 'Stop selecting' }, intent: 'select' }],
+        }),
+      );
+    }
     start.push(
       barItem({
         component: 'Dropdown',
@@ -298,8 +313,6 @@ function listBar(entries: ListEntry[], controls: ListControls): ViewNode {
       component: 'ToolbarGroup',
       props: { align: { default: 'alignEnd' } },
       children: [
-        // Done ends card select mode and clears the choice; it sits apart from the batch actions, so it never reads as one.
-        ...(controls.mode === 'cards' && controls.selecting ? [barItem(barLink('Done', 'select'))] : []),
         // While objects are chosen the bar is for acting on them; creating another waits until the choice is cleared (spec 4.3).
         ...(controls.create && !chosen ? [barItem(createButton(controls.create))] : []),
         barItem({
@@ -435,9 +448,9 @@ export function objectList(entries: ListEntry[], controls: ListControls, name: s
   // An empty list still offers New, so the first object of a type can be made (platform spec 5.3).
   if (!entries.length) return controls.create ? [{ component: 'Flex', props: { gap: { default: 'gapSm' } }, children: [createButton(controls.create)] }] : [];
   // The type's name is shown, as a link, only when the list holds more than one type.
-  const mixed = new Set(entries.map((e) => e.object.type)).size > 1;
   const objects: ViewNode =
-    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, mixed)));
+    // Every card names its type above its title, as an indicator of what kind of object it is (design system spec 4.3).
+    controls.mode === 'list' ? objectTable(entries, name) : gallery(entries.map((e) => entryCard(e, heading, true)));
   // The bar and the objects share one parent, so the sticky bar stays in view all the way down the list.
   return [group([listBar(entries, controls), objects], 'gapMd')];
 }
@@ -469,9 +482,14 @@ export function buildTodoView(
   const filter = options.filter ?? 'all';
   const items = allItems.filter((i) => matchesFilter(i, filter, today));
   const entries = todoEntries(items, runs, today);
-  const summary = allItems.length
-    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} you as ${who.role}. Nearest deadline first, then the most urgent.`
-    : `Nothing needs you as ${who.role} right now.`;
+  // The count is a link to Your work, further down the page (design system spec 4.3, The greeting).
+  const summary: ViewNode = allItems.length
+    ? {
+        component: 'Content',
+        props: { label: `${allItems.length === 1 ? 'needs' : 'need'} you as ${who.role}. Nearest deadline first, then the most urgent.` },
+        children: [{ component: 'Button', props: { label: `${allItems.length} ${allItems.length === 1 ? 'item' : 'items'}`, variant: 'link', isInline: true }, jumpsTo: YOUR_WORK }],
+      }
+    : text(`Nothing needs you as ${who.role} right now.`);
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
@@ -485,7 +503,7 @@ export function buildTodoView(
       ...(allItems.length || options.home
         ? [
             group([
-              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode,
+              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' }, anchor: YOUR_WORK } as ViewNode,
               ...(allItems.length ? buildSummary(allItems, today) : []),
               ...(options.home ? [text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))] : []),
             ]),
@@ -517,7 +535,7 @@ export function objectEntries(objects: ObjectSummary[], options: { methods?: Map
 export function buildTypeView(
   pluralLabel: string,
   objects: ObjectSummary[],
-  options: { methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
+  options: { label?: string; methods?: Map<string, MethodOption[]>; runs?: RunView[]; notice?: ViewNode; controls?: ListControls } = {},
 ): ViewSpec {
   const entries = objectEntries(objects, options);
   return {
@@ -526,7 +544,7 @@ export function buildTypeView(
     root: sections([
       ...(options.notice ? [options.notice] : []),
       // The way back to Home stands a little above the heading, as on a metric's page (design system spec 4.3, Home).
-      group([backToHome, header(pluralLabel, `${objects.length} ${objects.length === 1 ? 'object' : 'objects'}.`)], 'gapMd'),
+      group([backToHome, header(pluralLabel, counted(objects.length, options.label ?? objects[0]?.typeLabel ?? pluralLabel, pluralLabel))], 'gapMd'),
       ...objectList(entries, options.controls ?? NO_CONTROLS, pluralLabel),
     ]),
   };
@@ -570,7 +588,7 @@ export function buildSearchView(
       ...(options.notice ? [options.notice] : []),
       // The title and how many matched, then how the query was understood as one group beneath it.
       group([
-        header('Search', `${count} for “${result.query}”${shown}.`),
+        header('Search', `${count} for “${result.query}”${shown}`),
         // A question searched rather than answered says so, quietly (design system spec 4.1, Search).
         group([...(options.searched ? [text(options.searched, 'small')] : []), text('model' in result.understoodBy ? `Understood by ${result.understoodBy.model}` : 'Understood from the ontology', 'small'), ...(chips.length ? [flexOf(chips)] : [])]),
       ], 'gapMd'),

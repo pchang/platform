@@ -314,7 +314,7 @@ export function TypeView({ type }: { type: string }) {
   const chat = useChat();
   const { client, principal } = usePrincipal();
   const { changes } = useNotifications();
-  const [loaded, setLoaded] = useState<{ pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]>; create?: { type: string; typeLabel: string; verb: 'New' } }>();
+  const [loaded, setLoaded] = useState<{ label: string; pluralLabel: string; objects: ObjectSummary[]; methods: Map<string, MethodOption[]>; create?: { type: string; typeLabel: string; verb: 'New' } }>();
   const processes = useProcesses();
   const openMethod = useOpenMethod((object, method) => {
     const summary = loaded?.objects.find((o) => o.iri === object);
@@ -331,7 +331,9 @@ export function TypeView({ type }: { type: string }) {
       const objects = await client.find(principal, type);
       const methods = new Map(await Promise.all(objects.map(async (o) => [o.iri, await client.methods(principal, o.iri)] as const)));
       const create = entry?.creatable ? { type, typeLabel: entry.label, verb: 'New' as const } : undefined;
-      if (!cancelled) setLoaded({ pluralLabel: entry?.pluralLabel ?? type.split('#').pop()!, objects, methods, ...(create ? { create } : {}) });
+      // The type's own names, from the ontology, even when it is not in the person's navigation, such as a type reached by a link.
+      const names = entry ? { label: entry.label, pluralLabel: entry.pluralLabel } : objects[0] ? { label: objects[0].typeLabel, pluralLabel: objects[0].pluralLabel } : await client.describeType(principal, type);
+      if (!cancelled) setLoaded({ label: names.label, pluralLabel: names.pluralLabel, objects, methods, ...(create ? { create } : {}) });
     })();
     return () => {
       cancelled = true;
@@ -342,7 +344,7 @@ export function TypeView({ type }: { type: string }) {
   // New, when the person may create objects of the type (platform spec 5.3).
   const create = loaded?.create;
   const view = loaded
-    ? buildTypeView(loaded.pluralLabel, loaded.objects, { methods: loaded.methods, runs, notice: processes.notice, controls: { ...list.controls, ...(create ? { create } : {}) } })
+    ? buildTypeView(loaded.pluralLabel, loaded.objects, { label: loaded.label, methods: loaded.methods, runs, notice: processes.notice, controls: { ...list.controls, ...(create ? { create } : {}) } })
     : loadingView;
   return (
     <>

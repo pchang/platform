@@ -1,7 +1,8 @@
 import type { ViewNode, ViewSpec } from '../design-system/catalog';
-import type { MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
+import type { AgentActivity, Journey, JourneyStatus, MethodOption, ObjectView, RelationshipEnd, RunView } from '../data/client';
 import { group, sections } from './layout';
 import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries, objectList, quietId, runLabels, runnable, stack, stateLabels, text, typeLink, type ListControls } from './orientView';
+import { inText } from './words';
 
 /**
  * One object in the object panel (platform spec 5.1, Within an object; design system spec 4.4), composed from what the
@@ -11,6 +12,7 @@ import { createButton, daysUntil, flexOf, formatDate, NO_CONTROLS, objectEntries
 /** The field the panel's tabs set: which section is shown. */
 export const OBJECT_TAB_FIELD = 'objectTab';
 export const OVERVIEW_TAB = 'overview';
+export const ACTIVITY_TAB = 'activity';
 
 /** A term's local name, such as runsAt for …#runsAt, made safe for an element id. */
 const localName = (iri: string) => (iri.split(/[#/]/).pop() ?? iri).replace(/[^A-Za-z0-9_-]/g, '-');
@@ -21,12 +23,6 @@ const localName = (iri: string) => (iri.split(/[#/]/).pop() ?? iri).replace(/[^A
  */
 export const endKey = (end: Pick<RelationshipEnd, 'direction' | 'relationship' | 'type'>) => [end.direction, localName(end.relationship), localName(end.type)].join('-');
 
-/** A type's name in running text: lower case, except words that start in capitals, such as CAPA and CAPAs. */
-const inText = (name: string) =>
-  name
-    .split(' ')
-    .map((word) => (/^[A-Z]{2}/.test(word) ? word : word.toLowerCase()))
-    .join(' ');
 
 /** The ends that hold at most one object go in the overview; the others each get a tab. */
 const isTab = (end: RelationshipEnd) => !end.one;
@@ -65,7 +61,10 @@ const part = (title: string, body: ViewNode): ViewNode => group([heading(title),
 function overview(view: ObjectView, today: Date): ViewNode {
   const parts: ViewNode[] = [];
   const properties = Object.entries(view.properties).sort(([a], [b]) => a.localeCompare(b));
-  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), [text(v)]])) : text('No details recorded.')));
+  // A value an outside agent wrote says so, quietly, so a person weighs it as an outside claim (design system spec 4.4).
+  const value = (k: string, v: string): ViewNode[] =>
+    view.byOutsideAgents?.[k] ? [{ component: 'Flex', props: { direction: { default: 'column' }, gap: { default: 'gapNone' } }, children: [text(v), quietId(`Written by ${view.byOutsideAgents[k]}`)] }] : [text(v)];
+  parts.push(part('Details', properties.length ? dl(properties.map(([k, v]) => [sentenceCase(k), value(k, v)])) : text('No details recorded.')));
 
   const linked = view.links.filter((end) => !isTab(end));
   if (linked.length) {
@@ -99,6 +98,39 @@ function overview(view: ObjectView, today: Date): ViewNode {
   return sections(parts);
 }
 
+const when = (at: string) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const cell = (column: string, children: ViewNode[]): ViewNode => ({ component: 'Td', props: { dataLabel: column }, children });
+const opens = (object: string, identifier: string): ViewNode => ({ component: 'Button', props: { label: identifier, variant: 'link', isInline: true }, opens: object });
+
+function activityTable(name: string, columns: string[], rows: ViewNode[][]): ViewNode {
+  return {
+    component: 'Table',
+    props: { 'aria-label': name, variant: 'compact' },
+    children: [
+      { component: 'Thead', children: [{ component: 'Tr', children: columns.map((label) => ({ component: 'Th', props: { label } })) }] },
+      { component: 'Tbody', children: rows.map((cells) => ({ component: 'Tr', children: cells.map((c, i) => cell(columns[i], [c])) })) },
+    ],
+  };
+}
+
+/**
+ * An outside agent's activity (design system spec 4.4, Activity; platform spec 3.4, Outside agents, Audit): what it
+ * committed and proposed, with its reasons, then what it read, newest first.
+ */
+function activity(a: AgentActivity): ViewNode {
+  const showing = (shown: number, total: number) => (shown < total ? `, the latest ${shown}` : '');
+  const done = a.commits.length
+    ? activityTable('Commits and proposals', ['What', 'On', 'When', 'Reason'], a.commits.map((c) => [text(c.what), opens(c.object, c.objectIdentifier), text(when(c.at)), text(c.reason ?? '')]))
+    : text('Nothing committed or proposed yet.');
+  const read = a.reads.length
+    ? activityTable('Reads', ['Object', 'When'], a.reads.map((r) => [opens(r.object, r.objectIdentifier), text(when(r.at))]))
+    : text('Nothing read yet.');
+  return sections([
+    part(`Commits and proposals: ${a.commitCount}${showing(a.commits.length, a.commitCount)}`, done),
+    part(`Reads: ${a.readCount}${showing(a.reads.length, a.readCount)}`, read),
+  ]);
+}
+
 /** A tab's objects as an object list like any other (design system spec 4.4 and 4.3): the list bar, then cards or a list. */
 function section(
   view: ObjectView,
@@ -111,6 +143,40 @@ function section(
   const create = end.canAdd ? { type: end.type, typeLabel: end.typeLabel, within: view.iri, verb: 'Add' as const } : undefined;
   if (!end.objects.length) return group([text(`No ${inText(end.pluralLabel)} yet.`), ...(create ? [createButton(create)] : [])], 'gapMd');
   return group([text(sentence), ...objectList(objectEntries(end.objects, options), { ...(options.controls ?? NO_CONTROLS), create }, name, 'h3')], 'gapMd');
+}
+
+/** How each stage of a journey is drawn, and said: never by its icon or color alone (design system spec 4.4, Journey). */
+const STEP: Record<JourneyStatus, { variant: 'success' | 'info' | 'pending'; said: string; description?: string }> = {
+  passed: { variant: 'success', said: 'passed' },
+  current: { variant: 'info', said: 'now', description: 'Now' },
+  upcoming: { variant: 'pending', said: 'to come' },
+  skipped: { variant: 'pending', said: 'skipped', description: 'Skipped' },
+  unknown: { variant: 'pending', said: 'not known', description: 'Not known' },
+};
+
+/** The object's journey along its lifecycle, as a progress stepper: vertical on phones, horizontal from md up. */
+export function journeyStepper(journey: Journey): ViewNode {
+  const now = journey.steps.findIndex((s) => s.status === 'current');
+  const current = journey.steps[now];
+  const where = current.exit ? `now ${current.stage}, an exit` : `now ${current.stage}, stage ${now + 1} of ${journey.steps.length}`;
+  return {
+    component: 'ProgressStepper',
+    props: { 'aria-label': `Journey: ${journey.dimension}, ${where}`, horizontalFrom: 'md' },
+    because: `Where the object is along its ${journey.dimension.toLowerCase()}, from its lifecycle in the ontology and its own commits`,
+    children: journey.steps.map((step) => {
+      const look = STEP[step.status];
+      return {
+        component: 'ProgressStep',
+        props: {
+          label: step.stage,
+          variant: step.exit ? 'danger' : look.variant,
+          ...(step.status === 'current' ? { isCurrent: true } : {}),
+          ...(look.description ? { description: look.description } : {}),
+          'aria-label': `${step.stage}, ${look.said}${step.exit ? ', an exit' : ''}`,
+        },
+      };
+    }),
+  };
 }
 
 /**
@@ -140,12 +206,19 @@ export function buildObjectView(
   if (status.length) header.push([flexOf(status)]);
   if (Object.keys(view.state).length) header.push([flexOf(stateLabels(view))]);
   const available = (options.methods ?? []).filter((m) => m.available);
-  const actions = runnable(available, view.iri, false);
-  // Edit follows the methods, when the person may edit the object now (platform spec 5.3; design system spec 4.4).
+  // The methods the person can run now, then Edit when they may edit it, then Ask about this last, as on a card
+  // (platform spec 5.3; design system spec 4.1 and 4.4).
+  const actions = runnable(available, view.iri, false, view);
   const edit: ViewNode = { component: 'Button', props: { label: 'Edit', variant: 'secondary', size: 'sm' }, edits: view.iri };
-  if (options.editable && actions.length && actions[0][0].component === 'Flex') actions[0][0] = { ...actions[0][0], children: [...(actions[0][0].children ?? []), edit] };
-  else if (options.editable) actions.unshift([{ component: 'Flex', props: { gap: { default: 'gapSm' }, flexWrap: { default: 'wrap' } }, children: [edit] }]);
+  if (options.editable) {
+    const row = actions.find((r) => r[0].component === 'Flex')!;
+    const children = row[0].children ?? [];
+    // Before Ask, which is always last in the row.
+    row[0] = { ...row[0], children: [...children.slice(0, -1), edit, children[children.length - 1]] };
+  }
   header.push(...actions);
+  // Under the header, after what the person can do now: where the object is along its lifecycle (design system spec 4.4).
+  if (view.journey) header.push([journeyStepper(view.journey)]);
 
   const tabs = view.links.filter(isTab);
   const named = names(tabs, view.type, (end) => end.pluralLabel);
@@ -156,6 +229,8 @@ export function buildObjectView(
       props: { eventKey: endKey(end), label: named.get(end)!, count: end.objects.length },
       children: [section(view, end, named.get(end)!, { methods: options.related, runs: options.runs, controls: options.controls })],
     })),
+    // On an outside agent's own page, its activity, last.
+    ...(view.activity ? [{ component: 'Tab', props: { eventKey: ACTIVITY_TAB, label: 'Activity', count: view.activity.commitCount }, children: [activity(view.activity)] }] : []),
   ];
 
   return {

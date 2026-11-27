@@ -28,3 +28,8 @@
 .app-process-dock__card {
   inline-size: 16rem;
 }
+
+/* A set-aside conversation's Ask icon, quiet, where a process has its progress bar. */
+.app-process-dock__ask {
+  color: var(--pf-t--global--icon--color--subtle);
+}

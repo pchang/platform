@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, normalize, sep } from 'node:path';
 import { defaultGraphDataset } from '../ontology/ontology';
 import { loadOntology, SEED_FILE } from '../ontology/files';
 import { Gateway, type GatewayOptions } from './gateway';
@@ -6,9 +7,20 @@ import { fromNQuads, Journal, seedFingerprint } from './journal';
 
 /** Starting a gateway on the server: from the seed graph on disk, with or without a journal. */
 
+/**
+ * The adapter that reads dataset versions (platform spec 3.2, Measures and observations): files beside the seed graph,
+ * by their location, never outside its folder.
+ */
+export function seedDatasets(location: string): string | undefined {
+  const root = dirname(SEED_FILE);
+  const path = normalize(join(root, location));
+  if (!path.startsWith(root + sep) || !existsSync(path)) return undefined;
+  return readFileSync(path, 'utf8');
+}
+
 /** The ontology with the seed graph, in memory only: the starting point for tests. */
 export function withSeed(extraTurtle: string[] = [], options: GatewayOptions = {}): Gateway {
-  return new Gateway(loadOntology([readFileSync(SEED_FILE, 'utf8'), ...extraTurtle]), options);
+  return new Gateway(loadOntology([readFileSync(SEED_FILE, 'utf8'), ...extraTurtle]), { datasets: seedDatasets, ...options });
 }
 
 /**
@@ -25,5 +37,5 @@ export function openGateway(journalPath: string, options: Omit<GatewayOptions, '
     for (const q of fromNQuads(entry.added)) graph.store.add(q);
   }
   graph.dataset = defaultGraphDataset(graph.store);
-  return new Gateway(graph, { ...options, journal });
+  return new Gateway(graph, { datasets: seedDatasets, ...options, journal });
 }

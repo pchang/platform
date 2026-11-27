@@ -86,3 +86,36 @@ Weigh each scenario's current forecasts against the agreed targets first and the
 Say in a few sentences why you recommend it, and name what each scenario gives up. When two are close, say what would change the recommendation. Name the records you rest on by identifier.
 
 Never write the decision's rationale: that is the person's own words.""" .
+
+# Start a protocol: the ways a new protocol may begin (domain spec 3.9; platform spec 3.3, Starting points).
+
+ls:StartProtocol-scratch a p:StartingPoint ;
+  rdfs:label "Author from scratch" ;
+  rdfs:comment "Write the protocol in the platform, beginning with its name and the study it is for." ;
+  p:begins p:BeginWithForm ;
+  p:order 1 .
+
+ls:StartProtocol-template a p:StartingPoint ;
+  rdfs:label "Start from a template" ;
+  rdfs:comment "Begin from one of the sponsor's approved protocol templates, with its sections and standard text in place." ;
+  p:begins p:BeginFromTemplate ;
+  p:order 2 .
+
+ls:StartProtocol-import a p:StartingPoint ;
+  rdfs:label "Import a protocol document" ;
+  rdfs:comment "Read an existing protocol document, such as last year's synopsis, and review its objectives, criteria, arms and visits as structure." ;
+  p:begins p:BeginFromDocument ;
+  p:order 3 .
+
+ls:StartProtocol a p:Skill ;
+  rdfs:label "Start a protocol" ;
+  rdfs:comment "Where to begin a new protocol: from scratch, from a template or from a document." ;
+  p:serves p:Create ;
+  p:forType ls:Protocol ;
+  p:startingPoint ls:StartProtocol-scratch, ls:StartProtocol-template, ls:StartProtocol-import ;
+  p:skillVersion "1.0" ;
+  p:owner ls:MedicalWriter ;
+  p:approvedOn "2026-11-23"^^xsd:date ;
+  p:instructions """A protocol begins one of three ways, in this order: authored from scratch in the platform; from one of the sponsor's approved protocol templates, with its sections and standard text in place; or by importing an existing protocol document, such as last year's synopsis, whose objectives, criteria, arms and visits are proposed as structure for review.
+
+Whichever way it begins, it is a draft that the people named for it shape and review before it is sent for approval.""" .

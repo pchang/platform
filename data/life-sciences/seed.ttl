@@ -9,7 +9,8 @@
 @prefix lst:  <https://w3id.org/lsh-platform/life-sciences/term#> .
 @prefix d:    <https://example.org/lsh-data/> .
 
-# People: one per persona, a second Drug Safety Physician for separation of duties (rule 5), and an external CRO agent.
+# People: one per persona, a second Drug Safety Physician for separation of duties (rule 5), and a contract research
+# organization's data manager with its agent.
 
 d:person-ada a p:Person ;
   rdfs:label "Ada Moreno" ;
@@ -39,10 +40,59 @@ d:person-sam a p:Person ;
   rdfs:label "Sam Whitfield" ;
   p:actsAs ls:ClinicalResearchCoordinator .
 
-d:agent-northbridge a p:Person ;
-  rdfs:label "Northbridge CRO agent" ;
+# Outside agent (domain spec sections 6 and 11): Northbridge CRO runs data management at the first two sites. Its CRO Data
+# Manager registered its query agent, and the Clinical Operations Lead approved it.
+
+d:ORG-1 a p:Organization ;
+  ls:identifier "ORG-1" ;
+  p:organizationName "Northbridge CRO" .
+
+d:person-mira a p:Person ;
+  rdfs:label "Mira Castellanos" ;
+  p:actsAs ls:CRODataManager ;
+  p:memberOf d:ORG-1 .
+
+d:agent-northbridge a p:Agent ;
+  ls:identifier "AG-1" ;
+  rdfs:label "Northbridge query agent" ;
   p:actsAs ls:ExternalCROAgent ;
-  p:isAgent true .
+  p:operatedBy d:ORG-1 ;
+  p:accountablePerson d:person-mira ;
+  p:registeredBy d:person-mira ;
+  p:clientId "northbridge-query-agent" ;
+  p:agentStatus p:AgentStatus-active .
+
+# Its proposal to close an answered query at the second site, waiting for Mira (External agent journey, step 3).
+d:AgentProposal-1 a p:AgentProposal ;
+  ls:identifier "AgentProposal-1" ;
+  p:agentProposalStatus p:AgentProposalStatus-pending ;
+  p:proposingAgent d:agent-northbridge ;
+  p:proposedMethod ls:CloseQuery ;
+  p:proposalTarget d:Q-04 ;
+  p:agentReason "The site's answer cites the source document and the value matches it; nothing is left to resolve." ;
+  p:agentVersion "northbridge-query-agent 1.4.0" .
+
+d:ASG-1 a p:Assignment ;
+  ls:identifier "ASG-1" ;
+  p:assignee d:ORG-1 ;
+  p:inScope d:ST-01, d:SITE-1, d:SITE-2 ;
+  p:assignedFrom "2026-01-05"^^xsd:date ;
+  p:contractReference "NB-2026-014" ;
+  p:contractDate "2025-12-18"^^xsd:date .
+
+# Site staff work at their own sites: the coordinator at the first, the associate monitoring the first two.
+
+d:ASG-2 a p:Assignment ;
+  ls:identifier "ASG-2" ;
+  p:assignee d:person-sam ;
+  p:inScope d:ST-01, d:SITE-1 ;
+  p:assignedFrom "2026-01-05"^^xsd:date .
+
+d:ASG-3 a p:Assignment ;
+  ls:identifier "ASG-3" ;
+  p:assignee d:person-priya ;
+  p:inScope d:ST-01, d:SITE-1, d:SITE-2 ;
+  p:assignedFrom "2026-01-05"^^xsd:date .
 
 # Scientific Innovation: 5 compounds, including 1 candidate and 2 analogs
 
@@ -344,6 +394,7 @@ d:PT-12 a ls:Patient ;
 
 d:V-01-1 a ls:Visit ;
   ls:identifier "V-01-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-09-08"^^xsd:date ;
@@ -365,6 +416,7 @@ d:DR-002 a ls:DataRecord ;
 
 d:V-01-2 a ls:Visit ;
   ls:identifier "V-01-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-06"^^xsd:date ;
@@ -386,6 +438,7 @@ d:DR-004 a ls:DataRecord ;
 
 d:V-02-1 a ls:Visit ;
   ls:identifier "V-02-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-09-15"^^xsd:date ;
@@ -407,6 +460,7 @@ d:DR-006 a ls:DataRecord ;
 
 d:V-02-2 a ls:Visit ;
   ls:identifier "V-02-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-13"^^xsd:date ;
@@ -428,6 +482,7 @@ d:DR-008 a ls:DataRecord ;
 
 d:V-03-1 a ls:Visit ;
   ls:identifier "V-03-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-09-22"^^xsd:date ;
@@ -449,6 +504,7 @@ d:DR-010 a ls:DataRecord ;
 
 d:V-03-2 a ls:Visit ;
   ls:identifier "V-03-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-20"^^xsd:date ;
@@ -470,6 +526,7 @@ d:DR-012 a ls:DataRecord ;
 
 d:V-04-1 a ls:Visit ;
   ls:identifier "V-04-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-09-29"^^xsd:date ;
@@ -491,6 +548,7 @@ d:DR-014 a ls:DataRecord ;
 
 d:V-04-2 a ls:Visit ;
   ls:identifier "V-04-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-27"^^xsd:date ;
@@ -512,6 +570,7 @@ d:DR-016 a ls:DataRecord ;
 
 d:V-05-1 a ls:Visit ;
   ls:identifier "V-05-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-06"^^xsd:date ;
@@ -533,6 +592,7 @@ d:DR-018 a ls:DataRecord ;
 
 d:V-05-2 a ls:Visit ;
   ls:identifier "V-05-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-03"^^xsd:date ;
@@ -554,6 +614,7 @@ d:DR-020 a ls:DataRecord ;
 
 d:V-06-1 a ls:Visit ;
   ls:identifier "V-06-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-13"^^xsd:date ;
@@ -575,6 +636,7 @@ d:DR-022 a ls:DataRecord ;
 
 d:V-06-2 a ls:Visit ;
   ls:identifier "V-06-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-10"^^xsd:date ;
@@ -596,6 +658,7 @@ d:DR-024 a ls:DataRecord ;
 
 d:V-07-1 a ls:Visit ;
   ls:identifier "V-07-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-20"^^xsd:date ;
@@ -617,6 +680,7 @@ d:DR-026 a ls:DataRecord ;
 
 d:V-07-2 a ls:Visit ;
   ls:identifier "V-07-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-17"^^xsd:date ;
@@ -638,6 +702,7 @@ d:DR-028 a ls:DataRecord ;
 
 d:V-08-1 a ls:Visit ;
   ls:identifier "V-08-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-10-27"^^xsd:date ;
@@ -659,6 +724,7 @@ d:DR-030 a ls:DataRecord ;
 
 d:V-08-2 a ls:Visit ;
   ls:identifier "V-08-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-24"^^xsd:date ;
@@ -680,6 +746,7 @@ d:DR-032 a ls:DataRecord ;
 
 d:V-09-1 a ls:Visit ;
   ls:identifier "V-09-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-03"^^xsd:date ;
@@ -701,6 +768,7 @@ d:DR-034 a ls:DataRecord ;
 
 d:V-09-2 a ls:Visit ;
   ls:identifier "V-09-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-12-01"^^xsd:date ;
@@ -722,6 +790,7 @@ d:DR-036 a ls:DataRecord ;
 
 d:V-10-1 a ls:Visit ;
   ls:identifier "V-10-1" ;
+  ls:scheduledFrom d:PV-W4 ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-11-10"^^xsd:date ;
@@ -743,6 +812,7 @@ d:DR-038 a ls:DataRecord ;
 
 d:V-10-2 a ls:Visit ;
   ls:identifier "V-10-2" ;
+  ls:scheduledFrom d:PV-W8 ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-completed ;
   ls:scheduledOn "2026-12-08"^^xsd:date ;
@@ -764,6 +834,7 @@ d:DR-040 a ls:DataRecord ;
 
 d:V-01-3 a ls:Visit ;
   ls:identifier "V-01-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-01 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-03"^^xsd:date ;
@@ -771,6 +842,7 @@ d:V-01-3 a ls:Visit ;
 
 d:V-02-3 a ls:Visit ;
   ls:identifier "V-02-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-02 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-09"^^xsd:date ;
@@ -778,6 +850,7 @@ d:V-02-3 a ls:Visit ;
 
 d:V-03-3 a ls:Visit ;
   ls:identifier "V-03-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-03 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-12"^^xsd:date ;
@@ -785,6 +858,7 @@ d:V-03-3 a ls:Visit ;
 
 d:V-04-3 a ls:Visit ;
   ls:identifier "V-04-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-04 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-13"^^xsd:date ;
@@ -792,6 +866,7 @@ d:V-04-3 a ls:Visit ;
 
 d:V-05-3 a ls:Visit ;
   ls:identifier "V-05-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-05 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-14"^^xsd:date ;
@@ -799,6 +874,7 @@ d:V-05-3 a ls:Visit ;
 
 d:V-06-3 a ls:Visit ;
   ls:identifier "V-06-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-06 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-16"^^xsd:date ;
@@ -806,6 +882,7 @@ d:V-06-3 a ls:Visit ;
 
 d:V-07-3 a ls:Visit ;
   ls:identifier "V-07-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-07 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-18"^^xsd:date ;
@@ -813,6 +890,7 @@ d:V-07-3 a ls:Visit ;
 
 d:V-08-3 a ls:Visit ;
   ls:identifier "V-08-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-08 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-21"^^xsd:date ;
@@ -820,6 +898,7 @@ d:V-08-3 a ls:Visit ;
 
 d:V-09-3 a ls:Visit ;
   ls:identifier "V-09-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-09 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-11-25"^^xsd:date ;
@@ -827,6 +906,7 @@ d:V-09-3 a ls:Visit ;
 
 d:V-10-3 a ls:Visit ;
   ls:identifier "V-10-3" ;
+  ls:scheduledFrom d:PV-W12 ;
   ls:visitFor d:PT-10 ;
   ls:visitStatus lst:VisitStatus-scheduled ;
   ls:scheduledOn "2026-12-02"^^xsd:date ;
@@ -2738,3 +2818,75 @@ d:SSC-4 a ls:StudyScenario ;
   ls:scenarioChange "Tests protocol version 3.0, which adds a Week 16 safety visit, before it is sent for review." ;
   ls:explores d:ST-01 ;
   ls:usesProtocol d:PROT-3 .
+
+# Vital signs for the Phase II study (domain spec section 11; platform spec 3.2, Measures and observations): its protocol
+# in force plans three visits, each with a vital signs assessment that measures blood pressure. One SDTM VS dataset with
+# one version, a Dataset-JSON file read through the adapter: twenty completed visits' blood pressures, one diastolic
+# pressure not sent (PT-04, week 8) and one systolic pressure of 310 mmHg (PT-07, week 4).
+
+d:PV-W4 a ls:PlannedVisit ;
+  ls:identifier "PV-W4" ;
+  ls:plannedVisitName "Week 4 visit" ;
+  ls:studyDay 28 ;
+  ls:windowDays 3 ;
+  ls:specifiedIn d:PROT-2 .
+
+d:PV-W8 a ls:PlannedVisit ;
+  ls:identifier "PV-W8" ;
+  ls:plannedVisitName "Week 8 visit" ;
+  ls:studyDay 56 ;
+  ls:windowDays 3 ;
+  ls:specifiedIn d:PROT-2 .
+
+d:PV-W12 a ls:PlannedVisit ;
+  ls:identifier "PV-W12" ;
+  ls:plannedVisitName "Week 12 visit" ;
+  ls:studyDay 84 ;
+  ls:windowDays 3 ;
+  ls:specifiedIn d:PROT-2 .
+
+d:AS-VS a ls:Assessment ;
+  ls:identifier "AS-VS" ;
+  ls:assessmentPurpose lst:AssessmentPurpose-safety ;
+  ls:assessmentBurden lst:AssessmentBurden-low ;
+  ls:assessmentName "Vital signs" ;
+  ls:costPerVisit 25.0 ;
+  ls:minutesOnSite 10 ;
+  ls:performedAt d:PV-W4, d:PV-W8, d:PV-W12 ;
+  ls:specifiedIn d:PROT-2 ;
+  p:measures ls:BloodPressure .
+
+d:DSET-1 a p:Dataset ;
+  ls:identifier "DSET-1" ;
+  p:datasetName "VELOCITY-2 vital signs" ;
+  p:standard "SDTM VS" ;
+  p:datasetFor d:ST-01 ;
+  p:observedColumn "USUBJID" ;
+  p:observedType ls:Patient ;
+  p:occasionColumn "VISIT" ;
+  p:occasionType ls:Visit ;
+  p:occasionMatch ls:visitName .
+
+d:DSV-1 a p:DatasetVersion ;
+  ls:identifier "DSV-1" ;
+  p:versionOf d:DSET-1 ;
+  p:location "datasets/vs-velocity-2-2026-11-20.json" ;
+  p:format "Dataset-JSON 1.1" ;
+  p:cutOn "2026-11-20"^^xsd:date ;
+  p:datasetVersionStatus p:DatasetVersionStatus-loaded .
+
+d:MB-1 a p:MeasureBinding ;
+  p:bindsComponent ls:BloodPressure-systolic ;
+  p:inDataset d:DSET-1 ;
+  p:whereColumn "VSTESTCD" ;
+  p:whereValue "SYSBP" ;
+  p:valueColumn "VSSTRESN" ;
+  p:unitColumn "VSSTRESU" .
+
+d:MB-2 a p:MeasureBinding ;
+  p:bindsComponent ls:BloodPressure-diastolic ;
+  p:inDataset d:DSET-1 ;
+  p:whereColumn "VSTESTCD" ;
+  p:whereValue "DIABP" ;
+  p:valueColumn "VSSTRESN" ;
+  p:unitColumn "VSSTRESU" .

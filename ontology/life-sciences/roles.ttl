@@ -48,6 +48,7 @@ ls:ClinicalResearchAssociate a p:Role ;
   rdfs:label "Clinical Research Associate" ;
   rdfs:comment "Monitors sites for the sponsor: verifies data against source documents and raises queries." ;
   p:mayRun ls:VerifyDataRecord, ls:VerifyAdverseEvent, ls:RaiseQuery ;
+  p:scoped true ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalResearchCoordinator a p:Role ;
@@ -59,6 +60,7 @@ ls:ClinicalResearchCoordinator a p:Role ;
   rdfs:label "Clinical Research Coordinator" ;
   rdfs:comment "Runs the study at a site: consents and randomizes patients, holds visits, records data and adverse events, and answers queries." ;
   p:mayRun ls:Consent, ls:Randomize, ls:CompleteVisit, ls:RecordMissedVisit, ls:RecordData, ls:RecordAdverseEvent, ls:AnswerQuery ;
+  p:scoped true ;
   p:mayNotRead ls:assignedArm .
 
 ls:DrugSafetyPhysician a p:Role ;
@@ -87,8 +89,23 @@ ls:ExternalCROAgent a p:Role ;
   p:worksAcross ls:DataQuery ;
   p:worksIn ls:ClinicalDevelopment ;
   rdfs:label "External CRO agent" ;
-  rdfs:comment "A contract research organization's agent. Answers and closes data queries at its own sites, through the gateway, under the same policy as people." ;
+  rdfs:comment "A contract research organization's agent. Answers data queries, and proposes closing them, at its organization's sites, through the gateway, under the same policy as people (platform spec 3.4, Outside agents)." ;
+  p:forAgents true ;
+  p:scoped true ;
+  # Only what answering a query needs: the query, its record and visit, the patient by study code, the site and the study.
+  p:mayRead ls:DataQuery, ls:DataRecord, ls:Visit, ls:Patient, ls:Site, ls:Study ;
   p:mayRun ls:AnswerQuery, ls:CloseQuery ;
+  p:mayNotRead ls:assignedArm .
+
+ls:CRODataManager a p:Role ;
+  p:watches ls:Metric-AgentProposalsToDecide, ls:Metric-OpenDataQueries ;
+  p:mayCreate p:Agent ;
+  p:worksAcross ls:DataQuery, p:AgentProposal ;
+  p:worksIn ls:ClinicalDevelopment, p:Partners ;
+  rdfs:label "CRO Data Manager" ;
+  rdfs:comment "Keeps data clean at a contract research organization's sites: answers and closes data queries there, registers its organization's agents and decides their proposals." ;
+  p:scoped true ;
+  p:mayRun ls:AnswerQuery, ls:CloseQuery, p:ConfirmAgentProposal, p:RejectAgentProposal ;
   p:mayNotRead ls:assignedArm .
 
 # Design and Plan (domain spec section 3.4). Their methods are specified in section 3.7 and not yet built,
@@ -126,13 +143,14 @@ ls:MedicalWriter a p:Role ;
   p:mayNotRead ls:assignedArm .
 
 ls:ClinicalOperationsLead a p:Role ;
-  p:watches ls:Metric-BudgetsOverCeiling, ls:Metric-ForecastsMissingTarget, ls:Metric-DesignSignalsRaised, ls:Metric-SitesStillProposed ;
-  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
-  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site ;
-  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment ;
+  p:watches ls:Metric-BudgetsOverCeiling, ls:Metric-ForecastsMissingTarget, ls:Metric-DesignSignalsRaised, ls:Metric-SitesStillProposed, ls:Metric-AgentsAwaitingApproval, ls:Metric-AgentsPaused ;
+  p:mayCreate ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site, p:Organization, p:Assignment ;
+  p:mayEdit ls:StudyScenario, ls:StudyBudget, ls:SiteSelection, ls:ProposedSite, ls:Site, p:Organization ;
+  p:worksIn ls:DesignAndPlan, ls:ClinicalDevelopment, p:Partners ;
   rdfs:label "Clinical Operations Lead" ;
-  rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them." ;
-  p:mayRun ls:RunTrialSimulation, ls:CompareStudyScenarios ;
+  rdfs:comment "Makes a plan that delivers on time and on budget: site selections, study budgets and the simulations that test them. Oversees the outside agents of the sponsor's service providers (ICH E6(R3))." ;
+  p:mayRun ls:RunTrialSimulation, ls:CompareStudyScenarios, p:ApproveAgent, p:OnlyPropose, p:SuspendAgent, p:ResumeAgent, p:RetireAgent,
+    p:EndAssignment, ls:CoverStudy, ls:CoverSite ;
   p:mayNotRead ls:assignedArm .
 
 ls:PortfolioStrategist a p:Role ;
@@ -385,3 +403,46 @@ ls:MedicalWriter p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:ClinicalOperationsLead p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:PortfolioStrategist p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
 ls:ProgramLeader p:mayRun p:ApproveChangeSet, p:RejectChangeSet .
+
+# The domain each role is mainly in, the first of its domains (domain spec section 6), which groups people in Profile.
+ls:ComputationalChemist p:mainlyIn ls:ScientificInnovation .
+ls:ClinicalDataManager p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalResearchAssociate p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalResearchCoordinator p:mainlyIn ls:ClinicalDevelopment .
+ls:DrugSafetyPhysician p:mainlyIn ls:SafetyAndRegulatory .
+ls:QualityLead p:mainlyIn ls:ScientificInnovation .
+ls:ExternalCROAgent p:mainlyIn ls:ClinicalDevelopment .
+ls:CRODataManager p:mainlyIn ls:ClinicalDevelopment .
+ls:ClinicalScientist p:mainlyIn ls:DesignAndPlan .
+ls:Biostatistician p:mainlyIn ls:DesignAndPlan .
+ls:MedicalWriter p:mainlyIn ls:DesignAndPlan .
+ls:ClinicalOperationsLead p:mainlyIn ls:DesignAndPlan .
+ls:PortfolioStrategist p:mainlyIn ls:DesignAndPlan .
+ls:ProgramLeader p:mainlyIn ls:DesignAndPlan .
+
+# Outside agents (domain spec section 6): proposals for the person who answers for the agent, and the sponsor's oversight.
+
+ls:Metric-AgentProposalsToDecide a p:Metric ;
+  rdfs:label "Agent proposals to decide" ;
+  rdfs:comment "Proposals of the agents you answer for, waiting for you to confirm or reject them." ;
+  p:metricOf p:AgentProposal ;
+  p:inState p:AgentProposalStatus-pending ;
+  p:principalPath ( p:proposingAgent p:accountablePerson ) ;
+  p:watchAt 1 ;
+  p:riskAt 5 .
+
+ls:Metric-AgentsAwaitingApproval a p:Metric ;
+  rdfs:label "Agents awaiting approval" ;
+  rdfs:comment "Outside agents registered by their organizations and not yet approved." ;
+  p:metricOf p:Agent ;
+  p:inState p:AgentStatus-registered ;
+  p:watchAt 1 ;
+  p:riskAt 3 .
+
+ls:Metric-AgentsPaused a p:Metric ;
+  rdfs:label "Agents paused" ;
+  rdfs:comment "Outside agents their ceilings paused, waiting for a person to understand why and resume them." ;
+  p:metricOf p:Agent ;
+  p:inState p:AgentStatus-paused ;
+  p:watchAt 1 ;
+  p:riskAt 2 .

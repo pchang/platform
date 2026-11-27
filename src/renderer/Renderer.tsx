@@ -491,6 +491,17 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   const inSet = entry.id === 'Radio' || (entry.id === 'Checkbox' && node.field);
   if (NEEDS_ID.has(entry.id)) props.id = !inSet && groupId ? groupId : generatedId;
   if (entry.id === 'FormGroup' && props.role !== 'radiogroup' && props.role !== 'group') props.fieldId = generatedId;
+  // A progress step's title is referenced by its id, so each step needs its own (design system spec 4.4, Journey).
+  if (entry.id === 'ProgressStep') {
+    props.id = generatedId;
+    props.titleId = `${generatedId}-title`;
+  }
+  // A journey is vertical below its breakpoint and horizontal from it, by PatternFly's responsive modifiers.
+  if (entry.id === 'ProgressStepper' && props.horizontalFrom) {
+    props.isVertical = true;
+    props.className = `pf-m-horizontal-on-${props.horizontalFrom as string}`;
+    delete props.horizontalFrom;
+  }
 
   // Fields: the value comes from the host, and changes go back to it.
   const field = node.field;
@@ -581,6 +592,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     else props['aria-hidden'] = true;
   } else if (label !== undefined) {
     if (LABEL_IS_PROP.has(entry.id)) props.label = label;
+    // Text led by an inline link, such as the greeting's count of items: the link, then the rest of the sentence.
+    else if (entry.id === 'Content' && content !== undefined) content = <>{content} {label as ReactNode}</>;
     else content = label as ReactNode;
   }
   if (entry.id === 'Radio') props.name = name;
@@ -617,6 +630,22 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Content' && props.isSubtle) {
     props.className = [props.className, 'app-subtle'].filter(Boolean).join(' ');
     delete props.isSubtle;
+  }
+  // A heading that marks a place on the page can take focus when a link jumps to it (design system spec 4.3, The greeting).
+  if (entry.id === 'Title' && node.anchor) {
+    props.id = `app-anchor-${node.anchor}`;
+    props.tabIndex = -1;
+    props.className = [props.className, 'app-anchor'].filter(Boolean).join(' ');
+  }
+  if (entry.id === 'Button' && node.jumpsTo) {
+    const target = `app-anchor-${node.jumpsTo}`;
+    props.onClick = () => {
+      const heading = document.getElementById(target);
+      if (!heading) return;
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      heading.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      heading.focus({ preventScroll: true });
+    };
   }
   if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
     props.component = 'a';
