@@ -61,3 +61,16 @@ test('each Where things stand row links to its type’s list of objects, and bac
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Where things stand' })).toBeVisible({ timeout: 30_000 });
 });
+
+test('the greeting’s count of items jumps to Your work, and moves focus there (design system spec 4.3, The greeting)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const main = page.getByRole('main');
+  const count = main.getByRole('button', { name: /^\d+ items?$/ });
+  await expect(count).toBeVisible({ timeout: 30_000 });
+  const yourWork = main.getByRole('heading', { level: 2, name: 'Your work' });
+  await expect(yourWork).not.toBeInViewport();
+  await count.click();
+  await expect(yourWork).toBeInViewport();
+  await expect(yourWork).toBeFocused();
+});

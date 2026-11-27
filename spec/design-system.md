@@ -1,6 +1,6 @@
 # Design System Spec
 
-Version 0.76. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
+Version 0.77. November 27, 2026. Applies to: Ontology-Driven AI Platform Prompt Specification v0.45, sections 3.6, 3.7, 5.1, 5.4 and 7.
 
 This spec chooses the design system for the platform and defines how agents read it. It is platform-level and domain-free.
 
@@ -195,7 +195,7 @@ To do, the list of a type's objects and the search page are object lists (patter
 - **Where things stand.** Under the heading "Where things stand", one row per type: its plural name, a link to that type's list of objects, the same page the sidebar's entry for it opens, marked by a small chevron after the name so it reads as a link at rest, and its total (every type's list page begins with the same "Back to Home" link and arrow as a metric's page, above its heading), then a thin segmented bar of its objects by lifecycle stage, then the stages as text, each with a small circle in its stage's color, its name and count, close under the bar (4.5), such as "draft 3 · in review 1". The bar runs the chart blue ramp from the first stage, step 100, to the last; in dark mode its own steps, from the same ramp against the dark surface. Segments are separated by a 2px surface gap, and the text beside the bar carries every figure, so the bar is never read by color alone. Each bar is an accessible chart, named for its type with its figures in its description. All the bars share one scale, from zero to the largest total, so rows compare. The legend's markers are circles, never squares, so they are not mistaken for the bar's segments.
 - **Your work.** Under the heading "Your work", the To do summary tiles, then a line on keeping up: what the person has done in the last 7 days, such as "You've done 4 things in the last 7 days; 1 item is overdue." Then the To do list.
 
-**The greeting.** Home opens with a greeting as its main heading, in place of the word "Home": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page Home. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now."
+**The greeting.** Home opens with a greeting as its main heading, in place of the word "Home": the time of day and the person's first name, for whoever is chosen in Profile, such as "Good morning, Chloé". The sidebar and the page's landmark still name the page Home. Under it, one line says how much is waiting and for which role: "3 items need you as Drug Safety Physician. Nearest deadline first, then the most urgent.", or "Nothing needs you as Drug Safety Physician right now." The count, such as "3 items", is a link to Your work further down the page: choosing it scrolls there, smoothly unless the person asks for reduced motion, and moves focus to the Your work heading, so a keyboard or screen reader user lands where a sighted person looks.
 
 - The time of day comes from the person's own clock: morning from 5:00, afternoon from 12:00, evening from 17:00, and late night from 22:00.
 - Each part of the day has a few greetings, plain or playful, such as "Good evening, Chloé", "Winding down, Chloé?" or "Burning the midnight oil, Chloé?". Some fit a day of the week: "Happy Monday" on a Monday morning, "Happy Friday" on a Friday afternoon, "Weekend shift" on a Saturday or Sunday.
@@ -552,3 +552,4 @@ A page at `#/catalog` shows the whole catalog so people can review it on any dev
 | 0.74 | 2026-11-26 | Outside agents in the object panel: an Activity tab on an agent's page, with its commits and proposals and its reads; a value an outside agent wrote says so. |
 | 0.75 | 2026-11-27 | Spacing: the navigation stays together at the top of the sidebar however tall it is, as Safari on iPhone had spread its items apart. |
 | 0.76 | 2026-11-27 | The list bar takes the surface it sits on, the object panel's in the panel, so it is not a dark strip there in dark mode. |
+| 0.77 | 2026-11-27 | The greeting's count of items is a link to Your work, further down Home: it scrolls there and moves focus to the heading. |

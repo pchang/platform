@@ -136,9 +136,12 @@ export function runLabels(object: ObjectSummary, runs: RunView[]): ViewNode[] {
     .map((r) => ({ component: 'Label', props: { label: `${r.methodLabel}: ${r.status === 'queued' ? 'waiting to start' : 'running'}`, status: 'info' } }));
 }
 
-function header(title: string, summary: string): ViewNode {
-  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, text(summary)], 'gapXs');
+function header(title: string, summary: string | ViewNode): ViewNode {
+  return group([{ component: 'Title', props: { label: title, headingLevel: 'h1' } }, typeof summary === 'string' ? text(summary) : summary], 'gapXs');
 }
+
+/** The place on Home the greeting's count of items jumps to. */
+const YOUR_WORK = 'your-work';
 
 // ---------------------------------------------------------------- the To do summary (design system spec 4.3)
 
@@ -479,9 +482,14 @@ export function buildTodoView(
   const filter = options.filter ?? 'all';
   const items = allItems.filter((i) => matchesFilter(i, filter, today));
   const entries = todoEntries(items, runs, today);
-  const summary = allItems.length
-    ? `${allItems.length} ${allItems.length === 1 ? 'item needs' : 'items need'} you as ${who.role}. Nearest deadline first, then the most urgent.`
-    : `Nothing needs you as ${who.role} right now.`;
+  // The count is a link to Your work, further down the page (design system spec 4.3, The greeting).
+  const summary: ViewNode = allItems.length
+    ? {
+        component: 'Content',
+        props: { label: `${allItems.length === 1 ? 'needs' : 'need'} you as ${who.role}. Nearest deadline first, then the most urgent.` },
+        children: [{ component: 'Button', props: { label: `${allItems.length} ${allItems.length === 1 ? 'item' : 'items'}`, variant: 'link', isInline: true }, jumpsTo: YOUR_WORK }],
+      }
+    : text(`Nothing needs you as ${who.role} right now.`);
   const narrowed = filter !== 'all' && allItems.length > 0;
   return {
     pattern: 'card-view',
@@ -495,7 +503,7 @@ export function buildTodoView(
       ...(allItems.length || options.home
         ? [
             group([
-              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' } } as ViewNode,
+              { component: 'Title', props: { label: 'Your work', headingLevel: 'h2', size: 'lg' }, anchor: YOUR_WORK } as ViewNode,
               ...(allItems.length ? buildSummary(allItems, today) : []),
               ...(options.home ? [text(keepingUp(options.home, allItems.filter((i) => matchesFilter(i, 'overdue', today)).length))] : []),
             ]),

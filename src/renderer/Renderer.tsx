@@ -592,6 +592,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
     else props['aria-hidden'] = true;
   } else if (label !== undefined) {
     if (LABEL_IS_PROP.has(entry.id)) props.label = label;
+    // Text led by an inline link, such as the greeting's count of items: the link, then the rest of the sentence.
+    else if (entry.id === 'Content' && content !== undefined) content = <>{content} {label as ReactNode}</>;
     else content = label as ReactNode;
   }
   if (entry.id === 'Radio') props.name = name;
@@ -628,6 +630,22 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   if (entry.id === 'Content' && props.isSubtle) {
     props.className = [props.className, 'app-subtle'].filter(Boolean).join(' ');
     delete props.isSubtle;
+  }
+  // A heading that marks a place on the page can take focus when a link jumps to it (design system spec 4.3, The greeting).
+  if (entry.id === 'Title' && node.anchor) {
+    props.id = `app-anchor-${node.anchor}`;
+    props.tabIndex = -1;
+    props.className = [props.className, 'app-anchor'].filter(Boolean).join(' ');
+  }
+  if (entry.id === 'Button' && node.jumpsTo) {
+    const target = `app-anchor-${node.jumpsTo}`;
+    props.onClick = () => {
+      const heading = document.getElementById(target);
+      if (!heading) return;
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      heading.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      heading.focus({ preventScroll: true });
+    };
   }
   if (entry.id === 'Button' && node.goes === 'home' && host.homeHref) {
     props.component = 'a';

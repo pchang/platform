@@ -973,10 +973,17 @@
           "label"
         ]
       },
-      "children": null,
+      "children": {
+        "accepts": [
+          "Button"
+        ],
+        "minItems": 0,
+        "maxItems": 1
+      },
       "responsive": "Wraps at every width.",
       "accessibility": [
-        "Headings use Title, not Content"
+        "Headings use Title, not Content",
+        "A Button child is an inline link that leads the text, such as the greeting's count of items linking to Your work (design system 4.3, The greeting)"
       ],
       "examples": [
         {

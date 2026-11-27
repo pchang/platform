@@ -51,6 +51,10 @@ export interface ViewNode {
   edits?: string;
   /** A type whose objects a Title or Button lists on a page of their own, as a link (design system spec 4.3, Home). */
   lists?: string;
+  /** A place on the page a Title marks, which a Button may jump to, such as your-work (design system spec 4.3, The greeting). */
+  anchor?: string;
+  /** The anchor a Button jumps to on the same page: it scrolls there and moves focus to the heading. */
+  jumpsTo?: string;
   /** A place in the app a Button goes to, as a link, such as Back to Home (design system spec 4.3, Home). */
   goes?: 'home';
   /** A metric whose objects a Card or Button shows on a page of their own, as a link (platform spec 5.1, Home). */

@@ -248,3 +248,11 @@ html body .pf-v6-c-description-list__description {
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+/* A heading a link jumps to lands clear of the masthead, and takes focus without a box around it (design system spec 4.3). */
+html body .app-anchor {
+  scroll-margin-block-start: var(--pf-t--global--spacer--lg);
+}
+html body .app-anchor:focus {
+  outline: none;
+}

@@ -140,6 +140,16 @@
           "pattern": "^([a-z][a-z0-9-]*:[A-Za-z0-9._-]+|https?://[^\\s]+)$",
           "description": "A type whose objects a Title or Button lists on a page of their own; a Title's text is the link, a Button is a link (design system 4.3, Home)."
         },
+        "anchor": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "A place on the page a Title marks, which a Button may jump to, such as your-work (design system 4.3, The greeting)."
+        },
+        "jumpsTo": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The anchor a Button jumps to on the same page: it scrolls there and moves focus to the heading (design system 4.3, The greeting)."
+        },
         "goes": {
           "enum": ["home"],
           "description": "A place in the app a Button goes to, as a link: Home. Used for Back (design system 4.3, Home)."
