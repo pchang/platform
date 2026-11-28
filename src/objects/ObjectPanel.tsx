@@ -11,6 +11,8 @@ import {
   Tooltip,
 } from '@patternfly/react-core';
 import ArrowLeftIcon from '@patternfly/react-icons/dist/esm/icons/arrow-left-icon';
+import AngleUpIcon from '@patternfly/react-icons/dist/esm/icons/angle-up-icon';
+import AngleDownIcon from '@patternfly/react-icons/dist/esm/icons/angle-down-icon';
 import CompressIcon from '@patternfly/react-icons/dist/esm/icons/compress-icon';
 import ExpandIcon from '@patternfly/react-icons/dist/esm/icons/expand-icon';
 import { useChat } from '../chat/ChatProvider';
@@ -82,7 +84,7 @@ function PanelInner() {
     const outgoing = last.current;
     last.current = current;
     const view = shown.current.get(outgoing)?.view;
-    if (panel.moved === 'fresh' || !view || prefersReducedMotion()) {
+    if (panel.moved === 'fresh' || panel.moved === 'step' || !view || prefersReducedMotion()) {
       setLeaving(undefined);
       return;
     }
@@ -109,6 +111,17 @@ function PanelInner() {
             <Tooltip content={panel.isExpanded ? 'Restore' : 'Expand'}>
               <Button variant="plain" icon={panel.isExpanded ? <CompressIcon /> : <ExpandIcon />} aria-label={panel.isExpanded ? 'Restore' : 'Expand'} onClick={panel.toggleExpanded} />
             </Tooltip>
+          )}
+          {/* Previous and Next through the list the object was opened from, left of Close (design system spec 4.4). */}
+          {panel.position && (
+            <>
+              <Tooltip content={panel.position.index > 0 ? `Previous, ${panel.position.index} of ${panel.position.total}` : 'This is the first in the list'}>
+                <Button variant="plain" icon={<AngleUpIcon />} aria-label="Previous" isAriaDisabled={panel.position.index === 0} onClick={() => panel.step(-1)} />
+              </Tooltip>
+              <Tooltip content={panel.position.index < panel.position.total - 1 ? `Next, ${panel.position.index + 2} of ${panel.position.total}` : 'This is the last in the list'}>
+                <Button variant="plain" icon={<AngleDownIcon />} aria-label="Next" isAriaDisabled={panel.position.index === panel.position.total - 1} onClick={() => panel.step(1)} />
+              </Tooltip>
+            </>
           )}
           <DrawerCloseButton onClick={panel.close} aria-label="Close" />
         </DrawerActions>
@@ -230,7 +243,7 @@ function ObjectContent({
           onField: (field, value) => (field === OBJECT_TAB_FIELD ? onTab(value) : list.onField(field, value)),
           onIntent: list.onIntent,
           onAction: (action) => openMethod(action.target, action.method),
-          onOpen: (target) => panel.moveIn(target),
+          onOpen: (target, origin) => panel.moveIn(target, origin),
           onAsk: chat.askAbout,
           // Following a type's name shows that type's list: the panel steps aside so it is seen (design system spec 4.3, Type links).
           onList: panel.close,

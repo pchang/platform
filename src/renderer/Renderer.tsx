@@ -241,7 +241,7 @@ function OpenableCard({ node, host }: { node: ViewNode; host: RenderHost }) {
   return (
     <OpensContext.Provider value={object}>
       <SelectContext.Provider value={selecting ? { chosen, toggle, title: cardTitle(node) } : undefined}>
-        <Card {...(node.props ?? {})} className={className} onClick={onClick}>
+        <Card {...(node.props ?? {})} className={className} onClick={onClick} {...(object ? { 'data-opens': object } : {})}>
           {(node.children ?? []).map((child, i) => (
             <Node key={i} node={child} host={host} />
           ))}
@@ -661,6 +661,8 @@ function Node({ node, host, ref }: { node: ViewNode; host: RenderHost; ref?: Ref
   }
   if (entry.id === 'Button' && node.opens) {
     const object = node.opens;
+    // Marked, so the object panel can step through the list it was opened from (design system spec 4.4, Previous and Next).
+    props['data-opens'] = object;
     props.onClick = (event: MouseEvent<HTMLElement>) => host.onOpen?.(object, event.currentTarget);
   }
   // In a card that opens its object, the title is the card's button.

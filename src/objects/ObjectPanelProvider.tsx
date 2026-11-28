@@ -8,12 +8,16 @@ import { usePrincipal } from '../principal/PrincipalProvider';
 export interface ObjectPanelContext {
   /** The objects opened, the one shown last. Empty while the panel is closed. */
   stack: string[];
-  /** How the last change moved: in to a related object, back out, or a fresh start. */
-  moved: 'in' | 'back' | 'fresh';
+  /** How the last change moved: in to a related object, back out, a step through the list, or a fresh start. */
+  moved: 'in' | 'back' | 'step' | 'fresh';
   /** Opens an object from the page, in place of whatever the panel showed. `origin` gets focus back on close. */
   open: (object: string, origin?: HTMLElement) => void;
   /** Opens a related object from inside the panel, keeping the way back. */
-  moveIn: (object: string) => void;
+  moveIn: (object: string, origin?: HTMLElement) => void;
+  /** Where the object shown is in the list it was opened from, when it was opened from one (design system spec 4.4). */
+  position?: { index: number; total: number };
+  /** Shows the object before, or after, the one shown, in the list it was opened from. */
+  step: (by: -1 | 1) => void;
   /** Steps back to the previous object. */
   back: () => void;
   /** Closes the whole panel. */
@@ -32,9 +36,22 @@ function focusOrigin(origin: HTMLElement | undefined) {
   target?.focus();
 }
 
+/**
+ * The list an object was opened from, in its order as the person saw it: the objects of the cards or rows around the one
+ * chosen, as the renderer marks them. Undefined when the object was not opened from a list of several.
+ */
+function listAround(object: string, origin: HTMLElement | undefined): string[] | undefined {
+  const list = origin?.closest('.pf-v6-l-gallery, table');
+  if (!list) return undefined;
+  const objects = [...new Set([...list.querySelectorAll<HTMLElement>('[data-opens]')].map((e) => e.dataset.opens!))];
+  return objects.length > 1 && objects.includes(object) ? objects : undefined;
+}
+
 export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   const { principal } = usePrincipal();
   const [stack, setStack] = useState<string[]>([]);
+  // For each object in the stack, the list it was opened from, if any.
+  const [lists, setLists] = useState<(string[] | undefined)[]>([]);
   const [moved, setMoved] = useState<ObjectPanelContext['moved']>('fresh');
   // Every object opened from the page opens at three quarters, as a peek; Expand lasts while the person moves through the
   // panel, until it closes or another object is opened from the page (design system spec 4.4).
@@ -42,24 +59,49 @@ export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   const origin = useRef<HTMLElement>(undefined);
 
   // Another person sees their own world: the panel closes when the person changes.
-  useEffect(() => setStack([]), [principal]);
+  useEffect(() => {
+    setStack([]);
+    setLists([]);
+  }, [principal]);
 
   const open = useCallback((object: string, from?: HTMLElement) => {
     origin.current = from;
     setMoved('fresh');
     setExpanded(false);
     setStack([object]);
+    setLists([listAround(object, from)]);
   }, []);
-  const moveIn = useCallback((object: string) => {
-    setMoved('in');
-    setStack((s) => (s.at(-1) === object ? s : [...s, object]));
-  }, []);
+  const moveIn = useCallback(
+    (object: string, from?: HTMLElement) => {
+      if (stack.at(-1) === object) return;
+      setMoved('in');
+      setStack([...stack, object]);
+      setLists([...lists, listAround(object, from)]);
+    },
+    [stack, lists],
+  );
   const back = useCallback(() => {
     setMoved('back');
     setStack((s) => s.slice(0, -1));
+    setLists((l) => l.slice(0, -1));
   }, []);
+  // Previous and Next: the neighbour takes the shown object's place; the way back, if any, stays (design system spec 4.4).
+  const list = lists.at(-1);
+  const index = list && stack.length ? list.indexOf(stack.at(-1)!) : -1;
+  const position = list && index >= 0 ? { index, total: list.length } : undefined;
+  const step = useCallback(
+    (by: -1 | 1) => {
+      if (!list || index < 0) return;
+      const next = list[index + by];
+      if (!next) return;
+      setMoved('step');
+      setStack((s) => [...s.slice(0, -1), next]);
+    },
+    [list, index],
+  );
   const close = useCallback(() => {
     setStack([]);
+    setLists([]);
     setExpanded(false);
     const from = origin.current;
     origin.current = undefined;
@@ -68,7 +110,10 @@ export function ObjectPanelProvider({ children }: { children: ReactNode }) {
   }, []);
   const toggleExpanded = useCallback(() => setExpanded((e) => !e), []);
 
-  const value = useMemo(() => ({ stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded }), [stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded]);
+  const value = useMemo(
+    () => ({ stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded, step, ...(position ? { position } : {}) }),
+    [stack, moved, open, moveIn, back, close, isExpanded, toggleExpanded, step, position?.index, position?.total],
+  );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
